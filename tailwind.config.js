@@ -4,6 +4,12 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    'focus:ring-orange-200',
+    'focus:ring-fuchsia-200',
+    'focus:ring-amber-200',
+    'focus:ring-pink-200',
+  ],
   theme: {
     extend: {
       colors: {
@@ -19,8 +25,8 @@ export default {
         pastel: {
           purple: '#e9d8fd',
           pink: '#fed7e2',
-          blue: '#c3dafe',
-          mint: '#c6f6d5',
+          lime: '#d9f99d',
+          brown: '#e8d5c4',
           yellow: '#fefcbf',
         }
       },

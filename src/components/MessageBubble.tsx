@@ -1,0 +1,167 @@
+/**
+ * @file src/components/MessageBubble.tsx
+ * @description 채팅 메시지 버블 컴포넌트
+ * - AI 메시지(좌측, 아바타 포함) / 유저 메시지(우측) 표시
+ * - AI 메시지 hover 시 ⋯ 버튼 표시
+ * - ⋯ 클릭 시 저장 드롭다운 메뉴 (일정/할일/인사이트/일기/복사/중요표시)
+ * - 외부 클릭 시 메뉴 자동 닫힘
+ */
+import { useState, useRef, useEffect } from 'react';
+import { ChatMessage, Room, SaveType } from '../types';
+
+/** 방별 아이콘 컬러 (각 방 파스텔 톤의 진한 버전) */
+const roomIconColor: Record<string, string> = {
+  strategy: '#9333ea',   // purple
+  marketing: '#ec4899',  // pink
+  dev: '#65a30d',        // lime
+  research: '#b07a4b',   // brown
+  meeting: '#ca8a04',    // yellow
+  secretary: '#ca8a04',  // yellow
+};
+
+interface MessageBubbleProps {
+  message: ChatMessage;
+  room: Room;
+  onSave?: (type: SaveType, message: ChatMessage) => void;
+  onStar?: (message: ChatMessage) => void;
+}
+
+const saveMenuItems: { type: SaveType; image: string; label: string }[] = [
+  { type: 'task', image: '/images/todo.png', label: '할일 추가' },
+  { type: 'insight', image: '/images/insight.png', label: '인사이트 저장' },
+];
+
+export function MessageBubble({ message, room, onSave, onStar }: MessageBubbleProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
+  const isAi = message.sender === 'ai';
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(message.content);
+    setMenuOpen(false);
+  };
+
+  const handleStar = () => {
+    onStar?.(message);
+    setMenuOpen(false);
+  };
+
+  const handleSave = (type: SaveType) => {
+    onSave?.(type, message);
+    setMenuOpen(false);
+  };
+
+  return (
+    <div className={`group flex ${isAi ? 'justify-start' : 'justify-end'}`}>
+      {/* AI 아바타 */}
+      {isAi && (
+        <img
+          src={room.image}
+          alt={room.aiName}
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover mr-2 mt-1 flex-shrink-0"
+        />
+      )}
+
+      {/* 메시지 영역 */}
+      <div className="relative max-w-[85%] sm:max-w-[80%]">
+        {/* ⋯ 버튼 (AI 메시지 hover 시) */}
+        {isAi && (
+          <div ref={menuRef} className="absolute -right-2 -top-2 z-10">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="w-7 h-7 rounded-full bg-white shadow-md border border-gray-100
+                flex items-center justify-center text-gray-400 hover:text-gray-600
+                hover:shadow-lg transition-all text-xs
+                opacity-0 group-hover:opacity-100 focus:opacity-100"
+            >
+              ⋯
+            </button>
+
+            {/* 드롭다운 메뉴 */}
+            {menuOpen && (
+              <div
+                className="absolute right-0 top-8 w-44 bg-white rounded-2xl shadow-hover
+                  border border-gray-100 py-2 z-20 animate-in fade-in slide-in-from-top-1"
+              >
+                {saveMenuItems.map((item) => (
+                  <button
+                    key={item.type}
+                    onClick={() => handleSave(item.type)}
+                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700
+                      hover:bg-primary-50 transition-colors flex items-center gap-2.5"
+                  >
+                    <img src={item.image} alt={item.label} className="w-4 h-4 object-contain" />
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+
+                <div className="border-t border-gray-100 my-1" />
+
+                <button
+                  onClick={handleCopy}
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700
+                    hover:bg-primary-50 transition-colors flex items-center gap-2.5"
+                >
+                  <svg className="w-4 h-4" style={{ color: roomIconColor[room.id] || '#a855f7' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                  </svg>
+                  <span>복사</span>
+                </button>
+                <button
+                  onClick={handleStar}
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700
+                    hover:bg-primary-50 transition-colors flex items-center gap-2.5"
+                >
+                  {message.isStarred ? (
+                    <svg className="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  ) : (
+                    <svg className="w-4 h-4" style={{ color: roomIconColor[room.id] || '#a855f7' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  )}
+                  <span>{message.isStarred ? '즐겨찾기 해제' : '즐겨찾기'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 메시지 본문 */}
+        <div
+          className={`relative px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl whitespace-pre-wrap ${
+            isAi
+              ? 'bg-white shadow-soft rounded-bl-md'
+              : 'bg-primary-500 text-white rounded-br-md'
+          }`}
+        >
+          {/* 즐겨찾기 별 */}
+          {message.isStarred && (
+            <svg className="absolute -bottom-2.5 -left-2.5 w-5 h-5 text-amber-400 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          )}
+          {isAi && (
+            <p className="text-xs text-primary-500 font-medium mb-1">
+              {room.aiName}
+            </p>
+          )}
+          <p className={`text-sm ${isAi ? 'text-gray-700' : 'text-white'}`}>
+            {message.content}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

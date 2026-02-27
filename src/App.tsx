@@ -1,84 +1,61 @@
-import { useState } from 'react';
-import { Room, ChatHistory } from './types';
-import { rooms, dummyChatHistory } from './data';
-import { RoomCard } from './components/RoomCard';
-import { Sidebar } from './components/Sidebar';
-import { ChatModal } from './components/ChatModal';
+/**
+ * @file src/App.tsx
+ * @description 메인 앱 컴포넌트 — 인증 + 라우팅
+ * - useAuth로 로그인 상태 확인
+ * - 미인증: LoginPage / 인증: BrowserRouter 라우팅
+ */
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
+import { LoginPage } from './pages/LoginPage';
+import { Layout } from './components/Layout';
+import { HomePage } from './pages/HomePage';
+import { SchedulesPage } from './pages/SchedulesPage';
+import { TasksPage } from './pages/TasksPage';
+import { InsightsPage } from './pages/InsightsPage';
+import { ReadingsPage } from './pages/ReadingsPage';
+import { RecordsPage } from './pages/RecordsPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { ProjectDetailPage } from './pages/ProjectDetailPage';
+import { SummariesPage } from './pages/SummariesPage';
 
 function App() {
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [chatHistory] = useState<ChatHistory[]>(dummyChatHistory);
+  const { user, loading } = useAuth();
 
-  const handleRoomClick = (room: Room) => {
-    setSelectedRoom(room);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-3">
+          <h1 className="text-2xl font-bold text-gray-800">Teamie</h1>
+          <div className="flex gap-1 justify-center">
+            <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const handleHistorySelect = (history: ChatHistory) => {
-    const room = rooms.find((r) => r.id === history.roomId);
-    if (room) {
-      setSelectedRoom(room);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setSelectedRoom(null);
-  };
+  if (!user) {
+    return <LoginPage />;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-pastel-pink/30">
-      {/* 헤더 */}
-      <header className="py-6 px-8">
-        <h1 className="text-3xl font-bold text-gray-800 text-center">
-          <span className="mr-2">🏢</span>
-          Sol AI Office
-        </h1>
-        <p className="text-center text-gray-500 mt-2 text-sm">
-          1인 사업가를 위한 AI 팀 오피스
-        </p>
-      </header>
-
-      {/* 메인 컨텐츠 */}
-      <main className="flex gap-6 px-8 pb-8 h-[calc(100vh-140px)]">
-        {/* 사이드바 */}
-        <Sidebar history={chatHistory} onSelectHistory={handleHistorySelect} />
-
-        {/* 오피스 레이아웃 */}
-        <section className="flex-1 bg-white/60 backdrop-blur-sm rounded-3xl shadow-soft p-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-6 text-center">
-            우리 오피스의 방들
-          </h2>
-
-          {/* 방 카드들 */}
-          <div className="grid grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {/* 첫째 줄: 3개 */}
-            {rooms.slice(0, 3).map((room) => (
-              <RoomCard
-                key={room.id}
-                room={room}
-                onClick={() => handleRoomClick(room)}
-              />
-            ))}
-
-            {/* 둘째 줄: 2개 (중앙 정렬) */}
-            <div className="col-span-3 flex justify-center gap-6">
-              {rooms.slice(3, 5).map((room) => (
-                <div key={room.id} className="w-1/3">
-                  <RoomCard
-                    room={room}
-                    onClick={() => handleRoomClick(room)}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* 채팅 모달 */}
-      {selectedRoom && (
-        <ChatModal room={selectedRoom} onClose={handleCloseModal} />
-      )}
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/schedules" element={<SchedulesPage />} />
+          <Route path="/tasks" element={<TasksPage />} />
+          <Route path="/insights" element={<InsightsPage />} />
+          <Route path="/readings" element={<ReadingsPage />} />
+          <Route path="/records" element={<RecordsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/summaries" element={<SummariesPage />} />
+          <Route path="/project/:projectId" element={<ProjectDetailPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
