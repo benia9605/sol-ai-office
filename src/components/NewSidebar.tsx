@@ -6,10 +6,12 @@
  * - 히스토리 섹션: 최근 대화 3개
  * - 모바일: 오버레이 / PC: 좌측 고정 w-64
  */
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { ChatHistory } from '../types';
-import { menuItems, dummyChatHistory } from '../data';
+import { menuItems, rooms, modiSecretary } from '../data';
 import { useProjects } from '../hooks/useProjects';
+import { fetchRecentConversations, RecentConversation } from '../services/conversations.service';
 
 interface NewSidebarProps {
   isOpen: boolean;
@@ -27,10 +29,25 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }
 
+/** room_id → Room 정보 매핑 */
+const allRooms = [...rooms, modiSecretary];
+function getRoomInfo(roomId: string) {
+  const room = allRooms.find(r => r.id === roomId);
+  return {
+    name: room?.name || roomId,
+    image: room?.image || '/images/modi.png',
+    emoji: room?.emoji || '💬',
+  };
+}
+
 export function NewSidebar({ isOpen, onClose, onSelectHistory }: NewSidebarProps) {
   const navigate = useNavigate();
   const { projects } = useProjects();
-  const recentHistory = dummyChatHistory.slice(0, 3);
+  const [recentConversations, setRecentConversations] = useState<RecentConversation[]>([]);
+
+  useEffect(() => {
+    fetchRecentConversations(5).then(setRecentConversations).catch(() => {});
+  }, []);
 
   return (
     <>
@@ -107,32 +124,46 @@ export function NewSidebar({ isOpen, onClose, onSelectHistory }: NewSidebarProps
           </ul>
         </div>
 
-        {/* 히스토리 섹션 */}
+        {/* 히스토리 섹션 — 실제 DB 대화 */}
         <div className="px-3 mt-6 flex-1 overflow-y-auto">
           <p className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">최근 대화</p>
           <ul className="space-y-1">
-            {recentHistory.map((item) => (
-              <li key={item.id}>
-                <button
-                  onClick={() => {
-                    onSelectHistory(item);
-                    onClose();
-                  }}
-                  className="w-full text-left px-3 py-2 rounded-2xl hover:bg-pastel-purple/50 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={item.roomImage}
-                      alt={item.roomName}
-                      className="w-6 h-6 rounded-full object-cover"
-                    />
-                    <span className="text-sm font-medium text-gray-700 truncate">{item.roomName}</span>
-                    <span className="ml-auto text-xs text-gray-400 flex-shrink-0">{formatDate(item.timestamp)}</span>
-                  </div>
-                  <p className="text-xs text-gray-500 truncate mt-0.5 pl-8">{item.lastMessage}</p>
-                </button>
-              </li>
-            ))}
+            {recentConversations.map((conv) => {
+              const room = getRoomInfo(conv.room_id);
+              return (
+                <li key={conv.id}>
+                  <button
+                    onClick={() => {
+                      onSelectHistory({
+                        id: conv.id,
+                        roomId: conv.room_id,
+                        roomName: room.name,
+                        roomEmoji: room.emoji,
+                        roomImage: room.image,
+                        lastMessage: conv.last_message,
+                        timestamp: new Date(conv.created_at),
+                      });
+                      onClose();
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-2xl hover:bg-pastel-purple/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={room.image}
+                        alt={room.name}
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                      <span className="text-sm font-medium text-gray-700 truncate">{room.name}</span>
+                      <span className="ml-auto text-xs text-gray-400 flex-shrink-0">{formatDate(new Date(conv.created_at))}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 truncate mt-0.5 pl-8">{conv.last_message}</p>
+                  </button>
+                </li>
+              );
+            })}
+            {recentConversations.length === 0 && (
+              <li className="px-3 py-2 text-xs text-gray-400">아직 대화가 없어요</li>
+            )}
           </ul>
         </div>
 

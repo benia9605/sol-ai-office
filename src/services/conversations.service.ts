@@ -61,6 +61,49 @@ export async function addMessage(
   return data;
 }
 
+/** 최근 대화 목록 (마지막 메시지 포함) */
+export interface RecentConversation {
+  id: string;
+  room_id: string;
+  created_at: string;
+  last_message: string;
+  last_role: string;
+}
+
+export async function fetchRecentConversations(limit = 5): Promise<RecentConversation[]> {
+  const userId = await getCurrentUserId();
+
+  const { data: conversations, error } = await supabase
+    .from('conversations')
+    .select('id, room_id, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error || !conversations?.length) return [];
+
+  const results = await Promise.all(
+    conversations.map(async (conv) => {
+      const { data: messages } = await supabase
+        .from('messages')
+        .select('content, role')
+        .eq('conversation_id', conv.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      return {
+        id: conv.id,
+        room_id: conv.room_id,
+        created_at: conv.created_at,
+        last_message: messages?.[0]?.content || '',
+        last_role: messages?.[0]?.role || 'user',
+      };
+    })
+  );
+
+  return results.filter(r => r.last_message);
+}
+
 /** 대화 ID로 메시지 조회 */
 export async function fetchMessagesByConversation(conversationId: string): Promise<MessageRow[]> {
   const { data, error } = await supabase

@@ -81,9 +81,9 @@ export function DashboardWidgets() {
           </div>
           <span className="text-xs text-green-300 group-hover:text-green-500">&rarr;</span>
         </div>
-        {urgentTasks.length > 0 ? (
-          <ul className="space-y-1.5">
-            {urgentTasks.map((t) => (
+        <ul className="space-y-1.5">
+          {urgentTasks.length > 0 ? (
+            urgentTasks.map((t) => (
               <li key={t.id} className="flex items-center gap-2">
                 <span className="text-xs flex-shrink-0">
                   {t.urgencyType === 'overdue' ? '\uD83D\uDD34' : '\uD83D\uDFE1'}
@@ -95,11 +95,9 @@ export function DashboardWidgets() {
                   {t.daysLeft < 0 ? `D+${Math.abs(t.daysLeft)}` : t.daysLeft === 0 ? 'D-Day' : `D-${t.daysLeft}`}
                 </span>
               </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-xs text-gray-400 text-center py-3">긴급 업무 없음 {'\uD83D\uDC4D'}</p>
-        )}
+            ))
+          ) : null}
+        </ul>
       </Link>
 
       {/* 인사이트 — 노랑 파스텔 */}
