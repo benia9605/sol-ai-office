@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useProjects } from '../hooks/useProjects';
 import { useUserProfile, UserProfile } from '../hooks/useUserProfile';
+import { useAuth } from '../hooks/useAuth';
 import { Project } from '../types';
 import { uploadImage, deleteImage } from '../services/storage.service';
 
@@ -36,6 +37,7 @@ const EMPTY_PROJECT: Omit<Project, 'id'> = {
 };
 
 export function SettingsPage() {
+  const { user } = useAuth();
   const { profile, loading: profileLoading, save: saveProfile } = useUserProfile();
   const { projects, loading, add, update, remove, reorder } = useProjects();
 
@@ -47,10 +49,20 @@ export function SettingsPage() {
   const [profileSaved, setProfileSaved] = useState(false);
 
   useEffect(() => {
+    const googleName = user?.user_metadata?.name || user?.email?.split('@')[0] || '';
     if (profile.id) {
-      setProfileForm({ name: profile.name, bio: profile.bio, tone: profile.tone, responseLength: profile.responseLength, emojiUsage: profile.emojiUsage });
+      setProfileForm({
+        name: profile.name || googleName,
+        bio: profile.bio,
+        tone: profile.tone,
+        responseLength: profile.responseLength,
+        emojiUsage: profile.emojiUsage,
+      });
+    } else if (!profileLoading && googleName) {
+      // 프로필이 아직 없으면 구글 이름으로 초기화
+      setProfileForm((f) => ({ ...f, name: f.name || googleName }));
     }
-  }, [profile]);
+  }, [profile, user, profileLoading]);
 
   const handleProfileSave = async () => {
     if (!profileForm.name.trim()) return;

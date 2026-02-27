@@ -13,6 +13,7 @@ import { Room, ChatHistory, TaskItem } from '../types';
 import { rooms, modiSecretary } from '../data';
 import { Header } from './Header';
 import { useAuth } from '../hooks/useAuth';
+import { useUserProfile } from '../hooks/useUserProfile';
 import { signOut } from '../services/auth';
 import { NewSidebar } from './NewSidebar';
 import { ModiFAB } from './ModiFAB';
@@ -28,6 +29,7 @@ export interface LayoutContext {
 
 export function Layout() {
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [pomodoroTask, setPomodoroTask] = useState<TaskItem | null>(null);
@@ -71,7 +73,7 @@ export function Layout() {
     <div className="h-screen flex flex-col bg-gray-50">
       <Header
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        userName={user?.user_metadata?.name || user?.email?.split('@')[0]}
+        userName={profile.name || user?.user_metadata?.name || user?.email?.split('@')[0]}
         onLogout={signOut}
       />
 
