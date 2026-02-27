@@ -69,7 +69,7 @@ app.use('/api/yes24', createProxyMiddleware({
 app.use(express.static(join(__dirname, 'dist')));
 
 // SPA fallback — 모든 비-API 요청은 index.html로
-app.get('*', (req, res) => {
+app.get('/{*path}', (req, res) => {
   res.sendFile(join(__dirname, 'dist', 'index.html'));
 });
 
