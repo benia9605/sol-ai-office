@@ -17,6 +17,12 @@ const PROJECT_COLOR_PRESETS = [
   '#78716c', '#ef4444',
 ];
 
+const EMOJI_PRESETS = [
+  '📁', '🚀', '💡', '🎯', '📊', '🛒', '🎨', '📱',
+  '💻', '📝', '🏠', '🎓', '💰', '🌱', '⭐', '🔥',
+  '📚', '🎵', '✈️', '🏋️', '🍳', '❤️', '🤖', '📸',
+];
+
 const EMPTY_PROJECT: Omit<Project, 'id'> = {
   name: '',
   emoji: '📁',
@@ -352,12 +358,29 @@ export function SettingsPage() {
                       }`}>이미지</button>
                   </div>
                   {iconTab === 'emoji' ? (
-                    <input
-                      value={form.emoji}
-                      onChange={(e) => setForm((f) => ({ ...f, emoji: e.target.value, image: '' }))}
-                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
-                      placeholder="이모지 입력"
-                    />
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">{form.emoji}</span>
+                        <span className="text-xs text-gray-400">선택하거나 직접 입력하세요</span>
+                      </div>
+                      <div className="grid grid-cols-8 gap-1 mb-2">
+                        {EMOJI_PRESETS.map((e) => (
+                          <button
+                            key={e}
+                            onClick={() => setForm((f) => ({ ...f, emoji: e, image: '' }))}
+                            className={`w-8 h-8 rounded-lg text-lg flex items-center justify-center transition-all ${
+                              form.emoji === e ? 'bg-purple-100 ring-2 ring-purple-400 scale-110' : 'hover:bg-gray-100'
+                            }`}
+                          >{e}</button>
+                        ))}
+                      </div>
+                      <input
+                        value={form.emoji}
+                        onChange={(e) => setForm((f) => ({ ...f, emoji: e.target.value, image: '' }))}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+                        placeholder="직접 이모지 입력"
+                      />
+                    </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       {form.image ? (
@@ -398,20 +421,52 @@ export function SettingsPage() {
 
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">기간</label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="date"
-                      value={form.startDate || ''}
-                      onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
-                      className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
-                    />
-                    <span className="text-xs text-gray-400">~</span>
-                    <input
-                      type="date"
-                      value={form.endDate || ''}
-                      onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
-                      className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
-                    />
+                  <div className="space-y-2">
+                    <div className="flex gap-2 items-center">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-400">시작일</span>
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!form.startDate}
+                              onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.checked ? '' : new Date().toISOString().split('T')[0] }))}
+                              className="w-3 h-3 rounded accent-purple-500"
+                            />
+                            <span className="text-xs text-gray-400">미정</span>
+                          </label>
+                        </div>
+                        <input
+                          type="date"
+                          value={form.startDate || ''}
+                          onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+                          disabled={!form.startDate}
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      <span className="text-xs text-gray-400 mt-5">~</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-400">종료일</span>
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!form.endDate}
+                              onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.checked ? '' : new Date().toISOString().split('T')[0] }))}
+                              className="w-3 h-3 rounded accent-purple-500"
+                            />
+                            <span className="text-xs text-gray-400">미정</span>
+                          </label>
+                        </div>
+                        <input
+                          type="date"
+                          value={form.endDate || ''}
+                          onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
+                          disabled={!form.endDate}
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 

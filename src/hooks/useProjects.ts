@@ -77,8 +77,8 @@ export function useProjects() {
         description: data.description,
         status: data.status,
         priority: data.priority,
-        start_date: data.startDate || null,
-        end_date: data.endDate || null,
+        start_date: data.startDate || undefined,
+        end_date: data.endDate || undefined,
       });
       const p = toProject(row);
       setProjects((prev) => [...prev, p]);
