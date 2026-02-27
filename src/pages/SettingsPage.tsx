@@ -329,12 +329,12 @@ export function SettingsPage() {
         {/* 편집/추가 모달 */}
         {editing && (
           <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={handleCancel}>
-            <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-6 space-y-5 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-lg font-bold text-gray-800">
                 {editing === 'new' ? '프로젝트 추가' : '프로젝트 편집'}
               </h3>
 
-              <div className="space-y-3">
+              <div className="space-y-5">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">프로젝트 이름 *</label>
                   <input
