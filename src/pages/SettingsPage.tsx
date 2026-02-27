@@ -45,8 +45,8 @@ export function SettingsPage() {
   const [profileForm, setProfileForm] = useState<Omit<UserProfile, 'id'>>({
     name: '', bio: '', tone: 'polite', responseLength: 'short', emojiUsage: 'moderate',
   });
+  const [profileEditing, setProfileEditing] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
-  const [profileSaved, setProfileSaved] = useState(false);
 
   useEffect(() => {
     const googleName = user?.user_metadata?.name || user?.email?.split('@')[0] || '';
@@ -69,10 +69,7 @@ export function SettingsPage() {
     setProfileSaving(true);
     const ok = await saveProfile(profileForm);
     setProfileSaving(false);
-    if (ok) {
-      setProfileSaved(true);
-      setTimeout(() => setProfileSaved(false), 2000);
-    }
+    if (ok) setProfileEditing(false);
   };
   const [editing, setEditing] = useState<string | null>(null); // project id or 'new'
   const [form, setForm] = useState<Omit<Project, 'id'>>(EMPTY_PROJECT);
@@ -158,88 +155,123 @@ export function SettingsPage() {
               </svg>
               내 정보
             </h2>
-            <button
-              onClick={handleProfileSave}
-              disabled={profileSaving || !profileForm.name.trim()}
-              className={`px-4 py-1.5 text-sm rounded-xl font-medium transition-all ${
-                profileSaved
-                  ? 'bg-green-100 text-green-600'
-                  : 'bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50'
-              }`}
-            >
-              {profileSaved ? '저장됨' : profileSaving ? '저장 중...' : '저장'}
-            </button>
+            {profileEditing ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setProfileEditing(false);
+                    setProfileForm({ name: profile.name, bio: profile.bio, tone: profile.tone, responseLength: profile.responseLength, emojiUsage: profile.emojiUsage });
+                  }}
+                  className="px-3 py-1.5 text-sm rounded-xl font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleProfileSave}
+                  disabled={profileSaving || !profileForm.name.trim()}
+                  className="px-4 py-1.5 text-sm rounded-xl font-medium bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 transition-all"
+                >
+                  {profileSaving ? '저장 중...' : '저장'}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setProfileEditing(true)}
+                className="px-3 py-1.5 text-sm rounded-xl font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                수정
+              </button>
+            )}
           </div>
 
-          <div className="space-y-5">
-            {/* 이름 */}
-            <div>
-              <label className="text-sm font-medium text-gray-600 block mb-1.5">이름 *</label>
-              <input
-                type="text"
-                value={profileForm.name}
-                onChange={(e) => setProfileForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="이름을 입력하세요"
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
-              />
-            </div>
-
-            {/* 나에 대해 */}
-            <div>
-              <label className="text-sm font-medium text-gray-600 block mb-1.5">나에 대해 <span className="text-gray-400 font-normal">(AI가 참고할 내용)</span></label>
-              <textarea
-                value={profileForm.bio}
-                onChange={(e) => setProfileForm((f) => ({ ...f, bio: e.target.value }))}
-                rows={3}
-                placeholder="예: 1인 사업가, 3개 프로젝트 운영 중. 피드백은 솔직하게 해줘도 OK"
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-200"
-              />
-            </div>
-
-            {/* 대화 스타일 */}
-            <div className="pt-4 border-t border-gray-100">
-              <h3 className="text-sm font-medium text-gray-600 mb-4">선호하는 대화 스타일</h3>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">톤</label>
-                  <select
-                    value={profileForm.tone}
-                    onChange={(e) => setProfileForm((f) => ({ ...f, tone: e.target.value }))}
-                    className={selectStyle}
-                  >
-                    <option value="friendly">친근하게</option>
-                    <option value="polite">존댓말</option>
-                    <option value="formal">격식있게</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">답변 길이</label>
-                  <select
-                    value={profileForm.responseLength}
-                    onChange={(e) => setProfileForm((f) => ({ ...f, responseLength: e.target.value }))}
-                    className={selectStyle}
-                  >
-                    <option value="short">짧게</option>
-                    <option value="medium">적당히</option>
-                    <option value="detailed">자세히</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">이모지</label>
-                  <select
-                    value={profileForm.emojiUsage}
-                    onChange={(e) => setProfileForm((f) => ({ ...f, emojiUsage: e.target.value }))}
-                    className={selectStyle}
-                  >
-                    <option value="many">많이</option>
-                    <option value="moderate">적당히</option>
-                    <option value="few">거의 안씀</option>
-                  </select>
+          {profileEditing ? (
+            /* ── 편집 모드 ── */
+            <div className="space-y-5">
+              <div>
+                <label className="text-sm font-medium text-gray-600 block mb-1.5">이름 *</label>
+                <input
+                  type="text"
+                  value={profileForm.name}
+                  onChange={(e) => setProfileForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="이름을 입력하세요"
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600 block mb-1.5">나에 대해 <span className="text-gray-400 font-normal">(AI가 참고할 내용)</span></label>
+                <textarea
+                  value={profileForm.bio}
+                  onChange={(e) => setProfileForm((f) => ({ ...f, bio: e.target.value }))}
+                  rows={3}
+                  placeholder="예: 1인 사업가, 3개 프로젝트 운영 중. 피드백은 솔직하게 해줘도 OK"
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-200"
+                />
+              </div>
+              <div className="pt-4 border-t border-gray-100">
+                <h3 className="text-sm font-medium text-gray-600 mb-4">선호하는 대화 스타일</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">톤</label>
+                    <select value={profileForm.tone} onChange={(e) => setProfileForm((f) => ({ ...f, tone: e.target.value }))} className={selectStyle}>
+                      <option value="friendly">친근하게</option>
+                      <option value="polite">존댓말</option>
+                      <option value="formal">격식있게</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">답변 길이</label>
+                    <select value={profileForm.responseLength} onChange={(e) => setProfileForm((f) => ({ ...f, responseLength: e.target.value }))} className={selectStyle}>
+                      <option value="short">짧게</option>
+                      <option value="medium">적당히</option>
+                      <option value="detailed">자세히</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 block mb-1">이모지</label>
+                    <select value={profileForm.emojiUsage} onChange={(e) => setProfileForm((f) => ({ ...f, emojiUsage: e.target.value }))} className={selectStyle}>
+                      <option value="many">많이</option>
+                      <option value="moderate">적당히</option>
+                      <option value="few">거의 안씀</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            /* ── 뷰어 모드 ── */
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-lg flex-shrink-0">
+                  {(profile.name || '?')[0]}
+                </div>
+                <div>
+                  <div className="font-medium text-gray-800">{profile.name || '이름 미설정'}</div>
+                  <div className="text-xs text-gray-400">{user?.email}</div>
+                </div>
+              </div>
+              {profile.bio && (
+                <div>
+                  <span className="text-xs font-medium text-gray-400">소개</span>
+                  <p className="text-sm text-gray-700 mt-0.5">{profile.bio}</p>
+                </div>
+              )}
+              <div className="pt-3 border-t border-gray-100">
+                <span className="text-xs font-medium text-gray-400">대화 스타일</span>
+                <div className="flex gap-2 mt-1.5 flex-wrap">
+                  <span className="px-2.5 py-1 bg-purple-50 text-purple-600 text-xs rounded-lg font-medium">
+                    {{ friendly: '친근하게', polite: '존댓말', formal: '격식있게' }[profile.tone] || profile.tone}
+                  </span>
+                  <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs rounded-lg font-medium">
+                    답변 {{ short: '짧게', medium: '적당히', detailed: '자세히' }[profile.responseLength] || profile.responseLength}
+                  </span>
+                  <span className="px-2.5 py-1 bg-amber-50 text-amber-600 text-xs rounded-lg font-medium">
+                    이모지 {{ many: '많이', moderate: '적당히', few: '거의 안씀' }[profile.emojiUsage] || profile.emojiUsage}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* 프로젝트 관리 */}
