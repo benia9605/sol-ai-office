@@ -19,6 +19,26 @@ import { useInsightSources } from '../hooks/useInsightSources';
 import { ItemDetailPopup } from '../components/ItemDetailPopup';
 import { defaultTaskCategories, defaultScheduleCategories } from '../data';
 
+// ── 더보기/접기 텍스트 ──
+
+function ExpandableText({ text, maxLength = 30 }: { text: string; maxLength?: number }) {
+  const [expanded, setExpanded] = useState(false);
+  if (text.length <= maxLength) {
+    return <p className="text-sm text-gray-400 mt-0.5">{text}</p>;
+  }
+  return (
+    <p className="text-sm text-gray-400 mt-0.5">
+      {expanded ? text : text.slice(0, maxLength) + '...'}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="ml-1 text-primary-500 hover:text-primary-600 font-medium"
+      >
+        {expanded ? '접기' : '더보기'}
+      </button>
+    </p>
+  );
+}
+
 // ── SVG 아이콘 ──
 
 const PenIcon = ({ className = 'w-3.5 h-3.5' }: { className?: string }) => (
@@ -435,7 +455,7 @@ export function ProjectDetailPage() {
                 </span>
               </div>
               {project.description && (
-                <p className="text-sm text-gray-400 mt-0.5">{project.description}</p>
+                <ExpandableText text={project.description} maxLength={30} />
               )}
             </div>
           </div>
