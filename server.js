@@ -43,12 +43,20 @@ app.use('/api/perplexity', createProxyMiddleware({
   headers: { Origin: '' },
 }));
 
-// 알라딘
-app.use('/api/aladin', createProxyMiddleware({
-  target: 'http://www.aladin.co.kr',
-  changeOrigin: true,
-  pathRewrite: { '^/api/aladin': '/ttb/api' },
-}));
+// 알라딘 — 직접 fetch (리다이렉트를 서버에서 처리하여 CORS 우회)
+app.use('/api/aladin', async (req, res) => {
+  try {
+    const targetPath = req.originalUrl.replace(/^\/api\/aladin/, '/ttb/api');
+    const targetUrl = `https://www.aladin.co.kr${targetPath}`;
+    const response = await fetch(targetUrl, { redirect: 'follow' });
+    const text = await response.text();
+    res.set('Content-Type', response.headers.get('content-type') || 'application/json');
+    res.status(response.status).send(text);
+  } catch (err) {
+    console.error('알라딘 프록시 에러:', err);
+    res.status(500).json({ error: '알라딘 API 요청 실패' });
+  }
+});
 
 // Yes24
 app.use('/api/yes24', createProxyMiddleware({
