@@ -89,14 +89,14 @@ export function BriefingCard({ onOpenModi }: BriefingCardProps) {
         <>
           {/* 본문 섹션들 */}
           {hasContent && (
-            <div className="mt-3 space-y-3">
+            <div className="mt-4 space-y-4">
               {/* 오늘 일정 */}
               {schedules.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-amber-700 mb-1.5">
+                <div className="bg-white/50 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-amber-700 mb-2">
                     오늘 일정 {schedules.length}개
                   </p>
-                  <ul className="space-y-1">
+                  <ul className="space-y-1.5">
                     {schedules.map((s, i) => (
                       <li key={i} className="flex items-center gap-2 text-xs text-gray-700">
                         <span className="text-amber-400 flex-shrink-0">{s.time || '--:--'}</span>
@@ -112,11 +112,11 @@ export function BriefingCard({ onOpenModi }: BriefingCardProps) {
 
               {/* 긴급 할일 */}
               {urgentTasks.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-amber-700 mb-1.5">
+                <div className="bg-white/50 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-amber-700 mb-2">
                     긴급 할일 {urgentTasks.length}개
                   </p>
-                  <ul className="space-y-1">
+                  <ul className="space-y-1.5">
                     {urgentTasks.map((t, i) => (
                       <li key={i} className="flex items-center gap-2 text-xs">
                         <span className="flex-shrink-0">
@@ -136,18 +136,21 @@ export function BriefingCard({ onOpenModi }: BriefingCardProps) {
 
               {/* 프로젝트 진행률 */}
               {projectProgress.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-amber-700 mb-1.5">
+                <div className="bg-white/50 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-amber-700 mb-2">
                     프로젝트 진행률
                   </p>
-                  <ul className="space-y-1.5">
+                  <div className={`grid gap-3 ${
+                    projectProgress.length >= 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
+                    projectProgress.length === 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
+                  }`}>
                     {projectProgress.map((p, i) => (
-                      <li key={i}>
-                        <div className="flex items-center justify-between text-xs mb-0.5">
-                          <span className="text-gray-700">
+                      <div key={i} className="bg-amber-50/60 rounded-lg p-2.5">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="text-gray-700 font-medium">
                             {p.emoji} {p.name}
                           </span>
-                          <span className="text-gray-500 text-[10px]">{p.percent}%</span>
+                          <span className="text-amber-600 font-semibold text-[11px]">{p.percent}%</span>
                         </div>
                         <div className="w-full h-1.5 bg-white/80 rounded-full overflow-hidden">
                           <div
@@ -155,9 +158,10 @@ export function BriefingCard({ onOpenModi }: BriefingCardProps) {
                             style={{ width: `${Math.min(100, p.percent)}%` }}
                           />
                         </div>
-                      </li>
+                        <p className="text-[10px] text-gray-400 mt-1 truncate">{p.goalTitle}</p>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
