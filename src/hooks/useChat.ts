@@ -111,24 +111,30 @@ export function useChat({ roomId }: UseChatOptions) {
     const opening = await sendChatMessage(openingPrompt, [{ role: 'user', content }], 'meeting', 300);
     await addAIMessage(convId, opening, MODI_INFO.name, MODI_INFO.image);
 
-    // 2. 4명 AI 순차 발언
+    // 2. 4명 AI 순차 발언 (한 AI 실패해도 나머지 계속 진행)
     for (const participant of MEETING_PARTICIPANTS) {
       setMeetingPhase({ name: participant.name, image: participant.image, emoji: participant.emoji });
 
-      const prompt = await buildParticipantPrompt(participant, content, responses);
+      try {
+        const prompt = await buildParticipantPrompt(participant, content, responses);
 
-      // 이전 발언을 API messages로 구성
-      const apiMessages: ApiMessage[] = [
-        { role: 'user', content },
-        ...responses.map(r => ({
-          role: 'assistant' as const,
-          content: `[${r.name}의 의견]\n${r.content}`,
-        })),
-      ];
+        const apiMessages: ApiMessage[] = [
+          { role: 'user', content },
+          ...responses.map(r => ({
+            role: 'assistant' as const,
+            content: `[${r.name}의 의견]\n${r.content}`,
+          })),
+        ];
 
-      const response = await sendChatMessage(prompt, apiMessages, participant.roomId, 600);
-      await addAIMessage(convId, response, participant.name, participant.image);
-      responses.push({ name: participant.name, content: response });
+        const response = await sendChatMessage(prompt, apiMessages, participant.roomId, 600);
+        await addAIMessage(convId, response, participant.name, participant.image);
+        responses.push({ name: participant.name, content: response });
+      } catch (e) {
+        const errMsg = e instanceof Error ? e.message : 'API 호출 실패';
+        console.warn(`[meeting] ${participant.name} 응답 실패:`, errMsg);
+        const fallbackMsg = `⚠️ ${participant.name}의 의견을 가져오지 못했어요. (${errMsg})\n\n다음 팀원에게 넘어갈게요.`;
+        await addAIMessage(convId, fallbackMsg, participant.name, participant.image);
+      }
     }
 
     // 3. 모디 정리
