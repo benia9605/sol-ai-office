@@ -131,7 +131,7 @@ export function useChat({ roomId }: UseChatOptions) {
     // 1. 모디 시작 멘트
     setMeetingPhase({ name: MODI_INFO.name, image: MODI_INFO.image, emoji: MODI_INFO.emoji });
     const openingPrompt = await buildModiOpeningPrompt(content);
-    const opening = await sendChatMessage(openingPrompt, [{ role: 'user', content }], 'meeting', 300);
+    const opening = await sendChatMessage(openingPrompt, [{ role: 'user', content }], 'meeting', 100);
     await addAIMessage(convId, opening, MODI_INFO.name, MODI_INFO.image);
 
     // 2. 선택된 AI 순차 발언 (한 AI 실패해도 나머지 계속 진행)
