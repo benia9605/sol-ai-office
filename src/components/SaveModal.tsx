@@ -193,25 +193,25 @@ export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
             </div>
           )}
 
-          {/* ── 인사이트 전용: 기록일 + 시간 + 프로젝트 + 중요도 ── */}
+          {/* ── 인사이트 전용: 기록일 + 시간 + 중요도 ── */}
           {type === 'insight' && (
-            <div className="flex gap-2">
-              <div className="flex-1">
+            <div className="grid grid-cols-3 gap-2">
+              <div>
                 <label className="text-xs text-gray-500 mb-1 block">기록일</label>
                 <input type="date" value={insightDate}
                   onChange={(e) => setInsightDate(e.target.value)}
-                  className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${tc.ring}`} />
+                  className={`w-full px-2 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${tc.ring}`} />
               </div>
-              <div className="w-24">
+              <div>
                 <label className="text-xs text-gray-500 mb-1 block">시간</label>
                 <input type="time" value={insightTime}
                   onChange={(e) => setInsightTime(e.target.value)}
-                  className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${tc.ring}`} />
+                  className={`w-full px-2 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${tc.ring}`} />
               </div>
-              <div className="w-24">
+              <div>
                 <label className="text-xs text-gray-500 mb-1 block">중요도</label>
                 <select value={insightPriority} onChange={(e) => setInsightPriority(e.target.value as 'high' | 'medium' | 'low')}
-                  className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${tc.ring}`}>
+                  className={`w-full px-2 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${tc.ring}`}>
                   <option value="high">높음</option>
                   <option value="medium">보통</option>
                   <option value="low">낮음</option>
@@ -222,16 +222,16 @@ export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
 
           {/* ── 할일 전용: 마감일 + 우선순위 ── */}
           {type === 'task' && (
-            <div className="flex gap-2">
-              <div className="flex-1">
+            <div className="grid grid-cols-[1fr_6rem] gap-2">
+              <div>
                 <label className="text-xs text-gray-500 mb-1 block">마감일</label>
                 <input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)}
                   className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${tc.ring}`} />
               </div>
-              <div className="w-24">
+              <div>
                 <label className="text-xs text-gray-500 mb-1 block">우선순위</label>
                 <select value={taskPriority} onChange={(e) => setTaskPriority(e.target.value as 'high' | 'medium' | 'low')}
-                  className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${tc.ring}`}>
+                  className={`w-full px-2 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${tc.ring}`}>
                   <option value="high">높음</option>
                   <option value="medium">보통</option>
                   <option value="low">낮음</option>

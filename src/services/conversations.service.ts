@@ -20,9 +20,19 @@ export interface MessageRow {
   role: string;       // 'user' | 'assistant'
   content: string;
   ai_name?: string;
+  ai_model?: string;
   is_starred?: boolean;
   created_at: string;
 }
+
+/** AI 이름 → 모델명 자동 매핑 */
+const AI_MODEL_MAP: Record<string, string> = {
+  '플래니': 'claude-sonnet-4-20250514',
+  '데비':   'claude-opus-4-20250514',
+  '모디':   'claude-sonnet-4-20250514',
+  '마키':   'gpt-4o',
+  '서치':   'sonar-pro',
+};
 
 /** 대화 생성 */
 export async function createConversation(roomId: string, title?: string): Promise<ConversationRow> {
@@ -52,6 +62,7 @@ export async function addMessage(
       role,
       content,
       ai_name: aiName || null,
+      ai_model: aiName ? (AI_MODEL_MAP[aiName] || null) : null,
       user_id: userId,
     })
     .select()
@@ -102,6 +113,22 @@ export async function fetchRecentConversations(limit = 5): Promise<RecentConvers
   );
 
   return results.filter(r => r.last_message);
+}
+
+/** 특정 방의 최근 대화 ID 조회 */
+export async function fetchLatestConversationForRoom(roomId: string): Promise<ConversationRow | null> {
+  const userId = await getCurrentUserId();
+  const { data, error } = await supabase
+    .from('conversations')
+    .select('id, room_id, title, created_at')
+    .eq('user_id', userId)
+    .eq('room_id', roomId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !data) return null;
+  return data;
 }
 
 /** 대화 ID로 메시지 조회 */

@@ -336,14 +336,14 @@ export function ReadingsPage() {
                 className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
             </div>
 
-            <div className="flex gap-2">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
                 <label className="text-xs text-gray-500 mb-1 block">시작일</label>
                 <input type="date" value={form.startDate}
                   onChange={(e) => setForm({ ...form, startDate: e.target.value })}
                   className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
               </div>
-              <div className="flex-1">
+              <div>
                 <label className="text-xs text-gray-500 mb-1 block">
                   {form.category === 'rcat-course' ? '총 강수' : '총 페이지'}
                 </label>

@@ -27,6 +27,8 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   isStarred?: boolean;
+  aiName?: string;      // 회의실: 어떤 AI가 보낸 메시지인지
+  aiImage?: string;     // 회의실: AI 아바타 이미지
 }
 
 export interface ChatHistory {

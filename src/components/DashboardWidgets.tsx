@@ -42,7 +42,7 @@ export function DashboardWidgets() {
   const readingBooks = readings.filter((r) => r.status === 'reading');
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:grid-cols-4">
       {/* 이번주 일정 — 주황 파스텔 */}
       <Link
         to="/schedules"

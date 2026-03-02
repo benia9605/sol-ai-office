@@ -331,12 +331,12 @@ export function TasksPage() {
             </div>
 
             {/* 상위 목표 & 중요도 */}
-            <div className="flex gap-3">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_7rem] gap-2 sm:gap-3">
+              <div>
                 <label className="text-xs text-gray-500 mb-1 block">상위 목표</label>
                 <GoalSelect value={form.goalId} onChange={(goalId, projectName) => setForm({ ...form, goalId, project: projectName || '' })} />
               </div>
-              <div className="w-28">
+              <div>
                 <label className="text-xs text-gray-500 mb-1 block">중요도</label>
                 <select
                   value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value as TaskItem['priority'] })}

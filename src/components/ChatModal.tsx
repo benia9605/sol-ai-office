@@ -38,7 +38,8 @@ interface ChatModalProps {
 }
 
 export function ChatModal({ room, onClose }: ChatModalProps) {
-  const { messages, setMessages, loading, sendMessage: sendChatMsg } = useChat({ roomId: room.id });
+  const { messages, setMessages, loading, sendMessage: sendChatMsg, meetingPhase } = useChat({ roomId: room.id });
+  const isMeeting = room.id === 'meeting';
   const [input, setInput] = useState('');
   const [saveModal, setSaveModal] = useState<SaveModalConfig | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
@@ -196,7 +197,7 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
             <div>
               <h3 className="font-bold text-gray-800 text-sm sm:text-base">{room.name}</h3>
               <p className="text-xs sm:text-sm text-gray-600">
-                {room.aiName} · {room.aiModel}
+                {isMeeting ? '💜 플래니 · 💗 마키 · 🤎 데비 · 💚 서치 · 💛 모디' : `${room.aiName} · ${room.aiModel}`}
               </p>
             </div>
           </div>
@@ -239,12 +240,22 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
           ))}
           {loading && (
             <div className="flex items-center gap-2 px-3 py-2">
-              <img src={room.image} alt={room.aiName} className="w-7 h-7 rounded-full object-cover" />
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
+              <img
+                src={meetingPhase?.image || room.image}
+                alt={meetingPhase?.name || room.aiName}
+                className="w-7 h-7 rounded-full object-cover"
+              />
+              {meetingPhase ? (
+                <span className="text-xs text-gray-500 animate-pulse">
+                  {meetingPhase.emoji} {meetingPhase.name}가 의견을 정리하고 있어요...
+                </span>
+              ) : (
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              )}
             </div>
           )}
           <div ref={chatEndRef} />
@@ -267,7 +278,7 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={`${room.aiName}에게 메시지 보내기...`}
+              placeholder={isMeeting ? '회의 주제를 입력해주세요...' : `${room.aiName}에게 메시지 보내기...`}
               className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-100 rounded-2xl text-sm
                 focus:outline-none focus:ring-2 focus:ring-primary-300 transition-all"
             />

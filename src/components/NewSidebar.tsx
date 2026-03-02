@@ -45,8 +45,18 @@ export function NewSidebar({ isOpen, onClose, onSelectHistory }: NewSidebarProps
   const { projects } = useProjects();
   const [recentConversations, setRecentConversations] = useState<RecentConversation[]>([]);
 
+  const loadRecent = () => {
+    fetchRecentConversations(5)
+      .then(setRecentConversations)
+      .catch((e) => console.warn('[Sidebar] 최근 대화 로드 실패:', e));
+  };
+
+  // 마운트 시 + 대화 발생 시 리프레시
   useEffect(() => {
-    fetchRecentConversations(5).then(setRecentConversations).catch(() => {});
+    loadRecent();
+    const handler = () => loadRecent();
+    window.addEventListener('conversation-updated', handler);
+    return () => window.removeEventListener('conversation-updated', handler);
   }, []);
 
   return (

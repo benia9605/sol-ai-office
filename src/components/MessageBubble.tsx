@@ -7,6 +7,8 @@
  * - 외부 클릭 시 메뉴 자동 닫힘
  */
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { ChatMessage, Room, SaveType } from '../types';
 
 /** 방별 아이콘 컬러 (각 방 파스텔 톤의 진한 버전) */
@@ -17,6 +19,15 @@ const roomIconColor: Record<string, string> = {
   research: '#b07a4b',   // brown
   meeting: '#ca8a04',    // yellow
   secretary: '#ca8a04',  // yellow
+};
+
+/** AI 이름별 accent color (회의실에서 발언자 구분용) */
+const aiNameColor: Record<string, string> = {
+  '플래니': '#9333ea',
+  '마키': '#ec4899',
+  '데비': '#65a30d',
+  '서치': '#b07a4b',
+  '모디': '#ca8a04',
 };
 
 interface MessageBubbleProps {
@@ -49,6 +60,11 @@ export function MessageBubble({ message, room, onSave, onStar }: MessageBubblePr
 
   const isAi = message.sender === 'ai';
 
+  // 회의실에서는 message.aiName/aiImage 우선, 아니면 room 기본값
+  const displayName = message.aiName || room.aiName;
+  const displayImage = message.aiImage || room.image;
+  const nameColor = message.aiName ? (aiNameColor[message.aiName] || '#a855f7') : (roomIconColor[room.id] || '#a855f7');
+
   const handleCopy = async () => {
     await navigator.clipboard.writeText(message.content);
     setMenuOpen(false);
@@ -69,8 +85,8 @@ export function MessageBubble({ message, room, onSave, onStar }: MessageBubblePr
       {/* AI 아바타 */}
       {isAi && (
         <img
-          src={room.image}
-          alt={room.aiName}
+          src={displayImage}
+          alt={displayName}
           className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover mr-2 mt-1 flex-shrink-0"
         />
       )}
@@ -140,10 +156,10 @@ export function MessageBubble({ message, room, onSave, onStar }: MessageBubblePr
 
         {/* 메시지 본문 */}
         <div
-          className={`relative px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl whitespace-pre-wrap ${
+          className={`relative px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl ${
             isAi
               ? 'bg-white shadow-soft rounded-bl-md'
-              : 'bg-primary-500 text-white rounded-br-md'
+              : 'bg-primary-500 text-white rounded-br-md whitespace-pre-wrap'
           }`}
         >
           {/* 즐겨찾기 별 */}
@@ -153,13 +169,21 @@ export function MessageBubble({ message, room, onSave, onStar }: MessageBubblePr
             </svg>
           )}
           {isAi && (
-            <p className="text-xs text-primary-500 font-medium mb-1">
-              {room.aiName}
+            <p className="text-xs font-medium mb-1" style={{ color: nameColor }}>
+              {displayName}
             </p>
           )}
-          <p className={`text-sm ${isAi ? 'text-gray-700' : 'text-white'}`}>
-            {message.content}
-          </p>
+          {isAi ? (
+            <div className="text-sm text-gray-700 markdown-body">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {message.content}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <p className="text-sm text-white">
+              {message.content}
+            </p>
+          )}
         </div>
       </div>
     </div>
