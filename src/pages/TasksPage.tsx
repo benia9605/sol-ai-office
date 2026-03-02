@@ -5,9 +5,9 @@
  * - 날짜 기준 그룹핑 리스트 뷰
  * - 추가 폼, ItemDetailPopup
  */
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { TaskItem, RepeatType, ScheduleCategory } from '../types';
+import { TaskItem, TaskStatus, RepeatType, ScheduleCategory } from '../types';
 import { useTasks } from '../hooks/useTasks';
 import { defaultTaskCategories, categoryColorPresets } from '../data';
 import { ItemDetailPopup } from '../components/ItemDetailPopup';
@@ -89,6 +89,16 @@ export function TasksPage() {
 
   // Detail popup
   const [selectedItem, setSelectedItem] = useState<TaskItem | null>(null);
+
+  // 선택 모드 + 일괄 편집
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [bulkForm, setBulkForm] = useState<{
+    goalId?: string; project?: string; priority?: TaskItem['priority'];
+    date?: string; category?: string; status?: TaskStatus;
+  }>({});
+  const bulkEditRef = useRef<HTMLDivElement>(null);
 
   // Category management
   const [taskCategories, setTaskCategories] = useState(defaultTaskCategories);
@@ -204,6 +214,69 @@ export function TasksPage() {
 
   const hasActiveFilter = projectFilter !== 'all' || statusFilter !== 'all';
 
+  // 선택 모드 토글
+  const toggleSelectMode = useCallback(() => {
+    setSelectMode((prev) => {
+      if (prev) {
+        setSelectedIds(new Set());
+        setShowBulkEdit(false);
+        setBulkForm({});
+      }
+      return !prev;
+    });
+  }, []);
+
+  // 아이템 선택 토글
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // 전체 선택/해제
+  const handleSelectAll = useCallback(() => {
+    if (selectedIds.size === filteredAndSortedTasks.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredAndSortedTasks.map((t) => t.id)));
+    }
+  }, [selectedIds.size, filteredAndSortedTasks]);
+
+  // 일괄 편집 적용
+  const handleBulkApply = useCallback(async () => {
+    const patch: Partial<TaskItem> = {};
+    if (bulkForm.goalId !== undefined) { patch.goalId = bulkForm.goalId; patch.project = bulkForm.project || ''; }
+    if (bulkForm.priority !== undefined) patch.priority = bulkForm.priority;
+    if (bulkForm.date !== undefined) patch.date = bulkForm.date || undefined;
+    if (bulkForm.category !== undefined) patch.category = bulkForm.category || undefined;
+    if (bulkForm.status !== undefined) patch.status = bulkForm.status;
+
+    if (Object.keys(patch).length === 0) return;
+
+    for (const id of selectedIds) {
+      await updateTask(id, patch);
+    }
+
+    setSelectMode(false);
+    setSelectedIds(new Set());
+    setShowBulkEdit(false);
+    setBulkForm({});
+  }, [bulkForm, selectedIds, updateTask]);
+
+  // 일괄 편집 외부 클릭 닫기
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (bulkEditRef.current && !bulkEditRef.current.contains(e.target as Node)) {
+        setShowBulkEdit(false);
+      }
+    };
+    if (showBulkEdit) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showBulkEdit]);
+
   return (
     <div className="min-h-full bg-[#f1f9f1] p-4 sm:p-6 lg:p-8">
       <div className={viewMode === 'kanban' ? 'max-w-5xl mx-auto space-y-5' : 'max-w-3xl mx-auto space-y-5'}>
@@ -221,6 +294,16 @@ export function TasksPage() {
               className="px-3 py-1.5 text-sm font-medium text-green-600 bg-white rounded-xl shadow-soft hover:shadow-hover transition-all"
             >
               + 추가
+            </button>
+
+            {/* 선택 */}
+            <button
+              onClick={toggleSelectMode}
+              className={`px-3 py-1.5 text-sm rounded-xl shadow-soft hover:shadow-hover transition-all ${
+                selectMode ? 'text-white bg-green-500 font-medium' : 'text-gray-600 bg-white'
+              }`}
+            >
+              {selectMode ? '선택 해제' : '선택'}
             </button>
 
             {/* 정렬 ▼ */}
@@ -457,6 +540,135 @@ export function TasksPage() {
           </div>
         )}
 
+        {/* 선택 모드 툴바 */}
+        {selectMode && (
+          <div className="bg-white rounded-2xl shadow-soft px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-700">
+                {selectedIds.size}개 선택됨
+              </span>
+              <button
+                onClick={handleSelectAll}
+                className="text-xs text-green-600 hover:text-green-700 font-medium"
+              >
+                {selectedIds.size === filteredAndSortedTasks.length ? '전체 해제' : '전체 선택'}
+              </button>
+            </div>
+            <div className="relative" ref={bulkEditRef}>
+              <button
+                onClick={() => setShowBulkEdit(!showBulkEdit)}
+                disabled={selectedIds.size === 0}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                일괄 편집
+              </button>
+
+              {/* 일괄 편집 패널 */}
+              {showBulkEdit && selectedIds.size > 0 && (
+                <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 z-30 w-[320px] space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-700">{selectedIds.size}개 항목 일괄 편집</h3>
+
+                  {/* 목표 */}
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">목표</label>
+                    <GoalSelect
+                      value={bulkForm.goalId}
+                      onChange={(goalId, projectName) => setBulkForm({ ...bulkForm, goalId, project: projectName || '' })}
+                    />
+                  </div>
+
+                  {/* 중요도 */}
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1.5 block">중요도</label>
+                    <div className="flex gap-1.5">
+                      {([['high', '높음'], ['medium', '보통'], ['low', '낮음']] as const).map(([key, label]) => (
+                        <button
+                          key={key}
+                          onClick={() => setBulkForm({ ...bulkForm, priority: bulkForm.priority === key ? undefined : key })}
+                          className={`px-3 py-1.5 text-xs rounded-full transition-all ${
+                            bulkForm.priority === key
+                              ? 'bg-green-500 text-white font-medium'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 날짜 */}
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">마감일</label>
+                    <input
+                      type="date"
+                      value={bulkForm.date ?? ''}
+                      onChange={(e) => setBulkForm({ ...bulkForm, date: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-200"
+                    />
+                  </div>
+
+                  {/* 종류 (카테고리) */}
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1.5 block">종류</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {taskCategories.map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => setBulkForm({ ...bulkForm, category: bulkForm.category === cat.id ? undefined : cat.id })}
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                            bulkForm.category === cat.id ? 'text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                          style={bulkForm.category === cat.id ? { backgroundColor: cat.color } : undefined}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 상태 */}
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1.5 block">상태</label>
+                    <div className="flex gap-1.5">
+                      {([['pending', '대기'], ['in_progress', '진행중'], ['completed', '완료']] as const).map(([key, label]) => (
+                        <button
+                          key={key}
+                          onClick={() => setBulkForm({ ...bulkForm, status: bulkForm.status === key ? undefined : key })}
+                          className={`px-3 py-1.5 text-xs rounded-full transition-all ${
+                            bulkForm.status === key
+                              ? 'bg-green-500 text-white font-medium'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 적용 버튼 */}
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      onClick={() => { setShowBulkEdit(false); setBulkForm({}); }}
+                      className="px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-100 rounded-xl"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={handleBulkApply}
+                      disabled={Object.values(bulkForm).every((v) => v === undefined)}
+                      className="px-4 py-1.5 text-xs text-white bg-green-500 hover:bg-green-600 rounded-xl font-medium disabled:opacity-40"
+                    >
+                      적용
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* 매일 루틴 섹션 */}
         {!loading && dailyTasks.length > 0 && (
           <DailyRoutineSection
@@ -500,6 +712,9 @@ export function TasksPage() {
                 onToggleStar={toggleStar}
                 onStartPomodoro={context.startPomodoro}
                 onSelect={setSelectedItem}
+                selectMode={selectMode}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
               />
             )}
             {viewMode === 'kanban' && (
@@ -511,6 +726,9 @@ export function TasksPage() {
                 onToggleStar={toggleStar}
                 onStartPomodoro={context.startPomodoro}
                 onSelect={setSelectedItem}
+                selectMode={selectMode}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
               />
             )}
           </>

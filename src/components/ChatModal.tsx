@@ -103,6 +103,25 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
     });
   };
 
+  /** 전체 추가 → 모달 없이 모든 액션아이템을 할일로 일괄 등록 */
+  const handleBulkSaveActions = async (actions: ExtractedAction[], message: ChatMessage) => {
+    try {
+      const conversationId = await saveConversationContext(message);
+      for (const action of actions) {
+        await addTask({
+          title: action.title,
+          priority: action.priority || 'medium',
+          date: action.date,
+          conversation_id: conversationId,
+        });
+      }
+      setSaveSuccess(`${actions.length}개 할일이 추가되었습니다`);
+    } catch (e) {
+      console.error('[ChatModal] 전체 추가 실패:', e);
+      setSaveSuccess('전체 추가에 실패했습니다');
+    }
+  };
+
   /** AI 대화 컨텍스트를 DB에 저장하고 conversation_id 반환 */
   const saveConversationContext = async (sourceMessage: ChatMessage): Promise<string | undefined> => {
     try {
@@ -330,6 +349,7 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
                   onSave={handleSaveRequest}
                   onStar={handleStar}
                   onSaveAction={handleSaveAction}
+                  onBulkSaveActions={handleBulkSaveActions}
                 />
               </div>
             );

@@ -15,6 +15,9 @@ interface TaskListViewProps {
   onToggleStar: (id: string) => void;
   onStartPomodoro?: (task: TaskItem) => void;
   onSelect: (task: TaskItem) => void;
+  selectMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 function getDateGroup(task: TaskItem): string {
@@ -44,7 +47,7 @@ const dateGroups = [
   { key: 'no_date',   label: '마감일 없음',  color: 'text-gray-400' },
 ];
 
-export function TaskListView({ tasks, categories, onCycleStatus, onToggleStar, onStartPomodoro, onSelect }: TaskListViewProps) {
+export function TaskListView({ tasks, categories, onCycleStatus, onToggleStar, onStartPomodoro, onSelect, selectMode, selectedIds, onToggleSelect }: TaskListViewProps) {
   const { projects } = useProjects();
   const colorMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -83,6 +86,9 @@ export function TaskListView({ tasks, categories, onCycleStatus, onToggleStar, o
                   onToggleStar={onToggleStar}
                   onStartPomodoro={onStartPomodoro}
                   onSelect={onSelect}
+                  selectMode={selectMode}
+                  selected={selectedIds?.has(task.id)}
+                  onToggleSelect={onToggleSelect}
                 />
               ))}
             </div>

@@ -71,20 +71,43 @@ interface TaskListItemProps {
   onToggleStar: (id: string) => void;
   onStartPomodoro?: (task: TaskItem) => void;
   onSelect: (task: TaskItem) => void;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
-export function TaskListItem({ task, projectColor, onCycleStatus, onToggleStar, onSelect }: TaskListItemProps) {
+export function TaskListItem({ task, projectColor, onCycleStatus, onToggleStar, onSelect, selectMode, selected, onToggleSelect }: TaskListItemProps) {
   const isCompleted = task.status === 'completed';
 
   return (
     <div
-      onClick={() => onSelect(task)}
-      className={`flex items-center gap-3 bg-white rounded-2xl shadow-soft px-4 py-3 cursor-pointer hover:shadow-hover transition-all ${isCompleted ? 'opacity-50' : ''}`}
+      onClick={() => selectMode ? onToggleSelect?.(task.id) : onSelect(task)}
+      className={`flex items-center gap-3 bg-white rounded-2xl shadow-soft px-4 py-3 cursor-pointer hover:shadow-hover transition-all ${isCompleted ? 'opacity-50' : ''} ${selectMode && selected ? 'ring-2 ring-green-400 bg-green-50/30' : ''}`}
     >
-      {/* 상태 아이콘 */}
-      <div onClick={(e) => e.stopPropagation()}>
-        <StatusIcon status={task.status} onClick={() => onCycleStatus(task.id)} />
-      </div>
+      {/* 선택 모드: 체크박스 / 일반 모드: 상태 아이콘 */}
+      {selectMode ? (
+        <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
+          <button
+            onClick={() => onToggleSelect?.(task.id)}
+            className="w-5 h-5 flex items-center justify-center"
+          >
+            {selected ? (
+              <svg viewBox="0 0 20 20" className="w-5 h-5">
+                <rect x="1" y="1" width="18" height="18" rx="4" fill="#22c55e" stroke="#16a34a" strokeWidth="1" />
+                <path d="M6 10l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 20 20" className="w-5 h-5">
+                <rect x="1" y="1" width="18" height="18" rx="4" fill="white" stroke="#d1d5db" strokeWidth="1.5" />
+              </svg>
+            )}
+          </button>
+        </div>
+      ) : (
+        <div onClick={(e) => e.stopPropagation()}>
+          <StatusIcon status={task.status} onClick={() => onCycleStatus(task.id)} />
+        </div>
+      )}
 
       {/* 제목 */}
       <span className={`flex-1 text-sm font-medium min-w-0 truncate ${isCompleted ? 'text-gray-400 line-through' : 'text-gray-800'}`}>

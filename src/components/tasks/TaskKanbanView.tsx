@@ -32,6 +32,9 @@ interface TaskKanbanViewProps {
   onToggleStar: (id: string) => void;
   onStartPomodoro?: (task: TaskItem) => void;
   onSelect: (task: TaskItem) => void;
+  selectMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 const columns: { id: TaskStatus; label: string; color: string; bg: string }[] = [
@@ -59,12 +62,15 @@ function getDday(dateStr?: string): string | null {
 }
 
 /** 드래그 가능한 칸반 카드 */
-function KanbanCard({ task, categories, projectColor, onSelect, onToggleStar }: {
+function KanbanCard({ task, categories, projectColor, onSelect, onToggleStar, selectMode, selected, onToggleSelect }: {
   task: TaskItem;
   categories: ScheduleCategory[];
   projectColor?: string;
   onSelect: (task: TaskItem) => void;
   onToggleStar: (id: string) => void;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -85,16 +91,31 @@ function KanbanCard({ task, categories, projectColor, onSelect, onToggleStar }: 
       style={style}
       {...attributes}
       {...listeners}
-      onClick={() => onSelect(task)}
-      className="bg-white rounded-xl shadow-soft hover:shadow-hover transition-all cursor-grab active:cursor-grabbing overflow-hidden"
+      onClick={() => selectMode ? onToggleSelect?.(task.id) : onSelect(task)}
+      className={`bg-white rounded-xl shadow-soft hover:shadow-hover transition-all overflow-hidden ${selectMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'} ${selectMode && selected ? 'ring-2 ring-green-400 bg-green-50/30' : ''}`}
     >
       {/* 카테고리 상단바 */}
       <div className="h-1 w-full" style={{ backgroundColor: cat?.color ?? '#e5e7eb' }} />
 
       <div className="p-3 space-y-2">
-        {/* 제목 + 우선순위 점 + 즐겨찾기 */}
+        {/* 제목 + 우선순위 점 + 즐겨찾기/체크박스 */}
         <div className="flex items-start gap-2">
-          <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${priorityDot[task.priority]}`} />
+          {selectMode ? (
+            <div className="mt-1 flex-shrink-0">
+              {selected ? (
+                <svg viewBox="0 0 20 20" className="w-4 h-4">
+                  <rect x="1" y="1" width="18" height="18" rx="4" fill="#22c55e" stroke="#16a34a" strokeWidth="1" />
+                  <path d="M6 10l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 20 20" className="w-4 h-4">
+                  <rect x="1" y="1" width="18" height="18" rx="4" fill="white" stroke="#d1d5db" strokeWidth="1.5" />
+                </svg>
+              )}
+            </div>
+          ) : (
+            <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${priorityDot[task.priority]}`} />
+          )}
           <p className={`text-sm font-medium flex-1 ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
             {task.title}
           </p>
@@ -159,13 +180,16 @@ function KanbanCardOverlay({ task, categories, projectColor }: { task: TaskItem;
 }
 
 /** 드롭 가능한 열 */
-function KanbanColumn({ column, tasks, categories, colorMap, onSelect, onToggleStar }: {
+function KanbanColumn({ column, tasks, categories, colorMap, onSelect, onToggleStar, selectMode, selectedIds, onToggleSelect }: {
   column: typeof columns[number];
   tasks: TaskItem[];
   categories: ScheduleCategory[];
   colorMap: Record<string, string>;
   onSelect: (task: TaskItem) => void;
   onToggleStar: (id: string) => void;
+  selectMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
   const taskIds = tasks.map((t) => t.id);
@@ -182,7 +206,7 @@ function KanbanColumn({ column, tasks, categories, colorMap, onSelect, onToggleS
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-2 min-h-[60px]">
           {tasks.map((task) => (
-            <KanbanCard key={task.id} task={task} categories={categories} projectColor={colorMap[task.project]} onSelect={onSelect} onToggleStar={onToggleStar} />
+            <KanbanCard key={task.id} task={task} categories={categories} projectColor={colorMap[task.project]} onSelect={onSelect} onToggleStar={onToggleStar} selectMode={selectMode} selected={selectedIds?.has(task.id)} onToggleSelect={onToggleSelect} />
           ))}
           {tasks.length === 0 && (
             <div className="text-xs text-gray-300 text-center py-6 border-2 border-dashed border-gray-200 rounded-xl">
@@ -195,7 +219,7 @@ function KanbanColumn({ column, tasks, categories, colorMap, onSelect, onToggleS
   );
 }
 
-export function TaskKanbanView({ tasks, categories, onUpdateStatus, onToggleStar, onSelect }: TaskKanbanViewProps) {
+export function TaskKanbanView({ tasks, categories, onUpdateStatus, onToggleStar, onSelect, selectMode, selectedIds, onToggleSelect }: TaskKanbanViewProps) {
   const { projects } = useProjects();
   const colorMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -262,6 +286,9 @@ export function TaskKanbanView({ tasks, categories, onUpdateStatus, onToggleStar
             colorMap={colorMap}
             onSelect={onSelect}
             onToggleStar={onToggleStar}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
           />
         ))}
       </div>
