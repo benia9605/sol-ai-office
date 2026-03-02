@@ -1,6 +1,7 @@
 /**
  * @file src/utils/actionExtractor.ts
  * @description AI 응답에서 할일/액션 아이템 자동 추출
+ * - 명시적 할일 섹션이 있는 응답에서만 추출
  * - 회의 액션 아이템 패턴 (모디 정리)
  * - 체크리스트 패턴 (- [ ])
  * - 일반 할일 패턴 (~하기, ~완료 등)
@@ -50,7 +51,15 @@ function cleanTitle(raw: string): string {
     .trim();
 }
 
+/** 할일 추출 대상인지 판별 (명시적 할일 섹션이 있는 응답만) */
+function hasActionSection(text: string): boolean {
+  return /액션\s*아이템|할\s*일|체크리스트|To-?Do|다음\s*단계|실행\s*항목|\[\s*\]/.test(text);
+}
+
 export function extractActionItems(text: string): ExtractedAction[] {
+  // 명시적 할일 섹션이 없으면 추출하지 않음
+  if (!hasActionSection(text)) return [];
+
   const actions: ExtractedAction[] = [];
   const seen = new Set<string>();
 
