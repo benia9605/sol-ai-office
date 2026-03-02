@@ -304,6 +304,12 @@ export function useChat({ roomId }: UseChatOptions) {
     }
   }, [roomId, loading, ensureConversation, sendMeetingMessage, sendMeetingFollowUp, sendNormalMessage]);
 
+  /** 새 회의 시작 (대화 내용 유지, 다음 메시지부터 풀 회의) */
+  const startNewMeeting = useCallback(() => {
+    meetingRoundDone.current = false;
+    conversationIdRef.current = null;
+  }, []);
+
   /** 메시지 초기화 (새 대화) */
   const resetChat = useCallback(() => {
     setMessages([]);
@@ -321,6 +327,7 @@ export function useChat({ roomId }: UseChatOptions) {
     historyLoaded,
     sendMessage,
     resetChat,
+    startNewMeeting,
     conversationId: conversationIdRef.current,
     meetingPhase,
   };

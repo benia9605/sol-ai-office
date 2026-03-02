@@ -39,7 +39,7 @@ interface ChatModalProps {
 }
 
 export function ChatModal({ room, onClose }: ChatModalProps) {
-  const { messages, setMessages, loading, sendMessage: sendChatMsg, meetingPhase } = useChat({ roomId: room.id });
+  const { messages, setMessages, loading, sendMessage: sendChatMsg, meetingPhase, startNewMeeting } = useChat({ roomId: room.id });
   const isMeeting = room.id === 'meeting';
   const [input, setInput] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
@@ -242,7 +242,19 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
         {/* 참가자 선택 (회의실만) */}
         {isMeeting && (
           <div className="px-4 py-3 bg-white border-b border-gray-100 flex-shrink-0">
-            <p className="text-[11px] text-gray-400 mb-2 font-medium">회의 참가자 선택</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] text-gray-400 font-medium">회의 참가자 선택</p>
+              {messages.length > 0 && (
+                <button
+                  onClick={startNewMeeting}
+                  disabled={loading}
+                  className="text-[11px] text-primary-500 hover:text-primary-600 font-medium
+                    disabled:opacity-50 transition-colors"
+                >
+                  + 새 회의 시작
+                </button>
+              )}
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {MEETING_PARTICIPANTS.map(p => {
                 const isSelected = selectedParticipants.includes(p.roomId);
