@@ -53,7 +53,7 @@ Sol님이 회의 주제를 던졌습니다. 당신은 회의 진행자 모디입
 **주제:** ${topic}
 
 아래 형식으로 1-2문장 짧게 시작 멘트를 해주세요:
-- 주제를 간단히 정리
+- 인사말 없이 바로 주제 정리
 - "각 팀원에게 의견을 물어볼게요!" 식으로 마무리
 - 3문장 이내로 짧게
 
@@ -83,6 +83,7 @@ export async function buildParticipantPrompt(
 ${prevText ? `**이전 발언:**\n${prevText}\n` : ''}
 
 아래 가이드에 따라 의견을 주세요:
+- 인사말/자기소개 없이 바로 본론부터
 - **당신의 전문 영역(${participant.focus})** 관점에서만 답변
 - 이전 AI들의 발언에 동의/반박/보완하며 대화를 이어가기
 - 핵심만 간결하게 (3-5개 포인트)
@@ -128,4 +129,68 @@ ${allText}
 
 ### 한줄 요약
 (이번 회의의 핵심을 한 문장으로)`;
+}
+
+/** 모디 라우터 프롬프트 (후속 질문 시 어떤 AI가 답할지 판단) */
+export async function buildModiRouterPrompt(
+  followUp: string,
+  conversationHistory: string,
+): Promise<string> {
+  const baseContext = await buildSystemPrompt('meeting');
+
+  return `${baseContext}
+
+---
+
+## 지금 역할: 후속 질문 라우팅
+
+Sol님이 회의 중 후속 질문을 했습니다.
+이전 대화 내용을 보고, 어떤 팀원이 답변하면 좋을지 판단해주세요.
+
+**이전 대화:**
+${conversationHistory}
+
+**Sol님의 후속 질문:** ${followUp}
+
+아래 규칙을 지켜주세요:
+- 인사말 없이 1문장으로 자연스럽게 라우팅
+- 반드시 답변할 팀원 이름을 포함 (플래니, 마키, 데비, 서치 중 1-4명)
+- 예시: "이 부분은 마키에게 물어볼게요!" / "플래니와 데비가 답변하면 좋겠어요!"
+- 라우팅 멘트만 짧게, 직접 답변하지 말 것`;
+}
+
+/** 후속 질문에 답변하는 참가자 프롬프트 */
+export async function buildFollowUpParticipantPrompt(
+  participant: MeetingParticipant,
+  followUp: string,
+  conversationHistory: string,
+): Promise<string> {
+  const baseContext = await buildSystemPrompt(participant.roomId);
+
+  return `${baseContext}
+
+---
+
+## 지금 역할: 회의 후속 답변
+
+Sol님의 AI 오피스 회의실에서 후속 질문에 답변합니다.
+당신은 **${participant.name}** (${participant.focus}) 입니다.
+
+**이전 대화:**
+${conversationHistory}
+
+**Sol님의 후속 질문:** ${followUp}
+
+가이드:
+- 인사말/자기소개 없이 바로 답변
+- 이전 대화 맥락을 반영하여 답변
+- 간결하게 핵심만 (2-3개 포인트)
+- 마크다운 형식 사용`;
+}
+
+/** 모디 응답에서 라우팅된 AI 이름 파싱 */
+export function parseRoutedParticipants(modiResponse: string): MeetingParticipant[] {
+  const routed = MEETING_PARTICIPANTS.filter(p => modiResponse.includes(p.name));
+  // 아무 이름도 없으면 전원 반환 (안전장치)
+  return routed.length > 0 ? routed : MEETING_PARTICIPANTS;
 }

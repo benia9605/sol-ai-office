@@ -18,6 +18,9 @@ import {
   buildModiOpeningPrompt,
   buildParticipantPrompt,
   buildModiClosingPrompt,
+  buildModiRouterPrompt,
+  buildFollowUpParticipantPrompt,
+  parseRoutedParticipants,
 } from '../services/meeting.service';
 
 /** AI 이름 → 프로필 이미지 매핑 (DB 복원용) */
@@ -47,6 +50,7 @@ export function useChat({ roomId }: UseChatOptions) {
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [meetingPhase, setMeetingPhase] = useState<MeetingPhase | null>(null);
   const conversationIdRef = useRef<string | null>(null);
+  const meetingRoundDone = useRef(false);
   const aiName = getAIName(roomId);
 
   /** 방 입장 시 이전 대화 불러오기 */
@@ -60,6 +64,10 @@ export function useChat({ roomId }: UseChatOptions) {
         if (cancelled) return;
         if (rows.length > 0) {
           conversationIdRef.current = conv.id;
+          // 회의실: 이전 대화가 있으면 후속 모드로 전환
+          if (roomId === 'meeting' && rows.some(r => r.ai_name)) {
+            meetingRoundDone.current = true;
+          }
           setMessages(rows.map((r) => ({
             id: r.id,
             roomId,
@@ -168,6 +176,46 @@ export function useChat({ roomId }: UseChatOptions) {
     setMeetingPhase(null);
   }, [addAIMessage]);
 
+  /** 회의실 후속 질문 (모디 라우터 → 관련 AI만 답변) */
+  const sendMeetingFollowUp = useCallback(async (content: string, convId: string, selectedParticipants?: string[]) => {
+    // 이전 대화 히스토리 빌드
+    const history = messages
+      .slice(-20)
+      .map(m => m.sender === 'user' ? `[Sol님] ${m.content}` : `[${m.aiName || 'AI'}] ${m.content}`)
+      .join('\n\n');
+
+    // 1. 모디 라우팅
+    setMeetingPhase({ name: MODI_INFO.name, image: MODI_INFO.image, emoji: MODI_INFO.emoji });
+    const routerPrompt = await buildModiRouterPrompt(content, history);
+    const routerResponse = await sendChatMessage(routerPrompt, [{ role: 'user', content }], 'meeting', 150);
+    await addAIMessage(convId, routerResponse, MODI_INFO.name, MODI_INFO.image);
+
+    // 2. 라우팅된 AI 파싱 + 선택된 참가자와 교집합
+    let routed = parseRoutedParticipants(routerResponse);
+    if (selectedParticipants) {
+      routed = routed.filter(p => selectedParticipants.includes(p.roomId));
+      if (routed.length === 0) routed = parseRoutedParticipants(routerResponse);
+    }
+
+    // 3. 관련 AI만 답변
+    for (const participant of routed) {
+      setMeetingPhase({ name: participant.name, image: participant.image, emoji: participant.emoji });
+
+      try {
+        const prompt = await buildFollowUpParticipantPrompt(participant, content, history);
+        const response = await sendChatMessage(prompt, [{ role: 'user', content }], participant.roomId, 600);
+        await addAIMessage(convId, response, participant.name, participant.image);
+      } catch (e) {
+        const errMsg = e instanceof Error ? e.message : 'API 호출 실패';
+        console.warn(`[meeting-followup] ${participant.name} 응답 실패:`, errMsg);
+        const fallbackMsg = `⚠️ ${participant.name}의 의견을 가져오지 못했어요. (${errMsg})`;
+        await addAIMessage(convId, fallbackMsg, participant.name, participant.image);
+      }
+    }
+
+    setMeetingPhase(null);
+  }, [messages, addAIMessage]);
+
   /** 일반 1:1 채팅 */
   const sendNormalMessage = useCallback(async (_content: string, convId: string, userMsg: ChatMessage) => {
     const systemPrompt = await buildSystemPrompt(roomId);
@@ -213,7 +261,12 @@ export function useChat({ roomId }: UseChatOptions) {
       await addMessage(convId, 'user', content);
 
       if (roomId === 'meeting') {
-        await sendMeetingMessage(content, convId, selectedParticipants);
+        if (meetingRoundDone.current) {
+          await sendMeetingFollowUp(content, convId, selectedParticipants);
+        } else {
+          await sendMeetingMessage(content, convId, selectedParticipants);
+          meetingRoundDone.current = true;
+        }
       } else {
         await sendNormalMessage(content, convId, userMsg);
       }
@@ -237,12 +290,13 @@ export function useChat({ roomId }: UseChatOptions) {
       setLoading(false);
       setMeetingPhase(null);
     }
-  }, [roomId, loading, ensureConversation, sendMeetingMessage, sendNormalMessage]);
+  }, [roomId, loading, ensureConversation, sendMeetingMessage, sendMeetingFollowUp, sendNormalMessage]);
 
   /** 메시지 초기화 (새 대화) */
   const resetChat = useCallback(() => {
     setMessages([]);
     conversationIdRef.current = null;
+    meetingRoundDone.current = false;
     setError(null);
     setMeetingPhase(null);
   }, []);
