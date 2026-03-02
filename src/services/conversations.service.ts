@@ -93,8 +93,16 @@ export async function fetchRecentConversations(limit = 5): Promise<RecentConvers
 
   if (error || !conversations?.length) return [];
 
+  // 같은 방은 최신 대화 1개만 (중복 제거)
+  const uniqueByRoom = new Map<string, typeof conversations[0]>();
+  for (const conv of conversations) {
+    if (!uniqueByRoom.has(conv.room_id)) {
+      uniqueByRoom.set(conv.room_id, conv);
+    }
+  }
+
   const results = await Promise.all(
-    conversations.map(async (conv) => {
+    Array.from(uniqueByRoom.values()).map(async (conv) => {
       const { data: messages } = await supabase
         .from('messages')
         .select('content, role')

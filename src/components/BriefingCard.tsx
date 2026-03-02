@@ -55,9 +55,11 @@ export function BriefingCard({ onOpenModi }: BriefingCardProps) {
     );
   }
 
-  if (!briefing) return null;
-
-  const { schedules, urgentTasks, projectProgress, aiComment } = briefing;
+  // 데이터 (없으면 빈 상태로 표시)
+  const schedules = briefing?.schedules ?? [];
+  const urgentTasks = briefing?.urgentTasks ?? [];
+  const projectProgress = briefing?.projectProgress ?? [];
+  const aiComment = briefing?.aiComment || '';
   const hasContent = schedules.length > 0 || urgentTasks.length > 0 || projectProgress.length > 0;
 
   return (
@@ -75,7 +77,7 @@ export function BriefingCard({ onOpenModi }: BriefingCardProps) {
       {/* 접힌 상태: 모디 한마디만 표시 */}
       {collapsed ? (
         <div className="mt-2">
-          <p className="text-sm text-gray-600 line-clamp-1">{aiComment}</p>
+          <p className="text-sm text-gray-600 line-clamp-1">{aiComment || '데이터를 불러오는 중이에요...'}</p>
           <button
             onClick={toggleCollapse}
             className="text-xs text-amber-500 hover:text-amber-700 mt-2 transition-colors"
@@ -163,11 +165,12 @@ export function BriefingCard({ onOpenModi }: BriefingCardProps) {
 
           {/* 모디 한마디 */}
           <div className="mt-3 pt-3 border-t border-amber-200/60">
+            <p className="text-xs font-semibold text-amber-700 mb-1">오늘의 한마디</p>
             <p className="text-sm text-gray-700">
               {loading ? (
                 <span className="inline-block w-48 h-4 bg-amber-100 rounded animate-pulse" />
               ) : (
-                aiComment
+                aiComment || '데이터를 불러오는 중이에요...'
               )}
             </p>
           </div>
