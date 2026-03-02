@@ -308,7 +308,17 @@ export function useChat({ roomId }: UseChatOptions) {
   const startNewMeeting = useCallback(() => {
     meetingRoundDone.current = false;
     conversationIdRef.current = null;
-  }, []);
+    // 구분선 시스템 메시지 삽입
+    const separator: ChatMessage = {
+      id: `sep-${Date.now()}`,
+      roomId,
+      sender: 'ai',
+      content: '새 회의',
+      timestamp: new Date(),
+      isSystem: true,
+    };
+    setMessages(prev => [...prev, separator]);
+  }, [roomId]);
 
   /** 메시지 초기화 (새 대화) */
   const resetChat = useCallback(() => {

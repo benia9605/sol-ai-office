@@ -29,6 +29,7 @@ export interface ChatMessage {
   isStarred?: boolean;
   aiName?: string;      // 회의실: 어떤 AI가 보낸 메시지인지
   aiImage?: string;     // 회의실: AI 아바타 이미지
+  isSystem?: boolean;   // 시스템 메시지 (새 회의 구분선 등)
 }
 
 export interface ChatHistory {

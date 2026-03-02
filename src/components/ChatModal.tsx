@@ -286,6 +286,20 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
           {messages.map((msg, idx) => {
             const prev = idx > 0 ? messages[idx - 1] : null;
             const showDateSep = !prev || !isSameDay(prev.timestamp, msg.timestamp);
+
+            // 시스템 메시지 (새 회의 구분선)
+            if (msg.isSystem) {
+              return (
+                <div key={msg.id} className="flex items-center gap-3 my-3">
+                  <div className="flex-1 border-t border-yellow-300" />
+                  <span className="text-[11px] text-yellow-500 font-medium whitespace-nowrap">
+                    💛 {msg.content}
+                  </span>
+                  <div className="flex-1 border-t border-yellow-300" />
+                </div>
+              );
+            }
+
             return (
               <div key={msg.id}>
                 {showDateSep && (
