@@ -115,7 +115,27 @@ async function callPerplexity(
   }
 
   const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
+  let content = data.choices?.[0]?.message?.content || '';
+  const citations: string[] = data.citations || [];
+
+  if (citations.length > 0) {
+    // [1][2] 같은 인라인 출처 마커 제거
+    content = content.replace(/\[(\d+)\]/g, '');
+    // 연속 공백 정리
+    content = content.replace(/ {2,}/g, ' ').trim();
+    // 하단에 출처 링크 추가
+    content += '\n\n---\n📎 **출처**\n';
+    citations.forEach((url: string) => {
+      try {
+        const domain = new URL(url).hostname.replace('www.', '');
+        content += `- [${domain}](${url})\n`;
+      } catch {
+        content += `- ${url}\n`;
+      }
+    });
+  }
+
+  return content;
 }
 
 /**
