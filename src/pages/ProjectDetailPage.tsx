@@ -116,7 +116,7 @@ export function ProjectDetailPage() {
     addKpi, updateKpi, removeKpi,
     addKpiRecord, getKpiLogs, removeKpiLog,
   } = useGoals(projectId || '');
-  const { tasks, add: addTaskItem, cycleStatus: cycleTaskStatus, remove: removeTask } = useTasks();
+  const { tasks, add: addTaskItem, cycleStatus: cycleTaskStatus, remove: removeTask, updateTask } = useTasks();
   const { schedules, update: updateSchedule, remove: removeSchedule } = useSchedules();
   const { insights, update: updateInsight, remove: removeInsight } = useInsights();
 
@@ -146,6 +146,10 @@ export function ProjectDetailPage() {
     category: '', notes: '', repeat: 'none' as RepeatType,
   });
   const [showTaskAdvanced, setShowTaskAdvanced] = useState(false);
+
+  // 할일 상세 팝업 state
+  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+  const [taskCategories, setTaskCategories] = useState(defaultTaskCategories);
 
   // 일정·인사이트 카드 state
   const [showAllSchedules, setShowAllSchedules] = useState(false);
@@ -994,11 +998,15 @@ export function ProjectDetailPage() {
                             </div>
                           )}
 
-                          <div className="space-y-1 ml-1">
-                            {goalTasks.map((t) => (
-                              <div key={t.id} className="flex items-center gap-2 group">
+                          <div className="divide-y divide-gray-100 ml-1">
+                            {[...goalTasks].sort((a, b) => a.title.localeCompare(b.title, 'ko')).map((t) => (
+                              <div
+                                key={t.id}
+                                className="flex items-center gap-2 group py-2 cursor-pointer hover:bg-gray-50 rounded-lg px-1 -mx-1 transition-colors"
+                                onClick={() => setSelectedTask(t)}
+                              >
                                 <button
-                                  onClick={() => cycleTaskStatus(t.id)}
+                                  onClick={(e) => { e.stopPropagation(); cycleTaskStatus(t.id); }}
                                   className={`text-sm flex-shrink-0 ${taskStatusStyle(t)} transition-colors`}
                                 >
                                   {taskStatusIcon(t)}
@@ -1007,23 +1015,23 @@ export function ProjectDetailPage() {
                                   {t.title}
                                 </span>
                                 {t.date && (
-                                  <span className={`text-xs ${
+                                  <span className={`text-xs flex-shrink-0 ${
                                     t.status === 'completed' ? 'text-gray-300' :
                                     getDday(t.date)?.startsWith('D+') ? 'text-red-400' : 'text-gray-400'
                                   }`}>
-                                    {getDday(t.date)}
+                                    {t.date.slice(5).replace('-', '/')}
                                   </span>
                                 )}
                                 <button
-                                  onClick={() => removeTask(t.id)}
-                                  className="w-5 h-5 rounded hover:bg-red-50 flex items-center justify-center text-gray-300 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => { e.stopPropagation(); removeTask(t.id); }}
+                                  className="w-5 h-5 rounded hover:bg-red-50 flex items-center justify-center text-gray-300 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                                 >
                                   ✕
                                 </button>
                               </div>
                             ))}
                             {goalTasks.length === 0 && showTaskForm !== goal.id && (
-                              <p className="text-xs text-gray-300">연결된 할일이 없습니다</p>
+                              <p className="text-xs text-gray-300 py-2">연결된 할일이 없습니다</p>
                             )}
                           </div>
                         </div>
@@ -1185,6 +1193,30 @@ export function ProjectDetailPage() {
             setSelectedInsight(null);
           }}
           onClose={() => setSelectedInsight(null)}
+        />
+      )}
+
+      {/* 할일 상세 팝업 */}
+      {selectedTask && (
+        <ItemDetailPopup
+          type="task"
+          item={selectedTask}
+          categories={taskCategories}
+          onSave={(updated) => {
+            const t = updated as TaskItem;
+            updateTask(t.id, t);
+            setSelectedTask(null);
+          }}
+          onQuickUpdate={(updated) => {
+            updateTask((updated as TaskItem).id, updated as TaskItem);
+            setSelectedTask(updated as TaskItem);
+          }}
+          onDelete={(id) => {
+            removeTask(id);
+            setSelectedTask(null);
+          }}
+          onClose={() => setSelectedTask(null)}
+          onCategoriesChange={setTaskCategories}
         />
       )}
     </div>
