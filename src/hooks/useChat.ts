@@ -20,6 +20,15 @@ import {
   buildModiClosingPrompt,
 } from '../services/meeting.service';
 
+/** AI 이름 → 프로필 이미지 매핑 (DB 복원용) */
+const AI_IMAGE_MAP: Record<string, string> = {
+  '플래니': '/images/plani.png',
+  '마키':   '/images/maki.png',
+  '데비':   '/images/devi.png',
+  '서치':   '/images/searchi.png',
+  '모디':   '/images/modi.png',
+};
+
 /** 회의 진행 단계 */
 export interface MeetingPhase {
   name: string;
@@ -59,6 +68,7 @@ export function useChat({ roomId }: UseChatOptions) {
             timestamp: new Date(r.created_at),
             isStarred: r.is_starred || false,
             aiName: r.ai_name || undefined,
+            aiImage: r.ai_name ? AI_IMAGE_MAP[r.ai_name] : undefined,
           })));
         }
       } catch (e) {
