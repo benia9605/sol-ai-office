@@ -182,7 +182,7 @@ export function useChat({ roomId }: UseChatOptions) {
         },
       ] : []),
     ];
-    const closing = await sendChatMessage(closingPrompt, apiMessagesForClosing, 'meeting', 1000);
+    const closing = await sendChatMessage(closingPrompt, apiMessagesForClosing, 'meeting', 2048);
     await addAIMessage(convId, closing, MODI_INFO.name, MODI_INFO.image);
 
     setMeetingPhase(null);
