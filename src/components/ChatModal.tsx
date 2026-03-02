@@ -16,6 +16,7 @@ import { useTasks } from '../hooks/useTasks';
 import { useChat } from '../hooks/useChat';
 import { createConversation, addMessage } from '../services/conversations.service';
 import { summarizeAllRooms, SummaryResult } from '../services/summary.service';
+import { MEETING_PARTICIPANTS } from '../services/meeting.service';
 
 /** 방별 아이콘 컬러 (각 방 파스텔 톤의 진한 버전) */
 const roomIconColor: Record<string, string> = {
@@ -41,6 +42,9 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
   const { messages, setMessages, loading, sendMessage: sendChatMsg, meetingPhase } = useChat({ roomId: room.id });
   const isMeeting = room.id === 'meeting';
   const [input, setInput] = useState('');
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
+    MEETING_PARTICIPANTS.map(p => p.roomId)
+  );
   const [saveModal, setSaveModal] = useState<SaveModalConfig | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -60,11 +64,19 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
     }
   }, [saveSuccess]);
 
+  const toggleParticipant = (roomId: string) => {
+    setSelectedParticipants(prev =>
+      prev.includes(roomId)
+        ? prev.filter(id => id !== roomId)
+        : [...prev, roomId]
+    );
+  };
+
   const handleSend = () => {
     if (!input.trim() || loading) return;
     const text = input;
     setInput('');
-    sendChatMsg(text);
+    sendChatMsg(text, isMeeting ? selectedParticipants : undefined);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -226,6 +238,36 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
             </button>
           </div>
         </div>
+
+        {/* 참가자 선택 (회의실만) */}
+        {isMeeting && (
+          <div className="px-4 py-3 bg-white border-b border-gray-100 flex-shrink-0">
+            <p className="text-[11px] text-gray-400 mb-2 font-medium">회의 참가자 선택</p>
+            <div className="flex flex-wrap gap-1.5">
+              {MEETING_PARTICIPANTS.map(p => {
+                const isSelected = selectedParticipants.includes(p.roomId);
+                return (
+                  <button
+                    key={p.roomId}
+                    onClick={() => toggleParticipant(p.roomId)}
+                    disabled={loading}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs transition-all
+                      ${isSelected
+                        ? 'bg-gray-800 text-white shadow-sm'
+                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                      } disabled:opacity-50`}
+                  >
+                    <img src={p.image} alt={p.name} className="w-4 h-4 rounded-full object-cover" />
+                    <span className="font-medium">{p.name}</span>
+                    <span className={`text-[10px] ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>
+                      {p.focus.split(',')[0]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* 채팅 영역 */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gray-50 relative">

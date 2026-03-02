@@ -101,7 +101,12 @@ export function useChat({ roomId }: UseChatOptions) {
   }, [roomId]);
 
   /** 회의실 멀티 AI 토론 */
-  const sendMeetingMessage = useCallback(async (content: string, convId: string) => {
+  const sendMeetingMessage = useCallback(async (content: string, convId: string, selectedParticipants?: string[]) => {
+    // 선택된 참가자만 필터 (미선택 시 전원 참가)
+    const participants = selectedParticipants
+      ? MEETING_PARTICIPANTS.filter(p => selectedParticipants.includes(p.roomId))
+      : MEETING_PARTICIPANTS;
+
     // 이전 발언 누적용
     const responses: { name: string; content: string }[] = [];
 
@@ -111,8 +116,8 @@ export function useChat({ roomId }: UseChatOptions) {
     const opening = await sendChatMessage(openingPrompt, [{ role: 'user', content }], 'meeting', 300);
     await addAIMessage(convId, opening, MODI_INFO.name, MODI_INFO.image);
 
-    // 2. 4명 AI 순차 발언 (한 AI 실패해도 나머지 계속 진행)
-    for (const participant of MEETING_PARTICIPANTS) {
+    // 2. 선택된 AI 순차 발언 (한 AI 실패해도 나머지 계속 진행)
+    for (const participant of participants) {
       setMeetingPhase({ name: participant.name, image: participant.image, emoji: participant.emoji });
 
       try {
@@ -178,7 +183,7 @@ export function useChat({ roomId }: UseChatOptions) {
   }, [roomId, aiName, messages]);
 
   /** 메시지 전송 (일반/회의 자동 분기) */
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, selectedParticipants?: string[]) => {
     if (!content.trim() || loading) return;
 
     setLoading(true);
@@ -198,7 +203,7 @@ export function useChat({ roomId }: UseChatOptions) {
       await addMessage(convId, 'user', content);
 
       if (roomId === 'meeting') {
-        await sendMeetingMessage(content, convId);
+        await sendMeetingMessage(content, convId, selectedParticipants);
       } else {
         await sendNormalMessage(content, convId, userMsg);
       }

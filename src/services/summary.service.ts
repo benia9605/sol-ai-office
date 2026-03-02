@@ -18,7 +18,7 @@ export interface SummaryRow {
 }
 
 /** 요약 대상 방 목록 (room_id) */
-const SUMMARY_ROOMS = ['strategy', 'marketing', 'dev', 'research', 'secretary'];
+const SUMMARY_ROOMS = ['strategy', 'marketing', 'dev', 'research', 'meeting', 'secretary'];
 
 /** 방별 라벨 */
 export const ROOM_LABELS: Record<string, string> = {
@@ -26,6 +26,7 @@ export const ROOM_LABELS: Record<string, string> = {
   marketing: '마키 (마케팅룸)',
   dev: '데비 (개발실)',
   research: '서치 (리서치랩)',
+  meeting: '회의실',
   secretary: '모디 (비서실)',
 };
 
@@ -35,6 +36,7 @@ export const ROOM_ICONS: Record<string, { emoji: string; color: string; image: s
   marketing: { emoji: '💗', color: '#ec4899', image: '/images/maki.png' },
   dev:       { emoji: '🤎', color: '#65a30d', image: '/images/devi.png' },
   research:  { emoji: '💚', color: '#b07a4b', image: '/images/searchi.png' },
+  meeting:   { emoji: '💛', color: '#ca8a04', image: '/images/modi.png' },
   secretary: { emoji: '💛', color: '#ca8a04', image: '/images/modi.png' },
 };
 
