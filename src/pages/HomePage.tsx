@@ -7,9 +7,10 @@
  * - useOutletContext()로 Layout의 openRoom 호출
  */
 import { useOutletContext } from 'react-router-dom';
-import { rooms } from '../data';
+import { rooms, modiSecretary } from '../data';
 import { RoomCard } from '../components/RoomCard';
 import { DashboardWidgets } from '../components/DashboardWidgets';
+import { BriefingCard } from '../components/BriefingCard';
 import { LayoutContext } from '../components/Layout';
 
 export function HomePage() {
@@ -18,6 +19,9 @@ export function HomePage() {
   return (
     <div className="min-h-full bg-gradient-to-br from-primary-50 via-white to-pastel-pink/15 p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
+        {/* 모디 아침 브리핑 */}
+        <BriefingCard onOpenModi={() => openRoom(modiSecretary)} />
+
         {/* 대시보드 위젯 */}
         <DashboardWidgets />
 
