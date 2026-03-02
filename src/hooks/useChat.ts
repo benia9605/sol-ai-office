@@ -135,10 +135,10 @@ export function useChat({ roomId }: UseChatOptions) {
 
         const apiMessages: ApiMessage[] = [
           { role: 'user', content },
-          ...responses.map(r => ({
+          ...(responses.length > 0 ? [{
             role: 'assistant' as const,
-            content: `[${r.name}의 의견]\n${r.content}`,
-          })),
+            content: responses.map(r => `[${r.name}의 의견]\n${r.content}`).join('\n\n'),
+          }] : []),
         ];
 
         const response = await sendChatMessage(prompt, apiMessages, participant.roomId, 600);
@@ -157,10 +157,10 @@ export function useChat({ roomId }: UseChatOptions) {
     const closingPrompt = await buildModiClosingPrompt(content, responses);
     const apiMessagesForClosing: ApiMessage[] = [
       { role: 'user', content },
-      ...responses.map(r => ({
+      ...(responses.length > 0 ? [{
         role: 'assistant' as const,
-        content: `[${r.name}의 의견]\n${r.content}`,
-      })),
+        content: responses.map(r => `[${r.name}의 의견]\n${r.content}`).join('\n\n'),
+      }] : []),
     ];
     const closing = await sendChatMessage(closingPrompt, apiMessagesForClosing, 'meeting', 1000);
     await addAIMessage(convId, closing, MODI_INFO.name, MODI_INFO.image);
