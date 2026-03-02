@@ -9,6 +9,7 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { Room, ChatMessage, SaveType, SaveModalConfig, SaveData } from '../types';
+import { ExtractedAction } from '../utils/actionExtractor';
 import { MessageBubble, formatDateSeparator, isSameDay } from './MessageBubble';
 import { SaveModal } from './SaveModal';
 import { useInsights } from '../hooks/useInsights';
@@ -88,6 +89,18 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
 
   const handleSaveRequest = (type: SaveType, message: ChatMessage) => {
     setSaveModal({ type, message, room });
+  };
+
+  /** 액션 칩 클릭 → 할일 저장 모달 (제목/날짜/우선순위 프리필) */
+  const handleSaveAction = (action: ExtractedAction, message: ChatMessage) => {
+    setSaveModal({
+      type: 'task',
+      message,
+      room,
+      prefilledTitle: action.title,
+      prefilledDate: action.date,
+      prefilledPriority: action.priority,
+    });
   };
 
   /** AI 대화 컨텍스트를 DB에 저장하고 conversation_id 반환 */
@@ -316,6 +329,7 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
                   room={room}
                   onSave={handleSaveRequest}
                   onStar={handleStar}
+                  onSaveAction={handleSaveAction}
                 />
               </div>
             );

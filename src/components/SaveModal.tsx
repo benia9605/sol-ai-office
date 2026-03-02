@@ -50,7 +50,7 @@ function renderSourceImg(image: string, label: string, size = 'w-3.5 h-3.5') {
 }
 
 export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
-  const { type, message, room } = config;
+  const { type, message, room, prefilledTitle, prefilledDate, prefilledPriority } = config;
   const tc = typeConfig[type] || typeConfig.task;
 
   // 인사이트 출처
@@ -58,15 +58,15 @@ export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
   const defaultSourceId = aiNameToSourceId[room.aiName] || '';
 
   // 공통
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(prefilledTitle || '');
   const [project, setProject] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [showChat, setShowChat] = useState(false);
 
   // 할일 전용
-  const [taskDate, setTaskDate] = useState('');
-  const [taskPriority, setTaskPriority] = useState<'high' | 'medium' | 'low'>('medium');
+  const [taskDate, setTaskDate] = useState(prefilledDate || '');
+  const [taskPriority, setTaskPriority] = useState<'high' | 'medium' | 'low'>(prefilledPriority || 'medium');
   const [taskCategory, setTaskCategory] = useState('');
   const [taskNotes, setTaskNotes] = useState('');
   const [taskRepeat, setTaskRepeat] = useState<RepeatType>('none');

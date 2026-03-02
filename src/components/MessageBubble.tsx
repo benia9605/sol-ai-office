@@ -10,6 +10,7 @@ import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChatMessage, Room, SaveType } from '../types';
+import { ExtractedAction } from '../utils/actionExtractor';
 
 /** 방별 아이콘 컬러 (각 방 파스텔 톤의 진한 버전) */
 const roomIconColor: Record<string, string> = {
@@ -60,6 +61,7 @@ interface MessageBubbleProps {
   room: Room;
   onSave?: (type: SaveType, message: ChatMessage) => void;
   onStar?: (message: ChatMessage) => void;
+  onSaveAction?: (action: ExtractedAction, message: ChatMessage) => void;
 }
 
 const saveMenuItems: { type: SaveType; image: string; label: string }[] = [
@@ -67,7 +69,7 @@ const saveMenuItems: { type: SaveType; image: string; label: string }[] = [
   { type: 'insight', image: '/images/insight.png', label: '인사이트 저장' },
 ];
 
-export function MessageBubble({ message, room, onSave, onStar }: MessageBubbleProps) {
+export function MessageBubble({ message, room, onSave, onStar, onSaveAction }: MessageBubbleProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -219,6 +221,24 @@ export function MessageBubble({ message, room, onSave, onStar }: MessageBubblePr
             </p>
           )}
         </div>
+
+        {/* 액션 아이템 칩 */}
+        {isAi && message.extractedActions && message.extractedActions.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
+            {message.extractedActions.map((action, i) => (
+              <button
+                key={i}
+                onClick={() => onSaveAction?.(action, message)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+                  bg-green-50 text-green-600 text-[11px] font-medium
+                  hover:bg-green-100 transition-colors border border-green-100"
+              >
+                <img src="/images/todo.png" alt="" className="w-3 h-3 object-contain" />
+                {action.title}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* 시간 표시 */}
         <p className={`text-[10px] mt-1 ${isAi ? 'text-gray-300' : 'text-gray-300 text-right'}`}>

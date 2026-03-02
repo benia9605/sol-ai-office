@@ -30,6 +30,7 @@ export interface ChatMessage {
   aiName?: string;      // 회의실: 어떤 AI가 보낸 메시지인지
   aiImage?: string;     // 회의실: AI 아바타 이미지
   isSystem?: boolean;   // 시스템 메시지 (새 회의 구분선 등)
+  extractedActions?: import('./utils/actionExtractor').ExtractedAction[];  // 자동 추출된 액션
 }
 
 export interface ChatHistory {
@@ -60,6 +61,9 @@ export interface SaveModalConfig {
   type: SaveType;
   message: ChatMessage;
   room: Room;
+  prefilledTitle?: string;
+  prefilledDate?: string;
+  prefilledPriority?: 'high' | 'medium' | 'low';
 }
 
 /** 저장 모달 공통 데이터 */

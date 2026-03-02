@@ -12,6 +12,7 @@ import { ChatMessage } from '../types';
 import { buildSystemPrompt, getAIName } from '../services/context';
 import { sendChatMessage, ChatMessage as ApiMessage } from '../services/chatApi';
 import { createConversation, addMessage, fetchLatestConversationForRoom, fetchMessagesByConversation } from '../services/conversations.service';
+import { extractActionItems } from '../utils/actionExtractor';
 import {
   MEETING_PARTICIPANTS,
   MODI_INFO,
@@ -105,6 +106,7 @@ export function useChat({ roomId }: UseChatOptions) {
     name: string,
     image?: string,
   ) => {
+    const actions = extractActionItems(content);
     const msg: ChatMessage = {
       id: (Date.now() + Math.random()).toString(),
       roomId,
@@ -113,6 +115,7 @@ export function useChat({ roomId }: UseChatOptions) {
       timestamp: new Date(),
       aiName: name,
       aiImage: image,
+      extractedActions: actions.length > 0 ? actions : undefined,
     };
     setMessages(prev => [...prev, msg]);
     await addMessage(convId, 'assistant', content, name);
@@ -241,6 +244,7 @@ export function useChat({ roomId }: UseChatOptions) {
       }));
 
     const response = await sendChatMessage(systemPrompt, apiMessages, roomId);
+    const actions = extractActionItems(response);
 
     const aiMsg: ChatMessage = {
       id: (Date.now() + 1).toString(),
@@ -248,6 +252,7 @@ export function useChat({ roomId }: UseChatOptions) {
       sender: 'ai',
       content: response,
       timestamp: new Date(),
+      extractedActions: actions.length > 0 ? actions : undefined,
     };
     setMessages(prev => [...prev, aiMsg]);
     await addMessage(convId, 'assistant', response, aiName);
