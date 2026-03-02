@@ -9,7 +9,7 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { Room, ChatMessage, SaveType, SaveModalConfig, SaveData } from '../types';
-import { MessageBubble } from './MessageBubble';
+import { MessageBubble, formatDateSeparator, isSameDay } from './MessageBubble';
 import { SaveModal } from './SaveModal';
 import { useInsights } from '../hooks/useInsights';
 import { useTasks } from '../hooks/useTasks';
@@ -271,15 +271,29 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
 
         {/* 채팅 영역 */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gray-50 relative">
-          {messages.map((msg) => (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              room={room}
-              onSave={handleSaveRequest}
-              onStar={handleStar}
-            />
-          ))}
+          {messages.map((msg, idx) => {
+            const prev = idx > 0 ? messages[idx - 1] : null;
+            const showDateSep = !prev || !isSameDay(prev.timestamp, msg.timestamp);
+            return (
+              <div key={msg.id}>
+                {showDateSep && (
+                  <div className="flex items-center gap-3 my-2">
+                    <div className="flex-1 border-t border-gray-200" />
+                    <span className="text-[11px] text-gray-300 whitespace-nowrap">
+                      {formatDateSeparator(msg.timestamp)}
+                    </span>
+                    <div className="flex-1 border-t border-gray-200" />
+                  </div>
+                )}
+                <MessageBubble
+                  message={msg}
+                  room={room}
+                  onSave={handleSaveRequest}
+                  onStar={handleStar}
+                />
+              </div>
+            );
+          })}
           {loading && (
             <div className="flex items-center gap-2 px-3 py-2">
               <img

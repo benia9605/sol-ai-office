@@ -30,6 +30,31 @@ const aiNameColor: Record<string, string> = {
   '모디': '#ca8a04',
 };
 
+/** 시간 포맷 (오전/오후 h:mm) */
+function formatTime(date: Date): string {
+  const h = date.getHours();
+  const m = date.getMinutes().toString().padStart(2, '0');
+  const period = h < 12 ? '오전' : '오후';
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${period} ${hour12}:${m}`;
+}
+
+/** 날짜 포맷 (M/D 요일) */
+const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+export function formatDateSeparator(date: Date): string {
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const day = DAY_NAMES[date.getDay()];
+  return `${m}/${d} (${day}요일)`;
+}
+
+/** 같은 날짜인지 비교 */
+export function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate();
+}
+
 interface MessageBubbleProps {
   message: ChatMessage;
   room: Room;
@@ -185,6 +210,11 @@ export function MessageBubble({ message, room, onSave, onStar }: MessageBubblePr
             </p>
           )}
         </div>
+
+        {/* 시간 표시 */}
+        <p className={`text-[10px] mt-1 ${isAi ? 'text-gray-300' : 'text-gray-300 text-right'}`}>
+          {formatTime(message.timestamp)}
+        </p>
       </div>
     </div>
   );
