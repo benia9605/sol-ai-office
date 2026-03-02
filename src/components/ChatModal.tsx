@@ -40,7 +40,7 @@ interface ChatModalProps {
 }
 
 export function ChatModal({ room, onClose }: ChatModalProps) {
-  const { messages, setMessages, loading, sendMessage: sendChatMsg, meetingPhase, startNewMeeting } = useChat({ roomId: room.id });
+  const { messages, setMessages, loading, sendMessage: sendChatMsg, meetingPhase, startNewMeeting, startNewChat } = useChat({ roomId: room.id });
   const isMeeting = room.id === 'meeting';
   const [input, setInput] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
@@ -246,6 +246,18 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* 새 대화 (1:1 방, 회의실 제외) */}
+            {!isMeeting && messages.length > 0 && (
+              <button
+                onClick={startNewChat}
+                disabled={loading}
+                className="px-3 py-1.5 text-xs sm:text-sm bg-white/60 hover:bg-white
+                  rounded-xl transition-colors text-gray-600 hover:text-gray-800 font-medium
+                  disabled:opacity-50"
+              >
+                + 새 대화
+              </button>
+            )}
             {room.id === 'secretary' && (
               <button
                 onClick={handleSaveSummary}
@@ -319,15 +331,18 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
             const prev = idx > 0 ? messages[idx - 1] : null;
             const showDateSep = !prev || !isSameDay(prev.timestamp, msg.timestamp);
 
-            // 시스템 메시지 (새 회의 구분선)
+            // 시스템 메시지 (새 대화/새 회의 구분선)
             if (msg.isSystem) {
+              const sepColor = isMeeting ? 'border-yellow-300' : 'border-purple-200';
+              const textColor = isMeeting ? 'text-yellow-500' : 'text-purple-400';
+              const emoji = isMeeting ? '💛' : '✦';
               return (
                 <div key={msg.id} className="flex items-center gap-3 my-3">
-                  <div className="flex-1 border-t border-yellow-300" />
-                  <span className="text-[11px] text-yellow-500 font-medium whitespace-nowrap">
-                    💛 {msg.content}
+                  <div className={`flex-1 border-t ${sepColor}`} />
+                  <span className={`text-[11px] ${textColor} font-medium whitespace-nowrap`}>
+                    {emoji} {msg.content}
                   </span>
-                  <div className="flex-1 border-t border-yellow-300" />
+                  <div className={`flex-1 border-t ${sepColor}`} />
                 </div>
               );
             }

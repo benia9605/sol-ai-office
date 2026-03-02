@@ -12,6 +12,7 @@ import { ChatMessage } from '../types';
 import { buildSystemPrompt, getAIName } from '../services/context';
 import { sendChatMessage, ChatMessage as ApiMessage } from '../services/chatApi';
 import { createConversation, addMessage, fetchLatestConversationForRoom, fetchMessagesByConversation } from '../services/conversations.service';
+import { summarizeConversation } from '../services/summary.service';
 import { extractActionItems } from '../utils/actionExtractor';
 import {
   MEETING_PARTICIPANTS,
@@ -339,6 +340,34 @@ export function useChat({ roomId }: UseChatOptions) {
     setMeetingPhase(null);
   }, []);
 
+  /** 1:1 방 새 대화 (현재 대화 자동 요약 → 리셋) */
+  const startNewChat = useCallback(async () => {
+    // 현재 대화가 있으면 백그라운드로 요약 저장
+    if (messages.length >= 2) {
+      summarizeConversation(
+        messages.filter(m => !m.isSystem).map(m => ({ sender: m.sender, content: m.content })),
+        roomId,
+      );
+    }
+
+    // 구분선 삽입 (DB에도 저장)
+    if (conversationIdRef.current) {
+      await addMessage(conversationIdRef.current, 'assistant', '새 대화', '__system__');
+    }
+
+    conversationIdRef.current = null;
+
+    const separator: ChatMessage = {
+      id: `sep-${Date.now()}`,
+      roomId,
+      sender: 'ai',
+      content: '새 대화',
+      timestamp: new Date(),
+      isSystem: true,
+    };
+    setMessages(prev => [...prev, separator]);
+  }, [messages, roomId]);
+
   return {
     messages,
     setMessages,
@@ -348,6 +377,7 @@ export function useChat({ roomId }: UseChatOptions) {
     sendMessage,
     resetChat,
     startNewMeeting,
+    startNewChat,
     conversationId: conversationIdRef.current,
     meetingPhase,
   };

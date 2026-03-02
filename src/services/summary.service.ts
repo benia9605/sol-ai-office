@@ -143,7 +143,31 @@ async function saveSummary(roomId: string, summary: string) {
   }
 }
 
-/** 4. 전체 방 요약 실행 */
+/** 4. 단일 대화 요약 (새 대화 시 자동 호출) */
+export async function summarizeConversation(
+  messages: { sender: string; content: string }[],
+  roomId: string,
+): Promise<void> {
+  // 유저/AI 메시지만 필터 (시스템 메시지 제외), 최소 2개 이상
+  const filtered = messages.filter(m => m.content && !m.content.startsWith('⚠️'));
+  if (filtered.length < 2) return;
+
+  try {
+    const summary = await generateSummary(
+      filtered.map(m => ({
+        role: m.sender === 'ai' ? 'assistant' : 'user',
+        content: m.content,
+      }))
+    );
+    if (summary) {
+      await saveSummary(roomId, summary);
+    }
+  } catch (e) {
+    console.warn('[summary] 대화 요약 실패:', e);
+  }
+}
+
+/** 5. 전체 방 요약 실행 */
 export async function summarizeAllRooms(): Promise<SummaryResult[]> {
   const results: SummaryResult[] = [];
 
