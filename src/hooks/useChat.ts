@@ -75,8 +75,9 @@ export function useChat({ roomId }: UseChatOptions) {
             content: r.content,
             timestamp: new Date(r.created_at),
             isStarred: r.is_starred || false,
-            aiName: r.ai_name || undefined,
-            aiImage: r.ai_name ? AI_IMAGE_MAP[r.ai_name] : undefined,
+            isSystem: r.ai_name === '__system__',
+            aiName: r.ai_name === '__system__' ? undefined : (r.ai_name || undefined),
+            aiImage: r.ai_name === '__system__' ? undefined : (r.ai_name ? AI_IMAGE_MAP[r.ai_name] : undefined),
           })));
         }
       } catch (e) {
@@ -305,7 +306,11 @@ export function useChat({ roomId }: UseChatOptions) {
   }, [roomId, loading, ensureConversation, sendMeetingMessage, sendMeetingFollowUp, sendNormalMessage]);
 
   /** 새 회의 시작 (대화 내용 유지, 다음 메시지부터 풀 회의) */
-  const startNewMeeting = useCallback(() => {
+  const startNewMeeting = useCallback(async () => {
+    // 기존 대화에 구분선 저장
+    if (conversationIdRef.current) {
+      await addMessage(conversationIdRef.current, 'assistant', '새 회의', '__system__');
+    }
     meetingRoundDone.current = false;
     conversationIdRef.current = null;
     // 구분선 시스템 메시지 삽입

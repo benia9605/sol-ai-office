@@ -200,7 +200,16 @@ export function MessageBubble({ message, room, onSave, onStar }: MessageBubblePr
           )}
           {isAi ? (
             <div className="text-sm text-gray-700 markdown-body">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  a: ({ href, children }) => (
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
                 {message.content}
               </ReactMarkdown>
             </div>
