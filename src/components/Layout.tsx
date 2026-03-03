@@ -85,9 +85,14 @@ export function Layout() {
         />
 
         {/* 메인 콘텐츠 — 모바일 하단 네비 높이만큼 여백 */}
-        <main className="flex-1 overflow-y-auto pb-14 lg:pb-0">
+        <main className="flex-1 overflow-y-auto pb-14 lg:pb-0 min-w-0">
           <Outlet context={{ openRoom, startPomodoro, onPomodoroComplete: handlePomodoroComplete } satisfies LayoutContext} />
         </main>
+
+        {/* PC: 채팅 사이드 패널 / 모바일: 풀스크린 오버레이 (ChatModal 내부에서 반응형 처리) */}
+        {selectedRoom && (
+          <ChatModal room={selectedRoom} onClose={() => setSelectedRoom(null)} />
+        )}
       </div>
 
       {/* 모바일 하단 네비게이션 — 뽀모도로 미니 타이머 포함 */}
@@ -115,11 +120,6 @@ export function Layout() {
 
       {/* 모디 FAB */}
       <ModiFAB onClick={handleOpenModi} />
-
-      {/* 채팅 모달 */}
-      {selectedRoom && (
-        <ChatModal room={selectedRoom} onClose={() => setSelectedRoom(null)} />
-      )}
 
     </div>
   );

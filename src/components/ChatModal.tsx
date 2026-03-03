@@ -228,8 +228,13 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
   }, [summaryResult]);
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-white sm:rounded-3xl shadow-hover w-full h-full sm:max-w-2xl sm:h-[600px] flex flex-col overflow-hidden">
+    <>
+    {/* 모바일 오버레이 배경 */}
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden" onClick={onClose} />
+
+    {/* 채팅 패널 — 모바일: 전체 화면, PC: 사이드 패널 (Layout flex 내부) */}
+    <div className="fixed inset-0 z-50 lg:relative lg:z-auto lg:w-[420px] lg:flex-shrink-0 lg:border-l lg:border-gray-200">
+      <div className="bg-white w-full h-full flex flex-col overflow-hidden">
         {/* 헤더 */}
         <div className={`${room.color} px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0`}>
           <div className="flex items-center gap-3">
@@ -425,6 +430,7 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
           </div>
         </div>
       </div>
+    </div>
 
       {/* 저장 모달 */}
       {saveModal && (
@@ -434,6 +440,6 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
           onClose={() => setSaveModal(null)}
         />
       )}
-    </div>
+    </>
   );
 }

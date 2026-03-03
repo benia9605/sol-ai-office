@@ -18,6 +18,7 @@ import {
   GratitudeIcon, SparkleIcon, AffirmationIcon, IdeaIcon, RocketIcon,
   TrophyIcon, ImproveIcon, BookIcon, ThoughtIcon, TargetIcon,
 } from './RecordIcons';
+import { generateWeeklyDraft } from '../../services/weeklyReview.service';
 
 interface RecordFormProps {
   recordType: RecordType;
@@ -64,6 +65,8 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
   const [memoBody, setMemoBody] = useState<Record<string, unknown>>(
     initialData?.memoBody || {}
   );
+  const [aiDraftLoading, setAiDraftLoading] = useState(false);
+  const [aiDraftError, setAiDraftError] = useState<string | null>(null);
 
   const handleAddTag = () => {
     const tag = tagInput.trim();
@@ -204,6 +207,50 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
       {/* ── 주간 회고 섹션 ── */}
       {recordType === 'weekly' && (
         <div className="space-y-5">
+          {/* AI 초안 생성 버튼 */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                setAiDraftLoading(true);
+                setAiDraftError(null);
+                try {
+                  const draft = await generateWeeklyDraft();
+                  setWeeklyData(draft);
+                  if (!title) setTitle(`${date} 주간 회고`);
+                } catch (e) {
+                  console.error('[RecordForm] AI 초안 생성 실패:', e);
+                  setAiDraftError(e instanceof Error ? e.message : 'AI 초안 생성 실패');
+                } finally {
+                  setAiDraftLoading(false);
+                }
+              }}
+              disabled={aiDraftLoading}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl
+                bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-semibold
+                hover:from-pink-600 hover:to-purple-600 transition-all shadow-sm
+                disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {aiDraftLoading ? (
+                <>
+                  <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" />
+                  </svg>
+                  이번 주 데이터 분석 중...
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                  </svg>
+                  AI 초안 생성
+                </>
+              )}
+            </button>
+            {aiDraftError && (
+              <span className="text-xs text-red-500">{aiDraftError}</span>
+            )}
+          </div>
+
           <FormSection icon={<TrophyIcon size={14} className={cfg.iconText} />} label="이번 주 성취" {...sp}>
             <ListFieldEditor label="" fields={weeklyData.achievements}
               onChange={(f) => setWeeklyData({ ...weeklyData, achievements: f })} placeholder="성취한 것..." accentColor={cfg.accent} />

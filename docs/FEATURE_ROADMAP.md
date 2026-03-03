@@ -449,157 +449,115 @@ export function DashboardWidgets() {
 
 ---
 
-## 4. 주간 회고 자동화
+## 4. 주간 회고 자동화 ✅ 완료
 
 ### 왜 필요한가
 
 기록(Records)에 주간 회고 템플릿이 이미 있지만, **빈 칸을 채우는 게 귀찮아서 안 하게 된다**. AI가 한 주 데이터를 모아 초안을 써주면, 수정만 하면 되니까 실제로 회고를 하게 된다. 주간 회고는 성장의 복리 효과를 만드는 핵심 습관이다.
 
-### 현재 상태
+### 구현 완료 상태
 
 | 항목 | 상태 |
 |------|------|
 | Records 페이지 → 주간 회고 템플릿 | ✅ 있음 |
 | 주간 회고 폼 (achievements, regrets, nextGoals, lessons) | ✅ 있음 |
-| AI 자동 초안 생성 | ❌ 없음 |
+| 이번 주 데이터 자동 수집 (할일/일정/KPI/요약/인사이트) | ✅ 완료 |
+| AI 초안 생성 (Claude secretary, JSON 응답 → 폼 프리필) | ✅ 완료 |
+| RecordForm에 "AI 초안 생성" 버튼 | ✅ 완료 |
+| 실사용 테스트 | ⏳ 데이터 축적 후 테스트 예정 |
+
+### 구현된 파일
+
+| 파일 | 역할 |
+|------|------|
+| `src/services/weeklyReview.service.ts` | **신규** — 이번 주 데이터 수집 + AI 초안 생성 |
+| `src/components/records/RecordForm.tsx` | "AI 초안 생성" 버튼 추가 (핑크→보라 그라데이션) |
 
 ### 구현 방법
 
 #### 4-1. 회고 흐름
 
 ```
-매주 일요일 (또는 유저가 원할 때)
-  → "AI 회고 초안 생성" 버튼 클릭
-  → 이번 주 데이터 수집:
-    - 완료한 할일 목록
-    - 달성한 KPI 변화
-    - 모든 방 대화 요약
-    - 이번 주 일정 내역
-    - 작성한 기록/인사이트
-  → Claude API로 초안 생성
-  → 주간 회고 폼에 pre-fill
-  → 유저가 수정 후 저장
+유저가 "주간 회고" 폼 열기
+  → 상단에 "AI 초안 생성" 버튼 표시 (핑크→보라 그라데이션)
+  → 클릭 → 로딩 ("이번 주 데이터 분석 중...")
+  → collectWeeklyData(): 이번 주 월~일 범위로 Supabase 병렬 쿼리
+    - 완료된 할일 (status: done/completed, completed_at 기준)
+    - 진행 중 할일 (status: todo/in_progress)
+    - 이번 주 일정
+    - 프로젝트/목표/KPI 현황
+    - AI 대화 요약 (conversation_summaries)
+    - 저장한 인사이트
+  → generateWeeklyDraft(): Claude API (secretary 모델, 1024토큰)
+    - JSON 형식으로 응답 요청
+    - { achievements[], regrets[], nextGoals[], lessons }
+  → 응답 JSON 파싱 → WeeklyTemplate 형식 → setWeeklyData()로 폼 프리필
+  → 제목이 비어있으면 자동으로 "YYYY-MM-DD 주간 회고" 설정
+  → 유저가 수정 후 기존 저장 버튼으로 저장
 ```
 
-#### 4-2. 데이터 수집 범위
+#### 4-2. 데이터 수집 (weeklyReview.service.ts)
 
 ```typescript
-// src/services/weeklyReview.service.ts — 신규 파일
+// 이번 주 월~일 범위 계산
+function getWeekRange(): { start: string; end: string }
 
-interface WeeklyData {
-  completedTasks: { title: string; project: string; completedAt: string }[];
-  kpiChanges: { name: string; before: number; after: number; unit: string }[];
-  conversationSummaries: { room: string; summary: string }[];
-  schedules: { title: string; date: string }[];
-  insights: { title: string; content: string }[];
-  records: { type: string; preview: string }[];
-}
-
-async function collectWeeklyData(weekStart: Date, weekEnd: Date): Promise<WeeklyData> {
-  const userId = await getCurrentUserId();
-
-  const [tasks, kpiLogs, summaries, schedules, insights, records] = await Promise.all([
-    // 이번 주 완료된 할일
-    supabase.from('tasks')
-      .select('title, project, updated_at')
-      .eq('user_id', userId)
-      .eq('status', 'done')
-      .gte('updated_at', weekStart.toISOString())
-      .lte('updated_at', weekEnd.toISOString()),
-
-    // KPI 로그 (이번 주)
-    supabase.from('kpi_logs')
-      .select('*, kpis(name, unit)')
-      .eq('user_id', userId)
-      .gte('date', weekStart.toISOString().split('T')[0])
-      .lte('date', weekEnd.toISOString().split('T')[0]),
-
-    // 대화 요약
-    supabase.from('conversation_summaries')
-      .select('room_id, summary, date')
-      .eq('user_id', userId)
-      .gte('date', weekStart.toISOString().split('T')[0])
-      .lte('date', weekEnd.toISOString().split('T')[0]),
-
-    // 일정
-    supabase.from('schedules')
-      .select('title, date')
-      .eq('user_id', userId)
-      .gte('date', weekStart.toISOString().split('T')[0])
-      .lte('date', weekEnd.toISOString().split('T')[0]),
-
-    // 인사이트
-    supabase.from('insights')
-      .select('title, content')
-      .eq('user_id', userId)
-      .gte('created_at', weekStart.toISOString())
-      .lte('created_at', weekEnd.toISOString()),
-
-    // 기록
-    supabase.from('journals')
-      .select('type, title, created_at')
-      .eq('user_id', userId)
-      .gte('created_at', weekStart.toISOString())
-      .lte('created_at', weekEnd.toISOString()),
-  ]);
-
-  // ... 데이터 가공 후 반환
-}
+// 8개 Supabase 쿼리 병렬 실행
+async function collectWeeklyData(): Promise<string>
+  // 1. 이번 주 완료 할일 (tasks - status: done/completed)
+  // 2. 아직 진행 중 할일 (tasks - status: todo/in_progress, 상위 10개)
+  // 3. 이번 주 일정 (schedules)
+  // 4. 대화 요약 (conversation_summaries)
+  // 5. 인사이트 (insights, 상위 10개)
+  // 6. 프로젝트 목록 (projects)
+  // 7. 목표 목록 (goals)
+  // 8. KPI 현황 (kpis)
+  // → 마크다운 텍스트로 조합하여 반환
 ```
 
 #### 4-3. AI 초안 생성
 
 ```typescript
-async function generateWeeklyReview(data: WeeklyData): Promise<WeeklyReviewDraft> {
-  const prompt = `
-당신은 모디입니다. Sol님의 이번 주 데이터를 바탕으로 주간 회고 초안을 작성해주세요.
-
-## 이번 주 데이터
-- 완료한 할일: ${JSON.stringify(data.completedTasks)}
-- KPI 변화: ${JSON.stringify(data.kpiChanges)}
-- AI 대화 요약: ${JSON.stringify(data.conversationSummaries)}
-- 주요 일정: ${JSON.stringify(data.schedules)}
-- 새 인사이트: ${JSON.stringify(data.insights)}
-
-## 출력 형식 (JSON)
-{
-  "achievements": ["이번 주 잘한 점 3-5개"],
-  "regrets": ["아쉬운 점 2-3개"],
-  "nextGoals": ["다음 주 집중할 것 3-5개"],
-  "lessons": ["배운 점/깨달은 점 2-3개"],
-  "energyLevel": 1~5,
-  "mood": "이모지"
-}
-`;
-
-  const response = await sendChatMessage(prompt, [], 'secretary', 1000);
-  return JSON.parse(response);
-}
+// JSON 전용 응답 + 폴백 처리
+export async function generateWeeklyDraft(): Promise<WeeklyTemplate>
+  // 시스템 프롬프트: "반드시 JSON 형식으로만 응답"
+  // achievements 3-5개, regrets 1-3개, nextGoals 2-4개, lessons 1문장
+  // JSON 파싱 실패 시 → lessons에 원본 텍스트 폴백
 ```
 
-#### 4-4. UI 연동
+#### 4-4. UI (RecordForm.tsx)
 
 ```
-RecordsPage에서 "주간 회고" 탭 선택 시:
-  → 기존 빈 폼 대신 "🤖 AI 초안 생성" 버튼 추가
-  → 클릭 → 로딩 → 폼에 pre-fill
-  → 유저가 수정 가능
-  → 저장은 기존 useRecords.add() 그대로 사용
+주간 회고 섹션 최상단:
+┌──────────────────────────────┐
+│  [⭐ AI 초안 생성]           │  ← 핑크→보라 그라데이션 버튼
+│  or                          │
+│  [🔄 이번 주 데이터 분석 중...] │  ← 로딩 중 (스피너 + 텍스트)
+│  ❌ 에러 메시지               │  ← 실패 시 빨간 텍스트
+└──────────────────────────────┘
+  이번 주 성취: [AI가 채운 항목들...]
+  아쉬웠던 점: [AI가 채운 항목들...]
+  다음 주 목표: [AI가 채운 항목들...]
+  배운 것: [AI가 채운 텍스트]
 ```
 
-#### 4-5. 수정할 파일
+#### 4-5. 테스트 계획
 
-| 파일 | 변경 내용 |
-|------|----------|
-| `src/services/weeklyReview.service.ts` | **신규** — 데이터 수집 + AI 초안 생성 |
-| `src/pages/RecordsPage.tsx` | "AI 초안 생성" 버튼 추가 |
-| `src/components/RecordForm.tsx` | AI 초안 pre-fill 지원 |
-| `public/prompts/modi.md` | 주간 회고 생성 가이드 추가 |
+```
+데이터가 축적된 후 테스트 항목:
+1. 할일 완료 3개 이상 있을 때 achievements에 반영되는지
+2. 미완료 할일이 nextGoals에 자연스럽게 연결되는지
+3. KPI 변화가 achievements에 반영되는지
+4. 대화 요약이 없을 때도 에러 없이 동작하는지
+5. JSON 파싱 실패 시 폴백이 작동하는지
+6. 생성된 초안 수정 후 저장이 정상 동작하는지
+```
 
 #### 4-6. 의존성
 
 - 대화 요약 기능 (`conversation_summaries` 테이블)이 활성화되어 있어야 AI 초안 품질이 좋음
 - KPI 로그가 쌓여 있어야 진행률 비교 가능
+- "새 대화" 기능으로 자동 요약이 쌓이면 더 풍부한 초안 생성 가능
 
 ---
 
