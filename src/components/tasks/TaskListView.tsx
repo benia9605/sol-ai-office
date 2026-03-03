@@ -197,7 +197,7 @@ export function TaskListView({
   );
 }
 
-// ── 목표별 서브 그룹 컴포넌트 ──
+// ── 목표별 서브 그룹 (노션 스타일: ▼ 배지 구분선 + 플랫 리스트) ──
 function GoalSubGroups({
   dateGroupKey,
   items,
@@ -216,33 +216,35 @@ function GoalSubGroups({
   const { goalGroups, noGoalTasks } = useMemo(() => groupByGoal(items), [items, groupByGoal]);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {goalGroups.map(({ goal, tasks: goalTasks }) => {
         const collapseKey = `${dateGroupKey}-${goal?.id || 'unknown'}`;
         const isCollapsed = collapsed.has(collapseKey);
-        const completedCount = goalTasks.filter((t) => t.status === 'completed').length;
 
         return (
-          <div key={goal?.id || 'unknown'} className="bg-white rounded-2xl shadow-soft overflow-hidden">
+          <div key={goal?.id || 'unknown'}>
+            {/* ▼ 목표 배지 구분행 */}
             <button
               onClick={() => toggleCollapse(collapseKey)}
-              className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+              className="flex items-center gap-1.5 py-1.5 px-1 mb-1 group"
             >
               <svg
-                className={`w-3 h-3 text-gray-400 flex-shrink-0 transition-transform ${isCollapsed ? '' : 'rotate-90'}`}
-                viewBox="0 0 12 12" fill="currentColor"
+                className={`w-2.5 h-2.5 text-gray-400 flex-shrink-0 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                viewBox="0 0 10 10" fill="currentColor"
               >
-                <path d="M4.5 2l4 4-4 4V2z" />
+                <path d="M2 3l3 4 3-4H2z" />
               </svg>
-              <span className="text-xs font-medium text-gray-600 flex-1 truncate">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700">
                 {goal?.title || '목표 없음'}
               </span>
-              <span className="text-[11px] text-gray-400 flex-shrink-0">
-                {completedCount}/{goalTasks.length}
+              <span className="text-[11px] text-gray-400">
+                {goalTasks.length}
               </span>
             </button>
+
+            {/* 플랫 리스트 */}
             {!isCollapsed && (
-              <div className="px-3 pb-2 space-y-1">
+              <div className="space-y-1.5">
                 {goalTasks.map(renderTaskItem)}
               </div>
             )}
@@ -250,32 +252,32 @@ function GoalSubGroups({
         );
       })}
 
-      {/* 목표 없는 할일 */}
+      {/* 목표 없는 할일 — 플랫 렌더 */}
       {noGoalTasks.length > 0 && (
         goalGroups.length > 0 ? (
-          // 목표가 있는 그룹도 있으면 "목표 없음" 서브 그룹으로
-          <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
+          <div>
             <button
               onClick={() => toggleCollapse(`${dateGroupKey}-no_goal`)}
-              className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+              className="flex items-center gap-1.5 py-1.5 px-1 mb-1 group"
             >
               <svg
-                className={`w-3 h-3 text-gray-400 flex-shrink-0 transition-transform ${collapsed.has(`${dateGroupKey}-no_goal`) ? '' : 'rotate-90'}`}
-                viewBox="0 0 12 12" fill="currentColor"
+                className={`w-2.5 h-2.5 text-gray-400 flex-shrink-0 transition-transform ${collapsed.has(`${dateGroupKey}-no_goal`) ? '-rotate-90' : ''}`}
+                viewBox="0 0 10 10" fill="currentColor"
               >
-                <path d="M4.5 2l4 4-4 4V2z" />
+                <path d="M2 3l3 4 3-4H2z" />
               </svg>
-              <span className="text-xs font-medium text-gray-400 flex-1">목표 없음</span>
-              <span className="text-[11px] text-gray-400 flex-shrink-0">{noGoalTasks.length}</span>
+              <span className="text-xs font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-500">
+                목표 없음
+              </span>
+              <span className="text-[11px] text-gray-400">{noGoalTasks.length}</span>
             </button>
             {!collapsed.has(`${dateGroupKey}-no_goal`) && (
-              <div className="px-3 pb-2 space-y-1">
+              <div className="space-y-1.5">
                 {noGoalTasks.map(renderTaskItem)}
               </div>
             )}
           </div>
         ) : (
-          // 목표 그룹 없이 목표없는 할일만 있으면 플랫 렌더
           <div className="space-y-1.5">
             {noGoalTasks.map(renderTaskItem)}
           </div>
