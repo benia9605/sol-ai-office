@@ -34,9 +34,6 @@ interface TaskListViewProps {
 }
 
 function getDateGroup(task: TaskItem): string {
-  // 완료된 할일은 과거 날짜여도 '지연됨'이 아닌 'completed' 그룹
-  if (task.status === 'completed') return 'completed';
-
   if (!task.date) return 'no_date';
 
   const today = new Date();
@@ -45,23 +42,26 @@ function getDateGroup(task: TaskItem): string {
   due.setHours(0, 0, 0, 0);
   const diff = Math.floor((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-  if (diff < 0) return 'overdue';
+  // 완료된 할일은 지연됨에서 제외 → 원래 날짜 그룹 유지
+  if (diff < 0 && task.status !== 'completed') return 'overdue';
   if (diff === 0) return 'today';
   if (diff === 1) return 'tomorrow';
   if (diff <= 7) return 'this_week';
   if (diff <= 14) return 'next_week';
+  // 완료된 과거 날짜 할일 → 'past_completed'
+  if (diff < 0 && task.status === 'completed') return 'past_completed';
   return 'later';
 }
 
 const dateGroups = [
-  { key: 'overdue',   label: '🔴 지연됨',   color: 'text-red-600' },
-  { key: 'today',     label: '오늘',         color: 'text-blue-600' },
-  { key: 'tomorrow',  label: '내일',         color: 'text-green-600' },
-  { key: 'this_week', label: '이번 주',      color: 'text-emerald-600' },
-  { key: 'next_week', label: '다음 주',      color: 'text-gray-600' },
-  { key: 'later',     label: '나중에',       color: 'text-gray-500' },
-  { key: 'no_date',   label: '마감일 없음',  color: 'text-gray-400' },
-  { key: 'completed', label: '✅ 완료',      color: 'text-gray-400' },
+  { key: 'overdue',        label: '🔴 지연됨',     color: 'text-red-600' },
+  { key: 'today',          label: '오늘',           color: 'text-blue-600' },
+  { key: 'tomorrow',       label: '내일',           color: 'text-green-600' },
+  { key: 'this_week',      label: '이번 주',        color: 'text-emerald-600' },
+  { key: 'next_week',      label: '다음 주',        color: 'text-gray-600' },
+  { key: 'later',          label: '나중에',         color: 'text-gray-500' },
+  { key: 'no_date',        label: '마감일 없음',    color: 'text-gray-400' },
+  { key: 'past_completed', label: '✅ 지난 완료',   color: 'text-gray-400' },
 ];
 
 export function TaskListView({
@@ -121,11 +121,17 @@ export function TaskListView({
       }
     });
 
-    // 각 그룹 내 이름순 자연수 정렬
+    // 각 그룹 내: 완료 아래로 → 이름순 자연수 정렬
+    const sortTasks = (arr: TaskItem[]) => arr.sort((a, b) => {
+      const aComp = a.status === 'completed' ? 1 : 0;
+      const bComp = b.status === 'completed' ? 1 : 0;
+      if (aComp !== bComp) return aComp - bComp;
+      return a.title.localeCompare(b.title, 'ko', { numeric: true });
+    });
     for (const group of goalGroups.values()) {
-      group.tasks.sort((a, b) => a.title.localeCompare(b.title, 'ko', { numeric: true }));
+      sortTasks(group.tasks);
     }
-    noGoalTasks.sort((a, b) => a.title.localeCompare(b.title, 'ko', { numeric: true }));
+    sortTasks(noGoalTasks);
 
     return { goalGroups: Array.from(goalGroups.values()), noGoalTasks };
   };
@@ -138,6 +144,7 @@ export function TaskListView({
       task={task}
       categories={categories}
       projectColor={colorMap[task.project]}
+      goalName={task.goalId ? goalMap.get(task.goalId)?.title : undefined}
       onCycleStatus={onCycleStatus}
       onToggleStar={onToggleStar}
       onStartPomodoro={onStartPomodoro}

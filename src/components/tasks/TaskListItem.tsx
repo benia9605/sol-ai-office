@@ -67,6 +67,7 @@ interface TaskListItemProps {
   task: TaskItem;
   categories: ScheduleCategory[];
   projectColor?: string;
+  goalName?: string;
   onCycleStatus: (id: string) => void;
   onToggleStar: (id: string) => void;
   onStartPomodoro?: (task: TaskItem) => void;
@@ -76,7 +77,13 @@ interface TaskListItemProps {
   onToggleSelect?: (id: string) => void;
 }
 
-export function TaskListItem({ task, projectColor, onCycleStatus, onToggleStar, onSelect, selectMode, selected, onToggleSelect }: TaskListItemProps) {
+function formatShortDate(dateStr?: string): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+export function TaskListItem({ task, projectColor, goalName, onCycleStatus, onToggleStar, onSelect, selectMode, selected, onToggleSelect }: TaskListItemProps) {
   const isCompleted = task.status === 'completed';
 
   return (
@@ -114,29 +121,39 @@ export function TaskListItem({ task, projectColor, onCycleStatus, onToggleStar, 
         {task.title}
       </span>
 
-      {/* 즐겨찾기 별표 */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onToggleStar(task.id); }}
-        className={`flex-shrink-0 text-sm transition-all ${task.starred ? 'text-amber-400' : 'text-gray-300 hover:text-amber-300'}`}
-        title={task.starred ? '즐겨찾기 해제' : '즐겨찾기'}
-      >
-        {task.starred ? '★' : '☆'}
-      </button>
+      {/* 오른쪽 정보: 별표 / 날짜 / D-day / 목표 */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {/* 즐겨찾기 별표 */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleStar(task.id); }}
+          className={`text-sm transition-all ${task.starred ? 'text-amber-400' : 'text-gray-300 hover:text-amber-300'}`}
+          title={task.starred ? '즐겨찾기 해제' : '즐겨찾기'}
+        >
+          {task.starred ? '★' : '☆'}
+        </button>
 
-      {/* 프로젝트 태그 */}
-      {task.project && (
-        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">
-          {projectColor && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: projectColor }} />}
-          {task.project}
-        </span>
-      )}
+        {/* 날짜 (M/D) */}
+        {task.date && (
+          <span className="text-[11px] text-gray-400">
+            {formatShortDate(task.date)}
+          </span>
+        )}
 
-      {/* 마감일 D-n */}
-      {task.date && !isCompleted && (
-        <span className={`text-xs font-semibold flex-shrink-0 ${getDDayColor(task.date)}`}>
-          {getDDay(task.date)}
-        </span>
-      )}
+        {/* D-day */}
+        {task.date && !isCompleted && (
+          <span className={`text-[11px] font-semibold ${getDDayColor(task.date)}`}>
+            {getDDay(task.date)}
+          </span>
+        )}
+
+        {/* 목표명 (프로젝트 색상 점 포함) */}
+        {goalName && (
+          <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-500 max-w-[100px]">
+            {projectColor && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: projectColor }} />}
+            <span className="truncate">{goalName}</span>
+          </span>
+        )}
+      </div>
     </div>
   );
 }
