@@ -25,7 +25,7 @@ interface TasksLayoutContext {
 }
 
 type ViewMode = 'list' | 'kanban';
-type SortMode = 'deadline' | 'priority' | 'created' | 'name' | 'goal';
+type SortMode = 'deadline' | 'priority' | 'created' | 'name';
 
 const ListIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -54,7 +54,6 @@ const sortOptions: { key: SortMode; label: string }[] = [
   { key: 'priority', label: '우선순위순' },
   { key: 'created',  label: '생성일순' },
   { key: 'name',     label: '이름순' },
-  { key: 'goal',     label: '목표별' },
 ];
 
 const statusFilterOptions: { key: string; label: string }[] = [
@@ -729,7 +728,6 @@ export function TasksPage() {
                 selectMode={selectMode}
                 selectedIds={selectedIds}
                 onToggleSelect={handleToggleSelect}
-                groupBy={sortMode === 'goal' ? 'goal' : 'date'}
                 goals={allGoals}
                 projects={projects}
               />

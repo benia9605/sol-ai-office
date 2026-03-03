@@ -1,8 +1,9 @@
 /**
  * @file src/components/tasks/TaskListView.tsx
- * @description 리스트 뷰 - 날짜 기준 or 목표별 그룹핑
+ * @description 리스트 뷰 - 날짜 기준 그룹핑 + 각 그룹 내 목표별 서브 그룹 (접기/펼치기)
  * - 날짜: 지연됨 / 오늘 / 내일 / 이번 주 / 다음 주 / 나중에 / 마감일 없음
- * - 목표별: 프로젝트 > 목표 계층 구조, 접기/펼치기 토글
+ * - 완료된 할일은 '지연됨' 대신 별도 '완료' 그룹으로 분류
+ * - 각 날짜 그룹 내에서 목표별로 서브 그룹핑 + 토글
  */
 import { useState, useMemo } from 'react';
 import { TaskItem, ScheduleCategory } from '../../types';
@@ -28,12 +29,14 @@ interface TaskListViewProps {
   selectMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
-  groupBy?: 'date' | 'goal';
   goals?: GoalRow[];
   projects?: Project[];
 }
 
 function getDateGroup(task: TaskItem): string {
+  // 완료된 할일은 과거 날짜여도 '지연됨'이 아닌 'completed' 그룹
+  if (task.status === 'completed') return 'completed';
+
   if (!task.date) return 'no_date';
 
   const today = new Date();
@@ -58,12 +61,13 @@ const dateGroups = [
   { key: 'next_week', label: '다음 주',      color: 'text-gray-600' },
   { key: 'later',     label: '나중에',       color: 'text-gray-500' },
   { key: 'no_date',   label: '마감일 없음',  color: 'text-gray-400' },
+  { key: 'completed', label: '✅ 완료',      color: 'text-gray-400' },
 ];
 
 export function TaskListView({
   tasks, categories, onCycleStatus, onToggleStar, onStartPomodoro, onSelect,
   selectMode, selectedIds, onToggleSelect,
-  groupBy = 'date', goals = [], projects: projectsProp,
+  goals = [], projects: projectsProp,
 }: TaskListViewProps) {
   const { projects: projectsFromHook } = useProjects();
   const projects = projectsProp ?? projectsFromHook;
@@ -74,7 +78,10 @@ export function TaskListView({
     return map;
   }, [projects]);
 
-  // 접기/펼치기 상태 (key: goalId or 'no_goal')
+  // goalId → GoalRow 매핑
+  const goalMap = useMemo(() => new Map(goals.map((g) => [g.id, g])), [goals]);
+
+  // 접기/펼치기 상태 (key: `${dateGroupKey}-${goalId}`)
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const toggleCollapse = (key: string) => {
     setCollapsed((prev) => {
@@ -85,7 +92,7 @@ export function TaskListView({
     });
   };
 
-  // ── 날짜별 그룹핑 ──
+  // 날짜별 그룹핑
   const dateGrouped = useMemo(() => {
     const map: Record<string, TaskItem[]> = {};
     tasks.forEach((t) => {
@@ -96,59 +103,34 @@ export function TaskListView({
     return map;
   }, [tasks]);
 
-  // ── 목표별 그룹핑 ──
-  const goalGrouped = useMemo(() => {
-    if (groupBy !== 'goal') return [];
-
-    // goalId → GoalRow 매핑
-    const goalMap = new Map(goals.map((g) => [g.id, g]));
-    // projectId → Project 매핑
-    const projectMap = new Map(projects.map((p) => [p.id, p]));
-
-    // goalId별 태스크 그룹핑
-    const tasksByGoal = new Map<string, TaskItem[]>();
+  // 목표별 서브 그룹핑 (날짜 그룹 내 할일 배열 → 목표 그룹들)
+  const groupByGoal = (items: TaskItem[]) => {
+    const goalGroups = new Map<string, { goal: GoalRow | null; tasks: TaskItem[] }>();
     const noGoalTasks: TaskItem[] = [];
 
-    tasks.forEach((t) => {
+    items.forEach((t) => {
       if (t.goalId && goalMap.has(t.goalId)) {
-        const existing = tasksByGoal.get(t.goalId) || [];
-        existing.push(t);
-        tasksByGoal.set(t.goalId, existing);
+        const existing = goalGroups.get(t.goalId);
+        if (existing) {
+          existing.tasks.push(t);
+        } else {
+          goalGroups.set(t.goalId, { goal: goalMap.get(t.goalId)!, tasks: [t] });
+        }
       } else {
         noGoalTasks.push(t);
       }
     });
 
-    // 프로젝트별로 묶기
-    const projectGroups: {
-      project: Project | null;
-      goals: { goal: GoalRow; tasks: TaskItem[] }[];
-    }[] = [];
-
-    // projectId별로 goals를 분류
-    const goalsByProject = new Map<string, GoalRow[]>();
-    goals.forEach((g) => {
-      if (tasksByGoal.has(g.id)) {
-        const existing = goalsByProject.get(g.project_id) || [];
-        existing.push(g);
-        goalsByProject.set(g.project_id, existing);
-      }
-    });
-
-    // 프로젝트 순서대로 렌더
-    for (const [projectId, projectGoals] of goalsByProject) {
-      const project = projectMap.get(projectId) || null;
-      const goalItems = projectGoals.map((g) => ({
-        goal: g,
-        tasks: (tasksByGoal.get(g.id) || []).sort((a, b) =>
-          a.title.localeCompare(b.title, 'ko', { numeric: true })
-        ),
-      }));
-      projectGroups.push({ project, goals: goalItems });
+    // 각 그룹 내 이름순 자연수 정렬
+    for (const group of goalGroups.values()) {
+      group.tasks.sort((a, b) => a.title.localeCompare(b.title, 'ko', { numeric: true }));
     }
+    noGoalTasks.sort((a, b) => a.title.localeCompare(b.title, 'ko', { numeric: true }));
 
-    return { projectGroups, noGoalTasks };
-  }, [groupBy, tasks, goals, projects]);
+    return { goalGroups: Array.from(goalGroups.values()), noGoalTasks };
+  };
+
+  const hasGoals = goals.length > 0;
 
   const renderTaskItem = (task: TaskItem) => (
     <TaskListItem
@@ -166,116 +148,131 @@ export function TaskListView({
     />
   );
 
-  // ── 목표별 뷰 ──
-  if (groupBy === 'goal' && goalGrouped && typeof goalGrouped === 'object' && 'projectGroups' in goalGrouped) {
-    const { projectGroups, noGoalTasks } = goalGrouped;
-
-    return (
-      <div className="space-y-4">
-        {projectGroups.map(({ project, goals: goalItems }) => (
-          <div key={project?.id || 'unknown'} className="space-y-2">
-            {/* 프로젝트 헤더 */}
-            <div className="flex items-center gap-2 px-1">
-              {project?.image
-                ? <img src={project.image} alt={project.name} className="w-4 h-4 object-contain" />
-                : project?.emoji
-                  ? <span className="text-sm">{project.emoji}</span>
-                  : null
-              }
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                {project?.name || '프로젝트 없음'}
-              </span>
-            </div>
-
-            {/* 목표별 그룹 */}
-            {goalItems.map(({ goal, tasks: goalTasks }) => {
-              const isCollapsed = collapsed.has(goal.id);
-              const completedCount = goalTasks.filter((t) => t.status === 'completed').length;
-
-              return (
-                <section key={goal.id} className="bg-white rounded-2xl shadow-soft overflow-hidden">
-                  {/* 목표 헤더 (토글) */}
-                  <button
-                    onClick={() => toggleCollapse(goal.id)}
-                    className="w-full flex items-center gap-2 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-                  >
-                    <svg
-                      className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform ${isCollapsed ? '' : 'rotate-90'}`}
-                      viewBox="0 0 12 12" fill="currentColor"
-                    >
-                      <path d="M4.5 2l4 4-4 4V2z" />
-                    </svg>
-                    <span className="text-sm font-medium text-gray-700 flex-1 truncate">
-                      {goal.title}
-                    </span>
-                    <span className="text-xs text-gray-400 flex-shrink-0">
-                      {completedCount}/{goalTasks.length}
-                    </span>
-                  </button>
-
-                  {/* 할일 리스트 */}
-                  {!isCollapsed && (
-                    <div className="px-3 pb-2 space-y-1">
-                      {goalTasks.map(renderTaskItem)}
-                    </div>
-                  )}
-                </section>
-              );
-            })}
-          </div>
-        ))}
-
-        {/* 목표 없는 할일 */}
-        {noGoalTasks.length > 0 && (
-          <section className="bg-white rounded-2xl shadow-soft overflow-hidden">
-            <button
-              onClick={() => toggleCollapse('no_goal')}
-              className="w-full flex items-center gap-2 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-            >
-              <svg
-                className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform ${collapsed.has('no_goal') ? '' : 'rotate-90'}`}
-                viewBox="0 0 12 12" fill="currentColor"
-              >
-                <path d="M4.5 2l4 4-4 4V2z" />
-              </svg>
-              <span className="text-sm font-medium text-gray-400 flex-1">목표 없음</span>
-              <span className="text-xs text-gray-400 flex-shrink-0">{noGoalTasks.length}</span>
-            </button>
-            {!collapsed.has('no_goal') && (
-              <div className="px-3 pb-2 space-y-1">
-                {noGoalTasks.sort((a, b) => a.title.localeCompare(b.title, 'ko', { numeric: true })).map(renderTaskItem)}
-              </div>
-            )}
-          </section>
-        )}
-
-        {tasks.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-8">할일이 없습니다</p>
-        )}
-      </div>
-    );
-  }
-
-  // ── 날짜별 뷰 (기본) ──
   return (
     <div className="space-y-5">
       {dateGroups.map((g) => {
         const items = dateGrouped[g.key];
         if (!items || items.length === 0) return null;
+
+        // 목표가 있으면 서브 그룹핑
+        const hasGoalTasks = hasGoals && items.some((t) => t.goalId && goalMap.has(t.goalId));
+
         return (
           <section key={g.key}>
             <h2 className={`text-sm font-semibold ${g.color} mb-2`}>
               {g.label} <span className="text-gray-400 font-normal">({items.length})</span>
             </h2>
-            <div className="space-y-1.5">
-              {items.map(renderTaskItem)}
-            </div>
+
+            {hasGoalTasks ? (
+              // ── 목표별 서브 그룹핑 ──
+              <GoalSubGroups
+                dateGroupKey={g.key}
+                items={items}
+                groupByGoal={groupByGoal}
+                collapsed={collapsed}
+                toggleCollapse={toggleCollapse}
+                renderTaskItem={renderTaskItem}
+              />
+            ) : (
+              // ── 플랫 리스트 ──
+              <div className="space-y-1.5">
+                {items.map(renderTaskItem)}
+              </div>
+            )}
           </section>
         );
       })}
 
       {tasks.length === 0 && (
         <p className="text-sm text-gray-400 text-center py-8">할일이 없습니다</p>
+      )}
+    </div>
+  );
+}
+
+// ── 목표별 서브 그룹 컴포넌트 ──
+function GoalSubGroups({
+  dateGroupKey,
+  items,
+  groupByGoal,
+  collapsed,
+  toggleCollapse,
+  renderTaskItem,
+}: {
+  dateGroupKey: string;
+  items: TaskItem[];
+  groupByGoal: (items: TaskItem[]) => { goalGroups: { goal: GoalRow | null; tasks: TaskItem[] }[]; noGoalTasks: TaskItem[] };
+  collapsed: Set<string>;
+  toggleCollapse: (key: string) => void;
+  renderTaskItem: (task: TaskItem) => JSX.Element;
+}) {
+  const { goalGroups, noGoalTasks } = useMemo(() => groupByGoal(items), [items, groupByGoal]);
+
+  return (
+    <div className="space-y-2">
+      {goalGroups.map(({ goal, tasks: goalTasks }) => {
+        const collapseKey = `${dateGroupKey}-${goal?.id || 'unknown'}`;
+        const isCollapsed = collapsed.has(collapseKey);
+        const completedCount = goalTasks.filter((t) => t.status === 'completed').length;
+
+        return (
+          <div key={goal?.id || 'unknown'} className="bg-white rounded-2xl shadow-soft overflow-hidden">
+            <button
+              onClick={() => toggleCollapse(collapseKey)}
+              className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+            >
+              <svg
+                className={`w-3 h-3 text-gray-400 flex-shrink-0 transition-transform ${isCollapsed ? '' : 'rotate-90'}`}
+                viewBox="0 0 12 12" fill="currentColor"
+              >
+                <path d="M4.5 2l4 4-4 4V2z" />
+              </svg>
+              <span className="text-xs font-medium text-gray-600 flex-1 truncate">
+                {goal?.title || '목표 없음'}
+              </span>
+              <span className="text-[11px] text-gray-400 flex-shrink-0">
+                {completedCount}/{goalTasks.length}
+              </span>
+            </button>
+            {!isCollapsed && (
+              <div className="px-3 pb-2 space-y-1">
+                {goalTasks.map(renderTaskItem)}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* 목표 없는 할일 */}
+      {noGoalTasks.length > 0 && (
+        goalGroups.length > 0 ? (
+          // 목표가 있는 그룹도 있으면 "목표 없음" 서브 그룹으로
+          <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
+            <button
+              onClick={() => toggleCollapse(`${dateGroupKey}-no_goal`)}
+              className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+            >
+              <svg
+                className={`w-3 h-3 text-gray-400 flex-shrink-0 transition-transform ${collapsed.has(`${dateGroupKey}-no_goal`) ? '' : 'rotate-90'}`}
+                viewBox="0 0 12 12" fill="currentColor"
+              >
+                <path d="M4.5 2l4 4-4 4V2z" />
+              </svg>
+              <span className="text-xs font-medium text-gray-400 flex-1">목표 없음</span>
+              <span className="text-[11px] text-gray-400 flex-shrink-0">{noGoalTasks.length}</span>
+            </button>
+            {!collapsed.has(`${dateGroupKey}-no_goal`) && (
+              <div className="px-3 pb-2 space-y-1">
+                {noGoalTasks.map(renderTaskItem)}
+              </div>
+            )}
+          </div>
+        ) : (
+          // 목표 그룹 없이 목표없는 할일만 있으면 플랫 렌더
+          <div className="space-y-1.5">
+            {noGoalTasks.map(renderTaskItem)}
+          </div>
+        )
       )}
     </div>
   );
