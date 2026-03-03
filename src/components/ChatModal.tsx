@@ -232,8 +232,8 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
     {/* 모바일 오버레이 배경 */}
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden" onClick={onClose} />
 
-    {/* 채팅 패널 — 모바일: 전체 화면, PC: 사이드 패널 (Layout flex 내부) */}
-    <div className="fixed inset-0 z-50 lg:relative lg:z-auto lg:w-[420px] lg:flex-shrink-0 lg:border-l lg:border-gray-200">
+    {/* 채팅 패널 — 모바일: 전체 화면, PC: 사이드 패널 (Layout이 너비 제어) */}
+    <div className="fixed inset-0 z-50 lg:relative lg:z-auto lg:flex-shrink-0">
       <div className="bg-white w-full h-full flex flex-col overflow-hidden">
         {/* 헤더 */}
         <div className={`${room.color} px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0`}>

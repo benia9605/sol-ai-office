@@ -7,7 +7,7 @@
  * - 뽀모도로 미니 타이머를 BottomNav에 인라인 표시
  * - Outlet context로 openRoom, startPomodoro 함수를 하위 페이지에 전달
  */
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Room, ChatHistory, TaskItem } from '../types';
 import { rooms, modiSecretary } from '../data';
@@ -38,6 +38,52 @@ export function Layout() {
   const [pomodoroState, setPomodoroState] = useState<PomodoroState | null>(null);
   const pomodoroToggleRef = useRef<(() => void) | null>(null);
   const pomodoroExpandRef = useRef<(() => void) | null>(null);
+
+  // 채팅 사이드 패널 리사이즈
+  const MIN_CHAT_W = 320;
+  const MAX_CHAT_RATIO = 0.55;
+  const [chatWidth, setChatWidth] = useState(() =>
+    Math.max(MIN_CHAT_W, Math.round(window.innerWidth * 0.32))
+  );
+  const isResizing = useRef(false);
+
+  // 드래그 리사이즈 핸들러
+  const startResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev: MouseEvent) => {
+      if (!isResizing.current) return;
+      const maxW = Math.round(window.innerWidth * MAX_CHAT_RATIO);
+      const newW = Math.max(MIN_CHAT_W, Math.min(window.innerWidth - ev.clientX, maxW));
+      setChatWidth(newW);
+    };
+    const onUp = () => {
+      isResizing.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, []);
+
+  // 윈도우 리사이즈 시 채팅 너비 보정
+  useEffect(() => {
+    const onResize = () => {
+      setChatWidth(prev => {
+        const maxW = Math.round(window.innerWidth * MAX_CHAT_RATIO);
+        if (prev > maxW) return maxW;
+        if (prev < MIN_CHAT_W) return MIN_CHAT_W;
+        return prev;
+      });
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const openRoom = (room: Room) => {
     setSelectedRoom(room);
@@ -89,9 +135,21 @@ export function Layout() {
           <Outlet context={{ openRoom, startPomodoro, onPomodoroComplete: handlePomodoroComplete } satisfies LayoutContext} />
         </main>
 
-        {/* PC: 채팅 사이드 패널 / 모바일: 풀스크린 오버레이 (ChatModal 내부에서 반응형 처리) */}
+        {/* PC: 채팅 사이드 패널 (리사이즈 가능) / 모바일: 풀스크린 오버레이 */}
         {selectedRoom && (
-          <ChatModal room={selectedRoom} onClose={() => setSelectedRoom(null)} />
+          <>
+            {/* 드래그 리사이즈 핸들 (PC만) */}
+            <div
+              onMouseDown={startResize}
+              className="hidden lg:flex w-1.5 flex-shrink-0 cursor-col-resize items-center justify-center
+                hover:bg-primary-200 active:bg-primary-300 transition-colors group"
+            >
+              <div className="w-0.5 h-8 rounded-full bg-gray-300 group-hover:bg-primary-400 transition-colors" />
+            </div>
+            <div className="lg:flex-shrink-0" style={{ width: chatWidth }}>
+              <ChatModal room={selectedRoom} onClose={() => setSelectedRoom(null)} />
+            </div>
+          </>
         )}
       </div>
 
