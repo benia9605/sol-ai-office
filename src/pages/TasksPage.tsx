@@ -16,6 +16,8 @@ import { TaskListView } from '../components/tasks/TaskListView';
 import { TaskKanbanView } from '../components/tasks/TaskKanbanView';
 import { DailyRoutineSection } from '../components/tasks/DailyRoutineSection';
 import { useDailyCompletions } from '../hooks/useDailyCompletions';
+import { useProjects } from '../hooks/useProjects';
+import { fetchAllGoals, GoalRow } from '../services/goals.service';
 
 interface TasksLayoutContext {
   openRoom?: (room: unknown) => void;
@@ -23,7 +25,7 @@ interface TasksLayoutContext {
 }
 
 type ViewMode = 'list' | 'kanban';
-type SortMode = 'deadline' | 'priority' | 'created';
+type SortMode = 'deadline' | 'priority' | 'created' | 'name' | 'goal';
 
 const ListIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -51,6 +53,8 @@ const sortOptions: { key: SortMode; label: string }[] = [
   { key: 'deadline', label: '마감일순' },
   { key: 'priority', label: '우선순위순' },
   { key: 'created',  label: '생성일순' },
+  { key: 'name',     label: '이름순' },
+  { key: 'goal',     label: '목표별' },
 ];
 
 const statusFilterOptions: { key: string; label: string }[] = [
@@ -66,6 +70,13 @@ export function TasksPage() {
   const { tasks, loading, cycleStatus, updateStatus, toggleStar, add, remove, updateTask } = useTasks();
   const { toggleCompletion, isCompletedToday, completedCount: getDailyCompletedCount } = useDailyCompletions();
   const context = useOutletContext<TasksLayoutContext>() ?? {};
+  const { projects } = useProjects();
+
+  // 목표별 그룹핑용 전체 목표 데이터
+  const [allGoals, setAllGoals] = useState<GoalRow[]>([]);
+  useEffect(() => {
+    fetchAllGoals().then(setAllGoals).catch(() => setAllGoals([]));
+  }, []);
 
   // View / filter / sort state
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -171,6 +182,9 @@ export function TasksPage() {
       }
       if (sortMode === 'priority') {
         return priorityWeight[a.priority] - priorityWeight[b.priority];
+      }
+      if (sortMode === 'name') {
+        return a.title.localeCompare(b.title, 'ko', { numeric: true });
       }
       // created - id 기반 역순 (최신 먼저)
       return b.id.localeCompare(a.id);
@@ -715,6 +729,9 @@ export function TasksPage() {
                 selectMode={selectMode}
                 selectedIds={selectedIds}
                 onToggleSelect={handleToggleSelect}
+                groupBy={sortMode === 'goal' ? 'goal' : 'date'}
+                goals={allGoals}
+                projects={projects}
               />
             )}
             {viewMode === 'kanban' && (

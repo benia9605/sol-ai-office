@@ -999,7 +999,7 @@ export function ProjectDetailPage() {
                           )}
 
                           <div className="divide-y divide-gray-100 ml-1">
-                            {[...goalTasks].sort((a, b) => a.title.localeCompare(b.title, 'ko')).map((t) => (
+                            {[...goalTasks].sort((a, b) => a.title.localeCompare(b.title, 'ko', { numeric: true })).map((t) => (
                               <div
                                 key={t.id}
                                 className="flex items-center gap-2 group py-2 cursor-pointer hover:bg-gray-50 rounded-lg px-1 -mx-1 transition-colors"
