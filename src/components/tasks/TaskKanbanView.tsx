@@ -189,14 +189,16 @@ function KanbanCardOverlay({ task, categories, projectColor }: { task: TaskItem;
   );
 }
 
-/** 드롭 가능한 열 */
-function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectColorById, onSelect, onToggleStar, selectMode, selectedIds, onToggleSelect }: {
+/** 드롭 가능한 열 (목표별 그룹핑 + 토글) */
+function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectColorById, collapsed, toggleCollapse, onSelect, onToggleStar, selectMode, selectedIds, onToggleSelect }: {
   column: typeof columns[number];
   tasks: TaskItem[];
   categories: ScheduleCategory[];
   colorMap: Record<string, string>;
   goalMap: Map<string, GoalRow>;
   projectColorById: Record<string, string>;
+  collapsed: Set<string>;
+  toggleCollapse: (key: string) => void;
   onSelect: (task: TaskItem) => void;
   onToggleStar: (id: string) => void;
   selectMode?: boolean;
@@ -204,7 +206,45 @@ function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectCol
   onToggleSelect?: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
-  const taskIds = tasks.map((t) => t.id);
+
+  // 목표별 그룹핑
+  const { goalGroups, noGoalTasks } = useMemo(() => {
+    const groups = new Map<string, { goal: GoalRow; tasks: TaskItem[] }>();
+    const noGoal: TaskItem[] = [];
+
+    tasks.forEach((t) => {
+      if (t.goalId && goalMap.has(t.goalId)) {
+        const existing = groups.get(t.goalId);
+        if (existing) existing.tasks.push(t);
+        else groups.set(t.goalId, { goal: goalMap.get(t.goalId)!, tasks: [t] });
+      } else {
+        noGoal.push(t);
+      }
+    });
+
+    return { goalGroups: Array.from(groups.values()), noGoalTasks: noGoal };
+  }, [tasks, goalMap]);
+
+  const hasGoals = goalGroups.length > 0;
+
+  // 접힌 그룹의 task ID를 제외한 visible task IDs (SortableContext용)
+  const visibleTaskIds = useMemo(() => {
+    const ids: string[] = [];
+    goalGroups.forEach(({ goal, tasks: gTasks }) => {
+      const key = `${column.id}-${goal.id}`;
+      if (!collapsed.has(key)) gTasks.forEach((t) => ids.push(t.id));
+    });
+    const noGoalKey = `${column.id}-no_goal`;
+    if (!collapsed.has(noGoalKey) || !hasGoals) noGoalTasks.forEach((t) => ids.push(t.id));
+    return ids;
+  }, [goalGroups, noGoalTasks, collapsed, column.id, hasGoals]);
+
+  const renderCard = (task: TaskItem) => {
+    const goal = task.goalId ? goalMap.get(task.goalId) : undefined;
+    return (
+      <KanbanCard key={task.id} task={task} categories={categories} projectColor={colorMap[task.project]} goalName={undefined} goalColor={goal ? projectColorById[goal.project_id] : undefined} onSelect={onSelect} onToggleStar={onToggleStar} selectMode={selectMode} selected={selectedIds?.has(task.id)} onToggleSelect={onToggleSelect} />
+    );
+  };
 
   return (
     <div
@@ -215,14 +255,69 @@ function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectCol
         <h3 className={`text-sm font-semibold ${column.color}`}>{column.label}</h3>
         <span className="text-xs text-gray-400 bg-white px-2 py-0.5 rounded-full">{tasks.length}</span>
       </div>
-      <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+      <SortableContext items={visibleTaskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-2 min-h-[60px]">
-          {tasks.map((task) => {
-            const goal = task.goalId ? goalMap.get(task.goalId) : undefined;
-            return (
-              <KanbanCard key={task.id} task={task} categories={categories} projectColor={colorMap[task.project]} goalName={goal?.title} goalColor={goal ? projectColorById[goal.project_id] : undefined} onSelect={onSelect} onToggleStar={onToggleStar} selectMode={selectMode} selected={selectedIds?.has(task.id)} onToggleSelect={onToggleSelect} />
-            );
-          })}
+          {hasGoals ? (
+            <>
+              {goalGroups.map(({ goal, tasks: gTasks }) => {
+                const collapseKey = `${column.id}-${goal.id}`;
+                const isCollapsed = collapsed.has(collapseKey);
+                const goalColor = projectColorById[goal.project_id];
+
+                return (
+                  <div key={goal.id}>
+                    {/* ▼ GoalBadge 토글 */}
+                    <button
+                      onClick={() => toggleCollapse(collapseKey)}
+                      className="flex items-center gap-1.5 py-1 px-0.5 mb-1"
+                    >
+                      <svg
+                        className={`w-2.5 h-2.5 text-gray-400 flex-shrink-0 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                        viewBox="0 0 10 10" fill="currentColor"
+                      >
+                        <path d="M2 3l3 4 3-4H2z" />
+                      </svg>
+                      <GoalBadge title={goal.title} projectColor={goalColor} size="sm" />
+                      <span className="text-[11px] text-gray-400">{gTasks.length}</span>
+                    </button>
+                    {!isCollapsed && (
+                      <div className="space-y-2">
+                        {gTasks.map(renderCard)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* 목표 없는 할일 */}
+              {noGoalTasks.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => toggleCollapse(`${column.id}-no_goal`)}
+                    className="flex items-center gap-1.5 py-1 px-0.5 mb-1"
+                  >
+                    <svg
+                      className={`w-2.5 h-2.5 text-gray-400 flex-shrink-0 transition-transform ${collapsed.has(`${column.id}-no_goal`) ? '-rotate-90' : ''}`}
+                      viewBox="0 0 10 10" fill="currentColor"
+                    >
+                      <path d="M2 3l3 4 3-4H2z" />
+                    </svg>
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">목표 없음</span>
+                    <span className="text-[11px] text-gray-400">{noGoalTasks.length}</span>
+                  </button>
+                  {!collapsed.has(`${column.id}-no_goal`) && (
+                    <div className="space-y-2">
+                      {noGoalTasks.map(renderCard)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            // 목표 없으면 플랫 렌더
+            tasks.map(renderCard)
+          )}
+
           {tasks.length === 0 && (
             <div className="text-xs text-gray-300 text-center py-6 border-2 border-dashed border-gray-200 rounded-xl">
               여기에 끌어놓기
@@ -248,6 +343,15 @@ export function TaskKanbanView({ tasks, categories, goals = [], onUpdateStatus, 
   }, [projects]);
   const goalMap = useMemo(() => new Map(goals.map((g) => [g.id, g])), [goals]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const toggleCollapse = (key: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -307,6 +411,8 @@ export function TaskKanbanView({ tasks, categories, goals = [], onUpdateStatus, 
             colorMap={colorMap}
             goalMap={goalMap}
             projectColorById={projectColorById}
+            collapsed={collapsed}
+            toggleCollapse={toggleCollapse}
             onSelect={onSelect}
             onToggleStar={onToggleStar}
             selectMode={selectMode}
