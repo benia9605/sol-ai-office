@@ -141,12 +141,12 @@ export function Layout() {
             {/* 드래그 리사이즈 핸들 (PC만) */}
             <div
               onMouseDown={startResize}
-              className="hidden lg:flex w-1.5 flex-shrink-0 cursor-col-resize items-center justify-center
+              className="hidden lg:flex w-1.5 h-full flex-shrink-0 cursor-col-resize items-center justify-center
                 hover:bg-primary-200 active:bg-primary-300 transition-colors group"
             >
               <div className="w-0.5 h-8 rounded-full bg-gray-300 group-hover:bg-primary-400 transition-colors" />
             </div>
-            <div className="lg:flex-shrink-0" style={{ width: chatWidth }}>
+            <div className="lg:flex-shrink-0 h-full overflow-hidden" style={{ width: chatWidth }}>
               <ChatModal room={selectedRoom} onClose={() => setSelectedRoom(null)} />
             </div>
           </>
