@@ -10,6 +10,7 @@ import { TaskItem, ScheduleCategory } from '../../types';
 import { TaskListItem } from './TaskListItem';
 import { useProjects } from '../../hooks/useProjects';
 import { GoalRow } from '../../services/goals.service';
+import { GoalBadge } from '../GoalBadge';
 
 interface Project {
   id: string;
@@ -75,6 +76,13 @@ export function TaskListView({
   const colorMap = useMemo(() => {
     const map: Record<string, string> = {};
     projects.forEach((p) => { map[p.name] = p.color; });
+    return map;
+  }, [projects]);
+
+  // projectId → color 매핑
+  const projectColorById = useMemo(() => {
+    const map: Record<string, string> = {};
+    projects.forEach((p) => { map[p.id] = p.color; });
     return map;
   }, [projects]);
 
@@ -144,7 +152,6 @@ export function TaskListView({
       task={task}
       categories={categories}
       projectColor={colorMap[task.project]}
-      goalName={task.goalId ? goalMap.get(task.goalId)?.title : undefined}
       onCycleStatus={onCycleStatus}
       onToggleStar={onToggleStar}
       onStartPomodoro={onStartPomodoro}
@@ -179,6 +186,7 @@ export function TaskListView({
                 collapsed={collapsed}
                 toggleCollapse={toggleCollapse}
                 renderTaskItem={renderTaskItem}
+                projectColorById={projectColorById}
               />
             ) : (
               // ── 플랫 리스트 ──
@@ -197,7 +205,7 @@ export function TaskListView({
   );
 }
 
-// ── 목표별 서브 그룹 (노션 스타일: ▼ 배지 구분선 + 플랫 리스트) ──
+// ── 목표별 서브 그룹 (노션 스타일: ▼ GoalBadge + 플랫 리스트) ──
 function GoalSubGroups({
   dateGroupKey,
   items,
@@ -205,6 +213,7 @@ function GoalSubGroups({
   collapsed,
   toggleCollapse,
   renderTaskItem,
+  projectColorById,
 }: {
   dateGroupKey: string;
   items: TaskItem[];
@@ -212,6 +221,7 @@ function GoalSubGroups({
   collapsed: Set<string>;
   toggleCollapse: (key: string) => void;
   renderTaskItem: (task: TaskItem) => JSX.Element;
+  projectColorById: Record<string, string>;
 }) {
   const { goalGroups, noGoalTasks } = useMemo(() => groupByGoal(items), [items, groupByGoal]);
 
@@ -220,13 +230,14 @@ function GoalSubGroups({
       {goalGroups.map(({ goal, tasks: goalTasks }) => {
         const collapseKey = `${dateGroupKey}-${goal?.id || 'unknown'}`;
         const isCollapsed = collapsed.has(collapseKey);
+        const goalColor = goal ? projectColorById[goal.project_id] : undefined;
 
         return (
           <div key={goal?.id || 'unknown'}>
-            {/* ▼ 목표 배지 구분행 */}
+            {/* ▼ GoalBadge 구분행 */}
             <button
               onClick={() => toggleCollapse(collapseKey)}
-              className="flex items-center gap-1.5 py-1.5 px-1 mb-1 group"
+              className="flex items-center gap-1.5 py-1.5 px-1 mb-1"
             >
               <svg
                 className={`w-2.5 h-2.5 text-gray-400 flex-shrink-0 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
@@ -234,9 +245,7 @@ function GoalSubGroups({
               >
                 <path d="M2 3l3 4 3-4H2z" />
               </svg>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700">
-                {goal?.title || '목표 없음'}
-              </span>
+              <GoalBadge title={goal?.title || '목표 없음'} projectColor={goalColor} size="sm" />
               <span className="text-[11px] text-gray-400">
                 {goalTasks.length}
               </span>
@@ -258,7 +267,7 @@ function GoalSubGroups({
           <div>
             <button
               onClick={() => toggleCollapse(`${dateGroupKey}-no_goal`)}
-              className="flex items-center gap-1.5 py-1.5 px-1 mb-1 group"
+              className="flex items-center gap-1.5 py-1.5 px-1 mb-1"
             >
               <svg
                 className={`w-2.5 h-2.5 text-gray-400 flex-shrink-0 transition-transform ${collapsed.has(`${dateGroupKey}-no_goal`) ? '-rotate-90' : ''}`}
@@ -266,7 +275,7 @@ function GoalSubGroups({
               >
                 <path d="M2 3l3 4 3-4H2z" />
               </svg>
-              <span className="text-xs font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-500">
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
                 목표 없음
               </span>
               <span className="text-[11px] text-gray-400">{noGoalTasks.length}</span>

@@ -736,6 +736,7 @@ export function TasksPage() {
               <TaskKanbanView
                 tasks={filteredAndSortedTasks}
                 categories={taskCategories}
+                goals={allGoals}
                 onUpdateStatus={updateStatus}
                 onCycleStatus={cycleStatus}
                 onToggleStar={toggleStar}

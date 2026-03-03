@@ -18,6 +18,7 @@ import { useInsights } from '../hooks/useInsights';
 import { useInsightSources } from '../hooks/useInsightSources';
 import { ItemDetailPopup } from '../components/ItemDetailPopup';
 import { defaultTaskCategories, defaultScheduleCategories } from '../data';
+import { GoalBadge } from '../components/GoalBadge';
 
 // ── 더보기/접기 텍스트 ──
 
@@ -718,9 +719,12 @@ export function ProjectDetailPage() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`font-medium text-sm ${goal.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                            {goal.title}
-                          </span>
+                          <GoalBadge
+                            title={goal.title}
+                            projectColor={project.color}
+                            size="md"
+                            className={goal.status === 'completed' ? 'opacity-50' : ''}
+                          />
                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${goalTypeBadge(goal.type)}`}>
                             {goalTypeLabel(goal.type)}
                           </span>

@@ -23,10 +23,13 @@ import { CSS } from '@dnd-kit/utilities';
 import { useState } from 'react';
 import { TaskItem, TaskStatus, ScheduleCategory } from '../../types';
 import { useProjects } from '../../hooks/useProjects';
+import { GoalRow } from '../../services/goals.service';
+import { GoalBadge } from '../GoalBadge';
 
 interface TaskKanbanViewProps {
   tasks: TaskItem[];
   categories: ScheduleCategory[];
+  goals?: GoalRow[];
   onUpdateStatus: (id: string, status: TaskStatus) => void;
   onCycleStatus: (id: string) => void;
   onToggleStar: (id: string) => void;
@@ -62,10 +65,12 @@ function getDday(dateStr?: string): string | null {
 }
 
 /** 드래그 가능한 칸반 카드 */
-function KanbanCard({ task, categories, projectColor, onSelect, onToggleStar, selectMode, selected, onToggleSelect }: {
+function KanbanCard({ task, categories, projectColor, goalName, goalColor, onSelect, onToggleStar, selectMode, selected, onToggleSelect }: {
   task: TaskItem;
   categories: ScheduleCategory[];
   projectColor?: string;
+  goalName?: string;
+  goalColor?: string;
   onSelect: (task: TaskItem) => void;
   onToggleStar: (id: string) => void;
   selectMode?: boolean;
@@ -142,13 +147,18 @@ function KanbanCard({ task, categories, projectColor, onSelect, onToggleStar, se
           )}
         </div>
 
-        {/* 카테고리 배지 */}
-        {cat && (
-          <span className="inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium text-white"
-            style={{ backgroundColor: cat.color }}>
-            {cat.label}
-          </span>
-        )}
+        {/* 목표 배지 + 카테고리 배지 */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {goalName && (
+            <GoalBadge title={goalName} projectColor={goalColor} size="sm" />
+          )}
+          {cat && (
+            <span className="inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium text-white"
+              style={{ backgroundColor: cat.color }}>
+              {cat.label}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -180,11 +190,13 @@ function KanbanCardOverlay({ task, categories, projectColor }: { task: TaskItem;
 }
 
 /** 드롭 가능한 열 */
-function KanbanColumn({ column, tasks, categories, colorMap, onSelect, onToggleStar, selectMode, selectedIds, onToggleSelect }: {
+function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectColorById, onSelect, onToggleStar, selectMode, selectedIds, onToggleSelect }: {
   column: typeof columns[number];
   tasks: TaskItem[];
   categories: ScheduleCategory[];
   colorMap: Record<string, string>;
+  goalMap: Map<string, GoalRow>;
+  projectColorById: Record<string, string>;
   onSelect: (task: TaskItem) => void;
   onToggleStar: (id: string) => void;
   selectMode?: boolean;
@@ -205,9 +217,12 @@ function KanbanColumn({ column, tasks, categories, colorMap, onSelect, onToggleS
       </div>
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-2 min-h-[60px]">
-          {tasks.map((task) => (
-            <KanbanCard key={task.id} task={task} categories={categories} projectColor={colorMap[task.project]} onSelect={onSelect} onToggleStar={onToggleStar} selectMode={selectMode} selected={selectedIds?.has(task.id)} onToggleSelect={onToggleSelect} />
-          ))}
+          {tasks.map((task) => {
+            const goal = task.goalId ? goalMap.get(task.goalId) : undefined;
+            return (
+              <KanbanCard key={task.id} task={task} categories={categories} projectColor={colorMap[task.project]} goalName={goal?.title} goalColor={goal ? projectColorById[goal.project_id] : undefined} onSelect={onSelect} onToggleStar={onToggleStar} selectMode={selectMode} selected={selectedIds?.has(task.id)} onToggleSelect={onToggleSelect} />
+            );
+          })}
           {tasks.length === 0 && (
             <div className="text-xs text-gray-300 text-center py-6 border-2 border-dashed border-gray-200 rounded-xl">
               여기에 끌어놓기
@@ -219,13 +234,19 @@ function KanbanColumn({ column, tasks, categories, colorMap, onSelect, onToggleS
   );
 }
 
-export function TaskKanbanView({ tasks, categories, onUpdateStatus, onToggleStar, onSelect, selectMode, selectedIds, onToggleSelect }: TaskKanbanViewProps) {
+export function TaskKanbanView({ tasks, categories, goals = [], onUpdateStatus, onToggleStar, onSelect, selectMode, selectedIds, onToggleSelect }: TaskKanbanViewProps) {
   const { projects } = useProjects();
   const colorMap = useMemo(() => {
     const map: Record<string, string> = {};
     projects.forEach((p) => { map[p.name] = p.color; });
     return map;
   }, [projects]);
+  const projectColorById = useMemo(() => {
+    const map: Record<string, string> = {};
+    projects.forEach((p) => { map[p.id] = p.color; });
+    return map;
+  }, [projects]);
+  const goalMap = useMemo(() => new Map(goals.map((g) => [g.id, g])), [goals]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -284,6 +305,8 @@ export function TaskKanbanView({ tasks, categories, onUpdateStatus, onToggleStar
             tasks={tasksByStatus[col.id]}
             categories={categories}
             colorMap={colorMap}
+            goalMap={goalMap}
+            projectColorById={projectColorById}
             onSelect={onSelect}
             onToggleStar={onToggleStar}
             selectMode={selectMode}

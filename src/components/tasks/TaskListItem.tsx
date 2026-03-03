@@ -67,7 +67,6 @@ interface TaskListItemProps {
   task: TaskItem;
   categories: ScheduleCategory[];
   projectColor?: string;
-  goalName?: string;
   onCycleStatus: (id: string) => void;
   onToggleStar: (id: string) => void;
   onStartPomodoro?: (task: TaskItem) => void;
@@ -83,7 +82,7 @@ function formatShortDate(dateStr?: string): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-export function TaskListItem({ task, projectColor, goalName, onCycleStatus, onToggleStar, onSelect, selectMode, selected, onToggleSelect }: TaskListItemProps) {
+export function TaskListItem({ task, onCycleStatus, onToggleStar, onSelect, selectMode, selected, onToggleSelect }: TaskListItemProps) {
   const isCompleted = task.status === 'completed';
 
   return (
@@ -146,13 +145,6 @@ export function TaskListItem({ task, projectColor, goalName, onCycleStatus, onTo
           </span>
         )}
 
-        {/* 목표명 (프로젝트 색상 점 포함) */}
-        {goalName && (
-          <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-500 max-w-[100px]">
-            {projectColor && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: projectColor }} />}
-            <span className="truncate">{goalName}</span>
-          </span>
-        )}
       </div>
     </div>
   );

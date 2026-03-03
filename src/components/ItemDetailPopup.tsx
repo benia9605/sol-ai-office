@@ -21,6 +21,7 @@ import { uploadImage } from '../services/storage.service';
 import { fetchMessagesByConversation, MessageRow } from '../services/conversations.service';
 import { fetchAllGoals, GoalRow } from '../services/goals.service';
 import { fetchProjects } from '../services/projects.service';
+import { GoalBadge } from './GoalBadge';
 
 type ItemType = 'schedule' | 'task' | 'insight' | 'reading';
 type AnyItem = ScheduleItem | TaskItem | InsightItem | ReadingItem;
@@ -102,6 +103,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
   const [showConvMessages, setShowConvMessages] = useState(true);
   const [goalTitle, setGoalTitle] = useState<string | null>(null);
   const [goalProjectId, setGoalProjectId] = useState<string | null>(null);
+  const [goalProjectColor, setGoalProjectColor] = useState<string | undefined>(undefined);
   const [scheduleProjectId, setScheduleProjectId] = useState<string | null>(null);
   const [insightProjectId, setInsightProjectId] = useState<string | null>(null);
   const [showPomodoroPopover, setShowPomodoroPopover] = useState(false);
@@ -124,11 +126,13 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
     if (type === 'task') {
       const t = item as TaskItem;
       if (t.goalId) {
-        fetchAllGoals().then((rows) => {
-          const goal = rows.find((r: GoalRow) => r.id === t.goalId);
+        Promise.all([fetchAllGoals(), fetchProjects()]).then(([goalRows, projectRows]) => {
+          const goal = goalRows.find((r: GoalRow) => r.id === t.goalId);
           if (goal) {
             setGoalTitle(goal.title);
             setGoalProjectId(goal.project_id);
+            const project = projectRows.find((p) => p.id === goal.project_id);
+            setGoalProjectColor(project?.color);
           }
         }).catch(() => {});
       }
@@ -896,9 +900,9 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
                     onClose();
                     if (goalProjectId) navigate(`/project/${goalProjectId}`);
                   }}
-                  className="text-sm text-green-600 hover:text-green-700 font-medium hover:underline transition-colors"
+                  className="hover:opacity-80 transition-opacity"
                 >
-                  {goalTitle} &rarr;
+                  <GoalBadge title={goalTitle} projectColor={goalProjectColor} size="md" />
                 </button>
               </ViewSection>
             ) : <div />}
