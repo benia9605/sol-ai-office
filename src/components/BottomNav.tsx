@@ -24,7 +24,7 @@ const bottomItems = menuItems.slice(0, 4);
 
 export function BottomNav({ onMoreClick, pomodoroTask, pomodoroTimeStr, pomodoroMode, pomodoroRunning, onPomodoroToggle, onPomodoroExpand }: BottomNavProps) {
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 px-2 pb-[env(safe-area-inset-bottom)]">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
       <div className="flex items-center h-14">
         {/* 뽀모도로 미니 타이머 */}
         {pomodoroTask && pomodoroTimeStr && (
