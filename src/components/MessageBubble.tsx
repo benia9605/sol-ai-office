@@ -6,11 +6,59 @@
  * - ⋯ 클릭 시 저장 드롭다운 메뉴 (일정/할일/인사이트/일기/복사/중요표시)
  * - 외부 클릭 시 메뉴 자동 닫힘
  */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChatMessage, Room, SaveType } from '../types';
 import { ExtractedAction } from '../utils/actionExtractor';
+
+/** 코드 블록 래퍼 — hover 시 우하단에 복사 아이콘 표시 */
+function CodeBlockWrapper({ children }: { children: ReactNode }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    const text = extractText(children);
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative group/code">
+      <pre>{children}</pre>
+      <button
+        onClick={handleCopy}
+        className="absolute bottom-2 right-2 p-1.5 rounded-lg
+          bg-gray-200/80 hover:bg-gray-300 text-gray-500 hover:text-gray-700
+          opacity-0 group-hover/code:opacity-100 transition-all"
+        title="복사"
+      >
+        {copied ? (
+          <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        ) : (
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
+/** ReactNode에서 텍스트만 재귀적으로 추출 */
+function extractText(node: ReactNode): string {
+  if (typeof node === 'string') return node;
+  if (typeof node === 'number') return String(node);
+  if (!node) return '';
+  if (Array.isArray(node)) return node.map(extractText).join('');
+  if (typeof node === 'object' && 'props' in node) {
+    return extractText((node as any).props.children);
+  }
+  return '';
+}
 
 /** 방별 아이콘 컬러 (각 방 파스텔 톤의 진한 버전) */
 const roomIconColor: Record<string, string> = {
@@ -211,6 +259,7 @@ export function MessageBubble({ message, room, onSave, onStar, onSaveAction, onB
                       {children}
                     </a>
                   ),
+                  pre: ({ children }) => <CodeBlockWrapper>{children}</CodeBlockWrapper>,
                 }}
               >
                 {message.content}

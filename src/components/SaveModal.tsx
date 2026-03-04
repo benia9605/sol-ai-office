@@ -6,6 +6,8 @@
  * - AI 대화 내용 프리필 + 참고 대화 토글
  */
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { SaveModalConfig, SaveData, ScheduleCategory, RepeatType, InsightSource } from '../types';
 import { defaultTaskCategories } from '../data';
 import { ProjectSelect } from './ProjectSelect';
@@ -75,6 +77,10 @@ export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
   const [goalId, setGoalId] = useState<string | undefined>();
   const [tCategories] = useState<ScheduleCategory[]>(defaultTaskCategories);
 
+  // 미리보기 토글
+  const [previewContent, setPreviewContent] = useState(false);
+  const [previewNotes, setPreviewNotes] = useState(false);
+
   // 인사이트 전용
   const [content, setContent] = useState(message.content);
   const [insightSource, setInsightSource] = useState(defaultSourceId);
@@ -143,10 +149,24 @@ export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
           {/* ── 인사이트 전용: 내용 ── */}
           {type === 'insight' && (
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">내용</label>
-              <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={3}
-                placeholder="인사이트 내용"
-                className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 ${tc.ring}`} />
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-gray-500">내용</label>
+                {content.trim() && (
+                  <button type="button" onClick={() => setPreviewContent(!previewContent)}
+                    className="text-[11px] text-amber-500 hover:text-amber-600 font-medium">
+                    {previewContent ? '편집' : '미리보기'}
+                  </button>
+                )}
+              </div>
+              {previewContent ? (
+                <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm min-h-[4.5rem] max-h-40 overflow-y-auto markdown-body">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                </div>
+              ) : (
+                <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={3}
+                  placeholder="인사이트 내용"
+                  className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 ${tc.ring}`} />
+              )}
             </div>
           )}
 
@@ -158,8 +178,8 @@ export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
               {room.aiName} 대화 참고 {showChat ? '▲' : '▼'}
             </button>
             {showChat && (
-              <div className="mt-1.5 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-xs text-gray-600 max-h-28 overflow-y-auto whitespace-pre-wrap">
-                {message.content}
+              <div className="mt-1.5 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-xs text-gray-600 max-h-28 overflow-y-auto markdown-body">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
               </div>
             )}
           </div>
@@ -285,10 +305,24 @@ export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
               {showTaskAdvanced && (
                 <div className="space-y-5">
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">메모</label>
-                    <textarea value={taskNotes} onChange={(e) => setTaskNotes(e.target.value)} rows={3}
-                      placeholder="메모를 입력하세요"
-                      className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 ${tc.ring}`} />
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs text-gray-500">메모</label>
+                      {taskNotes.trim() && (
+                        <button type="button" onClick={() => setPreviewNotes(!previewNotes)}
+                          className="text-[11px] text-green-500 hover:text-green-600 font-medium">
+                          {previewNotes ? '편집' : '미리보기'}
+                        </button>
+                      )}
+                    </div>
+                    {previewNotes ? (
+                      <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm min-h-[4.5rem] max-h-40 overflow-y-auto markdown-body">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{taskNotes}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <textarea value={taskNotes} onChange={(e) => setTaskNotes(e.target.value)} rows={3}
+                        placeholder="메모를 입력하세요"
+                        className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 ${tc.ring}`} />
+                    )}
                   </div>
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">반복</label>

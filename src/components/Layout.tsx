@@ -147,7 +147,7 @@ export function Layout() {
               <div className="w-0.5 h-8 rounded-full bg-gray-300 group-hover:bg-primary-400 transition-colors" />
             </div>
             <div className="lg:flex-shrink-0 h-full overflow-hidden" style={{ width: chatWidth }}>
-              <ChatModal room={selectedRoom} onClose={() => setSelectedRoom(null)} />
+              <ChatModal key={selectedRoom.id} room={selectedRoom} onClose={() => setSelectedRoom(null)} />
             </div>
           </>
         )}
@@ -176,8 +176,8 @@ export function Layout() {
         onExpandRef={pomodoroExpandRef}
       />
 
-      {/* 모디 FAB */}
-      <ModiFAB onClick={handleOpenModi} />
+      {/* 모디 FAB — 채팅 패널이 열려있으면 숨김 */}
+      {!selectedRoom && <ModiFAB onClick={handleOpenModi} />}
 
     </div>
   );
