@@ -70,6 +70,13 @@ export function BriefingCard({ onOpenModi }: BriefingCardProps) {
         <div className="flex items-center gap-2.5">
           <img src="/images/modi.png" alt="모디" className="w-7 h-7 rounded-full object-cover" />
           <span className="text-sm font-bold text-amber-800">오늘 브리핑</span>
+          <button
+            onClick={toggleCollapse}
+            className="px-2 py-0.5 rounded-lg text-[11px] font-medium bg-amber-200/60 text-amber-600
+              hover:bg-amber-200 transition-colors"
+          >
+            {collapsed ? '펼치기' : '접기'}
+          </button>
         </div>
         <span className="text-xs text-amber-500">{formatToday()}</span>
       </div>
@@ -78,12 +85,6 @@ export function BriefingCard({ onOpenModi }: BriefingCardProps) {
       {collapsed ? (
         <div className="mt-2">
           <p className="text-sm text-gray-600 line-clamp-1">{aiComment || '데이터를 불러오는 중이에요...'}</p>
-          <button
-            onClick={toggleCollapse}
-            className="text-xs text-amber-500 hover:text-amber-700 mt-2 transition-colors"
-          >
-            펼치기
-          </button>
         </div>
       ) : (
         <>
@@ -180,13 +181,7 @@ export function BriefingCard({ onOpenModi }: BriefingCardProps) {
           </div>
 
           {/* 하단 버튼 */}
-          <div className="flex items-center justify-between mt-3">
-            <button
-              onClick={toggleCollapse}
-              className="text-xs text-amber-500 hover:text-amber-700 transition-colors"
-            >
-              접기
-            </button>
+          <div className="mt-3 pt-3 border-t border-amber-200/60 flex items-center justify-end">
             <div className="flex items-center gap-2">
               <button
                 onClick={refresh}
