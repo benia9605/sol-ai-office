@@ -1,0 +1,9 @@
+modules = ["nodejs-20"]
+
+[agent]
+expertMode = true
+
+[deployment]
+deploymentTarget = "autoscale"
+build = ["sh", "-c", "npm install --include=dev && npx vite build"]
+run = ["node", "server.js"]
