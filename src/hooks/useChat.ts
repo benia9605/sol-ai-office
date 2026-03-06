@@ -53,7 +53,21 @@ export function useChat({ roomId }: UseChatOptions) {
   const [meetingPhase, setMeetingPhase] = useState<MeetingPhase | null>(null);
   const conversationIdRef = useRef<string | null>(null);
   const meetingRoundDone = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const aiName = getAIName(roomId);
+
+  /** 진행 중인 AI 응답 생성 중지 */
+  const stopGenerating = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  }, []);
+
+  /** 컴포넌트 unmount 시 진행 중 요청 자동 취소 */
+  useEffect(() => {
+    return () => { abortControllerRef.current?.abort(); };
+  }, []);
 
   /** 방 입장 시 이전 대화 불러오기 */
   useEffect(() => {
@@ -124,7 +138,7 @@ export function useChat({ roomId }: UseChatOptions) {
   }, [roomId]);
 
   /** 회의실 멀티 AI 토론 */
-  const sendMeetingMessage = useCallback(async (content: string, convId: string, selectedParticipants?: string[]) => {
+  const sendMeetingMessage = useCallback(async (content: string, convId: string, selectedParticipants?: string[], signal?: AbortSignal) => {
     // 선택된 참가자만 필터 (미선택 시 전원 참가)
     const participants = selectedParticipants
       ? MEETING_PARTICIPANTS.filter(p => selectedParticipants.includes(p.roomId))
@@ -136,11 +150,12 @@ export function useChat({ roomId }: UseChatOptions) {
     // 1. 모디 시작 멘트
     setMeetingPhase({ name: MODI_INFO.name, image: MODI_INFO.image, emoji: MODI_INFO.emoji });
     const openingPrompt = await buildModiOpeningPrompt(content);
-    const opening = await sendChatMessage(openingPrompt, [{ role: 'user', content }], 'meeting', 100);
+    const opening = await sendChatMessage(openingPrompt, [{ role: 'user', content }], 'meeting', 100, signal);
     await addAIMessage(convId, opening, MODI_INFO.name, MODI_INFO.image);
 
     // 2. 선택된 AI 순차 발언 (한 AI 실패해도 나머지 계속 진행)
     for (const participant of participants) {
+      if (signal?.aborted) break;
       setMeetingPhase({ name: participant.name, image: participant.image, emoji: participant.emoji });
 
       try {
@@ -160,16 +175,19 @@ export function useChat({ roomId }: UseChatOptions) {
           ] : []),
         ];
 
-        const response = await sendChatMessage(prompt, apiMessages, participant.roomId, 600);
+        const response = await sendChatMessage(prompt, apiMessages, participant.roomId, 600, signal);
         await addAIMessage(convId, response, participant.name, participant.image);
         responses.push({ name: participant.name, content: response });
       } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') throw e;
         const errMsg = e instanceof Error ? e.message : 'API 호출 실패';
         console.warn(`[meeting] ${participant.name} 응답 실패:`, errMsg);
         const fallbackMsg = `⚠️ ${participant.name}의 의견을 가져오지 못했어요. (${errMsg})\n\n다음 팀원에게 넘어갈게요.`;
         await addAIMessage(convId, fallbackMsg, participant.name, participant.image);
       }
     }
+
+    if (signal?.aborted) return;
 
     // 3. 모디 정리
     setMeetingPhase({ name: MODI_INFO.name, image: MODI_INFO.image, emoji: MODI_INFO.emoji });
@@ -187,14 +205,14 @@ export function useChat({ roomId }: UseChatOptions) {
         },
       ] : []),
     ];
-    const closing = await sendChatMessage(closingPrompt, apiMessagesForClosing, 'meeting', 2048);
+    const closing = await sendChatMessage(closingPrompt, apiMessagesForClosing, 'meeting', 2048, signal);
     await addAIMessage(convId, closing, MODI_INFO.name, MODI_INFO.image);
 
     setMeetingPhase(null);
   }, [addAIMessage]);
 
   /** 회의실 후속 질문 (모디 라우터 → 관련 AI만 답변) */
-  const sendMeetingFollowUp = useCallback(async (content: string, convId: string, selectedParticipants?: string[]) => {
+  const sendMeetingFollowUp = useCallback(async (content: string, convId: string, selectedParticipants?: string[], signal?: AbortSignal) => {
     // 이전 대화 히스토리 빌드
     const history = messages
       .slice(-20)
@@ -204,7 +222,7 @@ export function useChat({ roomId }: UseChatOptions) {
     // 1. 모디 라우팅
     setMeetingPhase({ name: MODI_INFO.name, image: MODI_INFO.image, emoji: MODI_INFO.emoji });
     const routerPrompt = await buildModiRouterPrompt(content, history);
-    const routerResponse = await sendChatMessage(routerPrompt, [{ role: 'user', content }], 'meeting', 150);
+    const routerResponse = await sendChatMessage(routerPrompt, [{ role: 'user', content }], 'meeting', 150, signal);
     await addAIMessage(convId, routerResponse, MODI_INFO.name, MODI_INFO.image);
 
     // 2. 라우팅된 AI 파싱 + 선택된 참가자와 교집합
@@ -216,13 +234,15 @@ export function useChat({ roomId }: UseChatOptions) {
 
     // 3. 관련 AI만 답변
     for (const participant of routed) {
+      if (signal?.aborted) break;
       setMeetingPhase({ name: participant.name, image: participant.image, emoji: participant.emoji });
 
       try {
         const prompt = await buildFollowUpParticipantPrompt(participant, content, history);
-        const response = await sendChatMessage(prompt, [{ role: 'user', content }], participant.roomId, 600);
+        const response = await sendChatMessage(prompt, [{ role: 'user', content }], participant.roomId, 600, signal);
         await addAIMessage(convId, response, participant.name, participant.image);
       } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') throw e;
         const errMsg = e instanceof Error ? e.message : 'API 호출 실패';
         console.warn(`[meeting-followup] ${participant.name} 응답 실패:`, errMsg);
         const fallbackMsg = `⚠️ ${participant.name}의 의견을 가져오지 못했어요. (${errMsg})`;
@@ -234,7 +254,7 @@ export function useChat({ roomId }: UseChatOptions) {
   }, [messages, addAIMessage]);
 
   /** 일반 1:1 채팅 */
-  const sendNormalMessage = useCallback(async (_content: string, convId: string, userMsg: ChatMessage) => {
+  const sendNormalMessage = useCallback(async (_content: string, convId: string, userMsg: ChatMessage, signal?: AbortSignal) => {
     const systemPrompt = await buildSystemPrompt(roomId);
 
     const apiMessages: ApiMessage[] = [...messages, userMsg]
@@ -244,7 +264,7 @@ export function useChat({ roomId }: UseChatOptions) {
         content: m.content,
       }));
 
-    const response = await sendChatMessage(systemPrompt, apiMessages, roomId);
+    const response = await sendChatMessage(systemPrompt, apiMessages, roomId, 2048, signal);
     const actions = extractActionItems(response);
 
     const aiMsg: ChatMessage = {
@@ -262,6 +282,9 @@ export function useChat({ roomId }: UseChatOptions) {
   /** 메시지 전송 (일반/회의 자동 분기) */
   const sendMessage = useCallback(async (content: string, selectedParticipants?: string[]) => {
     if (!content.trim() || loading) return;
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     setLoading(true);
     setError(null);
@@ -281,17 +304,23 @@ export function useChat({ roomId }: UseChatOptions) {
 
       if (roomId === 'meeting') {
         if (meetingRoundDone.current) {
-          await sendMeetingFollowUp(content, convId, selectedParticipants);
+          await sendMeetingFollowUp(content, convId, selectedParticipants, controller.signal);
         } else {
-          await sendMeetingMessage(content, convId, selectedParticipants);
+          await sendMeetingMessage(content, convId, selectedParticipants, controller.signal);
           meetingRoundDone.current = true;
         }
       } else {
-        await sendNormalMessage(content, convId, userMsg);
+        await sendNormalMessage(content, convId, userMsg, controller.signal);
       }
 
       window.dispatchEvent(new CustomEvent('conversation-updated'));
     } catch (e) {
+      // 사용자가 중지한 경우 에러 표시 없이 조용히 종료
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        window.dispatchEvent(new CustomEvent('conversation-updated'));
+        return;
+      }
+
       const errMsg = e instanceof Error ? e.message : 'AI 응답 생성 실패';
       setError(errMsg);
       console.error('[useChat] 오류:', e);
@@ -308,6 +337,7 @@ export function useChat({ roomId }: UseChatOptions) {
     } finally {
       setLoading(false);
       setMeetingPhase(null);
+      abortControllerRef.current = null;
     }
   }, [roomId, loading, ensureConversation, sendMeetingMessage, sendMeetingFollowUp, sendNormalMessage]);
 
@@ -375,6 +405,7 @@ export function useChat({ roomId }: UseChatOptions) {
     error,
     historyLoaded,
     sendMessage,
+    stopGenerating,
     resetChat,
     startNewMeeting,
     startNewChat,

@@ -40,7 +40,7 @@ interface ChatModalProps {
 }
 
 export function ChatModal({ room, onClose }: ChatModalProps) {
-  const { messages, setMessages, loading, sendMessage: sendChatMsg, meetingPhase, startNewMeeting, startNewChat } = useChat({ roomId: room.id });
+  const { messages, setMessages, loading, sendMessage: sendChatMsg, stopGenerating, meetingPhase, startNewMeeting, startNewChat } = useChat({ roomId: room.id });
   const isMeeting = room.id === 'meeting';
   const [input, setInput] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
@@ -78,6 +78,23 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
     const text = input;
     setInput('');
     sendChatMsg(text, isMeeting ? selectedParticipants : undefined);
+    // 전송 후 textarea 높이 리셋
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+    });
+  };
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    const lineHeight = 20;
+    const maxHeight = lineHeight * 5 + 12; // 5줄 + padding
+    textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -408,25 +425,45 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
 
         {/* 입력 영역 */}
         <div className="p-3 sm:p-4 bg-white border-t border-gray-100 flex-shrink-0">
-          <div className="flex gap-2 sm:gap-3">
-            <input
-              type="text"
+          <div className="flex items-end gap-2 sm:gap-3">
+            <textarea
+              ref={textareaRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                adjustTextareaHeight();
+              }}
               onKeyDown={handleKeyDown}
+              rows={1}
               placeholder={isMeeting ? '회의 주제를 입력해주세요...' : `${room.aiName}에게 메시지 보내기...`}
               className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-100 rounded-2xl text-sm
-                focus:outline-none focus:ring-2 focus:ring-primary-300 transition-all"
+                focus:outline-none focus:ring-2 focus:ring-primary-300 transition-all
+                resize-none overflow-y-auto leading-5"
+              style={{ maxHeight: '112px' }}
             />
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || loading}
-              className="px-4 sm:px-6 py-2.5 sm:py-3 bg-primary-500 text-white rounded-2xl font-medium text-sm
-                hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed
-                transition-colors"
-            >
-              {loading ? '...' : '전송'}
-            </button>
+            {loading ? (
+              <button
+                onClick={stopGenerating}
+                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-red-500 text-white rounded-2xl font-medium text-sm
+                  hover:bg-red-600 transition-colors flex items-center gap-1.5"
+                title="응답 생성 중지"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+                중지
+              </button>
+            ) : (
+              <button
+                onClick={handleSend}
+                disabled={!input.trim()}
+                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-primary-500 text-white rounded-2xl font-medium text-sm
+                  hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed
+                  transition-colors"
+              >
+                전송
+              </button>
+            )}
           </div>
         </div>
       </div>

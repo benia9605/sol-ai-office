@@ -35,6 +35,7 @@ const DEFAULT_CONFIG: ModelConfig = { provider: 'anthropic', model: 'claude-sonn
 /** Anthropic Claude API */
 async function callAnthropic(
   config: ModelConfig, systemPrompt: string, messages: ChatMessage[], maxTokens: number,
+  signal?: AbortSignal,
 ): Promise<string> {
   const res = await fetch('/api/claude/v1/messages', {
     method: 'POST',
@@ -49,6 +50,7 @@ async function callAnthropic(
       system: systemPrompt,
       messages,
     }),
+    signal,
   });
 
   if (!res.ok) {
@@ -63,6 +65,7 @@ async function callAnthropic(
 /** OpenAI GPT API */
 async function callOpenAI(
   config: ModelConfig, systemPrompt: string, messages: ChatMessage[], maxTokens: number,
+  signal?: AbortSignal,
 ): Promise<string> {
   const res = await fetch('/api/openai/v1/chat/completions', {
     method: 'POST',
@@ -78,6 +81,7 @@ async function callOpenAI(
         ...messages,
       ],
     }),
+    signal,
   });
 
   if (!res.ok) {
@@ -92,6 +96,7 @@ async function callOpenAI(
 /** Perplexity Sonar API */
 async function callPerplexity(
   config: ModelConfig, systemPrompt: string, messages: ChatMessage[], maxTokens: number,
+  signal?: AbortSignal,
 ): Promise<string> {
   const res = await fetch('/api/perplexity/chat/completions', {
     method: 'POST',
@@ -107,6 +112,7 @@ async function callPerplexity(
         ...messages,
       ],
     }),
+    signal,
   });
 
   if (!res.ok) {
@@ -146,15 +152,16 @@ export async function sendChatMessage(
   messages: ChatMessage[],
   roomId: string,
   maxTokens = 2048,
+  signal?: AbortSignal,
 ): Promise<string> {
   const config = MODEL_MAP[roomId] || DEFAULT_CONFIG;
 
   switch (config.provider) {
     case 'openai':
-      return callOpenAI(config, systemPrompt, messages, maxTokens);
+      return callOpenAI(config, systemPrompt, messages, maxTokens, signal);
     case 'perplexity':
-      return callPerplexity(config, systemPrompt, messages, maxTokens);
+      return callPerplexity(config, systemPrompt, messages, maxTokens, signal);
     default:
-      return callAnthropic(config, systemPrompt, messages, maxTokens);
+      return callAnthropic(config, systemPrompt, messages, maxTokens, signal);
   }
 }
