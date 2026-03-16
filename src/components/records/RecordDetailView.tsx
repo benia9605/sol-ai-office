@@ -6,7 +6,9 @@
  * - 편집 모드: RecordForm 인라인
  */
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { RecordItem, ListField } from '../../types';
+import { useProjects } from '../../hooks/useProjects';
 import { recordTypeConfig } from '../../utils/recordTemplates';
 import { RecordForm } from './RecordForm';
 import { EnergyGauge } from './EnergySelector';
@@ -48,7 +50,7 @@ function ListItems({ items, bulletColor }: { items: ListField[]; bulletColor: st
       {filled.map((f) => (
         <div key={f.id} className="flex items-start gap-2.5">
           <div className={`w-1.5 h-1.5 rounded-full ${bulletColor} mt-1.5 flex-shrink-0`} />
-          <span className="text-sm text-gray-700 leading-relaxed">{f.text}</span>
+          <span className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{f.text}</span>
         </div>
       ))}
     </div>
@@ -67,6 +69,8 @@ function QuoteText({ text, borderColor }: { text?: string; borderColor: string }
 
 export function RecordDetailView({ record, onUpdate, onDelete, onClose }: RecordDetailViewProps) {
   const [editing, setEditing] = useState(false);
+  const navigate = useNavigate();
+  const { projects } = useProjects();
   const cfg = recordTypeConfig[record.recordType];
 
   const dateLabel = new Date(record.date).toLocaleDateString('ko-KR', {
@@ -146,6 +150,22 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
                     {record.energy && <EnergyGauge value={record.energy} />}
                   </div>
                 )}
+
+                {record.project && (() => {
+                  const proj = projects.find((p) => p.name === record.project);
+                  return (
+                    <div className="flex items-center gap-1.5 mb-3">
+                      <span className="text-xs text-gray-400">프로젝트</span>
+                      <button
+                        onClick={() => { onClose(); if (proj) navigate(`/project/${proj.id}`); }}
+                        className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 font-medium transition-colors"
+                      >
+                        {proj?.color && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: proj.color }} />}
+                        {record.project} →
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 {record.tags && record.tags.length > 0 && (
                   <div className="flex gap-1.5 flex-wrap">

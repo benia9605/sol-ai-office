@@ -49,11 +49,11 @@ export function StudyNoteCard({ note, readingCategory, onEdit, onDelete, onUpdat
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-400">{note.date}</span>
               {note.time && <span className="text-xs text-gray-300">{note.time}</span>}
-              {note.chapter && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
-                  {note.chapter}
+              {note.chapter && note.chapter.length > 0 && note.chapter.map((ch) => (
+                <span key={ch} className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
+                  {ch}
                 </span>
-              )}
+              ))}
             </div>
 
             {/* 수정/삭제 */}

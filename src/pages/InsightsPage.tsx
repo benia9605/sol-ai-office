@@ -7,6 +7,8 @@
  * - 아이템 클릭 시 ItemDetailPopup 오픈
  */
 import { useState, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { InsightItem, InsightSource } from '../types';
 import { useInsights } from '../hooks/useInsights';
 import { useProjects } from '../hooks/useProjects';
@@ -154,7 +156,9 @@ export function InsightsPage() {
           </span>
         )}
       </div>
-      <p className="text-xs text-gray-600 flex-1 leading-relaxed line-clamp-3">{item.content}</p>
+      <div className="text-xs text-gray-600 flex-1 leading-relaxed line-clamp-3 markdown-body">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.content}</ReactMarkdown>
+      </div>
       <div className="mt-3 pt-3 border-t border-gray-100">
         <div className="flex items-center gap-2 mb-2">
           {renderSourceBadge(item.source, insightSources)}

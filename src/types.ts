@@ -261,7 +261,7 @@ export interface StudyNote {
   readingId: string;             // 연결된 ReadingItem ID
   date: string;                  // YYYY-MM-DD
   time?: string;                 // HH:mm
-  chapter?: string;              // 챕터/섹션명
+  chapter?: string[];            // 챕터/섹션명 (복수 선택 가능)
   content: Record<string, unknown>;  // Tiptap JSON (도서용)
   // 강좌용 필드
   rawText?: string;              // 원본 텍스트 (녹음 텍스트 등)
@@ -311,6 +311,7 @@ export interface RecordItem {
   mood?: string;
   energy?: number;              // 1-5
   tags?: string[];
+  project?: string;             // 연결된 프로젝트명
   conversationId?: string;
   morningData?: MorningTemplate;
   eveningData?: EveningTemplate;

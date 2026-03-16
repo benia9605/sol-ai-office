@@ -23,6 +23,7 @@ function toRecordItem(row: RecordRow): RecordItem {
     mood: row.mood,
     energy: row.energy,
     tags: row.tags,
+    project: row.project,
     conversationId: row.conversation_id,
     morningData: row.morning_data as MorningTemplate | undefined,
     eveningData: row.evening_data as EveningTemplate | undefined,
@@ -42,6 +43,7 @@ function toDbFields(patch: Partial<RecordItem>): Partial<RecordRow> {
   if (patch.mood !== undefined) db.mood = patch.mood;
   if (patch.energy !== undefined) db.energy = patch.energy;
   if (patch.tags !== undefined) db.tags = patch.tags;
+  if (patch.project !== undefined) db.project = patch.project || undefined;
   if (patch.conversationId !== undefined) db.conversation_id = patch.conversationId;
   if (patch.morningData !== undefined) db.morning_data = patch.morningData as unknown as Record<string, unknown>;
   if (patch.eveningData !== undefined) db.evening_data = patch.eveningData as unknown as Record<string, unknown>;

@@ -9,6 +9,8 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   ScheduleItem, TaskItem, InsightItem, ReadingItem,
   ScheduleCategory, RepeatType, TaskStatus, InsightSource,
@@ -1018,7 +1020,9 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
         {i.content && (
           <div className="py-4 border-t border-gray-100">
             <span className="text-[11px] font-semibold text-gray-400 block mb-1">내용</span>
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{i.content}</p>
+            <div className="text-sm text-gray-700 leading-relaxed markdown-body">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{i.content}</ReactMarkdown>
+            </div>
           </div>
         )}
         {/* 태그 */}

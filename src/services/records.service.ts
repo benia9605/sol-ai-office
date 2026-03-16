@@ -17,6 +17,7 @@ export interface RecordRow {
   mood?: string;
   energy?: number;
   tags?: string[];
+  project?: string;
   conversation_id?: string;
   record_type: string;
   morning_data?: Record<string, unknown>;

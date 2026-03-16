@@ -6,6 +6,7 @@
  */
 import { useState, useRef, useMemo } from 'react';
 import { ReadingItem, ReadingCategory, StudyNote } from '../../types';
+import type { NoteEditorSaveData } from './StudyNoteEditor';
 import { calcReadingProgress, progressLabel } from '../../utils/readingProgress';
 import { StarRating } from './StarRating';
 import { StudyNoteCard } from './StudyNoteCard';
@@ -43,7 +44,11 @@ export function ReadingDetailView({
 
   // 각 챕터별 노트 작성 여부 추적
   const writtenChapters = useMemo(() => {
-    return new Set(studyNotes.map((n) => n.chapter).filter(Boolean));
+    const set = new Set<string>();
+    studyNotes.forEach((n) => {
+      if (n.chapter) n.chapter.forEach((ch) => set.add(ch));
+    });
+    return set;
   }, [studyNotes]);
 
   const handleCoverFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,24 +91,45 @@ export function ReadingDetailView({
     }
   };
 
-  const handleSaveNote = (noteData: Omit<StudyNote, 'id' | 'createdAt'> & { id?: string }) => {
-    if (noteData.id) {
+  const handleSaveNote = (noteData: NoteEditorSaveData) => {
+    const { pageNumber, ...noteFields } = noteData;
+
+    if (noteFields.id) {
       // 수정
-      const existing = studyNotes.find((n) => n.id === noteData.id);
+      const existing = studyNotes.find((n) => n.id === noteFields.id);
       if (existing) {
-        onUpdateNote({ ...existing, ...noteData, id: existing.id });
+        onUpdateNote({ ...existing, ...noteFields, id: existing.id });
       }
+      setEditingNote(null);
     } else {
       // 새 노트
-      onAddNote(noteData);
+      onAddNote(noteFields);
+      setShowNoteEditor(false);
     }
-    setShowNoteEditor(false);
-    setEditingNote(null);
+
+    // 진행률 자동 반영 (도서만)
+    if (reading.category === 'rcat-book') {
+      if (pageNumber && pageNumber > 0) {
+        // 1) 페이지 입력이 있으면 우선 반영
+        onUpdateReading({ ...reading, currentPage: pageNumber });
+      } else if (noteData.chapter && noteData.chapter.length > 0 && reading.chapters && reading.chapters.length > 0 && reading.totalPages) {
+        // 2) 페이지 미입력 + 챕터 선택 → 챕터 비율로 자동 계산
+        const allWritten = new Set<string>();
+        studyNotes.forEach((n) => { if (n.chapter) n.chapter.forEach((ch) => allWritten.add(ch)); });
+        noteData.chapter.forEach((ch) => allWritten.add(ch));
+        const ratio = allWritten.size / reading.chapters.length;
+        const estimatedPage = Math.round(ratio * reading.totalPages);
+        // 현재보다 큰 경우에만 업데이트 (역주행 방지)
+        if (estimatedPage > (reading.currentPage || 0)) {
+          onUpdateReading({ ...reading, currentPage: estimatedPage });
+        }
+      }
+    }
   };
 
   const handleEditNote = (note: StudyNote) => {
     setEditingNote(note);
-    setShowNoteEditor(true);
+    // 수정은 인라인으로 표시 (새 노트 에디터와 분리)
   };
 
   return (
@@ -473,17 +499,16 @@ export function ReadingDetailView({
               )}
             </div>
 
-            {/* 노트 에디터 */}
-            {showNoteEditor && (
+            {/* 새 노트 에디터 (추가 전용) */}
+            {showNoteEditor && !editingNote && (
               <div className="mb-4">
                 <StudyNoteEditor
                   readingId={reading.id}
                   readingCategory={reading.category}
                   chapters={reading.chapters}
                   preselectedChapter={preselectedChapter}
-                  editingNote={editingNote}
                   onSave={(noteData) => { handleSaveNote(noteData); setPreselectedChapter(undefined); }}
-                  onCancel={() => { setShowNoteEditor(false); setEditingNote(null); setPreselectedChapter(undefined); }}
+                  onCancel={() => { setShowNoteEditor(false); setPreselectedChapter(undefined); }}
                 />
               </div>
             )}
@@ -491,16 +516,29 @@ export function ReadingDetailView({
             {/* 타임라인 */}
             {sortedNotes.length > 0 ? (
               <div className="relative">
-                {sortedNotes.map((note) => (
-                  <StudyNoteCard
-                    key={note.id}
-                    note={note}
-                    readingCategory={reading.category}
-                    onEdit={handleEditNote}
-                    onDelete={onDeleteNote}
-                    onUpdateNote={onUpdateNote}
-                  />
-                ))}
+                {sortedNotes.map((note) =>
+                  editingNote?.id === note.id ? (
+                    <div key={note.id} className="mb-4">
+                      <StudyNoteEditor
+                        readingId={reading.id}
+                        readingCategory={reading.category}
+                        chapters={reading.chapters}
+                        editingNote={editingNote}
+                        onSave={handleSaveNote}
+                        onCancel={() => setEditingNote(null)}
+                      />
+                    </div>
+                  ) : (
+                    <StudyNoteCard
+                      key={note.id}
+                      note={note}
+                      readingCategory={reading.category}
+                      onEdit={handleEditNote}
+                      onDelete={onDeleteNote}
+                      onUpdateNote={onUpdateNote}
+                    />
+                  )
+                )}
               </div>
             ) : (
               !showNoteEditor && (

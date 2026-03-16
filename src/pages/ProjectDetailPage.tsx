@@ -12,12 +12,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useProjects } from '../hooks/useProjects';
 import { useGoals } from '../hooks/useGoals';
 import { useTasks } from '../hooks/useTasks';
-import { GoalItem, GoalType, KpiItem, KpiLog, TaskItem, RepeatType, ScheduleItem, InsightItem } from '../types';
+import { GoalItem, GoalType, KpiItem, KpiLog, TaskItem, RepeatType, ScheduleItem, InsightItem, RecordItem } from '../types';
 import { useSchedules } from '../hooks/useSchedules';
 import { useInsights } from '../hooks/useInsights';
+import { useRecords } from '../hooks/useRecords';
 import { useInsightSources } from '../hooks/useInsightSources';
 import { ItemDetailPopup } from '../components/ItemDetailPopup';
+import { RecordDetailView } from '../components/records/RecordDetailView';
 import { defaultTaskCategories, defaultScheduleCategories } from '../data';
+import { recordTypeConfig } from '../utils/recordTemplates';
 import { GoalBadge } from '../components/GoalBadge';
 
 // ── 더보기/접기 텍스트 ──
@@ -120,6 +123,7 @@ export function ProjectDetailPage() {
   const { tasks, add: addTaskItem, cycleStatus: cycleTaskStatus, remove: removeTask, updateTask } = useTasks();
   const { schedules, update: updateSchedule, remove: removeSchedule } = useSchedules();
   const { insights, update: updateInsight, remove: removeInsight } = useInsights();
+  const { records, update: updateRecord, remove: removeRecord } = useRecords();
 
   // 목표 토글 상태 (열린 목표 ID 목록)
   const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set());
@@ -152,11 +156,13 @@ export function ProjectDetailPage() {
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
   const [taskCategories, setTaskCategories] = useState(defaultTaskCategories);
 
-  // 일정·인사이트 카드 state
+  // 일정·인사이트·기록 카드 state
   const [showAllSchedules, setShowAllSchedules] = useState(false);
   const [showAllInsights, setShowAllInsights] = useState(false);
+  const [showAllRecords, setShowAllRecords] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleItem | null>(null);
   const [selectedInsight, setSelectedInsight] = useState<InsightItem | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<RecordItem | null>(null);
   const [scheduleCategories, setScheduleCategories] = useState(defaultScheduleCategories);
   const { sources: insightSources, setSources: setInsightSources, addSource: addInsightSource, removeSource: removeInsightSource } = useInsightSources();
 
@@ -426,11 +432,13 @@ export function ProjectDetailPage() {
   // 프로젝트 기간 D-day
   const projectDday = getDday(project.endDate);
 
-  // 이 프로젝트에 연결된 일정·인사이트
+  // 이 프로젝트에 연결된 일정·인사이트·기록
   const projectSchedules = schedules.filter((s) => s.project === project.name);
   const projectInsights = insights.filter((i) => i.project === project.name);
+  const projectRecords = records.filter((r) => r.project === project.name);
   const visibleSchedules = showAllSchedules ? projectSchedules : projectSchedules.slice(0, 3);
   const visibleInsights = showAllInsights ? projectInsights : projectInsights.slice(0, 3);
+  const visibleRecords = showAllRecords ? projectRecords : projectRecords.slice(0, 3);
 
   return (
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-white to-primary-50/20 p-4 sm:p-6 lg:p-8">
@@ -571,6 +579,48 @@ export function ProjectDetailPage() {
               <p className="text-xs text-gray-400 text-center py-2">등록된 인사이트 없음</p>
             )}
           </div>
+        </div>
+
+        {/* 기록 카드 */}
+        <div className="p-4 rounded-2xl bg-[#fff5f7] border border-pink-100">
+          <div className="flex items-center gap-2 mb-3">
+            <img src="/images/diary.png" alt="기록" className="w-5 h-5 object-contain" />
+            <span className="text-sm font-bold text-pink-700">기록</span>
+            <span className="text-[10px] text-pink-400 ml-auto">{projectRecords.length}건</span>
+          </div>
+          {projectRecords.length > 0 ? (
+            <>
+              <ul className="space-y-1.5">
+                {visibleRecords.map((r) => {
+                  const rcfg = recordTypeConfig[r.recordType];
+                  return (
+                    <li
+                      key={r.id}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-pink-50 rounded-lg px-1 py-0.5 -mx-1 transition-colors"
+                      onClick={() => setSelectedRecord(r)}
+                    >
+                      <div className="w-1 h-4 rounded-full bg-pink-300 flex-shrink-0" />
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${rcfg.bgColor} ${rcfg.textColor} flex-shrink-0`}>
+                        {rcfg.label}
+                      </span>
+                      <span className="text-xs text-gray-700 truncate flex-1">{r.title || rcfg.label}</span>
+                      <span className="text-[10px] text-pink-500 font-medium flex-shrink-0">{r.date.slice(5).replace('-', '/')}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              {projectRecords.length > 3 && (
+                <button
+                  onClick={() => setShowAllRecords(!showAllRecords)}
+                  className="text-[10px] text-pink-400 hover:text-pink-600 mt-2 w-full text-center"
+                >
+                  {showAllRecords ? '접기' : `더보기 (${projectRecords.length - 3}건)`}
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-gray-400 text-center py-2">등록된 기록 없음</p>
+          )}
         </div>
 
         {/* 목표 섹션 */}
@@ -1221,6 +1271,22 @@ export function ProjectDetailPage() {
           }}
           onClose={() => setSelectedTask(null)}
           onCategoriesChange={setTaskCategories}
+        />
+      )}
+
+      {/* 기록 상세 팝업 */}
+      {selectedRecord && (
+        <RecordDetailView
+          record={selectedRecord}
+          onUpdate={(updated) => {
+            updateRecord(updated.id, updated);
+            setSelectedRecord(null);
+          }}
+          onDelete={(id) => {
+            removeRecord(id);
+            setSelectedRecord(null);
+          }}
+          onClose={() => setSelectedRecord(null)}
         />
       )}
     </div>

@@ -1,10 +1,10 @@
 /**
  * @file src/components/DashboardWidgets.tsx
  * @description 홈 상단 대시보드 위젯 4개
- * - 이번주 일정: 다가오는 일정 2~3개 리스트
- * - 주요 업무: 진행 중 할일 2~3개 (체크박스)
- * - 인사이트: 최근 인사이트 1~2개 미리보기
- * - 독서 기록: 읽고 있는 책 + 진행률 바
+ * - 이번주 일정: 다가오는 일정 최대 5개
+ * - 긴급 업무: 긴급 할일 최대 5개
+ * - 인사이트: 최근 인사이트 최대 5개 (제목만)
+ * - 스터디: 읽고 있는 책 최대 5개 + 진행률 바
  * - PC: 4열 그리드 / 모바일: 가로 스크롤
  * - 클릭 시 해당 페이지로 이동
  * - 카드 컬러: 일정(주황), 할일(초록), 인사이트(노랑), 독서(파랑) 파스텔톤
@@ -36,10 +36,10 @@ export function DashboardWidgets() {
   const { insights } = useInsights();
   const { readings } = useReadings();
 
-  const upcomingSchedules = schedules.slice(0, 3);
-  const urgentTasks = getUrgentTasks(tasks).slice(0, 3);
-  const recentInsights = insights.slice(0, 2);
-  const readingBooks = readings.filter((r) => r.status === 'reading');
+  const upcomingSchedules = schedules.slice(0, 5);
+  const urgentTasks = getUrgentTasks(tasks).slice(0, 5);
+  const recentInsights = insights.slice(0, 5);
+  const readingBooks = readings.filter((r) => r.status === 'reading').slice(0, 5);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:grid-cols-4">
@@ -117,7 +117,6 @@ export function DashboardWidgets() {
           {recentInsights.map((i) => (
             <li key={i.id}>
               <p className="text-xs font-semibold text-gray-700 truncate">{i.title}</p>
-              <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{i.content}</p>
             </li>
           ))}
         </ul>

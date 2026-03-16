@@ -10,6 +10,7 @@
 import { useState } from 'react';
 import { RecordItem, RecordType } from '../types';
 import { useRecords } from '../hooks/useRecords';
+import { useProjects } from '../hooks/useProjects';
 import { recordTypeConfig } from '../utils/recordTemplates';
 import { RecordTypeSelector } from '../components/records/RecordTypeSelector';
 import { RecordForm } from '../components/records/RecordForm';
@@ -83,6 +84,7 @@ const tabs: { id: FilterTab; label: string }[] = [
 
 export function RecordsPage() {
   const { records, add: addRecord, update: updateRecord, remove: removeRecord } = useRecords();
+  const { projects } = useProjects();
   const [filter, setFilter] = useState<FilterTab>('all');
   const [showCalendar, setShowCalendar] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -172,6 +174,23 @@ export function RecordsPage() {
           </div>
         )}
 
+        {/* 타입 선택기 */}
+        {showSelector && !formType && (
+          <RecordTypeSelector
+            onSelect={handleSelectType}
+            onCancel={() => setShowSelector(false)}
+          />
+        )}
+
+        {/* 추가 폼 */}
+        {formType && (
+          <RecordForm
+            recordType={formType}
+            onSave={handleAdd}
+            onCancel={() => { setFormType(null); setShowSelector(false); }}
+          />
+        )}
+
         {/* 필터 탭 (SVG 아이콘 + 핑크) */}
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           {tabs.map((tab) => {
@@ -192,23 +211,6 @@ export function RecordsPage() {
             );
           })}
         </div>
-
-        {/* 타입 선택기 */}
-        {showSelector && !formType && (
-          <RecordTypeSelector
-            onSelect={handleSelectType}
-            onCancel={() => setShowSelector(false)}
-          />
-        )}
-
-        {/* 추가 폼 */}
-        {formType && (
-          <RecordForm
-            recordType={formType}
-            onSave={handleAdd}
-            onCancel={() => { setFormType(null); setShowSelector(false); }}
-          />
-        )}
 
         {/* 타임라인 */}
         <div className="relative">
@@ -255,6 +257,16 @@ export function RecordsPage() {
                     {preview && (
                       <p className="text-sm text-gray-500 line-clamp-2">{preview}</p>
                     )}
+                    {/* 프로젝트 */}
+                    {item.project && (() => {
+                      const proj = projects.find((p) => p.name === item.project);
+                      return (
+                        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-600 font-medium mt-1">
+                          {proj?.color && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: proj.color }} />}
+                          {item.project}
+                        </span>
+                      );
+                    })()}
                     {/* 에너지 게이지 + 태그 */}
                     {(item.energy || (item.tags && item.tags.length > 0)) && (
                       <div className="flex items-center gap-3 mt-2 flex-wrap">

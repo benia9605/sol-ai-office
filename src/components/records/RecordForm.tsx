@@ -13,6 +13,7 @@ import {
 import { ListFieldEditor } from './ListFieldEditor';
 import { EnergySelector } from './EnergySelector';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
+import { ProjectSelect } from '../ProjectSelect';
 import {
   RecordTypeIcon,
   GratitudeIcon, SparkleIcon, AffirmationIcon, IdeaIcon, RocketIcon,
@@ -52,6 +53,7 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
   const [energy, setEnergy] = useState(initialData?.energy || 0);
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(initialData?.tags || []);
+  const [project, setProject] = useState(initialData?.project || '');
 
   const [morningData, setMorningData] = useState<MorningTemplate>(
     initialData?.morningData || emptyMorningTemplate()
@@ -86,6 +88,7 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
       mood: mood || undefined,
       energy: energy || undefined,
       tags: tags.length > 0 ? tags : undefined,
+      project: project || undefined,
       conversationId: initialData?.conversationId,
     };
 
@@ -301,6 +304,12 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
           </div>
         </div>
       )}
+
+      {/* 프로젝트 */}
+      <div>
+        <label className="text-sm font-medium text-gray-600 block mb-1.5">프로젝트</label>
+        <ProjectSelect value={project} onChange={setProject} placeholder="선택 안함" />
+      </div>
 
       {/* 버튼 */}
       <div className="flex justify-end gap-2 pt-1">

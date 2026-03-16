@@ -269,7 +269,7 @@ export const dummyReadings: ReadingItem[] = [
 
 export const dummyStudyNotes: StudyNote[] = [
   {
-    id: 'sn1', readingId: 'r1', date: '2026-02-20', chapter: '3장 - 검증된 학습',
+    id: 'sn1', readingId: 'r1', date: '2026-02-20', chapter: ['3장 - 검증된 학습'],
     content: { type: 'doc', content: [
       { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'MVP를 통한 빠른 가설 검증이 핵심' }] },
       { type: 'blockquote', content: [{ type: 'paragraph', content: [{ type: 'text', text: '"성공적인 스타트업의 생산성은 물건이나 기능을 많이 만드는 것이 아니라, 어떤 것을 만들어야 할지 학습하는 속도로 측정해야 한다."' }] }] },
@@ -278,7 +278,7 @@ export const dummyStudyNotes: StudyNote[] = [
     createdAt: '2026-02-20T10:30:00Z',
   },
   {
-    id: 'sn2', readingId: 'r1', date: '2026-02-18', chapter: '2장 - 린의 원칙',
+    id: 'sn2', readingId: 'r1', date: '2026-02-18', chapter: ['2장 - 린의 원칙'],
     content: { type: 'doc', content: [
       { type: 'paragraph', content: [{ type: 'text', text: '낭비를 줄이고 학습 주기를 짧게 만드는 것이 핵심이다.' }] },
       { type: 'taskList', content: [
@@ -289,7 +289,7 @@ export const dummyStudyNotes: StudyNote[] = [
     createdAt: '2026-02-18T14:00:00Z',
   },
   {
-    id: 'sn3', readingId: 'r3', date: '2026-02-19', chapter: 'Section 12 - useEffect 심화',
+    id: 'sn3', readingId: 'r3', date: '2026-02-19', chapter: ['Section 12 - useEffect 심화'],
     content: {},
     rawText: 'useEffect의 cleanup 함수는 컴포넌트가 unmount 될 때와 다음 effect가 실행되기 전에 호출됩니다. 이는 메모리 누수를 방지하고 이전 구독을 정리하는 데 중요합니다.',
     sections: [

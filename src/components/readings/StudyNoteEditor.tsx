@@ -8,13 +8,15 @@ import { useState } from 'react';
 import { StudyNote, NoteSection, NoteActionItem } from '../../types';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
 
+export type NoteEditorSaveData = Omit<StudyNote, 'id' | 'createdAt'> & { id?: string; pageNumber?: number };
+
 interface StudyNoteEditorProps {
   readingId: string;
   readingCategory: string;
   chapters?: string[];
   preselectedChapter?: string;
   editingNote?: StudyNote | null;
-  onSave: (note: Omit<StudyNote, 'id' | 'createdAt'> & { id?: string }) => void;
+  onSave: (note: NoteEditorSaveData) => void;
   onCancel: () => void;
 }
 
@@ -24,7 +26,11 @@ export function StudyNoteEditor({ readingId, readingCategory, chapters, preselec
   const isCourse = readingCategory === 'rcat-course';
 
   const [date, setDate] = useState(editingNote?.date || new Date().toISOString().slice(0, 10));
-  const [chapter, setChapter] = useState(editingNote?.chapter || preselectedChapter || '');
+  const [selectedChapters, setSelectedChapters] = useState<string[]>(
+    editingNote?.chapter || (preselectedChapter ? [preselectedChapter] : [])
+  );
+  const [chapterInput, setChapterInput] = useState('');
+  const [pageNumber, setPageNumber] = useState<string>('');
 
   // 도서용
   const [content, setContent] = useState<Record<string, unknown>>(
@@ -42,13 +48,29 @@ export function StudyNoteEditor({ readingId, readingCategory, chapters, preselec
     editingNote?.actionItems || []
   );
 
+  const toggleChapter = (ch: string) => {
+    setSelectedChapters((prev) =>
+      prev.includes(ch) ? prev.filter((c) => c !== ch) : [...prev, ch]
+    );
+  };
+
+  const handleAddChapterInput = () => {
+    const ch = chapterInput.trim();
+    if (ch && !selectedChapters.includes(ch)) {
+      setSelectedChapters([...selectedChapters, ch]);
+      setChapterInput('');
+    }
+  };
+
   const handleSave = () => {
+    const chapterValue = selectedChapters.length > 0 ? selectedChapters : undefined;
+    const page = pageNumber ? Number(pageNumber) : undefined;
     if (isCourse) {
       onSave({
         id: editingNote?.id,
         readingId,
         date,
-        chapter: chapter || undefined,
+        chapter: chapterValue,
         content: {},
         rawText,
         sections: sections.filter(s => s.title || (s.content as Record<string, unknown>)?.content),
@@ -60,8 +82,9 @@ export function StudyNoteEditor({ readingId, readingCategory, chapters, preselec
         id: editingNote?.id,
         readingId,
         date,
-        chapter: chapter || undefined,
+        chapter: chapterValue,
         content,
+        pageNumber: page,
         updatedAt: new Date().toISOString(),
       });
     }
@@ -103,26 +126,52 @@ export function StudyNoteEditor({ readingId, readingCategory, chapters, preselec
           />
         </div>
         <div className="flex-1">
-          <label className="text-xs text-gray-500 mb-1 block">챕터/섹션</label>
+          <label className="text-xs text-gray-500 mb-1 block">챕터/섹션 (복수 선택 가능)</label>
           {chapters && chapters.length > 0 ? (
-            <select
-              value={chapter}
-              onChange={(e) => setChapter(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-            >
-              <option value="">목차에서 선택...</option>
+            <div className="flex flex-wrap gap-1.5">
               {chapters.map((ch, idx) => (
-                <option key={idx} value={ch}>{ch}</option>
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => toggleChapter(ch)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                    selectedChapters.includes(ch)
+                      ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-300'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {ch}
+                </button>
               ))}
-            </select>
+            </div>
           ) : (
-            <input
-              type="text"
-              value={chapter}
-              onChange={(e) => setChapter(e.target.value)}
-              placeholder={isCourse ? '예: 3강 - React Hooks' : '예: 3장 - 검증된 학습'}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-            />
+            <div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={chapterInput}
+                  onChange={(e) => setChapterInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); handleAddChapterInput(); } }}
+                  placeholder={isCourse ? '예: 3강 - React Hooks' : '예: 3장 - 검증된 학습'}
+                  className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                />
+                <button type="button" onClick={handleAddChapterInput}
+                  className="px-3 py-2 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl font-medium transition-colors">
+                  추가
+                </button>
+              </div>
+              {selectedChapters.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {selectedChapters.map((ch) => (
+                    <span key={ch} className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                      {ch}
+                      <button type="button" onClick={() => setSelectedChapters(selectedChapters.filter((c) => c !== ch))}
+                        className="text-blue-400 hover:text-blue-600">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -233,14 +282,28 @@ export function StudyNoteEditor({ readingId, readingCategory, chapters, preselec
         </>
       ) : (
         /* ── 도서용: 블로그형 에디터 ── */
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">노트</label>
-          <TiptapEditor
-            content={content}
-            onChange={setContent}
-            placeholder="스터디 노트를 작성하세요... 인용문, 체크리스트, 하이라이트 등을 활용해보세요."
-          />
-        </div>
+        <>
+          {/* 현재 페이지 입력 */}
+          <div className="w-48">
+            <label className="text-xs text-gray-500 mb-1 block">현재 페이지 (선택)</label>
+            <input
+              type="number"
+              min={0}
+              value={pageNumber}
+              onChange={(e) => setPageNumber(e.target.value)}
+              placeholder="예: 150"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">노트</label>
+            <TiptapEditor
+              content={content}
+              onChange={setContent}
+              placeholder="스터디 노트를 작성하세요... 인용문, 체크리스트, 하이라이트 등을 활용해보세요."
+            />
+          </div>
+        </>
       )}
 
       {/* 버튼 */}

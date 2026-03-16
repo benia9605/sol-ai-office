@@ -44,6 +44,16 @@ function toReadingItem(row: ReadingRow): ReadingItem {
   };
 }
 
+/** DB chapter 문자열 → string[] 변환 (하위 호환) */
+function parseChapter(raw?: string): string[] | undefined {
+  if (!raw) return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch { /* 기존 단일 문자열 */ }
+  return [raw];
+}
+
 /** DB → 프론트: StudyNote */
 function toStudyNote(row: StudyNoteRow): StudyNote {
   return {
@@ -51,7 +61,7 @@ function toStudyNote(row: StudyNoteRow): StudyNote {
     readingId: row.reading_id,
     date: row.date,
     time: row.time,
-    chapter: row.chapter,
+    chapter: parseChapter(row.chapter),
     content: (row.content ?? {}) as Record<string, unknown>,
     rawText: row.raw_text,
     sections: row.sections as NoteSection[] | undefined,
@@ -93,7 +103,7 @@ function toNoteDbFields(patch: Partial<StudyNote>): Partial<StudyNoteRow> {
   if (patch.readingId !== undefined) db.reading_id = patch.readingId;
   if (patch.date !== undefined) db.date = patch.date;
   if (patch.time !== undefined) db.time = patch.time;
-  if (patch.chapter !== undefined) db.chapter = patch.chapter;
+  if (patch.chapter !== undefined) db.chapter = patch.chapter ? JSON.stringify(patch.chapter) : undefined;
   if (patch.content !== undefined) db.content = patch.content;
   if (patch.rawText !== undefined) db.raw_text = patch.rawText;
   if (patch.sections !== undefined) db.sections = patch.sections as unknown[];
