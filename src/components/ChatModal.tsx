@@ -142,7 +142,8 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
   /** AI 대화 컨텍스트를 DB에 저장하고 conversation_id 반환 */
   const saveConversationContext = async (sourceMessage: ChatMessage): Promise<string | undefined> => {
     try {
-      const conv = await createConversation(room.id, `${room.aiName} 대화`);
+      // 컨텍스트 저장용 conversation은 별도 room_id로 구분 (원본 대화 로드에 영향 안 주도록)
+      const conv = await createConversation(`_ctx_${room.id}`, `${room.aiName} 대화 컨텍스트`);
       // 저장 대상 메시지의 앞뒤 컨텍스트 포함 (최대 5개)
       const msgIdx = messages.findIndex((m) => m.id === sourceMessage.id);
       const start = Math.max(0, msgIdx - 2);
@@ -153,7 +154,7 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
           conv.id,
           m.sender === 'ai' ? 'assistant' : 'user',
           m.content,
-          m.sender === 'ai' ? room.aiName : undefined,
+          m.sender === 'ai' ? (m.aiName || room.aiName) : undefined,
         );
       }
       return conv.id;
