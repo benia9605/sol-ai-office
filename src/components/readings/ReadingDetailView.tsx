@@ -348,13 +348,13 @@ export function ReadingDetailView({
 
                 {/* 날짜 */}
                 <div className="flex gap-2">
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <label className="text-xs text-gray-500 mb-1 block">시작일</label>
                     <input type="date" value={form.startDate || ''}
                       onChange={(e) => setForm({ ...form, startDate: e.target.value })}
                       className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <label className="text-xs text-gray-500 mb-1 block">완료일</label>
                     <input type="date" value={form.completedDate || ''}
                       onChange={(e) => setForm({ ...form, completedDate: e.target.value })}

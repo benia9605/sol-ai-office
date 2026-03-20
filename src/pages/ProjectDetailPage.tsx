@@ -673,14 +673,14 @@ export function ProjectDetailPage() {
                     type="date"
                     value={goalForm.startDate}
                     onChange={(e) => setGoalForm((f) => ({ ...f, startDate: e.target.value }))}
-                    className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    className="flex-1 min-w-0 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
                   />
                   <span className="text-xs text-gray-400">~</span>
                   <input
                     type="date"
                     value={goalForm.endDate}
                     onChange={(e) => setGoalForm((f) => ({ ...f, endDate: e.target.value }))}
-                    className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    className="flex-1 min-w-0 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
                   />
                 </div>
               </div>
@@ -736,14 +736,14 @@ export function ProjectDetailPage() {
                             type="date"
                             value={editGoalForm.startDate}
                             onChange={(e) => setEditGoalForm((f) => ({ ...f, startDate: e.target.value }))}
-                            className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm"
+                            className="flex-1 min-w-0 px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm"
                           />
                           <span className="text-xs text-gray-400">~</span>
                           <input
                             type="date"
                             value={editGoalForm.endDate}
                             onChange={(e) => setEditGoalForm((f) => ({ ...f, endDate: e.target.value }))}
-                            className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm"
+                            className="flex-1 min-w-0 px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm"
                           />
                         </div>
                       </div>

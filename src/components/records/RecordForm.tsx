@@ -122,7 +122,7 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
 
       {/* 날짜 + 시간 */}
       <div className="flex gap-2">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
             className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pink-200" />
         </div>

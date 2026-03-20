@@ -215,7 +215,7 @@ export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
 
           {/* ── 인사이트 전용: 기록일 + 시간 + 중요도 ── */}
           {type === 'insight' && (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">기록일</label>
                 <input type="date" value={insightDate}

@@ -656,18 +656,18 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
         </div>
 
         {/* 날짜 + 시간 + 중요도 */}
-        <div className="flex gap-2">
-          <div className="flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div>
             <label className="text-sm font-medium text-gray-600 block mb-1.5">기록일</label>
             <input type="date" value={i.createdAt} onChange={(e) => update({ createdAt: e.target.value })}
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200" />
           </div>
-          <div className="w-24">
+          <div>
             <label className="text-sm font-medium text-gray-600 block mb-1.5">시간</label>
             <input type="time" value={i.time || ''} onChange={(e) => update({ time: e.target.value })}
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200" />
           </div>
-          <div className="w-28">
+          <div>
             <label className="text-sm font-medium text-gray-600 block mb-1.5">중요도</label>
             <select value={i.priority || 'medium'} onChange={(e) => update({ priority: e.target.value as InsightItem['priority'] })}
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200">
@@ -718,12 +718,12 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
           </div>
         </div>
         <div className="flex gap-2">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <label className="text-sm font-medium text-gray-600 block mb-1.5">시작일</label>
             <input type="date" value={r.startDate || ''} onChange={(e) => update({ startDate: e.target.value })}
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <label className="text-sm font-medium text-gray-600 block mb-1.5">완료일</label>
             <input type="date" value={r.completedDate || ''} onChange={(e) => update({ completedDate: e.target.value })}
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
