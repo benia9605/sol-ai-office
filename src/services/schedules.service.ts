@@ -12,6 +12,7 @@ export interface ScheduleRow {
   id: string;
   title: string;
   date: string;
+  end_date?: string;
   time: string;
   project: string;
   color: string;

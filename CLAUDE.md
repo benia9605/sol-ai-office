@@ -201,6 +201,29 @@ VITE_PERPLEXITY_API_KEY=
 - 서비스: camelCase + .service (`tasks.service.ts`)
 - 유틸: camelCase (`dateCalc.ts`)
 
+### Mock 모드 개발 체크리스트 (중요)
+
+로컬 개발은 `.env.local`(빈 Supabase 값) → `mockSupabase.ts`(인메모리 mock)으로 동작합니다.
+**새 필드/테이블 추가 시 반드시 아래 3곳을 모두 수정해야 합니다:**
+
+1. **`src/types.ts`** — 프론트 타입에 새 필드 추가 (camelCase)
+2. **`src/services/*.service.ts`** — DB Row 타입에 새 컬럼 추가 (snake_case) + 변환 함수
+3. **`src/services/mockSupabase.ts`** — mock 데이터 매핑에 새 컬럼 추가 (`camelCase → snake_case`)
+
+```
+예시: schedules 테이블에 end_date 추가 시
+  types.ts        → ScheduleItem에 endDate?: string 추가
+  schedules.service.ts → ScheduleRow에 end_date?: string 추가
+  mockSupabase.ts → schedules 매핑에 end_date: s.endDate ?? null 추가
+```
+
+> 빠뜨리면 프로덕션(Supabase)에서는 되고 로컬(Mock)에서는 안 되는 문제가 발생합니다.
+
+**MockQueryBuilder 주의사항:**
+- 쓰기 연산(`insert`/`update`/`delete`/`upsert`)은 **절대 `async`로 만들면 안 됩니다**
+- Supabase는 `.update(payload).eq('id', id)` 체이닝 패턴을 사용하므로, `async`면 Promise에 `.eq()`을 호출하게 되어 체이닝이 깨집니다
+- 쓰기 연산은 `this`를 반환하고, 실행은 `_resolve()`에서 `await` 시점에 처리합니다
+
 ### DB status 매핑
 ```
 프론트 'pending' ↔ DB 'todo'

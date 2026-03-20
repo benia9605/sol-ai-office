@@ -4,9 +4,10 @@
  * - 태그별 필터/그룹화 + 태그 관리
  * - 출처 선택 (AI 프로필 + 유튜브/웹/책/내생각 + 커스텀)
  * - 링크, 프로젝트, 중요도 필드
+ * - 검색, 필터 드롭다운, 선택 모드 (일괄 삭제)
  * - 아이템 클릭 시 ItemDetailPopup 오픈
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { InsightItem, InsightSource } from '../types';
@@ -43,6 +44,8 @@ const priorityBadge: Record<string, { label: string; cls: string }> = {
   low:    { label: '낮음', cls: 'bg-gray-100 text-gray-500' },
 };
 
+const priorityWeight: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
 const defaultPresetTags = ['트렌드', 'AI', '마케팅', '개발', '아이디어', '전략'];
 
 export function InsightsPage() {
@@ -68,6 +71,26 @@ export function InsightsPage() {
   const [activeTag, setActiveTag] = useState<string>('all');
   const [presetTags] = useState<string[]>(defaultPresetTags);
 
+  // 검색 + 필터 + 정렬 + 선택 모드
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const [projectFilter, setProjectFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [sortMode, setSortMode] = useState<'date' | 'name' | 'priority'>('date');
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // 필터 드롭다운 외부 클릭 닫기
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setShowFilterDropdown(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   // 모든 태그 수집 (프리셋 + 인사이트에서 발견된 태그)
   const allTags = useMemo(() => {
     const tagSet = new Set(presetTags);
@@ -75,11 +98,73 @@ export function InsightsPage() {
     return Array.from(tagSet);
   }, [insights, presetTags]);
 
-  // 태그별 필터된 인사이트
+  // 고유 프로젝트 이름
+  const projectNames = useMemo(() => {
+    const names = new Set(insights.map((i) => i.project).filter(Boolean) as string[]);
+    return Array.from(names);
+  }, [insights]);
+
+  // 고유 출처 목록
+  const uniqueSources = useMemo(() => {
+    const srcIds = new Set(insights.map((i) => i.source).filter(Boolean));
+    return Array.from(srcIds);
+  }, [insights]);
+
+  const hasActiveFilter = projectFilter !== 'all' || sourceFilter !== 'all' || priorityFilter !== 'all';
+
+  // 검색 + 필터 + 정렬 파이프라인 (태그 필터 전에 적용)
+  const searchAndFilteredInsights = useMemo(() => {
+    let result = [...insights];
+
+    // 1. 검색 필터
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((i) => {
+        if (i.title.toLowerCase().includes(q)) return true;
+        if (i.content.toLowerCase().includes(q)) return true;
+        if (i.tags.some((tag) => tag.toLowerCase().includes(q))) return true;
+        if (i.project?.toLowerCase().includes(q)) return true;
+        return false;
+      });
+    }
+
+    // 2. 프로젝트 필터
+    if (projectFilter !== 'all') {
+      result = result.filter((i) => i.project === projectFilter);
+    }
+
+    // 3. 출처 필터
+    if (sourceFilter !== 'all') {
+      result = result.filter((i) => i.source === sourceFilter);
+    }
+
+    // 4. 중요도 필터
+    if (priorityFilter !== 'all') {
+      result = result.filter((i) => i.priority === priorityFilter);
+    }
+
+    // 5. 정렬
+    result.sort((a, b) => {
+      if (sortMode === 'date') {
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
+      }
+      if (sortMode === 'name') {
+        return a.title.localeCompare(b.title, 'ko', { numeric: true });
+      }
+      if (sortMode === 'priority') {
+        return (priorityWeight[a.priority || 'medium'] ?? 1) - (priorityWeight[b.priority || 'medium'] ?? 1);
+      }
+      return 0;
+    });
+
+    return result;
+  }, [insights, searchQuery, projectFilter, sourceFilter, priorityFilter, sortMode]);
+
+  // 태그별 필터된 인사이트 (검색/필터 적용 후)
   const filteredInsights = useMemo(() => {
-    if (activeTag === 'all') return insights;
-    return insights.filter((i) => i.tags.includes(activeTag));
-  }, [insights, activeTag]);
+    if (activeTag === 'all') return searchAndFilteredInsights;
+    return searchAndFilteredInsights.filter((i) => i.tags.includes(activeTag));
+  }, [searchAndFilteredInsights, activeTag]);
 
   // 태그별 그룹화 (activeTag === 'all'일 때 사용)
   const groupedByTag = useMemo(() => {
@@ -89,7 +174,7 @@ export function InsightsPage() {
 
     // 프리셋 태그 순서대로 그룹 생성
     for (const tag of allTags) {
-      const items = insights.filter((i) => i.tags.includes(tag));
+      const items = searchAndFilteredInsights.filter((i) => i.tags.includes(tag));
       if (items.length > 0) {
         groups.push({ tag, items });
         items.forEach((i) => assigned.add(i.id));
@@ -97,13 +182,13 @@ export function InsightsPage() {
     }
 
     // 태그 없는 아이템
-    const untagged = insights.filter((i) => !assigned.has(i.id));
+    const untagged = searchAndFilteredInsights.filter((i) => !assigned.has(i.id));
     if (untagged.length > 0) {
       groups.push({ tag: '태그 없음', items: untagged });
     }
 
     return groups;
-  }, [insights, allTags, activeTag]);
+  }, [searchAndFilteredInsights, allTags, activeTag]);
 
   const handleAddTag = () => {
     const tag = form.tagInput.trim();
@@ -144,13 +229,82 @@ export function InsightsPage() {
     setSelectedItem(null);
   };
 
+  // 선택 모드 토글
+  const toggleSelectMode = useCallback(() => {
+    setSelectMode((prev) => {
+      if (prev) {
+        setSelectedIds(new Set());
+      }
+      return !prev;
+    });
+  }, []);
+
+  // 아이템 선택 토글
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // 전체 선택/해제
+  const handleSelectAll = useCallback(() => {
+    if (selectedIds.size === filteredInsights.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredInsights.map((i) => i.id)));
+    }
+  }, [selectedIds.size, filteredInsights]);
+
+  // 일괄 삭제
+  const handleBulkDelete = useCallback(async () => {
+    if (!window.confirm(`${selectedIds.size}개 인사이트를 삭제하시겠습니까?`)) return;
+    for (const id of selectedIds) {
+      await removeInsight(id);
+    }
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }, [selectedIds, removeInsight]);
+
+  // 출처 라벨 가져오기
+  const getSourceLabel = (sourceId: string) => {
+    const src = insightSources.find((s) => s.id === sourceId);
+    return src?.label || sourceId;
+  };
+
   const renderCard = (item: InsightItem) => (
     <div key={item.id}
-      onClick={() => setSelectedItem(item)}
-      className="bg-white rounded-2xl p-5 shadow-soft hover:shadow-hover transition-all duration-300 flex flex-col cursor-pointer">
+      onClick={() => {
+        if (selectMode) {
+          handleToggleSelect(item.id);
+        } else {
+          setSelectedItem(item);
+        }
+      }}
+      className={`bg-white rounded-2xl p-5 shadow-soft hover:shadow-hover transition-all duration-300 flex flex-col cursor-pointer relative ${
+        selectMode && selectedIds.has(item.id) ? 'ring-2 ring-amber-400' : ''
+      }`}>
+      {/* 선택 모드 체크박스 오버레이 */}
+      {selectMode && (
+        <div className="absolute top-3 right-3 z-10">
+          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+            selectedIds.has(item.id)
+              ? 'bg-amber-500 border-amber-500'
+              : 'border-gray-300 bg-white'
+          }`}>
+            {selectedIds.has(item.id) && (
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 6l3 3 5-5" />
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
       <div className="flex items-start justify-between mb-2">
         <h3 className="font-bold text-gray-800 text-sm flex-1">{item.title}</h3>
-        {item.priority && (
+        {item.priority && !selectMode && (
           <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ml-2 flex-shrink-0 ${priorityBadge[item.priority]?.cls || ''}`}>
             {priorityBadge[item.priority]?.label}
           </span>
@@ -160,7 +314,7 @@ export function InsightsPage() {
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.content}</ReactMarkdown>
       </div>
       <div className="mt-3 pt-3 border-t border-gray-100">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           {renderSourceBadge(item.source, insightSources)}
           <span className="text-xs text-gray-300">·</span>
           <span className="text-xs text-gray-400">{item.createdAt}</span>
@@ -201,7 +355,7 @@ export function InsightsPage() {
           </h1>
           <button
             onClick={() => { if (!showForm) setForm((f) => ({ ...f, date: new Date().toISOString().slice(0, 10), time: new Date().toTimeString().slice(0, 5) })); setShowForm(!showForm); }}
-            className="px-3 py-1.5 text-sm font-medium text-amber-600 bg-white rounded-xl shadow-soft hover:shadow-hover transition-all"
+            className="px-2.5 py-1 text-xs font-medium text-amber-600 bg-white rounded-lg shadow-soft hover:shadow-hover transition-all"
           >
             + 추가
           </button>
@@ -216,7 +370,7 @@ export function InsightsPage() {
               <input
                 type="text" placeholder="인사이트 제목" value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
               />
             </div>
             {/* 내용 */}
@@ -225,7 +379,7 @@ export function InsightsPage() {
               <textarea
                 placeholder="내용을 입력하세요" value={form.content} rows={3}
                 onChange={(e) => setForm({ ...form, content: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-200"
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-200"
               />
             </div>
 
@@ -251,7 +405,7 @@ export function InsightsPage() {
               <label className="text-sm font-medium text-gray-600 block mb-1.5">링크 (선택)</label>
               <input type="url" placeholder="https://" value={form.link}
                 onChange={(e) => setForm({ ...form, link: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200" />
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-200" />
             </div>
 
             {/* 프로젝트 */}
@@ -266,18 +420,18 @@ export function InsightsPage() {
                 <label className="text-sm font-medium text-gray-600 block mb-1.5">기록일</label>
                 <input type="date" value={form.date}
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  className="w-full px-2 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200" />
+                  className="w-full px-2 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-200" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600 block mb-1.5">시간</label>
                 <input type="time" value={form.time}
                   onChange={(e) => setForm({ ...form, time: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200" />
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-200" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600 block mb-1.5">중요도</label>
                 <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value as InsightItem['priority'] })}
-                  className="w-full px-2 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200">
+                  className="w-full px-2 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-200">
                   <option value="high">높음</option>
                   <option value="medium">보통</option>
                   <option value="low">낮음</option>
@@ -306,7 +460,7 @@ export function InsightsPage() {
                   type="text" placeholder="직접 입력 후 Enter" value={form.tagInput}
                   onChange={(e) => setForm({ ...form, tagInput: e.target.value })}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); handleAddTag(); } }}
-                  className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
                 {form.tags.map((t) => (
                   <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full">
@@ -319,8 +473,8 @@ export function InsightsPage() {
             </div>
 
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-xl">취소</button>
-              <button onClick={handleAdd} className="px-4 py-2 text-sm text-white bg-amber-500 hover:bg-amber-600 rounded-xl font-medium">추가</button>
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-lg">취소</button>
+              <button onClick={handleAdd} className="px-4 py-2 text-sm text-white bg-amber-500 hover:bg-amber-600 rounded-lg font-medium">추가</button>
             </div>
           </div>
         )}
@@ -349,6 +503,113 @@ export function InsightsPage() {
             );
           })}
         </div>
+
+        {/* 필터/선택 + 검색 */}
+        <div className="space-y-1.5">
+        <div className="flex items-center justify-end gap-2">
+          {/* 필터 */}
+          <div ref={filterRef} className="relative">
+            <button
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={`px-2.5 py-1 text-xs rounded-lg shadow-soft hover:shadow-hover transition-all flex items-center gap-1 ${
+                hasActiveFilter ? 'text-amber-700 bg-amber-50 font-medium' : 'text-gray-600 bg-white'
+              }`}
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="2" y1="4" x2="14" y2="4" /><line x1="4" y1="8" x2="12" y2="8" /><line x1="6" y1="12" x2="10" y2="12" /></svg>
+              필터
+            </button>
+            {showFilterDropdown && (
+              <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-100 p-4 z-20 min-w-[220px] space-y-3">
+                {/* 프로젝트별 */}
+                <div>
+                  <label className="text-xs text-gray-500 font-medium mb-1.5 block">프로젝트별</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button onClick={() => setProjectFilter('all')} className={`px-2.5 py-1 text-xs rounded-full transition-all ${projectFilter === 'all' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>전체</button>
+                    {projectNames.map((name) => (
+                      <button key={name} onClick={() => setProjectFilter(projectFilter === name ? 'all' : name)} className={`px-2.5 py-1 text-xs rounded-full transition-all ${projectFilter === name ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{name}</button>
+                    ))}
+                  </div>
+                </div>
+                {/* 출처별 */}
+                <div>
+                  <label className="text-xs text-gray-500 font-medium mb-1.5 block">출처별</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button onClick={() => setSourceFilter('all')} className={`px-2.5 py-1 text-xs rounded-full transition-all ${sourceFilter === 'all' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>전체</button>
+                    {uniqueSources.map((srcId) => (
+                      <button key={srcId} onClick={() => setSourceFilter(sourceFilter === srcId ? 'all' : srcId)} className={`px-2.5 py-1 text-xs rounded-full transition-all ${sourceFilter === srcId ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{getSourceLabel(srcId)}</button>
+                    ))}
+                  </div>
+                </div>
+                {/* 우선순위별 */}
+                <div>
+                  <label className="text-xs text-gray-500 font-medium mb-1.5 block">우선순위별</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button onClick={() => setPriorityFilter('all')} className={`px-2.5 py-1 text-xs rounded-full transition-all ${priorityFilter === 'all' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>전체</button>
+                    {(['high', 'medium', 'low'] as const).map((p) => (
+                      <button key={p} onClick={() => setPriorityFilter(priorityFilter === p ? 'all' : p)} className={`px-2.5 py-1 text-xs rounded-full transition-all ${priorityFilter === p ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{priorityBadge[p].label}</button>
+                    ))}
+                  </div>
+                </div>
+                {/* 정렬 */}
+                <div>
+                  <label className="text-xs text-gray-500 font-medium mb-1.5 block">정렬</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {([['date', '날짜순'], ['name', '이름순'], ['priority', '우선순위순']] as const).map(([key, label]) => (
+                      <button key={key} onClick={() => setSortMode(key)} className={`px-2.5 py-1 text-xs rounded-full transition-all ${sortMode === key ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+                    ))}
+                  </div>
+                </div>
+                {hasActiveFilter && (
+                  <button onClick={() => { setProjectFilter('all'); setSourceFilter('all'); setPriorityFilter('all'); }} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">필터 초기화</button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 선택 / 취소 */}
+          <button
+            onClick={toggleSelectMode}
+            className={`px-2.5 py-1 text-xs rounded-lg shadow-soft hover:shadow-hover transition-all ${
+              selectMode ? 'text-white bg-amber-500 font-medium' : 'text-gray-600 bg-white'
+            }`}
+          >
+            {selectMode ? '취소' : '선택'}
+          </button>
+        </div>
+        <div className="relative">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" className="absolute left-3 top-1/2 -translate-y-1/2">
+            <circle cx="7" cy="7" r="5" /><line x1="11" y1="11" x2="14" y2="14" />
+          </svg>
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="제목, 내용, 태그 검색"
+            className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 shadow-soft"
+          />
+        </div>
+        </div>
+
+        {/* 선택 모드 액션 바 */}
+        {selectMode && (
+          <div className="bg-amber-50 rounded-lg px-4 py-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleSelectAll}
+                className="text-xs text-amber-700 hover:text-amber-800 font-medium bg-white/70 px-2.5 py-1 rounded-lg"
+              >
+                {selectedIds.size === filteredInsights.length ? '전체 해제' : '전체 선택'}
+              </button>
+              <span className="text-xs text-amber-700 font-medium">{selectedIds.size}건 선택</span>
+            </div>
+            <button
+              onClick={handleBulkDelete}
+              disabled={selectedIds.size === 0}
+              className="px-3 py-1.5 text-xs font-medium text-red-600 bg-white border border-red-200 hover:bg-red-50 rounded-lg transition-all disabled:opacity-40"
+            >
+              삭제
+            </button>
+          </div>
+        )}
 
         {/* 카드 영역 */}
         {activeTag !== 'all' ? (

@@ -25,6 +25,9 @@ import { TaskItem, TaskStatus, ScheduleCategory } from '../../types';
 import { useProjects } from '../../hooks/useProjects';
 import { GoalRow } from '../../services/goals.service';
 import { GoalBadge } from '../GoalBadge';
+import { StatusIcon } from './TaskListItem';
+import { getBadgeColors } from '../../utils/colorUtils';
+
 
 interface TaskKanbanViewProps {
   tasks: TaskItem[];
@@ -32,7 +35,6 @@ interface TaskKanbanViewProps {
   goals?: GoalRow[];
   onUpdateStatus: (id: string, status: TaskStatus) => void;
   onCycleStatus: (id: string) => void;
-  onToggleStar: (id: string) => void;
   onStartPomodoro?: (task: TaskItem) => void;
   onSelect: (task: TaskItem) => void;
   selectMode?: boolean;
@@ -65,14 +67,14 @@ function getDday(dateStr?: string): string | null {
 }
 
 /** 드래그 가능한 칸반 카드 */
-function KanbanCard({ task, categories, projectColor, goalName, goalColor, onSelect, onToggleStar, selectMode, selected, onToggleSelect }: {
+function KanbanCard({ task, categories, projectColor, goalName, goalColor, onSelect, onCycleStatus, selectMode, selected, onToggleSelect }: {
   task: TaskItem;
   categories: ScheduleCategory[];
   projectColor?: string;
   goalName?: string;
   goalColor?: string;
   onSelect: (task: TaskItem) => void;
-  onToggleStar: (id: string) => void;
+  onCycleStatus: (id: string) => void;
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -99,14 +101,11 @@ function KanbanCard({ task, categories, projectColor, goalName, goalColor, onSel
       onClick={() => selectMode ? onToggleSelect?.(task.id) : onSelect(task)}
       className={`bg-white rounded-xl shadow-soft hover:shadow-hover transition-all overflow-hidden ${selectMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'} ${selectMode && selected ? 'ring-2 ring-green-400 bg-green-50/30' : ''}`}
     >
-      {/* 카테고리 상단바 */}
-      <div className="h-1 w-full" style={{ backgroundColor: cat?.color ?? '#e5e7eb' }} />
-
       <div className="p-3 space-y-2">
-        {/* 제목 + 우선순위 점 + 즐겨찾기/체크박스 */}
+        {/* 상태 동그라미 + 제목 / 체크박스 */}
         <div className="flex items-start gap-2">
           {selectMode ? (
-            <div className="mt-1 flex-shrink-0">
+            <div className="mt-0.5 flex-shrink-0">
               {selected ? (
                 <svg viewBox="0 0 20 20" className="w-4 h-4">
                   <rect x="1" y="1" width="18" height="18" rx="4" fill="#22c55e" stroke="#16a34a" strokeWidth="1" />
@@ -119,43 +118,44 @@ function KanbanCard({ task, categories, projectColor, goalName, goalColor, onSel
               )}
             </div>
           ) : (
-            <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${priorityDot[task.priority]}`} />
+            <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+              <StatusIcon status={task.status} onClick={() => onCycleStatus(task.id)} />
+            </div>
           )}
           <p className={`text-sm font-medium flex-1 ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
             {task.title}
           </p>
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleStar(task.id); }}
-            className={`flex-shrink-0 text-xs transition-all ${task.starred ? 'text-amber-400' : 'text-gray-300 hover:text-amber-300'}`}
-          >
-            {task.starred ? '★' : '☆'}
-          </button>
         </div>
 
-        {/* 프로젝트 + D-day */}
-        <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1 text-xs text-gray-400">
-            {projectColor && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: projectColor }} />}
-            {task.project}
-          </span>
-          {dday && (
-            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-              isOverdue ? 'bg-red-100 text-red-600' : dday === 'D-Day' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
-            }`}>
-              {dday}
-            </span>
-          )}
-        </div>
-
-        {/* 목표 배지 + 카테고리 배지 */}
+        {/* 카테고리 + 목표 배지 */}
         <div className="flex items-center gap-1.5 flex-wrap">
+          {cat && (() => {
+            const cc = getBadgeColors(cat.color);
+            return (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: cc.bg, color: cc.text }}>
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: cc.dot }} />
+                {cat.label}
+              </span>
+            );
+          })()}
           {goalName && (
             <GoalBadge title={goalName} projectColor={goalColor} size="sm" />
           )}
-          {cat && (
-            <span className="inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium text-white"
-              style={{ backgroundColor: cat.color }}>
-              {cat.label}
+        </div>
+
+        {/* 날짜 + D-day */}
+        <div className="flex items-center justify-end gap-1.5">
+          {task.date && (
+            <span className="text-[10px] text-gray-400">
+              {new Date(task.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+            </span>
+          )}
+          {dday && (
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+              isOverdue ? 'bg-red-100 text-red-600' : dday === 'D-Day' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+            }`}>
+              {dday}
             </span>
           )}
         </div>
@@ -171,7 +171,6 @@ function KanbanCardOverlay({ task, categories, projectColor }: { task: TaskItem;
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden w-[240px] opacity-90">
-      <div className="h-1 w-full" style={{ backgroundColor: cat?.color ?? '#e5e7eb' }} />
       <div className="p-3 space-y-2">
         <div className="flex items-start gap-2">
           <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${priorityDot[task.priority]}`} />
@@ -190,7 +189,7 @@ function KanbanCardOverlay({ task, categories, projectColor }: { task: TaskItem;
 }
 
 /** 드롭 가능한 열 (목표별 그룹핑 + 토글) */
-function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectColorById, collapsed, toggleCollapse, onSelect, onToggleStar, selectMode, selectedIds, onToggleSelect }: {
+function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectColorById, collapsed, toggleCollapse, onSelect, onCycleStatus, selectMode, selectedIds, onToggleSelect }: {
   column: typeof columns[number];
   tasks: TaskItem[];
   categories: ScheduleCategory[];
@@ -200,7 +199,7 @@ function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectCol
   collapsed: Set<string>;
   toggleCollapse: (key: string) => void;
   onSelect: (task: TaskItem) => void;
-  onToggleStar: (id: string) => void;
+  onCycleStatus: (id: string) => void;
   selectMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
@@ -242,7 +241,7 @@ function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectCol
   const renderCard = (task: TaskItem) => {
     const goal = task.goalId ? goalMap.get(task.goalId) : undefined;
     return (
-      <KanbanCard key={task.id} task={task} categories={categories} projectColor={colorMap[task.project]} goalName={undefined} goalColor={goal ? projectColorById[goal.project_id] : undefined} onSelect={onSelect} onToggleStar={onToggleStar} selectMode={selectMode} selected={selectedIds?.has(task.id)} onToggleSelect={onToggleSelect} />
+      <KanbanCard key={task.id} task={task} categories={categories} projectColor={colorMap[task.project]} goalName={goal?.title} goalColor={goal ? projectColorById[goal.project_id] : undefined} onSelect={onSelect} onCycleStatus={onCycleStatus} selectMode={selectMode} selected={selectedIds?.has(task.id)} onToggleSelect={onToggleSelect} />
     );
   };
 
@@ -329,7 +328,7 @@ function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectCol
   );
 }
 
-export function TaskKanbanView({ tasks, categories, goals = [], onUpdateStatus, onToggleStar, onSelect, selectMode, selectedIds, onToggleSelect }: TaskKanbanViewProps) {
+export function TaskKanbanView({ tasks, categories, goals = [], onUpdateStatus, onCycleStatus, onSelect, selectMode, selectedIds, onToggleSelect }: TaskKanbanViewProps) {
   const { projects } = useProjects();
   const colorMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -344,6 +343,7 @@ export function TaskKanbanView({ tasks, categories, goals = [], onUpdateStatus, 
   const goalMap = useMemo(() => new Map(goals.map((g) => [g.id, g])), [goals]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [mobileTab, setMobileTab] = useState<TaskStatus>('pending');
   const toggleCollapse = (key: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -375,13 +375,11 @@ export function TaskKanbanView({ tasks, categories, goals = [], onUpdateStatus, 
     if (!over) return;
 
     const taskId = active.id as string;
-    // over.id can be a column id (TaskStatus) or another task id
     let targetStatus: TaskStatus | undefined;
 
     if (['pending', 'in_progress', 'completed'].includes(over.id as string)) {
       targetStatus = over.id as TaskStatus;
     } else {
-      // Dropped on a task → find which column that task is in
       const overTask = tasks.find((t) => t.id === over.id);
       if (overTask) targetStatus = overTask.status;
     }
@@ -401,7 +399,43 @@ export function TaskKanbanView({ tasks, categories, goals = [], onUpdateStatus, 
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-3 lg:overflow-x-visible">
+      {/* 모바일: 탭 전환 */}
+      <div className="lg:hidden">
+        <div className="flex gap-1 bg-white rounded-lg p-1 shadow-soft mb-3">
+          {columns.map((col) => (
+            <button
+              key={col.id}
+              onClick={() => setMobileTab(col.id)}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                mobileTab === col.id
+                  ? `${col.bg} ${col.color} shadow-sm`
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              {col.label}
+              <span className="text-[10px] opacity-70">{tasksByStatus[col.id].length}</span>
+            </button>
+          ))}
+        </div>
+        <KanbanColumn
+          column={columns.find((c) => c.id === mobileTab)!}
+          tasks={tasksByStatus[mobileTab]}
+          categories={categories}
+          colorMap={colorMap}
+          goalMap={goalMap}
+          projectColorById={projectColorById}
+          collapsed={collapsed}
+          toggleCollapse={toggleCollapse}
+          onSelect={onSelect}
+          onCycleStatus={onCycleStatus}
+          selectMode={selectMode}
+          selectedIds={selectedIds}
+          onToggleSelect={onToggleSelect}
+        />
+      </div>
+
+      {/* PC: 3열 그리드 */}
+      <div className="hidden lg:grid lg:grid-cols-3 gap-3">
         {columns.map((col) => (
           <KanbanColumn
             key={col.id}
@@ -414,13 +448,14 @@ export function TaskKanbanView({ tasks, categories, goals = [], onUpdateStatus, 
             collapsed={collapsed}
             toggleCollapse={toggleCollapse}
             onSelect={onSelect}
-            onToggleStar={onToggleStar}
+            onCycleStatus={onCycleStatus}
             selectMode={selectMode}
             selectedIds={selectedIds}
             onToggleSelect={onToggleSelect}
           />
         ))}
       </div>
+
       <DragOverlay>
         {activeTask ? <KanbanCardOverlay task={activeTask} categories={categories} projectColor={colorMap[activeTask.project]} /> : null}
       </DragOverlay>

@@ -215,7 +215,7 @@ export function ReadingsPage() {
             스터디
           </h1>
           <button onClick={() => setShowForm(!showForm)}
-            className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-white rounded-xl shadow-soft hover:shadow-hover transition-all">
+            className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-white rounded-xl shadow-soft hover:shadow-hover transition-all">
             + 추가
           </button>
         </div>
@@ -449,9 +449,9 @@ export function ReadingsPage() {
                       : item.coverEmoji}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-bold text-gray-800 text-sm truncate">{item.title}</h3>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${status.cls}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${status.cls}`}>
                         {status.label}
                       </span>
                     </div>

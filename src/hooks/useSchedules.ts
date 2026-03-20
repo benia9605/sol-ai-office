@@ -18,6 +18,7 @@ function toScheduleItem(row: ScheduleRow): ScheduleItem {
     id: row.id,
     title: row.title,
     date: row.date,
+    endDate: row.end_date,
     time: row.time,
     project: row.project,
     color: row.color,
@@ -34,6 +35,7 @@ function toDbFields(patch: Partial<ScheduleItem>): Partial<ScheduleRow> {
   const db: Partial<ScheduleRow> = {};
   if (patch.title !== undefined) db.title = patch.title;
   if (patch.date !== undefined) db.date = patch.date;
+  if (patch.endDate !== undefined) db.end_date = patch.endDate || undefined;
   if (patch.time !== undefined) db.time = patch.time;
   if (patch.project !== undefined) db.project = patch.project;
   if (patch.color !== undefined) db.color = patch.color;
@@ -80,6 +82,7 @@ export function useSchedules() {
       const row = await addSchedule({
         title: data.title,
         date: data.date,
+        end_date: data.endDate,
         time: data.time,
         project: data.project,
         color: data.color,

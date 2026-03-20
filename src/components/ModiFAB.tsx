@@ -14,7 +14,7 @@ export function ModiFAB({ onClick }: ModiFABProps) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-20 right-6 lg:bottom-6 w-14 h-14 rounded-full bg-pastel-yellow
+      className="modi-fab fixed bottom-20 right-6 lg:bottom-6 w-14 h-14 rounded-full bg-pastel-yellow
         shadow-hover hover:scale-110 transition-all duration-300 z-30
         flex items-center justify-center group"
       title="모디에게 물어보기"

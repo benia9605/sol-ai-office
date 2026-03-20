@@ -22,6 +22,11 @@ body {
   animation: fadeInDown 0.15s ease-out;
 }
 
+/* 모달 열릴 때 ModiFAB 숨기기 */
+body:has([data-modal-overlay]) .modi-fab {
+  display: none !important;
+}
+
 /* AI 메시지 마크다운 스타일 */
 .markdown-body {
   line-height: 1.6;

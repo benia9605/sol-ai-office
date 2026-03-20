@@ -23,7 +23,10 @@ import { uploadImage } from '../services/storage.service';
 import { fetchMessagesByConversation, MessageRow } from '../services/conversations.service';
 import { fetchAllGoals, GoalRow } from '../services/goals.service';
 import { fetchProjects } from '../services/projects.service';
+
 import { GoalBadge } from './GoalBadge';
+import { SortableCategoryList } from './SortableCategoryChip';
+import { DateRangePicker } from './calendar/DateRangePicker';
 
 type ItemType = 'schedule' | 'task' | 'insight' | 'reading';
 type AnyItem = ScheduleItem | TaskItem | InsightItem | ReadingItem;
@@ -201,17 +204,16 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
     const s = data as ScheduleItem;
     return (
       <>
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <label className="text-sm font-medium text-gray-600 block mb-1.5">날짜</label>
-            <input type="date" value={s.date} onChange={(e) => update({ date: e.target.value })}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-200" />
-          </div>
-          <div className="w-28">
-            <label className="text-sm font-medium text-gray-600 block mb-1.5">시간</label>
-            <input type="time" value={s.time} onChange={(e) => update({ time: e.target.value })}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-200" />
-          </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600 block mb-1.5">날짜</label>
+          <DateRangePicker
+            date={s.date}
+            endDate={s.endDate}
+            time={s.time}
+            onDateChange={(d) => update({ date: d })}
+            onEndDateChange={(ed) => update({ endDate: ed })}
+            onTimeChange={(t) => update({ time: t })}
+          />
         </div>
 
         {/* 종류 (카테고리) */}
@@ -271,15 +273,11 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
                   <span className="text-xs text-gray-400 ml-1">선택: {newCatColor}</span>
                 )}
               </div>
-              <div className="flex flex-wrap gap-1">
-                {categories.map((cat) => (
-                  <span key={cat.id} className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-white rounded-full border">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
-                    {cat.label}
-                    <button onClick={() => handleRemoveCategory(cat.id)} className="text-gray-400 hover:text-red-500 ml-0.5">x</button>
-                  </span>
-                ))}
-              </div>
+              <SortableCategoryList
+                categories={categories}
+                onReorder={(cats) => onCategoriesChange?.(cats)}
+                onRemove={handleRemoveCategory}
+              />
             </div>
           )}
         </div>
@@ -364,13 +362,13 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
         </div>
 
         {/* 마감일 + 우선순위 */}
-        <div className="flex gap-2">
-          <div className="flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
             <label className="text-sm font-medium text-gray-600 block mb-1.5">마감일</label>
             <input type="date" value={t.date || ''} onChange={(e) => update({ date: e.target.value })}
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-200" />
           </div>
-          <div className="w-28">
+          <div>
             <label className="text-sm font-medium text-gray-600 block mb-1.5">우선순위</label>
             <select value={t.priority} onChange={(e) => update({ priority: e.target.value as TaskItem['priority'] })}
               className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
@@ -444,15 +442,11 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
                   <span className="text-xs text-gray-400 ml-1">선택: {newCatColor}</span>
                 )}
               </div>
-              <div className="flex flex-wrap gap-1">
-                {categories.map((cat) => (
-                  <span key={cat.id} className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-white rounded-full border">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
-                    {cat.label}
-                    <button onClick={() => handleRemoveCategory(cat.id)} className="text-gray-400 hover:text-red-500 ml-0.5">x</button>
-                  </span>
-                ))}
-              </div>
+              <SortableCategoryList
+                categories={categories}
+                onReorder={(cats) => onCategoriesChange?.(cats)}
+                onRemove={handleRemoveCategory}
+              />
             </div>
           )}
         </div>
@@ -795,7 +789,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
         {/* 날짜 + 시간 — 2열 그리드 */}
         <div className="grid grid-cols-2 gap-4 py-4 border-t border-gray-100">
           <ViewSection label="날짜"><span className="text-sm text-gray-800">{s.date}</span></ViewSection>
-          {s.time ? <ViewSection label="시간"><span className="text-sm text-gray-800">{s.time}</span></ViewSection> : <div />}
+          <ViewSection label="시간"><span className="text-sm text-gray-800">{s.time || '하루종일'}</span></ViewSection>
         </div>
         {/* 프로젝트 + 종류 — 2열 그리드 */}
         {(s.project || cat) && (
@@ -1078,7 +1072,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
   const tl = typeLabels[type];
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+    <div data-modal-overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-3xl shadow-hover w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col">
         {/* 헤더 */}

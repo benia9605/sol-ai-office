@@ -360,7 +360,7 @@ export function SettingsPage() {
 
         {/* 편집/추가 모달 */}
         {editing && (
-          <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={handleCancel}>
+          <div data-modal-overlay className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={handleCancel}>
             <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-6 space-y-5 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-lg font-bold text-gray-800">
                 {editing === 'new' ? '프로젝트 추가' : '프로젝트 편집'}
@@ -566,7 +566,7 @@ export function SettingsPage() {
 
         {/* 삭제 확인 */}
         {deleteConfirm && (
-          <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setDeleteConfirm(null)}>
+          <div data-modal-overlay className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={() => setDeleteConfirm(null)}>
             <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>
               <p className="text-sm text-gray-600 mb-4">
                 이 프로젝트를 삭제하시겠습니까?<br />

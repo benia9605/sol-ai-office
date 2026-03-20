@@ -115,8 +115,8 @@ export function StudyNoteEditor({ readingId, readingCategory, chapters, preselec
       </h4>
 
       {/* 날짜 + 챕터 */}
-      <div className="flex gap-3">
-        <div className="w-40">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="w-full sm:w-40 flex-shrink-0">
           <label className="text-xs text-gray-500 mb-1 block">날짜</label>
           <input
             type="date"
@@ -125,7 +125,7 @@ export function StudyNoteEditor({ readingId, readingCategory, chapters, preselec
             className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
           />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <label className="text-xs text-gray-500 mb-1 block">챕터/섹션 (복수 선택 가능)</label>
           {chapters && chapters.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">

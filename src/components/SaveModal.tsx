@@ -125,7 +125,7 @@ export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+    <div data-modal-overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-3xl shadow-hover w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col">
         {/* 헤더 */}

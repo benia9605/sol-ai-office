@@ -42,8 +42,9 @@ function Section({ icon, label, labelColor, badgeBg, children }: {
 }
 
 /** 리스트 항목 (타입별 불릿 색상) */
-function ListItems({ items, bulletColor }: { items: ListField[]; bulletColor: string }) {
-  const filled = items.filter((f) => f.text.trim());
+function ListItems({ items, bulletColor }: { items?: ListField[]; bulletColor: string }) {
+  if (!items) return <p className="text-sm text-gray-300 italic">-</p>;
+  const filled = items.filter((f) => f.text?.trim());
   if (filled.length === 0) return <p className="text-sm text-gray-300 italic">-</p>;
   return (
     <div className="space-y-1.5">
@@ -90,7 +91,7 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
   const bb = cfg.bgColor;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    <div data-modal-overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-[#fff5f7] rounded-3xl shadow-hover w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* 헤더 */}

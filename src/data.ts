@@ -177,25 +177,29 @@ export const defaultTaskCategories: ScheduleCategory[] = [
 // ── 더미 데이터: 일정 ──
 
 export const dummySchedules: ScheduleItem[] = [
-  { id: 's1', title: '운명랩 콘텐츠 기획 회의',  date: '2026-02-20', time: '10:00', project: '운명랩',     color: 'bg-pastel-purple', category: 'cat-meeting',  repeat: 'none',   reminder: 'none', notes: '', tags: ['콘텐츠'] },
-  { id: 's2', title: 'PTE 마케팅 전략 미팅',      date: '2026-02-20', time: '14:00', project: 'PTE',        color: 'bg-pastel-lime',   category: 'cat-meeting',  repeat: 'none',   reminder: '10min', notes: '', tags: ['마케팅'] },
-  { id: 's3', title: '쏠닝포인트 런칭 준비',       date: '2026-02-21', time: '11:00', project: '쏠닝포인트', color: 'bg-pastel-yellow', category: 'cat-deadline', repeat: 'none',   reminder: '1hour', notes: '베타 테스트 포함', tags: ['런칭'] },
-  { id: 's4', title: '주간 회고',                   date: '2026-02-22', time: '09:00', project: '운명랩',     color: 'bg-pastel-purple', category: 'cat-routine',  repeat: 'weekly', reminder: '30min', notes: '', tags: ['회고'] },
+  { id: 's1', title: '운명랩 콘텐츠 기획 회의',  date: '2026-03-20', time: '10:00', project: '운명랩',     color: 'bg-pastel-purple', category: 'cat-meeting',  repeat: 'none',   reminder: 'none', notes: '', tags: ['콘텐츠'] },
+  { id: 's2', title: 'PTE 마케팅 전략 미팅',      date: '2026-03-20', time: '14:00', project: 'PTE',        color: 'bg-pastel-lime',   category: 'cat-meeting',  repeat: 'none',   reminder: '10min', notes: '', tags: ['마케팅'] },
+  { id: 's3', title: '쏠닝포인트 런칭 준비',       date: '2026-03-21', time: '11:00', project: '쏠닝포인트', color: 'bg-pastel-yellow', category: 'cat-deadline', repeat: 'none',   reminder: '1hour', notes: '베타 테스트 포함', tags: ['런칭'] },
+  { id: 's4', title: '주간 회고',                   date: '2026-03-22', time: '09:00', project: '운명랩',     color: 'bg-pastel-purple', category: 'cat-routine',  repeat: 'weekly', reminder: '30min', notes: '', tags: ['회고'] },
+  { id: 's5', title: '쏠닝포인트 베타 기간',        date: '2026-03-23', endDate: '2026-03-27', time: '', project: '쏠닝포인트', color: 'bg-pastel-yellow', category: 'cat-deadline', repeat: 'none', reminder: 'none', notes: '베타 테스트 운영', tags: ['베타'] },
+  { id: 's6', title: '운명랩 마케팅 캠페인',        date: '2026-03-25', endDate: '2026-04-01', time: '', project: '운명랩',     color: 'bg-pastel-purple', category: 'cat-meeting',  repeat: 'none', reminder: 'none', notes: '', tags: ['마케팅'] },
+  { id: 's7', title: 'PTE 집중 개발 스프린트',      date: '2026-03-16', endDate: '2026-03-20', time: '', project: 'PTE',        color: 'bg-pastel-lime',   category: 'cat-deadline', repeat: 'none', reminder: '1day', notes: '프론트엔드 리팩토링', tags: ['개발'] },
+  { id: 's8', title: '투자자 미팅 주간',             date: '2026-03-09', endDate: '2026-03-12', time: '', project: '쏠닝포인트', color: 'bg-pastel-yellow', category: 'cat-meeting',  repeat: 'none', reminder: '1day', notes: '', tags: ['투자'] },
 ];
 
 // ── 더미 데이터: 할일 ──
 
 export const dummyTasks: TaskItem[] = [
-  { id: 't1',  title: '운명랩 랜딩페이지 카피 수정',  project: '운명랩',     status: 'in_progress', priority: 'high',   starred: true,  date: '2026-02-21', category: 'tcat-content', pomodoroEstimate: 4, pomodoroCompleted: 2, tags: ['카피'] },
-  { id: 't2',  title: 'PTE 광고 소재 제작',            project: 'PTE',        status: 'pending',     priority: 'high',   starred: true,  date: '2026-02-22', category: 'tcat-design',  pomodoroEstimate: 3, pomodoroCompleted: 0, tags: ['마케팅'] },
-  { id: 't3',  title: '쏠닝포인트 베타 테스트 준비',    project: '쏠닝포인트', status: 'pending',     priority: 'medium', starred: false, date: '2026-02-25', category: 'tcat-dev' },
-  { id: 't4',  title: '블로그 포스트 작성',              project: '운명랩',     status: 'completed',   priority: 'low',    starred: false, date: '2026-02-18', category: 'tcat-content' },
-  { id: 't5',  title: '경쟁사 리서치 정리',              project: 'PTE',        status: 'completed',   priority: 'medium', starred: false, date: '2026-02-19' },
-  { id: 't6',  title: 'API 문서 업데이트',               project: '쏠닝포인트', status: 'pending',     priority: 'high',   starred: true,  date: '2026-02-19', category: 'tcat-dev', notes: '인증 엔드포인트 추가 반영', tags: ['API', '문서'] },
-  { id: 't7',  title: '인스타 콘텐츠 캘린더 작성',       project: '운명랩',     status: 'in_progress', priority: 'medium', starred: false, date: '2026-02-23', category: 'tcat-content', repeat: 'weekly', pomodoroEstimate: 2, pomodoroCompleted: 1 },
-  { id: 't8',  title: '서비스 약관 검토',                 project: '쏠닝포인트', status: 'pending',     priority: 'low',    starred: false, date: '2026-02-28', category: 'tcat-admin' },
-  { id: 't9',  title: 'UI 디자인 리뷰',                  project: 'PTE',        status: 'pending',     priority: 'medium', starred: false, date: '2026-02-20', category: 'tcat-design', notes: '모바일 반응형 검증 필요' },
-  { id: 't10', title: '팀 회의 자료 준비',                project: '운명랩',     status: 'completed',   priority: 'medium', starred: false, date: '2026-02-17', category: 'tcat-meeting' },
+  { id: 't1',  title: '운명랩 랜딩페이지 카피 수정',  project: '운명랩',     status: 'in_progress', priority: 'high',   starred: true,  date: '2026-03-21', category: 'tcat-content', pomodoroEstimate: 4, pomodoroCompleted: 2, tags: ['카피'] },
+  { id: 't2',  title: 'PTE 광고 소재 제작',            project: 'PTE',        status: 'pending',     priority: 'high',   starred: true,  date: '2026-03-22', category: 'tcat-design',  pomodoroEstimate: 3, pomodoroCompleted: 0, tags: ['마케팅'] },
+  { id: 't3',  title: '쏠닝포인트 베타 테스트 준비',    project: '쏠닝포인트', status: 'pending',     priority: 'medium', starred: false, date: '2026-03-25', category: 'tcat-dev' },
+  { id: 't4',  title: '블로그 포스트 작성',              project: '운명랩',     status: 'completed',   priority: 'low',    starred: false, date: '2026-03-18', category: 'tcat-content' },
+  { id: 't5',  title: '경쟁사 리서치 정리',              project: 'PTE',        status: 'completed',   priority: 'medium', starred: false, date: '2026-03-19' },
+  { id: 't6',  title: 'API 문서 업데이트',               project: '쏠닝포인트', status: 'pending',     priority: 'high',   starred: true,  date: '2026-03-19', category: 'tcat-dev', notes: '인증 엔드포인트 추가 반영', tags: ['API', '문서'] },
+  { id: 't7',  title: '인스타 콘텐츠 캘린더 작성',       project: '운명랩',     status: 'in_progress', priority: 'medium', starred: false, date: '2026-03-23', category: 'tcat-content', repeat: 'weekly', pomodoroEstimate: 2, pomodoroCompleted: 1 },
+  { id: 't8',  title: '서비스 약관 검토',                 project: '쏠닝포인트', status: 'pending',     priority: 'low',    starred: false, date: '2026-03-28', category: 'tcat-admin' },
+  { id: 't9',  title: 'UI 디자인 리뷰',                  project: 'PTE',        status: 'pending',     priority: 'medium', starred: false, date: '2026-03-20', category: 'tcat-design', notes: '모바일 반응형 검증 필요' },
+  { id: 't10', title: '팀 회의 자료 준비',                project: '운명랩',     status: 'completed',   priority: 'medium', starred: false, date: '2026-03-17', category: 'tcat-meeting' },
   // 매일 루틴
   { id: 't11', title: '아침 운동 30분',                  project: '',           status: 'pending',     priority: 'medium', starred: false, repeat: 'daily' },
   { id: 't12', title: '독서 30분',                        project: '운명랩',     status: 'pending',     priority: 'low',    starred: false, repeat: 'daily' },

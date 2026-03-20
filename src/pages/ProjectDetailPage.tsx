@@ -21,7 +21,8 @@ import { ItemDetailPopup } from '../components/ItemDetailPopup';
 import { RecordDetailView } from '../components/records/RecordDetailView';
 import { defaultTaskCategories, defaultScheduleCategories } from '../data';
 import { recordTypeConfig } from '../utils/recordTemplates';
-import { GoalBadge } from '../components/GoalBadge';
+import { GoalTimeline } from '../components/GoalTimeline';
+
 
 // ── 더보기/접기 텍스트 ──
 
@@ -623,6 +624,21 @@ export function ProjectDetailPage() {
           )}
         </div>
 
+        {/* 목표 타임라인 */}
+        {goals.length > 0 && (
+          <GoalTimeline
+            goals={goals}
+            projectColor={project.color}
+            onGoalClick={(id) => {
+              setExpandedGoals((prev) => {
+                const next = new Set(prev);
+                next.add(id);
+                return next;
+              });
+            }}
+          />
+        )}
+
         {/* 목표 섹션 */}
         <section className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
@@ -738,82 +754,71 @@ export function ProjectDetailPage() {
                     </div>
                   ) : (
                     <div
-                      className={`flex items-center gap-3 p-4 cursor-pointer transition-colors ${headerBg}`}
+                      className={`p-4 cursor-pointer transition-colors ${headerBg}`}
                       onClick={() => toggleGoal(goal.id)}
                     >
-                      <ChevronIcon open={isExpanded} className="w-4 h-4 text-gray-400 flex-shrink-0" />
-
-                      <select
-                        value={goal.status}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          const next = e.target.value as GoalItem['status'];
-                          const patch: Partial<GoalItem> = { status: next };
-                          const todayStr = new Date().toISOString().slice(0, 10);
-                          if (next === 'in_progress' && (!goal.startDate || goal.startDate > todayStr)) {
-                            patch.startDate = todayStr;
-                          }
-                          if (next === 'completed') {
-                            patch.endDate = todayStr;
-                          }
-                          updateGoal(goal.id, patch);
-                        }}
-                        className={`text-xs px-2 py-0.5 rounded-full cursor-pointer transition-colors flex-shrink-0 appearance-none text-center ${statusColor(goal.status)}`}
-                      >
-                        <option value="pending">대기</option>
-                        <option value="in_progress">진행</option>
-                        <option value="on_hold">보류</option>
-                        <option value="completed">완료</option>
-                      </select>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <GoalBadge
-                            title={goal.title}
-                            projectColor={project.color}
-                            size="md"
-                            className={goal.status === 'completed' ? 'opacity-50' : ''}
-                          />
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${goalTypeBadge(goal.type)}`}>
-                            {goalTypeLabel(goal.type)}
-                          </span>
-                          {(smart.text || goalDateRange(goal)) && (
-                            <span className="inline-flex items-center gap-1.5 text-[11px]">
-                              {smart.text && <span className={smart.style}>{smart.text}</span>}
-                              {goalDateRange(goal) && <span className="text-gray-400 text-[10px]">{goalDateRange(goal)}</span>}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* 진행률 미니 */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-300"
-                            style={{ width: `${effectiveProgress}%`, backgroundColor: project.color }}
-                          />
-                        </div>
-                        <span className="text-xs font-medium text-gray-500 w-8 text-right">{effectiveProgress}%</span>
-                      </div>
-
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => {
-                            setEditingGoal(goal.id);
-                            setEditGoalForm({ title: goal.title, type: goal.type, startDate: goal.startDate || '', endDate: goal.endDate || '', notes: goal.notes || '' });
-                          }}
-                          className="w-6 h-6 rounded-lg hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600"
-                        >
-                          <PenIcon />
-                        </button>
-                        <button
-                          onClick={() => removeGoal(goal.id)}
-                          className="w-6 h-6 rounded-lg hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-500"
-                        >
+                      {/* 1행: 제목 + 액션 */}
+                      <div className="flex items-center gap-2">
+                        <ChevronIcon open={isExpanded} className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className={`text-sm font-semibold text-gray-700 flex-1 min-w-0 truncate ${goal.status === 'completed' ? 'opacity-50' : ''}`}>{goal.title}</span>
+                        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => {
+                              setEditingGoal(goal.id);
+                              setEditGoalForm({ title: goal.title, type: goal.type, startDate: goal.startDate || '', endDate: goal.endDate || '', notes: goal.notes || '' });
+                            }}
+                            className="w-6 h-6 rounded-lg hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                          >
+                            <PenIcon />
+                          </button>
+                          <button
+                            onClick={() => removeGoal(goal.id)}
+                            className="w-6 h-6 rounded-lg hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-500"
+                          >
                           <TrashIcon />
                         </button>
+                        </div>
+                      </div>
+
+                      {/* 2행: 상태 + 타입 + 날짜 + 진행률 */}
+                      <div className="flex items-center gap-2 mt-2 ml-6 flex-wrap">
+                        <select
+                          value={goal.status}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            const next = e.target.value as GoalItem['status'];
+                            const patch: Partial<GoalItem> = { status: next };
+                            const todayStr = new Date().toISOString().slice(0, 10);
+                            if (next === 'in_progress' && (!goal.startDate || goal.startDate > todayStr)) {
+                              patch.startDate = todayStr;
+                            }
+                            if (next === 'completed') {
+                              patch.endDate = todayStr;
+                            }
+                            updateGoal(goal.id, patch);
+                          }}
+                          className={`text-[10px] px-2 py-0.5 rounded-full cursor-pointer transition-colors flex-shrink-0 appearance-none text-center ${statusColor(goal.status)}`}
+                        >
+                          <option value="pending">대기</option>
+                          <option value="in_progress">진행</option>
+                          <option value="on_hold">보류</option>
+                          <option value="completed">완료</option>
+                        </select>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${goalTypeBadge(goal.type)}`}>
+                          {goalTypeLabel(goal.type)}
+                        </span>
+                        {smart.text && <span className={`text-[11px] ${smart.style}`}>{smart.text}</span>}
+                        {goalDateRange(goal) && <span className="text-gray-400 text-[10px]">{goalDateRange(goal)}</span>}
+                        <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
+                          <div className="w-14 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-300"
+                              style={{ width: `${effectiveProgress}%`, backgroundColor: project.color }}
+                            />
+                          </div>
+                          <span className="text-[11px] font-medium text-gray-500">{effectiveProgress}%</span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1101,7 +1106,7 @@ export function ProjectDetailPage() {
 
       {/* ── KPI 기록 상세 모달 ── */}
       {detailKpi && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setKpiDetailId(null); setShowKpiLogForm(false); }}>
+        <div data-modal-overlay className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setKpiDetailId(null); setShowKpiLogForm(false); }}>
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 pb-3 border-b border-gray-100">
               <div className="flex items-center justify-between mb-2">

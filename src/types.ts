@@ -155,6 +155,7 @@ export interface ScheduleItem {
   id: string;
   title: string;
   date: string;
+  endDate?: string;
   time: string;
   project: string;
   color: string;

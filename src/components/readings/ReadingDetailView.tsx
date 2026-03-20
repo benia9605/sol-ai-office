@@ -133,20 +133,22 @@ export function ReadingDetailView({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div data-modal-overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-[#f0f7ff] rounded-3xl shadow-hover w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* 헤더 바 */}
         <div className="px-6 pt-5 pb-3 flex items-center justify-between flex-shrink-0 bg-white/80 border-b border-blue-100">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            {reading.coverImage
-              ? <img src={reading.coverImage} alt={reading.title} className="w-8 h-8 rounded-lg object-cover" />
-              : <span className="text-2xl">{reading.coverEmoji}</span>}
-            {reading.title}
+          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2 min-w-0 flex-1">
+            <span className="flex-shrink-0">
+              {reading.coverImage
+                ? <img src={reading.coverImage} alt={reading.title} className="w-8 h-8 rounded-lg object-cover" />
+                : <span className="text-2xl">{reading.coverEmoji}</span>}
+            </span>
+            <span className="truncate">{reading.title}</span>
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {!editing && (
               <button onClick={() => { setForm({ ...reading }); setEditing(true); }}
-                className="text-xs px-2.5 py-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium">
+                className="text-xs px-2.5 py-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium whitespace-nowrap">
                 수정
               </button>
             )}
@@ -157,7 +159,7 @@ export function ReadingDetailView({
                   onClose();
                 }
               }}
-              className="text-xs px-2 py-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="text-xs px-2 py-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors whitespace-nowrap"
             >
               삭제
             </button>
@@ -543,7 +545,8 @@ export function ReadingDetailView({
             ) : (
               !showNoteEditor && (
                 <p className="text-sm text-gray-400 text-center py-8">
-                  아직 스터디 노트가 없습니다. 위의 "+ 노트 추가" 버튼을 눌러 시작하세요.
+                  아직 스터디 노트가 없습니다.<br />
+                  위의 &quot;+ 노트 추가&quot; 버튼을 눌러 시작하세요.
                 </p>
               )
             )}

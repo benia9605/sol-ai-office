@@ -3,11 +3,12 @@
  * @description 기록 페이지
  * - 캘린더 뷰: 월별 달력에서 기록 도트 확인, 날짜 필터링
  * - 필터 탭: SVG 아이콘 핑크 테마
+ * - 검색 + 프로젝트 필터 + 선택 모드
  * - 타임라인: 핑크 테마 유지, 타입별 도트 색상 분기
  * - +추가 → RecordTypeSelector → RecordForm
  * - 카드 클릭 → RecordDetailView
  */
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { RecordItem, RecordType } from '../types';
 import { useRecords } from '../hooks/useRecords';
 import { useProjects } from '../hooks/useProjects';
@@ -83,7 +84,7 @@ const tabs: { id: FilterTab; label: string }[] = [
 ];
 
 export function RecordsPage() {
-  const { records, add: addRecord, update: updateRecord, remove: removeRecord } = useRecords();
+  const { records, loading, add: addRecord, update: updateRecord, remove: removeRecord } = useRecords();
   const { projects } = useProjects();
   const [filter, setFilter] = useState<FilterTab>('all');
   const [showCalendar, setShowCalendar] = useState(true);
@@ -92,10 +93,42 @@ export function RecordsPage() {
   const [formType, setFormType] = useState<RecordType | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<RecordItem | null>(null);
 
-  // 타입 필터 → 날짜 필터 순서로 적용
+  // 검색, 필터, 선택 모드
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const [projectFilter, setProjectFilter] = useState<string>('all');
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // 필터 드롭다운 외부 클릭 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setShowFilterDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 타입 필터 → 날짜 필터 → 검색 → 프로젝트 필터
   const byType = filter === 'all' ? records : records.filter((r) => r.recordType === filter);
-  const filtered = selectedDate ? byType.filter((r) => r.date === selectedDate) : byType;
-  const sorted = [...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const byDate = selectedDate ? byType.filter((r) => r.date === selectedDate) : byType;
+
+  const bySearch = searchQuery.trim()
+    ? byDate.filter((r) => {
+        const q = searchQuery.trim().toLowerCase();
+        const titleMatch = r.title?.toLowerCase().includes(q);
+        const tagMatch = r.tags?.some((t) => t.toLowerCase().includes(q));
+        const projectMatch = r.project?.toLowerCase().includes(q);
+        return titleMatch || tagMatch || projectMatch;
+      })
+    : byDate;
+
+  const byProject = projectFilter === 'all' ? bySearch : bySearch.filter((r) => r.project === projectFilter);
+
+  const sorted = [...byProject].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handleSelectType = (type: RecordType) => {
     setShowSelector(false);
@@ -117,6 +150,54 @@ export function RecordsPage() {
     setSelectedRecord(null);
   };
 
+  const toggleSelectMode = useCallback(() => {
+    setSelectMode((prev) => !prev);
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedIds.size === sorted.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(sorted.map((r) => r.id)));
+    }
+  }, [sorted, selectedIds.size]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    const ok = window.confirm(`${selectedIds.size}건의 기록을 삭제하시겠습니까?`);
+    if (!ok) return;
+    for (const id of selectedIds) {
+      await removeRecord(id);
+    }
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  }, [selectedIds, removeRecord]);
+
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  // 로딩 상태
+  if (loading) return (
+    <div className="min-h-full bg-[#fff5f7] p-4 sm:p-6 lg:p-8">
+      <div className="max-w-3xl mx-auto flex items-center justify-center py-20">
+        <span className="text-sm text-gray-400">불러오는 중...</span>
+      </div>
+    </div>
+  );
+
+  // 프로젝트 목록 (필터 드롭다운용)
+  const usedProjects = Array.from(new Set(records.map((r) => r.project).filter(Boolean))) as string[];
+
   return (
     <div className="min-h-full bg-[#fff5f7] p-4 sm:p-6 lg:p-8">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -129,21 +210,22 @@ export function RecordsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowCalendar(!showCalendar)}
-              className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${
-                showCalendar ? 'bg-pink-500 text-white shadow-sm' : 'bg-white text-pink-500 shadow-soft hover:shadow-hover'
+              className={`px-2.5 py-1 text-xs rounded-lg transition-all flex items-center gap-0.5 ${
+                showCalendar ? 'bg-pink-500 text-white shadow-sm font-medium' : 'bg-white text-pink-500 shadow-soft hover:shadow-hover'
               }`}
               title="캘린더 보기"
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="3" width="12" height="11" rx="1.5" />
                 <path d="M2 6.5h12" />
                 <path d="M5 1.5v3" />
                 <path d="M11 1.5v3" />
               </svg>
+              캘린더
             </button>
             <button
               onClick={() => { setShowSelector(!showSelector); setFormType(null); }}
-              className="px-3 py-1.5 text-sm font-medium text-pink-600 bg-white rounded-xl shadow-soft hover:shadow-hover transition-all"
+              className="px-2.5 py-1 text-xs font-medium text-pink-600 bg-white rounded-lg shadow-soft hover:shadow-hover transition-all"
             >
               + 추가
             </button>
@@ -212,6 +294,121 @@ export function RecordsPage() {
           })}
         </div>
 
+        {/* 필터/선택 + 검색 */}
+        <div className="space-y-1.5">
+        <div className="flex items-center justify-end gap-2">
+          {/* 프로젝트 필터 */}
+          <div className="relative" ref={filterRef}>
+            <button
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={`flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg shadow-soft hover:shadow-hover transition-all ${
+                projectFilter !== 'all'
+                  ? 'text-pink-600 bg-pink-50 font-medium'
+                  : 'text-gray-600 bg-white'
+              }`}
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 4h12" />
+                <path d="M4 8h8" />
+                <path d="M6 12h4" />
+              </svg>
+              필터
+              {projectFilter !== 'all' && (
+                <span className="bg-white/30 rounded-full px-1 text-[10px]">1</span>
+              )}
+            </button>
+            {showFilterDropdown && (
+              <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-20 min-w-[180px]">
+                <p className="px-3 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">프로젝트별</p>
+                <button
+                  onClick={() => { setProjectFilter('all'); setShowFilterDropdown(false); }}
+                  className={`w-full text-left px-3 py-1.5 text-xs hover:bg-pink-50 transition-colors ${
+                    projectFilter === 'all' ? 'text-pink-600 font-semibold' : 'text-gray-700'
+                  }`}
+                >
+                  전체
+                </button>
+                {usedProjects.map((pName) => {
+                  const proj = projects.find((p) => p.name === pName);
+                  return (
+                    <button
+                      key={pName}
+                      onClick={() => { setProjectFilter(pName); setShowFilterDropdown(false); }}
+                      className={`w-full text-left px-3 py-1.5 text-xs hover:bg-pink-50 transition-colors flex items-center gap-1.5 ${
+                        projectFilter === pName ? 'text-pink-600 font-semibold' : 'text-gray-700'
+                      }`}
+                    >
+                      {proj?.color && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: proj.color }} />}
+                      {pName}
+                    </button>
+                  );
+                })}
+                {usedProjects.length === 0 && (
+                  <p className="px-3 py-1.5 text-xs text-gray-400">연결된 프로젝트 없음</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 선택 모드 토글 */}
+          <button
+            onClick={toggleSelectMode}
+            className={`px-2.5 py-1 text-xs rounded-lg shadow-soft hover:shadow-hover transition-all ${
+              selectMode
+                ? 'text-white bg-pink-500 font-medium'
+                : 'text-gray-600 bg-white'
+            }`}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="12" height="12" rx="2" />
+              {selectMode && <path d="M5 8l2 2 4-4" />}
+            </svg>
+            {selectMode ? '취소' : '선택'}
+          </button>
+        </div>
+        <div className="relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="7" cy="7" r="4.5" />
+            <path d="M10.5 10.5L14 14" />
+          </svg>
+          <input
+            type="text"
+            placeholder="제목, 태그 검색"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-200 placeholder-gray-400"
+          />
+        </div>
+        </div>
+
+        {/* 선택 모드 액션 바 */}
+        {selectMode && (
+          <div className="bg-pink-50 rounded-lg px-4 py-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleSelectAll}
+                className="text-xs font-medium text-pink-700 hover:text-pink-900 transition-colors"
+              >
+                {selectedIds.size === sorted.length && sorted.length > 0 ? '전체 해제' : '전체 선택'}
+              </button>
+              <span className="text-xs text-pink-500">
+                {selectedIds.size}건 선택
+              </span>
+            </div>
+            <button
+              onClick={handleBulkDelete}
+              disabled={selectedIds.size === 0}
+              className={`text-xs font-medium px-3 py-1 rounded-lg transition-all ${
+                selectedIds.size > 0
+                  ? 'bg-pink-500 text-white hover:bg-pink-600 shadow-sm'
+                  : 'bg-pink-100 text-pink-300 cursor-not-allowed'
+              }`}
+            >
+              삭제
+            </button>
+          </div>
+        )}
+
         {/* 타임라인 */}
         <div className="relative">
           <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-pink-200" />
@@ -223,27 +420,52 @@ export function RecordsPage() {
 
               // 미리보기 텍스트 생성
               let preview = '';
-              if (item.recordType === 'morning' && item.morningData) {
-                const filled = item.morningData.gratitude.filter((f) => f.text.trim());
+              if (item.recordType === 'morning' && item.morningData?.gratitude) {
+                const filled = item.morningData.gratitude.filter((f) => f.text?.trim());
                 preview = filled.length > 0 ? filled.map((f) => f.text).join(', ') : '';
-              } else if (item.recordType === 'evening' && item.eveningData) {
-                const filled = item.eveningData.greatThings.filter((f) => f.text.trim());
+              } else if (item.recordType === 'evening' && item.eveningData?.greatThings) {
+                const filled = item.eveningData.greatThings.filter((f) => f.text?.trim());
                 preview = filled.length > 0 ? filled.map((f) => f.text).join(', ') : '';
-              } else if (item.recordType === 'weekly' && item.weeklyData) {
-                const filled = item.weeklyData.achievements.filter((f) => f.text.trim());
+              } else if (item.recordType === 'weekly' && item.weeklyData?.achievements) {
+                const filled = item.weeklyData.achievements.filter((f) => f.text?.trim());
                 preview = filled.length > 0 ? filled.map((f) => f.text).join(', ') : '';
               } else if (item.recordType === 'memo') {
                 preview = '메모';
               }
 
+              const isSelected = selectedIds.has(item.id);
+
               return (
-                <div key={item.id} className="relative cursor-pointer" onClick={() => setSelectedRecord(item)}>
+                <div
+                  key={item.id}
+                  className="relative cursor-pointer"
+                  onClick={() => {
+                    if (selectMode) {
+                      toggleSelection(item.id);
+                    } else {
+                      setSelectedRecord(item);
+                    }
+                  }}
+                >
                   {/* 도트 (타입별 색상) */}
                   <div className="absolute -left-10 top-4 w-8 flex justify-center">
                     <div className={`w-3 h-3 rounded-full ${cfg.color} ring-4 ring-pink-100`} />
                   </div>
-                  <div className="bg-white rounded-2xl p-5 shadow-soft hover:shadow-hover transition-all">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div className={`bg-white rounded-2xl p-5 shadow-soft hover:shadow-hover transition-all ${
+                    isSelected ? 'ring-2 ring-pink-400' : ''
+                  }`}>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {selectMode && (
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          isSelected ? 'bg-pink-500 border-pink-500' : 'border-gray-300 bg-white'
+                        }`}>
+                          {isSelected && (
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M4 8l3 3 5-5" />
+                            </svg>
+                          )}
+                        </div>
+                      )}
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${cfg.bgColor} ${cfg.textColor}`}>
                         {cfg.label}
                       </span>

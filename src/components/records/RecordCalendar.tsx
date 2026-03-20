@@ -62,16 +62,16 @@ function getMonthDays(year: number, month: number) {
 /** 기록에서 짧은 미리보기 텍스트 추출 */
 function getPreview(r: RecordItem): string {
   if (r.title) return r.title;
-  if (r.recordType === 'morning' && r.morningData) {
-    const f = r.morningData.gratitude.find((g) => g.text.trim());
+  if (r.recordType === 'morning' && r.morningData?.gratitude) {
+    const f = r.morningData.gratitude.find((g) => g.text?.trim());
     return f ? f.text : '';
   }
-  if (r.recordType === 'evening' && r.eveningData) {
-    const f = r.eveningData.greatThings.find((g) => g.text.trim());
+  if (r.recordType === 'evening' && r.eveningData?.greatThings) {
+    const f = r.eveningData.greatThings.find((g) => g.text?.trim());
     return f ? f.text : '';
   }
-  if (r.recordType === 'weekly' && r.weeklyData) {
-    const f = r.weeklyData.achievements.find((g) => g.text.trim());
+  if (r.recordType === 'weekly' && r.weeklyData?.achievements) {
+    const f = r.weeklyData.achievements.find((g) => g.text?.trim());
     return f ? f.text : '';
   }
   return '';

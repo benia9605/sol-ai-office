@@ -33,6 +33,15 @@ export default {
       boxShadow: {
         'soft': '0 4px 20px rgba(0, 0, 0, 0.08)',
         'hover': '0 8px 30px rgba(0, 0, 0, 0.12)',
+      },
+      keyframes: {
+        'slide-up': {
+          '0%': { transform: 'translateY(100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'slide-up': 'slide-up 0.25s ease-out',
       }
     },
   },

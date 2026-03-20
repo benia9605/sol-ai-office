@@ -24,7 +24,6 @@ interface TaskListViewProps {
   tasks: TaskItem[];
   categories: ScheduleCategory[];
   onCycleStatus: (id: string) => void;
-  onToggleStar: (id: string) => void;
   onStartPomodoro?: (task: TaskItem) => void;
   onSelect: (task: TaskItem) => void;
   selectMode?: boolean;
@@ -32,6 +31,9 @@ interface TaskListViewProps {
   onToggleSelect?: (id: string) => void;
   goals?: GoalRow[];
   projects?: Project[];
+  onUpdateTitle?: (id: string, title: string) => void;
+  onPostpone?: (id: string) => void;
+  onMoveToToday?: (id: string) => void;
 }
 
 function getDateGroup(task: TaskItem): string {
@@ -55,20 +57,21 @@ function getDateGroup(task: TaskItem): string {
 }
 
 const dateGroups = [
-  { key: 'overdue',        label: '🔴 지연됨',     color: 'text-red-600' },
-  { key: 'today',          label: '오늘',           color: 'text-blue-600' },
-  { key: 'tomorrow',       label: '내일',           color: 'text-green-600' },
-  { key: 'this_week',      label: '이번 주',        color: 'text-emerald-600' },
-  { key: 'next_week',      label: '다음 주',        color: 'text-gray-600' },
-  { key: 'later',          label: '나중에',         color: 'text-gray-500' },
-  { key: 'no_date',        label: '마감일 없음',    color: 'text-gray-400' },
-  { key: 'past_completed', label: '✅ 지난 완료',   color: 'text-gray-400' },
+  { key: 'overdue',        label: '지연됨',       color: 'text-red-300',     lineColor: 'border-red-100' },
+  { key: 'today',          label: '오늘',          color: 'text-blue-300',    lineColor: 'border-blue-100' },
+  { key: 'tomorrow',       label: '내일',          color: 'text-gray-300',    lineColor: 'border-gray-200' },
+  { key: 'this_week',      label: '이번 주',       color: 'text-gray-300',    lineColor: 'border-gray-200' },
+  { key: 'next_week',      label: '다음 주',       color: 'text-gray-300',    lineColor: 'border-gray-200' },
+  { key: 'later',          label: '나중에',        color: 'text-gray-300',    lineColor: 'border-gray-200' },
+  { key: 'no_date',        label: '마감일 없음',   color: 'text-gray-300',    lineColor: 'border-gray-200' },
+  { key: 'past_completed', label: '지난 완료',     color: 'text-gray-300',    lineColor: 'border-gray-200' },
 ];
 
 export function TaskListView({
-  tasks, categories, onCycleStatus, onToggleStar, onStartPomodoro, onSelect,
+  tasks, categories, onCycleStatus, onStartPomodoro, onSelect,
   selectMode, selectedIds, onToggleSelect,
   goals = [], projects: projectsProp,
+  onUpdateTitle, onPostpone, onMoveToToday,
 }: TaskListViewProps) {
   const { projects: projectsFromHook } = useProjects();
   const projects = projectsProp ?? projectsFromHook;
@@ -146,59 +149,69 @@ export function TaskListView({
 
   const hasGoals = goals.length > 0;
 
-  const renderTaskItem = (task: TaskItem) => (
+  const renderTaskItem = (task: TaskItem, dateGroupKey?: string) => (
     <TaskListItem
       key={task.id}
       task={task}
       categories={categories}
       projectColor={colorMap[task.project]}
       onCycleStatus={onCycleStatus}
-      onToggleStar={onToggleStar}
       onStartPomodoro={onStartPomodoro}
       onSelect={onSelect}
       selectMode={selectMode}
       selected={selectedIds?.has(task.id)}
       onToggleSelect={onToggleSelect}
+      onUpdateTitle={onUpdateTitle}
+      onPostpone={onPostpone}
+      onMoveToToday={onMoveToToday}
+      isOverdue={dateGroupKey === 'overdue'}
     />
   );
 
+  // 렌더할 그룹 필터
+  const activeGroups = dateGroups.filter((g) => dateGrouped[g.key]?.length);
+
   return (
-    <div className="space-y-5">
-      {dateGroups.map((g) => {
-        const items = dateGrouped[g.key];
-        if (!items || items.length === 0) return null;
+    <div className="space-y-4">
+      {activeGroups.length > 0 ? (
+        activeGroups.map((g) => {
+          const items = dateGrouped[g.key]!;
+          const hasGoalTasks = hasGoals && items.some((t) => t.goalId && goalMap.has(t.goalId));
 
-        // 목표가 있으면 서브 그룹핑
-        const hasGoalTasks = hasGoals && items.some((t) => t.goalId && goalMap.has(t.goalId));
-
-        return (
-          <section key={g.key}>
-            <h2 className={`text-sm font-semibold ${g.color} mb-2`}>
-              {g.label} <span className="text-gray-400 font-normal">({items.length})</span>
-            </h2>
-
-            {hasGoalTasks ? (
-              // ── 목표별 서브 그룹핑 ──
-              <GoalSubGroups
-                dateGroupKey={g.key}
-                items={items}
-                groupByGoal={groupByGoal}
-                collapsed={collapsed}
-                toggleCollapse={toggleCollapse}
-                renderTaskItem={renderTaskItem}
-                projectColorById={projectColorById}
-              />
-            ) : (
-              // ── 플랫 리스트 ──
-              <div className="space-y-1.5">
-                {items.map(renderTaskItem)}
+          return (
+            <div key={g.key}>
+              {/* 그룹 헤더 (카드 밖) */}
+              <div className="px-1 mb-1.5">
+                <span className={`text-[11px] font-semibold ${g.color}`}>
+                  {g.label} ({items.length})
+                </span>
               </div>
-            )}
-          </section>
-        );
-      })}
 
-      {tasks.length === 0 && (
+              {/* 카드 */}
+              <div className="bg-white rounded-2xl shadow-soft overflow-hidden px-2 py-1.5">
+                {hasGoalTasks ? (
+                  <GoalSubGroups
+                    dateGroupKey={g.key}
+                    items={items}
+                    groupByGoal={groupByGoal}
+                    collapsed={collapsed}
+                    toggleCollapse={toggleCollapse}
+                    renderTaskItem={(task) => renderTaskItem(task, g.key)}
+                    projectColorById={projectColorById}
+                  />
+                ) : (
+                  items.map((t, i) => (
+                    <div key={t.id}>
+                      {i > 0 && <div className="border-t border-gray-100 mx-2" />}
+                      {renderTaskItem(t, g.key)}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            );
+          })
+      ) : (
         <p className="text-sm text-gray-400 text-center py-8">할일이 없습니다</p>
       )}
     </div>
