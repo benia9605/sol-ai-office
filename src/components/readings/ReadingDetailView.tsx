@@ -395,34 +395,34 @@ export function ReadingDetailView({
                     className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
                 </div>
 
-                {/* 목차 (도서일 때) */}
-                {form.category === 'rcat-book' && (
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs text-gray-500">
-                        목차 {(form.chapters?.length || 0) > 0 && <span className="text-blue-500">({form.chapters!.length}개)</span>}
-                      </label>
+                {/* 목차 */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs text-gray-500">
+                      목차 {(form.chapters?.length || 0) > 0 && <span className="text-blue-500">({form.chapters!.length}개)</span>}
+                    </label>
+                    {form.category === 'rcat-book' && (
                       <button
                         onClick={handleGenerateToc}
                         disabled={tocLoading || !form.title.trim()}
                         className="text-xs px-2.5 py-1 bg-purple-50 text-purple-600 hover:bg-purple-100 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
                       >
                         {tocLoading ? (
-                        <span className="inline-flex items-center gap-1">
-                          <span className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                          생성 중...
-                        </span>
-                      ) : 'AI 목차 생성'}
+                          <span className="inline-flex items-center gap-1">
+                            <span className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                            생성 중...
+                          </span>
+                        ) : 'AI 목차 생성'}
                       </button>
-                    </div>
-                    <textarea
-                      placeholder="한 줄에 한 챕터씩 입력"
-                      value={(form.chapters || []).join('\n')}
-                      onChange={(e) => setForm({ ...form, chapters: e.target.value.split('\n').filter((line) => line.trim()) })}
-                      rows={5}
-                      className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm resize-y" />
+                    )}
                   </div>
-                )}
+                  <textarea
+                    placeholder={form.category === 'rcat-book' ? '한 줄에 한 챕터씩 입력' : '한 줄에 한 강/섹션씩 입력 (예: 1강 - React 기초)'}
+                    value={(form.chapters || []).join('\n')}
+                    onChange={(e) => setForm({ ...form, chapters: e.target.value.split('\n').filter((line) => line.trim()) })}
+                    rows={5}
+                    className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm resize-y" />
+                </div>
 
                 <div className="flex justify-end gap-2 pt-1">
                   <button onClick={() => setEditing(false)}
