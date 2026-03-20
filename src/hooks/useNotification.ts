@@ -94,15 +94,32 @@ export function useNotification(userId: string | null) {
   const enablePush = useCallback(async (): Promise<boolean> => {
     if (!userId) return false;
     setSaving(true);
-    const ok = await subscribePush(userId);
-    setSaving(false);
-    if (ok) {
-      setSubscribed(true);
-      setPermission('granted');
-      // 기본 설정 저장
-      await upsertNotificationPreferences(userId, toRow(DEFAULT_PREFS));
+    try {
+      const ok = await subscribePush(userId);
+      if (ok) {
+        setSubscribed(true);
+        setPermission('granted');
+        await upsertNotificationPreferences(userId, toRow(DEFAULT_PREFS));
+      } else {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const perm = getPermissionState();
+        if (perm === 'denied') {
+          alert(isIOS
+            ? '알림 권한이 차단되어 있습니다.\n설정 > Teamie > 알림에서 허용해주세요.'
+            : '알림 권한이 차단되어 있습니다.\n브라우저 설정에서 알림을 허용해주세요.');
+        } else {
+          alert('알림 설정에 실패했습니다. 홈 화면에 추가한 후 다시 시도해주세요.');
+        }
+        setPermission(perm);
+      }
+      return ok;
+    } catch (e) {
+      console.error('[useNotification] enablePush error:', e);
+      alert('알림 설정 중 오류가 발생했습니다.');
+      return false;
+    } finally {
+      setSaving(false);
     }
-    return ok;
   }, [userId]);
 
   // 푸시 비활성화

@@ -25,6 +25,41 @@ const EMOJI_PRESETS = [
   '📚', '🎵', '✈️', '🏋️', '🍳', '❤️', '🤖', '📸',
 ];
 
+/** 소개글 접기/펼치기 */
+function BioSection({ bio }: { bio: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [needsToggle, setNeedsToggle] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (el) {
+      // 2줄(line-height 20px * 2 = 40px) 초과 여부
+      setNeedsToggle(el.scrollHeight > 44);
+    }
+  }, [bio]);
+
+  return (
+    <div className="pt-3 border-t border-gray-100">
+      <span className="text-xs font-medium text-gray-400">소개</span>
+      <p
+        ref={textRef}
+        className={`text-sm text-gray-700 mt-0.5 leading-5 ${!expanded && needsToggle ? 'line-clamp-2' : ''}`}
+      >
+        {bio}
+      </p>
+      {needsToggle && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-xs text-gray-400 hover:text-gray-600 mt-1"
+        >
+          {expanded ? '접기' : '더보기'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 const EMPTY_PROJECT: Omit<Project, 'id'> = {
   name: '',
   emoji: '📁',
@@ -252,10 +287,7 @@ export function SettingsPage() {
                 </div>
               </div>
               {profile.bio && (
-                <div className="pt-3 border-t border-gray-100">
-                  <span className="text-xs font-medium text-gray-400">소개</span>
-                  <p className="text-sm text-gray-700 mt-0.5">{profile.bio}</p>
-                </div>
+                <BioSection bio={profile.bio} />
               )}
               <div className="pt-3 border-t border-gray-100">
                 <span className="text-xs font-medium text-gray-400">대화 스타일</span>

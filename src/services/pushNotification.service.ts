@@ -75,11 +75,12 @@ export function isStandalonePWA(): boolean {
 export async function subscribePush(userId: string): Promise<boolean> {
   try {
     if (!VAPID_PUBLIC_KEY) {
-      console.warn('[Push] VAPID_PUBLIC_KEY not configured');
+      console.error('[Push] VAPID_PUBLIC_KEY not configured — Replit Secrets에 VITE_VAPID_PUBLIC_KEY를 추가하세요');
       return false;
     }
 
     const perm = await Notification.requestPermission();
+    console.log('[Push] Permission result:', perm);
     if (perm !== 'granted') return false;
 
     const reg = await navigator.serviceWorker.ready;
