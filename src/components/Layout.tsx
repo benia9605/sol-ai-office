@@ -90,8 +90,12 @@ export function Layout() {
   };
 
   const handleHistorySelect = (history: ChatHistory) => {
-    const room = rooms.find((r) => r.id === history.roomId);
-    if (room) setSelectedRoom(room);
+    if (history.roomId === 'secretary') {
+      setSelectedRoom(modiSecretary);
+    } else {
+      const room = rooms.find((r) => r.id === history.roomId);
+      if (room) setSelectedRoom(room);
+    }
   };
 
   const handleOpenModi = () => {

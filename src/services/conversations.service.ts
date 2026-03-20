@@ -84,12 +84,13 @@ export interface RecentConversation {
 export async function fetchRecentConversations(limit = 5): Promise<RecentConversation[]> {
   const userId = await getCurrentUserId();
 
+  // 방별 중복 제거 후에도 충분한 결과가 나오도록 넉넉히 조회
   const { data: conversations, error } = await supabase
     .from('conversations')
     .select('id, room_id, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
-    .limit(limit);
+    .limit(limit * 5);
 
   if (error || !conversations?.length) return [];
 
