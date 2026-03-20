@@ -5,6 +5,7 @@
  * - 체크리스트 스타일
  * - placeholder 스타일
  * - 하이라이트 색상
+ * - 테이블, H1, 코드블록 스타일
  */
 
 /* 에디터 컨테이너 */
@@ -27,6 +28,13 @@
 }
 
 /* 제목 */
+.tiptap h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 1.2em 0 0.6em;
+  color: #111827;
+}
+
 .tiptap h2 {
   font-size: 1.25rem;
   font-weight: 700;
@@ -175,13 +183,58 @@
   pointer-events: none;
 }
 
-/* 코드 */
+/* 인라인 코드 */
 .tiptap code {
   background: #f3f4f6;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.875em;
   font-family: 'SF Mono', monospace;
+}
+
+/* 코드블록 */
+.tiptap pre {
+  background: #1f2937;
+  color: #e5e7eb;
+  padding: 16px;
+  border-radius: 10px;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.tiptap pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  font-size: 0.85em;
+  line-height: 1.6;
+}
+
+/* 테이블 */
+.tiptap table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+  font-size: 0.9em;
+}
+
+.tiptap th,
+.tiptap td {
+  border: 1px solid #d1d5db;
+  padding: 8px 12px;
+  text-align: left;
+  min-width: 80px;
+}
+
+.tiptap th {
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+}
+
+.tiptap tr:hover td {
+  background: #f9fafb;
 }
 
 /* 툴바 */
