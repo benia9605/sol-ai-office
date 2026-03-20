@@ -19,11 +19,11 @@ export function HomePage() {
   return (
     <div className="min-h-full bg-gradient-to-br from-primary-50 via-white to-pastel-pink/15 p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* 모디 아침 브리핑 */}
-        <BriefingCard onOpenModi={() => openRoom(modiSecretary)} />
-
         {/* 대시보드 위젯 */}
         <DashboardWidgets />
+
+        {/* 모디 아침 브리핑 */}
+        <BriefingCard onOpenModi={() => openRoom(modiSecretary)} />
 
         {/* 오피스 방 */}
         <section className="bg-white/60 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6">

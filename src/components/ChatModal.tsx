@@ -29,6 +29,16 @@ const roomIconColor: Record<string, string> = {
   secretary: '#ca8a04',  // yellow
 };
 
+/** 방별 액센트 컬러 (전송버튼, focus ring 등) */
+const roomAccent: Record<string, { bg: string; hover: string; ring: string }> = {
+  strategy:  { bg: '#9333ea', hover: '#7e22ce', ring: 'rgba(147,51,234,0.3)' },
+  marketing: { bg: '#ec4899', hover: '#db2777', ring: 'rgba(236,72,153,0.3)' },
+  dev:       { bg: '#65a30d', hover: '#4d7c0f', ring: 'rgba(101,163,13,0.3)' },
+  research:  { bg: '#92400e', hover: '#78350f', ring: 'rgba(146,64,14,0.3)' },
+  meeting:   { bg: '#ca8a04', hover: '#a16207', ring: 'rgba(202,138,4,0.3)' },
+  secretary: { bg: '#ca8a04', hover: '#a16207', ring: 'rgba(202,138,4,0.3)' },
+};
+
 /** AI 이름 → 출처 ID 매핑 */
 const aiNameToSourceId: Record<string, string> = {
   '플래니': 'plani', '마키': 'maki', '데비': 'devi', '서치': 'searchi', '모디': 'modi',
@@ -42,6 +52,7 @@ interface ChatModalProps {
 export function ChatModal({ room, onClose }: ChatModalProps) {
   const { messages, setMessages, loading, sendMessage: sendChatMsg, stopGenerating, meetingPhase, startNewMeeting, startNewChat } = useChat({ roomId: room.id });
   const isMeeting = room.id === 'meeting';
+  const accent = roomAccent[room.id] || roomAccent.strategy;
   const [input, setInput] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
     MEETING_PARTICIPANTS.map(p => p.roomId)
@@ -438,9 +449,9 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
               rows={1}
               placeholder={isMeeting ? '회의 주제를 입력해주세요...' : `${room.aiName}에게 메시지 보내기...`}
               className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-100 rounded-2xl text-sm
-                focus:outline-none focus:ring-2 focus:ring-primary-300 transition-all
+                focus:outline-none focus:ring-2 transition-all
                 resize-none overflow-y-auto leading-5"
-              style={{ maxHeight: '112px' }}
+              style={{ maxHeight: '112px', '--tw-ring-color': accent.ring } as React.CSSProperties}
             />
             {loading ? (
               <button
@@ -458,9 +469,11 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
               <button
                 onClick={handleSend}
                 disabled={!input.trim()}
-                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-primary-500 text-white rounded-2xl font-medium text-sm
-                  hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed
-                  transition-colors"
+                className="px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-2xl font-medium text-sm
+                  disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                style={{ backgroundColor: accent.bg }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = accent.hover)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = accent.bg)}
               >
                 전송
               </button>
