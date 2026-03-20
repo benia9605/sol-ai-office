@@ -93,11 +93,17 @@ export async function fetchRecentConversations(limit = 10): Promise<RecentConver
 
   if (error || !conversations?.length) return [];
 
-  // _ctx_ 접두사 대화 (컨텍스트 저장용) 제외
-  const filtered = conversations.filter(c => !c.room_id.startsWith('_ctx_'));
+  // _ctx_ 접두사 대화 제외 + 방별 최신 1개만 (중복 제거)
+  const uniqueByRoom = new Map<string, typeof conversations[0]>();
+  for (const conv of conversations) {
+    if (conv.room_id.startsWith('_ctx_')) continue;
+    if (!uniqueByRoom.has(conv.room_id)) {
+      uniqueByRoom.set(conv.room_id, conv);
+    }
+  }
 
   const results = await Promise.all(
-    filtered.slice(0, limit).map(async (conv) => {
+    Array.from(uniqueByRoom.values()).slice(0, limit).map(async (conv) => {
       const { data: messages } = await supabase
         .from('messages')
         .select('content, role')
