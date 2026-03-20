@@ -4,9 +4,127 @@
  * - 도서(book): 블로그형 Tiptap 리치텍스트 에디터
  * - 강좌(course): 구조화된 섹션형 에디터 (원본텍스트, 요약섹션, 액션아이템)
  */
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { StudyNote, NoteSection, NoteActionItem } from '../../types';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
+
+/** 노션 스타일 멀티셀렉트 드롭다운 */
+function ChapterMultiSelect({
+  chapters,
+  selected,
+  onChange,
+}: {
+  chapters: string[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const toggle = (ch: string) => {
+    onChange(selected.includes(ch) ? selected.filter((c) => c !== ch) : [...selected, ch]);
+  };
+
+  const filtered = chapters.filter((ch) =>
+    ch.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="relative" ref={ref}>
+      {/* 트리거 */}
+      <button
+        type="button"
+        onClick={() => { setOpen(!open); setTimeout(() => inputRef.current?.focus(), 50); }}
+        className="w-full min-h-[38px] px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-left
+          focus:outline-none focus:ring-2 focus:ring-blue-200 flex items-center gap-1.5 flex-wrap"
+      >
+        {selected.length > 0 ? (
+          selected.map((ch) => (
+            <span key={ch} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md">
+              {ch}
+              <span
+                role="button"
+                onClick={(e) => { e.stopPropagation(); toggle(ch); }}
+                className="text-blue-400 hover:text-blue-600 cursor-pointer"
+              >
+                ×
+              </span>
+            </span>
+          ))
+        ) : (
+          <span className="text-gray-400">챕터를 선택하세요...</span>
+        )}
+        <svg className="w-3.5 h-3.5 text-gray-400 ml-auto flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+        </svg>
+      </button>
+
+      {/* 드롭다운 */}
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+          {/* 검색 */}
+          <div className="px-3 py-2 border-b border-gray-100">
+            <input
+              ref={inputRef}
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="검색..."
+              className="w-full text-sm bg-transparent outline-none placeholder:text-gray-400"
+            />
+          </div>
+          {/* 목록 */}
+          <div className="max-h-52 overflow-y-auto py-1">
+            {filtered.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-3">일치하는 챕터가 없습니다</p>
+            ) : (
+              filtered.map((ch) => {
+                const checked = selected.includes(ch);
+                return (
+                  <button
+                    key={ch}
+                    type="button"
+                    onClick={() => toggle(ch)}
+                    className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2.5 transition-colors
+                      ${checked ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                  >
+                    <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-xs
+                      ${checked ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300'}`}>
+                      {checked && '✓'}
+                    </span>
+                    <span className="truncate">{ch}</span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+          {/* 선택 수 + 전체 선택/해제 */}
+          <div className="px-3 py-2 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-xs text-gray-400">{selected.length}개 선택됨</span>
+            <button
+              type="button"
+              onClick={() => onChange(selected.length === chapters.length ? [] : [...chapters])}
+              className="text-xs text-blue-500 hover:text-blue-600 font-medium"
+            >
+              {selected.length === chapters.length ? '전체 해제' : '전체 선택'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export type NoteEditorSaveData = Omit<StudyNote, 'id' | 'createdAt'> & { id?: string; pageNumber?: number };
 
@@ -128,22 +246,11 @@ export function StudyNoteEditor({ readingId, readingCategory, chapters, preselec
         <div className="flex-1 min-w-0">
           <label className="text-xs text-gray-500 mb-1 block">챕터/섹션 (복수 선택 가능)</label>
           {chapters && chapters.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {chapters.map((ch, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => toggleChapter(ch)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                    selectedChapters.includes(ch)
-                      ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-300'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {ch}
-                </button>
-              ))}
-            </div>
+            <ChapterMultiSelect
+              chapters={chapters}
+              selected={selectedChapters}
+              onChange={setSelectedChapters}
+            />
           ) : (
             <div>
               <div className="flex gap-2">
