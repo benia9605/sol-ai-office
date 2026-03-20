@@ -81,6 +81,18 @@ export function PomodoroTimer({ task, initialWorkMin, initialBreakMin, onComplet
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           playBeep();
+          // 백그라운드일 때 SW 알림 발송 (뽀모도로 종료)
+          if (document.hidden && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.ready?.then((reg) => {
+              reg.showNotification(mode === 'work' ? '작업 시간 끝!' : '휴식 끝!', {
+                body: mode === 'work'
+                  ? `${task?.title || '작업'} — 휴식 시간이에요`
+                  : `${task?.title || '작업'} — 다시 집중할 시간이에요`,
+                icon: '/icon-192x192.png',
+                tag: 'pomodoro',
+              });
+            });
+          }
           if (mode === 'work') {
             if (task) {
               onComplete(task.id);

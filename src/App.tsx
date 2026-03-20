@@ -4,8 +4,10 @@
  * - useAuth로 로그인 상태 확인
  * - 미인증: LoginPage / 인증: BrowserRouter 라우팅
  */
+import { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+import { updateLastAccess, hasActiveSubscription, subscribePush } from './services/pushNotification.service';
 import { LoginPage } from './pages/LoginPage';
 import { Layout } from './components/Layout';
 import { HomePage } from './pages/HomePage';
@@ -20,6 +22,19 @@ import { SummariesPage } from './pages/SummariesPage';
 
 function App() {
   const { user, loading } = useAuth();
+  const lastAccessUpdated = useRef(false);
+
+  // 마지막 접속 시간 업데이트 + 기존 구독 갱신
+  useEffect(() => {
+    if (!user || lastAccessUpdated.current) return;
+    lastAccessUpdated.current = true;
+
+    updateLastAccess(user.id);
+
+    hasActiveSubscription().then((active) => {
+      if (active) subscribePush(user.id);
+    });
+  }, [user]);
 
   if (loading) {
     return (

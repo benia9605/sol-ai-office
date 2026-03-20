@@ -11,6 +11,7 @@ import { useUserProfile, UserProfile } from '../hooks/useUserProfile';
 import { useAuth } from '../hooks/useAuth';
 import { Project } from '../types';
 import { uploadImage, deleteImage } from '../services/storage.service';
+import { NotificationSettings } from '../components/NotificationSettings';
 
 const PROJECT_COLOR_PRESETS = [
   '#a855f7', '#ec4899', '#f97316', '#eab308',
@@ -148,8 +149,8 @@ export function SettingsPage() {
         {/* 내 정보 */}
         <section className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <svg className="w-5 h-5 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+              <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
@@ -162,14 +163,14 @@ export function SettingsPage() {
                     setProfileEditing(false);
                     setProfileForm({ name: profile.name, bio: profile.bio, tone: profile.tone, responseLength: profile.responseLength, emojiUsage: profile.emojiUsage });
                   }}
-                  className="px-3 py-1.5 text-sm rounded-xl font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                  className="px-3 py-1.5 text-xs rounded-xl font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   취소
                 </button>
                 <button
                   onClick={handleProfileSave}
                   disabled={profileSaving || !profileForm.name.trim()}
-                  className="px-4 py-1.5 text-sm rounded-xl font-medium bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 transition-all"
+                  className="px-3 py-1.5 text-xs rounded-xl font-medium bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 transition-all"
                 >
                   {profileSaving ? '저장 중...' : '저장'}
                 </button>
@@ -177,7 +178,7 @@ export function SettingsPage() {
             ) : (
               <button
                 onClick={() => setProfileEditing(true)}
-                className="px-3 py-1.5 text-sm rounded-xl font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                className="px-3 py-1.5 text-xs rounded-xl font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 수정
               </button>
@@ -251,7 +252,7 @@ export function SettingsPage() {
                 </div>
               </div>
               {profile.bio && (
-                <div>
+                <div className="pt-3 border-t border-gray-100">
                   <span className="text-xs font-medium text-gray-400">소개</span>
                   <p className="text-sm text-gray-700 mt-0.5">{profile.bio}</p>
                 </div>
@@ -277,10 +278,15 @@ export function SettingsPage() {
         {/* 프로젝트 관리 */}
         <section className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-800">프로젝트 관리</h2>
+            <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+              <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              </svg>
+              프로젝트 관리
+            </h2>
             <button
               onClick={startAdd}
-              className="px-3 py-1.5 bg-primary-500 text-white text-sm rounded-xl hover:bg-primary-600 transition-colors"
+              className="px-3 py-1.5 text-xs rounded-xl font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
             >
               + 추가
             </button>
@@ -362,7 +368,7 @@ export function SettingsPage() {
         {editing && (
           <div data-modal-overlay className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4" onClick={handleCancel}>
             <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-6 space-y-5 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-lg font-bold text-gray-800">
+              <h3 className="text-base font-bold text-gray-800">
                 {editing === 'new' ? '프로젝트 추가' : '프로젝트 편집'}
               </h3>
 
@@ -590,11 +596,20 @@ export function SettingsPage() {
           </div>
         )}
 
+        {/* 알림 설정 */}
+        {user && <NotificationSettings userId={user.id} />}
+
         {/* 기타 설정 (placeholder) */}
         <section className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">기타 설정</h2>
+          <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            기타 설정
+          </h2>
           <div className="space-y-3">
-            {['AI 캐릭터 설정', '알림 설정', '테마 설정', '데이터 관리'].map((label) => (
+            {['AI 캐릭터 설정', '테마 설정', '데이터 관리'].map((label) => (
               <div
                 key={label}
                 className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-2xl"

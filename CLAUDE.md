@@ -171,7 +171,13 @@ PC (lg, 1024px+):
 
 ---
 
-## 환경 변수 (.env)
+## 환경 변수
+
+### 프로덕션 (Replit)
+Replit **Secrets** 탭에서 관리. `.env` 파일 없음.
+
+### 로컬 개발
+`.env` 파일 사용 (`.gitignore`에 등록됨).
 
 ```env
 VITE_SUPABASE_URL=
@@ -179,7 +185,14 @@ VITE_SUPABASE_ANON_KEY=
 VITE_ANTHROPIC_API_KEY=
 VITE_OPENAI_API_KEY=
 VITE_PERPLEXITY_API_KEY=
+VITE_VAPID_PUBLIC_KEY=
 ```
+
+### 보안 주의사항
+- **`.env`, `.env.*` 파일은 절대 git에 커밋하지 않는다** (`.gitignore`에 등록됨)
+- **Supabase Access Token, VAPID Private Key 등 시크릿은 코드에 하드코딩하지 않는다**
+- Supabase Edge Function용 시크릿은 `supabase secrets set` 명령으로 관리
+- 배포 관련 토큰/키 정보는 `.claude/projects/.../memory/` 에만 기록 (git 추적 안 됨)
 
 ---
 

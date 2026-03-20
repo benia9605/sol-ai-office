@@ -1,0 +1,232 @@
+/**
+ * @file src/components/NotificationSettings.tsx
+ * @description 알림 설정 컴포넌트
+ * - 푸시 알림 활성화/비활성화
+ * - 7가지 알림 유형별 토글
+ * - iOS PWA 미설치 시 안내
+ */
+import { useNotification } from '../hooks/useNotification';
+
+/** 벨 아이콘 (SVG) */
+function BellIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
+/** 토글 스위치 */
+function NotifToggle({
+  label,
+  desc,
+  checked,
+  onChange,
+}: {
+  label: string;
+  desc: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-gray-700">{label}</p>
+        <p className="text-[11px] text-gray-400">{desc}</p>
+      </div>
+      <button
+        onClick={() => onChange(!checked)}
+        className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+          checked ? 'bg-primary-500' : 'bg-gray-200'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+            checked ? 'translate-x-5' : ''
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
+/** 카테고리 구분선 */
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider pt-2">
+      {children}
+    </p>
+  );
+}
+
+interface Props {
+  userId: string;
+}
+
+export function NotificationSettings({ userId }: Props) {
+  const {
+    supported,
+    isStandalone,
+    permission,
+    subscribed,
+    prefs,
+    loading,
+    saving,
+    enablePush,
+    disablePush,
+    togglePref,
+  } = useNotification(userId);
+
+  if (loading) {
+    return (
+      <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6">
+        <div className="flex items-center gap-2 mb-2">
+          <BellIcon className="w-5 h-5 text-gray-400" />
+          <h2 className="text-base font-bold text-gray-800">알림 설정</h2>
+        </div>
+        <p className="text-xs text-gray-400">로딩 중...</p>
+      </div>
+    );
+  }
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  return (
+    <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6 space-y-4">
+      {/* 헤더 */}
+      <div className="flex items-center gap-2">
+        <BellIcon className="w-5 h-5 text-gray-400" />
+        <h2 className="text-base font-bold text-gray-800">알림 설정</h2>
+      </div>
+
+      {/* 브라우저 미지원 */}
+      {!supported && (
+        <p className="text-xs text-gray-400">
+          이 브라우저는 푸시 알림을 지원하지 않습니다.
+        </p>
+      )}
+
+      {/* iOS Safari — PWA 미설치 안내 */}
+      {supported && isIOS && !isStandalone && (
+        <div className="bg-amber-50 rounded-2xl p-3 space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs">📱</span>
+            <p className="text-xs font-medium text-amber-700">홈 화면에 추가 필요</p>
+          </div>
+          <p className="text-[11px] text-amber-600 leading-relaxed">
+            iOS에서 푸시 알림을 받으려면 Safari 하단의 공유 버튼 → "홈 화면에 추가"로 앱을 설치한 후 알림을 허용해주세요.
+          </p>
+        </div>
+      )}
+
+      {/* 권한 거부됨 */}
+      {supported && permission === 'denied' && (
+        <div className="bg-red-50 rounded-2xl p-3">
+          <p className="text-xs text-red-600">
+            알림 권한이 차단되어 있습니다.
+            {isIOS
+              ? ' 설정 > Teamie > 알림에서 허용해주세요.'
+              : ' 브라우저 주소창 왼쪽 자물쇠 아이콘에서 알림을 허용해주세요.'}
+          </p>
+        </div>
+      )}
+
+      {/* 미구독 — 안내 + 허용 버튼 */}
+      {supported && !subscribed && permission !== 'denied' && (
+        <div className="flex items-center gap-3">
+          <p className="flex-1 text-xs text-gray-400 leading-relaxed">
+            알림을 받으려면 권한을 허용해주세요.
+          </p>
+          <button
+            onClick={enablePush}
+            disabled={saving}
+            className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            {saving ? '설정 중...' : '알림 허용'}
+          </button>
+        </div>
+      )}
+
+      {/* 구독 완료 — 토글 목록 */}
+      {supported && subscribed && (
+        <>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs text-green-600">
+              <span>✓</span>
+              <span>알림이 활성화되어 있습니다</span>
+            </div>
+            <button
+              onClick={disablePush}
+              className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+            >
+              해제
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {/* 할일 */}
+            <SectionLabel>할일</SectionLabel>
+            <NotifToggle
+              label="마감 알림 (D-1, D-Day)"
+              desc="마감 하루 전, 당일에 알림"
+              checked={prefs.taskDeadline}
+              onChange={(v) => togglePref('taskDeadline', v)}
+            />
+            <NotifToggle
+              label="미완료 할일 알림 (밤 10시)"
+              desc="못 끝낸 할일이 있으면 밤 10시에 알림"
+              checked={prefs.taskOverdue}
+              onChange={(v) => togglePref('taskOverdue', v)}
+            />
+            <NotifToggle
+              label="아침 루틴 체크 (9시)"
+              desc="매일 오전 9시 루틴 확인 알림"
+              checked={prefs.morningRoutine}
+              onChange={(v) => togglePref('morningRoutine', v)}
+            />
+
+            {/* 일정 */}
+            <SectionLabel>일정</SectionLabel>
+            <NotifToggle
+              label="일정 시작 전 알림"
+              desc="설정한 시간(15분/30분/1시간) 전 알림"
+              checked={prefs.scheduleReminder}
+              onChange={(v) => togglePref('scheduleReminder', v)}
+            />
+            <NotifToggle
+              label="오늘 일정 아침 브리핑 (8시)"
+              desc="매일 오전 8시 오늘 일정 요약"
+              checked={prefs.morningBriefing}
+              onChange={(v) => togglePref('morningBriefing', v)}
+            />
+
+            {/* 스터디 */}
+            <SectionLabel>스터디</SectionLabel>
+            <NotifToggle
+              label="뽀모도로 타이머 종료"
+              desc="작업 시간 종료 시 알림 (백그라운드)"
+              checked={prefs.pomodoroDone}
+              onChange={(v) => togglePref('pomodoroDone', v)}
+            />
+
+            {/* 기록 */}
+            <SectionLabel>기록</SectionLabel>
+            <NotifToggle
+              label="아침 일기 리마인더 (9시)"
+              desc="아침 일기를 안 쓰면 오전 9시에 알림"
+              checked={prefs.morningJournal}
+              onChange={(v) => togglePref('morningJournal', v)}
+            />
+            <NotifToggle
+              label="저녁 일기 리마인더 (9시)"
+              desc="저녁 일기를 안 쓰면 밤 9시에 알림"
+              checked={prefs.eveningJournal}
+              onChange={(v) => togglePref('eveningJournal', v)}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

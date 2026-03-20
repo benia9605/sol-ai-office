@@ -320,3 +320,15 @@ export interface RecordItem {
   memoBody?: Record<string, unknown>; // Tiptap JSON
   createdAt: string;
 }
+
+/** 알림 설정 (프론트 camelCase) */
+export interface NotificationPreferences {
+  taskDeadline: boolean;       // 마감 D-1, D-Day
+  taskOverdue: boolean;        // 미완료 자정 알림
+  morningRoutine: boolean;     // 매일 9시 루틴 체크
+  scheduleReminder: boolean;   // 일정 N분전
+  morningBriefing: boolean;    // 매일 8시 브리핑
+  pomodoroDone: boolean;       // 뽀모도로 종료
+  morningJournal: boolean;     // 아침 일기 리마인더 (9시)
+  eveningJournal: boolean;     // 저녁 일기 리마인더 (9시)
+}
