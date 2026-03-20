@@ -159,7 +159,6 @@ export function Layout() {
 
       {/* 모바일 하단 네비게이션 — 뽀모도로 미니 타이머 포함 */}
       <BottomNav
-        onMoreClick={() => setSidebarOpen(true)}
         pomodoroTask={pomodoroTask}
         pomodoroTimeStr={pomodoroState?.timeStr}
         pomodoroMode={pomodoroState?.mode}
