@@ -81,29 +81,23 @@ export interface RecentConversation {
   last_role: string;
 }
 
-export async function fetchRecentConversations(limit = 5): Promise<RecentConversation[]> {
+export async function fetchRecentConversations(limit = 10): Promise<RecentConversation[]> {
   const userId = await getCurrentUserId();
 
-  // 방별 중복 제거 후에도 충분한 결과가 나오도록 넉넉히 조회
   const { data: conversations, error } = await supabase
     .from('conversations')
     .select('id, room_id, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
-    .limit(limit * 5);
+    .limit(limit * 3);
 
   if (error || !conversations?.length) return [];
 
-  // 같은 방은 최신 대화 1개만 (중복 제거)
-  const uniqueByRoom = new Map<string, typeof conversations[0]>();
-  for (const conv of conversations) {
-    if (!uniqueByRoom.has(conv.room_id)) {
-      uniqueByRoom.set(conv.room_id, conv);
-    }
-  }
+  // _ctx_ 접두사 대화 (컨텍스트 저장용) 제외
+  const filtered = conversations.filter(c => !c.room_id.startsWith('_ctx_'));
 
   const results = await Promise.all(
-    Array.from(uniqueByRoom.values()).map(async (conv) => {
+    filtered.slice(0, limit).map(async (conv) => {
       const { data: messages } = await supabase
         .from('messages')
         .select('content, role')

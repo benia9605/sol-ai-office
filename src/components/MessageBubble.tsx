@@ -235,8 +235,9 @@ export function MessageBubble({ message, room, onSave, onStar, onSaveAction, onB
           className={`relative px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl ${
             isAi
               ? 'bg-white shadow-soft rounded-bl-md'
-              : 'bg-primary-500 text-white rounded-br-md whitespace-pre-wrap'
+              : 'text-white rounded-br-md whitespace-pre-wrap'
           }`}
+          style={!isAi ? { backgroundColor: roomIconColor[room.id] || '#9333ea' } : undefined}
         >
           {/* 즐겨찾기 별 */}
           {message.isStarred && (
