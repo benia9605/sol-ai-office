@@ -5,6 +5,7 @@
  * - 7가지 알림 유형별 토글
  * - iOS PWA 미설치 시 안내
  */
+import { useState } from 'react';
 import { useNotification } from '../hooks/useNotification';
 
 /** 벨 아이콘 (SVG) */
@@ -57,6 +58,117 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider pt-2">
       {children}
     </p>
+  );
+}
+
+/** 푸시 알림 진단 도구 */
+function PushDiagnostics() {
+  const [results, setResults] = useState<string[]>([]);
+  const [running, setRunning] = useState(false);
+
+  async function runDiagnostics() {
+    setRunning(true);
+    const log: string[] = [];
+
+    // 1. 브라우저 지원
+    const hasSW = 'serviceWorker' in navigator;
+    const hasPush = 'PushManager' in window;
+    const hasNotif = 'Notification' in window;
+    log.push(`[1] 브라우저 지원: SW=${hasSW}, Push=${hasPush}, Notif=${hasNotif}`);
+
+    // 2. 알림 권한
+    log.push(`[2] 알림 권한: ${Notification.permission}`);
+
+    // 3. Service Worker 상태
+    if (hasSW) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        const sw = reg.active || reg.waiting || reg.installing;
+        log.push(`[3] SW 상태: ${sw?.state || '없음'} (scope: ${reg.scope})`);
+      } else {
+        log.push('[3] SW 등록 안 됨!');
+      }
+    }
+
+    // 4. 로컬 알림 테스트 (push 없이 직접)
+    if (Notification.permission === 'granted' && hasSW) {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification('진단 테스트', {
+          body: '이 알림이 보이면 알림 권한은 정상입니다!',
+          tag: 'diagnostic-test',
+        });
+        log.push('[4] 로컬 알림 발송 성공 — 폰에 뜨는지 확인!');
+      } catch (e: any) {
+        log.push(`[4] 로컬 알림 실패: ${e.message}`);
+      }
+    } else {
+      log.push('[4] 로컬 알림 테스트 불가 (권한 없음)');
+    }
+
+    // 5. Push 구독 상태
+    if (hasSW && hasPush) {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        log.push(`[5] 구독 있음: ${sub.endpoint.slice(0, 60)}...`);
+        const key = sub.options?.applicationServerKey;
+        if (key) {
+          const arr = new Uint8Array(key as ArrayBuffer);
+          // base64url 인코딩
+          let binary = '';
+          for (const byte of arr) binary += String.fromCharCode(byte);
+          const b64 = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+          log.push(`[5] 구독 VAPID key: ${b64.slice(0, 20)}...${b64.slice(-10)}`);
+
+          const envKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || '(없음)';
+          const match = b64 === envKey;
+          log.push(`[5] 환경변수 VAPID key: ${envKey.slice(0, 20)}...${envKey.slice(-10)}`);
+          log.push(`[5] 키 일치: ${match ? 'YES' : 'NO — 재구독 필요!'}`);
+        } else {
+          log.push('[5] applicationServerKey 없음');
+        }
+      } else {
+        log.push('[5] Push 구독 없음 — 알림을 먼저 켜주세요');
+      }
+    }
+
+    setResults(log);
+    setRunning(false);
+  }
+
+  if (!results.length && !running) {
+    return (
+      <button
+        onClick={runDiagnostics}
+        className="w-full mt-2 py-2 rounded-xl text-xs font-medium border border-dashed border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-500 transition-colors"
+      >
+        푸시 알림 진단하기
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="bg-gray-50 rounded-2xl p-3 space-y-1">
+        {running && <p className="text-xs text-gray-400">진단 중...</p>}
+        {results.map((line, i) => {
+          const isError = line.includes('NO') || line.includes('실패') || line.includes('안 됨') || line.includes('없음');
+          const isOk = line.includes('YES') || line.includes('성공') || line.includes('granted');
+          return (
+            <p key={i} className={`text-[11px] font-mono leading-relaxed ${isError ? 'text-red-500' : isOk ? 'text-green-600' : 'text-gray-500'}`}>
+              {line}
+            </p>
+          );
+        })}
+      </div>
+      <button
+        onClick={runDiagnostics}
+        className="w-full py-1.5 rounded-xl text-[11px] text-gray-400 hover:text-gray-500 transition-colors"
+      >
+        다시 진단
+      </button>
+    </div>
   );
 }
 
@@ -225,6 +337,9 @@ export function NotificationSettings({ userId }: Props) {
               onChange={(v) => togglePref('eveningJournal', v)}
             />
           </div>
+
+          {/* 진단 도구 */}
+          <PushDiagnostics />
         </>
       )}
     </div>
