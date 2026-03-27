@@ -7,6 +7,7 @@
  */
 import { useState } from 'react';
 import { useNotification } from '../hooks/useNotification';
+import { supabase } from '../services/supabase';
 
 /** 벨 아이콘 (SVG) */
 function BellIcon({ className = 'w-4 h-4' }: { className?: string }) {
@@ -62,9 +63,11 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 /** 푸시 알림 진단 도구 */
-function PushDiagnostics() {
+function PushDiagnostics({ userId }: { userId: string }) {
   const [results, setResults] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
+  const [serverTesting, setServerTesting] = useState(false);
+  const [serverResult, setServerResult] = useState<string | null>(null);
 
   async function runDiagnostics() {
     setRunning(true);
@@ -137,6 +140,31 @@ function PushDiagnostics() {
     setRunning(false);
   }
 
+  async function testServerPush() {
+    setServerTesting(true);
+    setServerResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-push', {
+        body: {
+          user_id: userId,
+          title: '서버 푸시 테스트',
+          body: '이 알림이 오면 서버 푸시가 정상 작동합니다!',
+          tag: 'server-test',
+        },
+      });
+      if (error) {
+        setServerResult(`실패: ${error.message}`);
+      } else if (data?.ok) {
+        setServerResult(`성공! (sent: ${data.sent ?? '?'}) — 알림이 오는지 확인!`);
+      } else {
+        setServerResult(`응답: ${JSON.stringify(data)}`);
+      }
+    } catch (e: any) {
+      setServerResult(`오류: ${e.message}`);
+    }
+    setServerTesting(false);
+  }
+
   if (!results.length && !running) {
     return (
       <button
@@ -168,6 +196,19 @@ function PushDiagnostics() {
       >
         다시 진단
       </button>
+      {/* 서버 푸시 테스트 */}
+      <button
+        onClick={testServerPush}
+        disabled={serverTesting}
+        className="w-full py-2 rounded-xl text-xs font-medium border border-dashed border-primary-300 text-primary-500 hover:border-primary-400 hover:bg-primary-50 transition-colors disabled:opacity-50"
+      >
+        {serverTesting ? '서버 푸시 전송 중...' : '서버 푸시 테스트 (Edge Function)'}
+      </button>
+      {serverResult && (
+        <p className={`text-[11px] font-mono px-1 ${serverResult.includes('성공') ? 'text-green-600' : 'text-red-500'}`}>
+          {serverResult}
+        </p>
+      )}
     </div>
   );
 }
@@ -339,7 +380,7 @@ export function NotificationSettings({ userId }: Props) {
           </div>
 
           {/* 진단 도구 */}
-          <PushDiagnostics />
+          <PushDiagnostics userId={userId} />
         </>
       )}
     </div>
