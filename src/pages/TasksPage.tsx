@@ -129,6 +129,7 @@ export function TasksPage() {
     date?: string; category?: string; status?: TaskStatus;
   }>({});
   const bulkEditRef = useRef<HTMLDivElement>(null);
+  const bulkEditPanelRef = useRef<HTMLDivElement>(null);
 
   // Category management
   const [taskCategories, setTaskCategories] = useState(defaultTaskCategories);
@@ -344,7 +345,11 @@ export function TasksPage() {
   // 일괄 편집 외부 클릭 닫기
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (bulkEditRef.current && !bulkEditRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        bulkEditRef.current && !bulkEditRef.current.contains(target) &&
+        bulkEditPanelRef.current && !bulkEditPanelRef.current.contains(target)
+      ) {
         setShowBulkEdit(false);
       }
     };
@@ -727,7 +732,7 @@ export function TasksPage() {
 
         {/* 일괄 수정 패널 */}
         {showBulkEdit && selectMode && selectedIds.size > 0 && (
-          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-4 space-y-4">
+          <div ref={bulkEditPanelRef} className="bg-white rounded-lg shadow-lg border border-gray-100 p-4 space-y-4">
             <h3 className="text-sm font-semibold text-gray-700">{selectedIds.size}개 항목 일괄 수정</h3>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">목표</label>
