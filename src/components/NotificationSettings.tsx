@@ -144,20 +144,36 @@ function PushDiagnostics({ userId }: { userId: string }) {
     setServerTesting(true);
     setServerResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke('test-push', {
-        body: {
-          user_id: userId,
-          title: '서버 푸시 테스트',
-          body: '이 알림이 오면 서버 푸시가 정상 작동합니다!',
-          tag: 'server-test',
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const session = (await supabase.auth.getSession()).data.session;
+      const token = session?.access_token || anonKey;
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/test-push`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'apikey': anonKey,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          user_id: userId,
+          title: 'Server Push Test',
+          body: 'This notification confirms server push works!',
+          tag: 'server-test',
+        }),
       });
-      if (error) {
-        setServerResult(`실패: ${error.message}`);
-      } else if (data?.ok) {
-        setServerResult(`성공! (sent: ${data.sent ?? '?'}) — 알림이 오는지 확인!`);
+
+      const text = await res.text();
+      if (!res.ok) {
+        setServerResult(`실패 (${res.status}): ${text}`);
       } else {
-        setServerResult(`응답: ${JSON.stringify(data)}`);
+        const data = JSON.parse(text);
+        if (data.ok) {
+          setServerResult(`성공! (sent: ${data.sent ?? '?'}) — 알림이 오는지 확인!`);
+        } else {
+          setServerResult(`응답: ${text}`);
+        }
       }
     } catch (e: any) {
       setServerResult(`오류: ${e.message}`);
