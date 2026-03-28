@@ -37,6 +37,7 @@ CREATE TABLE notification_preferences (
   -- 스터디
   pomodoro_done BOOLEAN DEFAULT true,        -- 뽀모도로 종료 (클라이언트)
   -- 기록
+  morning_journal BOOLEAN DEFAULT true,      -- 아침 일기 리마인더
   evening_journal BOOLEAN DEFAULT true,      -- 저녁 기록 리마인더
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
@@ -74,101 +75,104 @@ ALTER TABLE user_profiles
 
 -- =============================================
 -- pg_cron 스케줄 등록
--- (SUPABASE_URL을 실제 프로젝트 URL로 교체)
+-- 주의: current_setting('supabase_functions_endpoint')는
+--       pg_cron 컨텍스트에서 사용 불가하므로 URL을 직접 지정
 -- =============================================
 
 -- 아침 브리핑: 매일 8시 KST (23:00 UTC 전날)
 SELECT cron.schedule(
   'morning-briefing',
   '0 23 * * *',
-  $$
-  SELECT net.http_post(
-    url := current_setting('supabase_functions_endpoint') || '/morning-briefing',
+  $$SELECT net.http_post(
+    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/morning-briefing',
     headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('supabase.service_role_key'),
-      'Content-Type', 'application/json'
+      'Content-Type','application/json',
+      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
     ),
     body := '{}'::jsonb
-  );
-  $$
+  )$$
 );
 
 -- 아침 루틴: 매일 9시 KST (0:00 UTC)
 SELECT cron.schedule(
   'morning-routine',
   '0 0 * * *',
-  $$
-  SELECT net.http_post(
-    url := current_setting('supabase_functions_endpoint') || '/morning-routine',
+  $$SELECT net.http_post(
+    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/morning-routine',
     headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('supabase.service_role_key'),
-      'Content-Type', 'application/json'
+      'Content-Type','application/json',
+      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
     ),
     body := '{}'::jsonb
-  );
-  $$
+  )$$
+);
+
+-- 아침 일기: 매일 9:05 KST (0:05 UTC)
+SELECT cron.schedule(
+  'morning-journal',
+  '5 0 * * *',
+  $$SELECT net.http_post(
+    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/morning-journal',
+    headers := jsonb_build_object(
+      'Content-Type','application/json',
+      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
+    ),
+    body := '{}'::jsonb
+  )$$
 );
 
 -- 일정 리마인더: 5분마다
 SELECT cron.schedule(
   'schedule-reminder',
   '*/5 * * * *',
-  $$
-  SELECT net.http_post(
-    url := current_setting('supabase_functions_endpoint') || '/schedule-reminder',
+  $$SELECT net.http_post(
+    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/schedule-reminder',
     headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('supabase.service_role_key'),
-      'Content-Type', 'application/json'
+      'Content-Type','application/json',
+      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
     ),
     body := '{}'::jsonb
-  );
-  $$
+  )$$
 );
 
 -- 할일 마감: 매일 10:01 KST (1:01 UTC)
 SELECT cron.schedule(
   'task-deadline',
   '1 1 * * *',
-  $$
-  SELECT net.http_post(
-    url := current_setting('supabase_functions_endpoint') || '/task-deadline',
+  $$SELECT net.http_post(
+    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/task-deadline',
     headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('supabase.service_role_key'),
-      'Content-Type', 'application/json'
+      'Content-Type','application/json',
+      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
     ),
     body := '{}'::jsonb
-  );
-  $$
-);
-
--- 미완료 할일: 매일 0:05 KST (15:05 UTC 전날)
-SELECT cron.schedule(
-  'overdue-tasks',
-  '5 15 * * *',
-  $$
-  SELECT net.http_post(
-    url := current_setting('supabase_functions_endpoint') || '/overdue-tasks',
-    headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('supabase.service_role_key'),
-      'Content-Type', 'application/json'
-    ),
-    body := '{}'::jsonb
-  );
-  $$
+  )$$
 );
 
 -- 저녁 기록: 매일 21시 KST (12:00 UTC)
 SELECT cron.schedule(
   'evening-journal',
   '0 12 * * *',
-  $$
-  SELECT net.http_post(
-    url := current_setting('supabase_functions_endpoint') || '/evening-journal',
+  $$SELECT net.http_post(
+    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/evening-journal',
     headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('supabase.service_role_key'),
-      'Content-Type', 'application/json'
+      'Content-Type','application/json',
+      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
     ),
     body := '{}'::jsonb
-  );
-  $$
+  )$$
+);
+
+-- 미완료 할일: 매일 22:05 KST (13:05 UTC)
+SELECT cron.schedule(
+  'overdue-tasks',
+  '5 13 * * *',
+  $$SELECT net.http_post(
+    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/overdue-tasks',
+    headers := jsonb_build_object(
+      'Content-Type','application/json',
+      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
+    ),
+    body := '{}'::jsonb
+  )$$
 );
