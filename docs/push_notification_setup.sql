@@ -74,105 +74,111 @@ ALTER TABLE user_profiles
 
 
 -- =============================================
+-- Vault 시크릿 등록 (최초 1회)
+-- pg_cron에서 URL/키를 안전하게 참조하기 위해 사용
+-- =============================================
+-- SELECT vault.create_secret('<SUPABASE_ANON_KEY>', 'supabase_anon_key');
+-- SELECT vault.create_secret('<SUPABASE_FUNCTIONS_URL>', 'supabase_functions_url');
+
+-- =============================================
 -- pg_cron 스케줄 등록
--- 주의: current_setting('supabase_functions_endpoint')는
---       pg_cron 컨텍스트에서 사용 불가하므로 URL을 직접 지정
+-- Vault에서 URL/키를 읽어서 Edge Function 호출
 -- =============================================
 
 -- 아침 브리핑: 매일 8시 KST (23:00 UTC 전날)
 SELECT cron.schedule(
   'morning-briefing',
   '0 23 * * *',
-  $$SELECT net.http_post(
-    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/morning-briefing',
+  $cmd$SELECT net.http_post(
+    url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_functions_url') || '/morning-briefing',
     headers := jsonb_build_object(
       'Content-Type','application/json',
-      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
+      'Authorization','Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_anon_key')
     ),
     body := '{}'::jsonb
-  )$$
+  )$cmd$
 );
 
 -- 아침 루틴: 매일 9시 KST (0:00 UTC)
 SELECT cron.schedule(
   'morning-routine',
   '0 0 * * *',
-  $$SELECT net.http_post(
-    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/morning-routine',
+  $cmd$SELECT net.http_post(
+    url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_functions_url') || '/morning-routine',
     headers := jsonb_build_object(
       'Content-Type','application/json',
-      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
+      'Authorization','Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_anon_key')
     ),
     body := '{}'::jsonb
-  )$$
+  )$cmd$
 );
 
 -- 아침 일기: 매일 9:05 KST (0:05 UTC)
 SELECT cron.schedule(
   'morning-journal',
   '5 0 * * *',
-  $$SELECT net.http_post(
-    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/morning-journal',
+  $cmd$SELECT net.http_post(
+    url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_functions_url') || '/morning-journal',
     headers := jsonb_build_object(
       'Content-Type','application/json',
-      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
+      'Authorization','Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_anon_key')
     ),
     body := '{}'::jsonb
-  )$$
+  )$cmd$
 );
 
 -- 일정 리마인더: 5분마다
 SELECT cron.schedule(
   'schedule-reminder',
   '*/5 * * * *',
-  $$SELECT net.http_post(
-    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/schedule-reminder',
+  $cmd$SELECT net.http_post(
+    url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_functions_url') || '/schedule-reminder',
     headers := jsonb_build_object(
       'Content-Type','application/json',
-      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
+      'Authorization','Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_anon_key')
     ),
     body := '{}'::jsonb
-  )$$
+  )$cmd$
 );
 
 -- 할일 마감: 매일 10:01 KST (1:01 UTC)
 SELECT cron.schedule(
   'task-deadline',
   '1 1 * * *',
-  $$SELECT net.http_post(
-    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/task-deadline',
+  $cmd$SELECT net.http_post(
+    url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_functions_url') || '/task-deadline',
     headers := jsonb_build_object(
       'Content-Type','application/json',
-      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
+      'Authorization','Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_anon_key')
     ),
     body := '{}'::jsonb
-  )$$
+  )$cmd$
 );
 
 -- 저녁 기록: 매일 21시 KST (12:00 UTC)
 SELECT cron.schedule(
   'evening-journal',
   '0 12 * * *',
-  $$SELECT net.http_post(
-    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/evening-journal',
+  $cmd$SELECT net.http_post(
+    url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_functions_url') || '/evening-journal',
     headers := jsonb_build_object(
       'Content-Type','application/json',
-      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
+      'Authorization','Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_anon_key')
     ),
     body := '{}'::jsonb
-  )$$
+  )$cmd$
 );
 
 -- 미완료 할일: 매일 22:05 KST (13:05 UTC)
 SELECT cron.schedule(
   'overdue-tasks',
   '5 13 * * *',
-  $$SELECT net.http_post(
-    url := 'https://eadhobeluoivppoaxzbh.supabase.co/functions/v1/overdue-tasks',
+  $cmd$SELECT net.http_post(
+    url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_functions_url') || '/overdue-tasks',
     headers := jsonb_build_object(
       'Content-Type','application/json',
-      'Authorization','Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZGhvYmVsdW9pdnBwb2F4emJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDk0MTMsImV4cCI6MjA4NzA4NTQxM30.w-zaFnj5kJ3e1wqgQo3o_vbvwiUxEd9ybAouhL_7buE'
+      'Authorization','Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_anon_key')
     ),
     body := '{}'::jsonb
-  )$$
+  )$cmd$
 );
