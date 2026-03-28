@@ -1,16 +1,30 @@
 /**
  * @file supabase/functions/test-push/index.ts
  * @description 테스트용 푸시 알림 발송
+ * - 브라우저에서 supabase.functions.invoke()로 호출
  * - 수동 호출: curl -X POST ... -d '{"user_id":"...","title":"테스트","body":"알림 테스트"}'
  */
 import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
 import { sendPushToUser } from '../_shared/push.ts';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 Deno.serve(async (req) => {
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
     const { user_id, title, body, tag, url } = await req.json();
     if (!user_id) {
-      return new Response(JSON.stringify({ error: 'user_id required' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'user_id required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const supabase = getSupabaseAdmin();
@@ -21,9 +35,14 @@ Deno.serve(async (req) => {
       url: url || '/',
     });
 
-    return new Response(JSON.stringify({ ok: true, sent }));
+    return new Response(JSON.stringify({ ok: true, sent }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (e) {
     console.error('test-push error:', e);
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
+    return new Response(JSON.stringify({ error: String(e) }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
