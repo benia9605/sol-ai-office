@@ -2,8 +2,383 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ────────────────────────────────────────────────────────
+   테마 토큰 — 모디 (기본)
+   - Tailwind v3에서 var(--...) 참조로 컬러 사용
+   - 변경 가이드: docs/THEME_SYSTEM_PLAN.md §4
+   ──────────────────────────────────────────────────────── */
+:root {
+  /* Primary (보라) */
+  --color-primary-50:  #faf5ff;
+  --color-primary-100: #f3e8ff;
+  --color-primary-200: #e9d5ff;
+  --color-primary-300: #d8b4fe;
+  --color-primary-400: #c084fc;
+  --color-primary-500: #a855f7;
+  --color-primary-600: #9333ea;
+
+  /* Pastel (방별) */
+  --color-pastel-purple: #e9d8fd;
+  --color-pastel-pink:   #fed7e2;
+  --color-pastel-lime:   #d9f99d;
+  --color-pastel-brown:  #e8d5c4;
+  --color-pastel-yellow: #fefcbf;
+
+  /* Surface / Text — 의미 기반 토큰 */
+  --color-surface:           #ffffff;
+  --color-surface-muted:     #f9fafb;
+  --color-foreground:        #1f2937;
+  --color-foreground-muted:  #6b7280;
+  --color-foreground-faint:  #9ca3af;
+  --color-line:              #e5e7eb;
+  --color-line-strong:       #d1d5db;
+
+  /* Gray 톤 — 기존 text-gray-* / bg-gray-* 가 따라가는 변수 */
+  --color-gray-50:  #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Shape */
+  --radius-card:    1.5rem;
+  --radius-card-sm: 1rem;
+  --radius-button:  1rem;
+  --radius-input:   1rem;
+
+  /* Shadow */
+  --shadow-soft:  0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+
+  /* Typography */
+  --font-heading-weight: 700;
+  --font-body-weight:    400;
+  --letter-spacing-body: 0;
+}
+
+/* ────────────────────────────────────────────────────────
+   테마 토큰 — 모던 (MUJI 톤, 진초록 액센트)
+   ──────────────────────────────────────────────────────── */
+[data-theme="modern"] {
+  /* Primary = 진초록 (#1b4332 deep forest green) */
+  --color-primary-50:  #e7eee9;
+  --color-primary-100: #c9d8ce;
+  --color-primary-200: #9ab9a4;
+  --color-primary-300: #6a9979;
+  --color-primary-400: #3d7a55;
+  --color-primary-500: #1b4332;
+  --color-primary-600: #0d2b1f;
+
+  /* Pastel → 모노톤 통일 (방별 컬러 제거, 프로필 이미지로만 구분) */
+  --color-pastel-purple: #ffffff;
+  --color-pastel-pink:   #ffffff;
+  --color-pastel-lime:   #ffffff;
+  --color-pastel-brown:  #ffffff;
+  --color-pastel-yellow: #ffffff;
+
+  /* Surface / Text — MUJI 톤 */
+  --color-surface:           #ffffff;
+  --color-surface-muted:     #f7f7f5;
+  --color-foreground:        #1a1a1a;
+  --color-foreground-muted:  #6b6b6b;
+  --color-foreground-faint:  #a1a1a1;
+  --color-line:              #e8e6e1;
+  --color-line-strong:       #c9c6bf;
+
+  /* Gray 톤 → warm gray (text-gray-* 722개 자동 변환) */
+  --color-gray-50:  #f7f7f5;
+  --color-gray-100: #efeeea;
+  --color-gray-200: #e8e6e1;
+  --color-gray-300: #c9c6bf;
+  --color-gray-400: #a1a1a1;
+  --color-gray-500: #6b6b6b;
+  --color-gray-600: #4a4a4a;
+  --color-gray-700: #2c2c2c;
+  --color-gray-800: #1a1a1a;
+  --color-gray-900: #000000;
+
+  /* Shape — 직사각형 */
+  --radius-card:    0;
+  --radius-card-sm: 0;
+  --radius-button:  0;
+  --radius-input:   0;
+
+  /* Shadow — 없음 (Phase 2에서 hairline border로 대체) */
+  --shadow-soft:  none;
+  --shadow-hover: none;
+
+  /* Typography — 가볍게 */
+  --font-heading-weight: 300;
+  --font-body-weight:    400;
+  --letter-spacing-body: -0.005em;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+  font-family:
+    'Pretendard',
+    -apple-system, BlinkMacSystemFont,
+    'Apple SD Gothic Neo',
+    'Segoe UI', Roboto,
+    'Noto Sans KR',
+    sans-serif;
+  letter-spacing: var(--letter-spacing-body, 0);
+}
+
+/* MUJI 시그니처 — 영문 대문자 트래킹 레이블 */
+.label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-foreground-faint);
+  font-weight: 500;
+}
+
+/* ────────────────────────────────────────────────────────
+   모던 테마 — 글로벌 오버라이드 (Phase 2)
+   기존 컴포넌트 코드 수정 없이 모디 → 모던 시각 차이 1차 적용
+   ──────────────────────────────────────────────────────── */
+
+/* 1) 둥근 모서리 제거 — 카드/버튼/인풋 모두 직사각형
+   .rounded-full(아바타/체크박스/원형 점)은 보존 */
+[data-theme="modern"] .rounded-3xl,
+[data-theme="modern"] .rounded-2xl,
+[data-theme="modern"] .rounded-xl {
+  border-radius: 0;
+}
+
+/* 2) 그림자 제거 + 1px hairline 경계로 대체
+   inset box-shadow 방식: border-box 영향 없고 기존 레이아웃 안 깨짐 */
+[data-theme="modern"] .shadow-soft {
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+[data-theme="modern"] .shadow-hover {
+  box-shadow: inset 0 0 0 1px var(--color-line-strong);
+}
+
+/* 3) 굵기 다운 — font-bold(700) → 500 (medium) */
+[data-theme="modern"] .font-bold {
+  font-weight: 500;
+}
+
+/* 4) 그라데이션 제거 — 모든 bg-gradient-* 를 단색 surface로 */
+[data-theme="modern"] [class*="bg-gradient-"] {
+  background-image: none !important;
+  background-color: var(--color-surface);
+}
+
+/* 5) backdrop-blur 제거 — 투명/블러 카드는 모던 톤과 안 맞음 */
+[data-theme="modern"] [class*="backdrop-blur-"] {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* 6) hover scale 효과 약화 — 모던은 절제된 인터랙션 */
+[data-theme="modern"] .hover\:scale-105:hover,
+[data-theme="modern"] .hover\:scale-\[1\.03\]:hover {
+  transform: none;
+}
+
+/* ────────────────────────────────────────────────────────
+   모던 테마 — 컬러 무력화 (모든 잡색 → 모노톤)
+   진초록 액센트(primary-*)만 살리고 나머지 모든 컬러는 회색/흰/검정으로
+   ──────────────────────────────────────────────────────── */
+
+/* 1) 연한 배경 (50~200) → 살짝 따뜻한 회색 surface-muted */
+[data-theme="modern"] [class~="bg-purple-50"],
+[data-theme="modern"] [class~="bg-purple-100"],
+[data-theme="modern"] [class~="bg-purple-200"],
+[data-theme="modern"] [class~="bg-pink-50"],
+[data-theme="modern"] [class~="bg-pink-100"],
+[data-theme="modern"] [class~="bg-pink-200"],
+[data-theme="modern"] [class~="bg-red-50"],
+[data-theme="modern"] [class~="bg-red-100"],
+[data-theme="modern"] [class~="bg-red-200"],
+[data-theme="modern"] [class~="bg-orange-50"],
+[data-theme="modern"] [class~="bg-orange-100"],
+[data-theme="modern"] [class~="bg-orange-200"],
+[data-theme="modern"] [class~="bg-amber-50"],
+[data-theme="modern"] [class~="bg-amber-100"],
+[data-theme="modern"] [class~="bg-amber-200"],
+[data-theme="modern"] [class~="bg-yellow-50"],
+[data-theme="modern"] [class~="bg-yellow-100"],
+[data-theme="modern"] [class~="bg-yellow-200"],
+[data-theme="modern"] [class~="bg-lime-50"],
+[data-theme="modern"] [class~="bg-lime-100"],
+[data-theme="modern"] [class~="bg-lime-200"],
+[data-theme="modern"] [class~="bg-green-50"],
+[data-theme="modern"] [class~="bg-green-100"],
+[data-theme="modern"] [class~="bg-green-200"],
+[data-theme="modern"] [class~="bg-emerald-50"],
+[data-theme="modern"] [class~="bg-emerald-100"],
+[data-theme="modern"] [class~="bg-emerald-200"],
+[data-theme="modern"] [class~="bg-teal-50"],
+[data-theme="modern"] [class~="bg-teal-100"],
+[data-theme="modern"] [class~="bg-teal-200"],
+[data-theme="modern"] [class~="bg-cyan-50"],
+[data-theme="modern"] [class~="bg-cyan-100"],
+[data-theme="modern"] [class~="bg-cyan-200"],
+[data-theme="modern"] [class~="bg-sky-50"],
+[data-theme="modern"] [class~="bg-sky-100"],
+[data-theme="modern"] [class~="bg-sky-200"],
+[data-theme="modern"] [class~="bg-blue-50"],
+[data-theme="modern"] [class~="bg-blue-100"],
+[data-theme="modern"] [class~="bg-blue-200"],
+[data-theme="modern"] [class~="bg-indigo-50"],
+[data-theme="modern"] [class~="bg-indigo-100"],
+[data-theme="modern"] [class~="bg-indigo-200"],
+[data-theme="modern"] [class~="bg-violet-50"],
+[data-theme="modern"] [class~="bg-violet-100"],
+[data-theme="modern"] [class~="bg-violet-200"],
+[data-theme="modern"] [class~="bg-fuchsia-50"],
+[data-theme="modern"] [class~="bg-fuchsia-100"],
+[data-theme="modern"] [class~="bg-fuchsia-200"],
+[data-theme="modern"] [class~="bg-rose-50"],
+[data-theme="modern"] [class~="bg-rose-100"],
+[data-theme="modern"] [class~="bg-rose-200"] {
+  background-color: var(--color-surface-muted) !important;
+  background-image: none !important;
+}
+
+/* 2) 진한 배경 (300~900) → 검정 foreground + 흰 텍스트 자동 */
+[data-theme="modern"] [class~="bg-purple-300"], [data-theme="modern"] [class~="bg-purple-400"],
+[data-theme="modern"] [class~="bg-purple-500"], [data-theme="modern"] [class~="bg-purple-600"],
+[data-theme="modern"] [class~="bg-purple-700"], [data-theme="modern"] [class~="bg-purple-800"], [data-theme="modern"] [class~="bg-purple-900"],
+[data-theme="modern"] [class~="bg-pink-300"], [data-theme="modern"] [class~="bg-pink-400"],
+[data-theme="modern"] [class~="bg-pink-500"], [data-theme="modern"] [class~="bg-pink-600"],
+[data-theme="modern"] [class~="bg-pink-700"], [data-theme="modern"] [class~="bg-pink-800"], [data-theme="modern"] [class~="bg-pink-900"],
+[data-theme="modern"] [class~="bg-red-300"], [data-theme="modern"] [class~="bg-red-400"],
+[data-theme="modern"] [class~="bg-red-500"], [data-theme="modern"] [class~="bg-red-600"],
+[data-theme="modern"] [class~="bg-red-700"], [data-theme="modern"] [class~="bg-red-800"], [data-theme="modern"] [class~="bg-red-900"],
+[data-theme="modern"] [class~="bg-orange-300"], [data-theme="modern"] [class~="bg-orange-400"],
+[data-theme="modern"] [class~="bg-orange-500"], [data-theme="modern"] [class~="bg-orange-600"],
+[data-theme="modern"] [class~="bg-orange-700"], [data-theme="modern"] [class~="bg-orange-800"], [data-theme="modern"] [class~="bg-orange-900"],
+[data-theme="modern"] [class~="bg-amber-300"], [data-theme="modern"] [class~="bg-amber-400"],
+[data-theme="modern"] [class~="bg-amber-500"], [data-theme="modern"] [class~="bg-amber-600"],
+[data-theme="modern"] [class~="bg-amber-700"], [data-theme="modern"] [class~="bg-amber-800"], [data-theme="modern"] [class~="bg-amber-900"],
+[data-theme="modern"] [class~="bg-yellow-300"], [data-theme="modern"] [class~="bg-yellow-400"],
+[data-theme="modern"] [class~="bg-yellow-500"], [data-theme="modern"] [class~="bg-yellow-600"],
+[data-theme="modern"] [class~="bg-yellow-700"], [data-theme="modern"] [class~="bg-yellow-800"], [data-theme="modern"] [class~="bg-yellow-900"],
+[data-theme="modern"] [class~="bg-lime-300"], [data-theme="modern"] [class~="bg-lime-400"],
+[data-theme="modern"] [class~="bg-lime-500"], [data-theme="modern"] [class~="bg-lime-600"],
+[data-theme="modern"] [class~="bg-lime-700"], [data-theme="modern"] [class~="bg-lime-800"], [data-theme="modern"] [class~="bg-lime-900"],
+[data-theme="modern"] [class~="bg-green-300"], [data-theme="modern"] [class~="bg-green-400"],
+[data-theme="modern"] [class~="bg-green-500"], [data-theme="modern"] [class~="bg-green-600"],
+[data-theme="modern"] [class~="bg-green-700"], [data-theme="modern"] [class~="bg-green-800"], [data-theme="modern"] [class~="bg-green-900"],
+[data-theme="modern"] [class~="bg-emerald-300"], [data-theme="modern"] [class~="bg-emerald-400"],
+[data-theme="modern"] [class~="bg-emerald-500"], [data-theme="modern"] [class~="bg-emerald-600"],
+[data-theme="modern"] [class~="bg-emerald-700"], [data-theme="modern"] [class~="bg-emerald-800"], [data-theme="modern"] [class~="bg-emerald-900"],
+[data-theme="modern"] [class~="bg-teal-300"], [data-theme="modern"] [class~="bg-teal-400"],
+[data-theme="modern"] [class~="bg-teal-500"], [data-theme="modern"] [class~="bg-teal-600"],
+[data-theme="modern"] [class~="bg-teal-700"], [data-theme="modern"] [class~="bg-teal-800"], [data-theme="modern"] [class~="bg-teal-900"],
+[data-theme="modern"] [class~="bg-cyan-300"], [data-theme="modern"] [class~="bg-cyan-400"],
+[data-theme="modern"] [class~="bg-cyan-500"], [data-theme="modern"] [class~="bg-cyan-600"],
+[data-theme="modern"] [class~="bg-cyan-700"], [data-theme="modern"] [class~="bg-cyan-800"], [data-theme="modern"] [class~="bg-cyan-900"],
+[data-theme="modern"] [class~="bg-sky-300"], [data-theme="modern"] [class~="bg-sky-400"],
+[data-theme="modern"] [class~="bg-sky-500"], [data-theme="modern"] [class~="bg-sky-600"],
+[data-theme="modern"] [class~="bg-sky-700"], [data-theme="modern"] [class~="bg-sky-800"], [data-theme="modern"] [class~="bg-sky-900"],
+[data-theme="modern"] [class~="bg-blue-300"], [data-theme="modern"] [class~="bg-blue-400"],
+[data-theme="modern"] [class~="bg-blue-500"], [data-theme="modern"] [class~="bg-blue-600"],
+[data-theme="modern"] [class~="bg-blue-700"], [data-theme="modern"] [class~="bg-blue-800"], [data-theme="modern"] [class~="bg-blue-900"],
+[data-theme="modern"] [class~="bg-indigo-300"], [data-theme="modern"] [class~="bg-indigo-400"],
+[data-theme="modern"] [class~="bg-indigo-500"], [data-theme="modern"] [class~="bg-indigo-600"],
+[data-theme="modern"] [class~="bg-indigo-700"], [data-theme="modern"] [class~="bg-indigo-800"], [data-theme="modern"] [class~="bg-indigo-900"],
+[data-theme="modern"] [class~="bg-violet-300"], [data-theme="modern"] [class~="bg-violet-400"],
+[data-theme="modern"] [class~="bg-violet-500"], [data-theme="modern"] [class~="bg-violet-600"],
+[data-theme="modern"] [class~="bg-violet-700"], [data-theme="modern"] [class~="bg-violet-800"], [data-theme="modern"] [class~="bg-violet-900"],
+[data-theme="modern"] [class~="bg-fuchsia-300"], [data-theme="modern"] [class~="bg-fuchsia-400"],
+[data-theme="modern"] [class~="bg-fuchsia-500"], [data-theme="modern"] [class~="bg-fuchsia-600"],
+[data-theme="modern"] [class~="bg-fuchsia-700"], [data-theme="modern"] [class~="bg-fuchsia-800"], [data-theme="modern"] [class~="bg-fuchsia-900"],
+[data-theme="modern"] [class~="bg-rose-300"], [data-theme="modern"] [class~="bg-rose-400"],
+[data-theme="modern"] [class~="bg-rose-500"], [data-theme="modern"] [class~="bg-rose-600"],
+[data-theme="modern"] [class~="bg-rose-700"], [data-theme="modern"] [class~="bg-rose-800"], [data-theme="modern"] [class~="bg-rose-900"] {
+  background-color: var(--color-foreground) !important;
+  color: var(--color-surface) !important;
+  background-image: none !important;
+}
+
+/* 3) 모든 컬러 텍스트 → foreground (검정) */
+[data-theme="modern"] [class*="text-purple-"]:not([class*="text-primary"]),
+[data-theme="modern"] [class*="text-pink-"],
+[data-theme="modern"] [class*="text-red-"],
+[data-theme="modern"] [class*="text-orange-"],
+[data-theme="modern"] [class*="text-amber-"],
+[data-theme="modern"] [class*="text-yellow-"],
+[data-theme="modern"] [class*="text-lime-"],
+[data-theme="modern"] [class*="text-green-"],
+[data-theme="modern"] [class*="text-emerald-"],
+[data-theme="modern"] [class*="text-teal-"],
+[data-theme="modern"] [class*="text-cyan-"],
+[data-theme="modern"] [class*="text-sky-"],
+[data-theme="modern"] [class*="text-blue-"],
+[data-theme="modern"] [class*="text-indigo-"],
+[data-theme="modern"] [class*="text-violet-"],
+[data-theme="modern"] [class*="text-fuchsia-"],
+[data-theme="modern"] [class*="text-rose-"] {
+  color: var(--color-foreground) !important;
+}
+
+/* 4) 모든 컬러 보더 → line (hairline 회색) */
+[data-theme="modern"] [class*="border-purple-"]:not([class*="border-primary"]),
+[data-theme="modern"] [class*="border-pink-"],
+[data-theme="modern"] [class*="border-red-"],
+[data-theme="modern"] [class*="border-orange-"],
+[data-theme="modern"] [class*="border-amber-"],
+[data-theme="modern"] [class*="border-yellow-"],
+[data-theme="modern"] [class*="border-lime-"],
+[data-theme="modern"] [class*="border-green-"],
+[data-theme="modern"] [class*="border-emerald-"],
+[data-theme="modern"] [class*="border-teal-"],
+[data-theme="modern"] [class*="border-cyan-"],
+[data-theme="modern"] [class*="border-sky-"],
+[data-theme="modern"] [class*="border-blue-"],
+[data-theme="modern"] [class*="border-indigo-"],
+[data-theme="modern"] [class*="border-violet-"],
+[data-theme="modern"] [class*="border-fuchsia-"],
+[data-theme="modern"] [class*="border-rose-"] {
+  border-color: var(--color-line) !important;
+}
+
+/* 5) 컬러 ring (focus state) → line-strong */
+[data-theme="modern"] [class*="ring-purple-"]:not([class*="ring-primary"]),
+[data-theme="modern"] [class*="ring-pink-"],
+[data-theme="modern"] [class*="ring-blue-"],
+[data-theme="modern"] [class*="ring-amber-"],
+[data-theme="modern"] [class*="ring-orange-"],
+[data-theme="modern"] [class*="ring-fuchsia-"] {
+  --tw-ring-color: var(--color-line-strong) !important;
+}
+
+/* 6) 헤딩 — MUJI 톤은 font-light(300) ~ font-normal(400) */
+[data-theme="modern"] h1,
+[data-theme="modern"] h2,
+[data-theme="modern"] .text-3xl,
+[data-theme="modern"] .text-4xl,
+[data-theme="modern"] .text-2xl {
+  font-weight: 300;
+  letter-spacing: -0.015em;
+}
+[data-theme="modern"] h3,
+[data-theme="modern"] .text-xl,
+[data-theme="modern"] .text-lg {
+  font-weight: 400;
+}
+/* 단, font-bold, font-semibold가 직접 적용된 곳은 위 글로벌 .font-bold 오버라이드(500)가 우선 */
+[data-theme="modern"] .font-semibold {
+  font-weight: 500;
+}
+
+/* 7) 페이지 본문 행간/letter-spacing 살짝 — 무지 톤 가독성 */
+[data-theme="modern"] body,
+[data-theme="modern"] p,
+[data-theme="modern"] li,
+[data-theme="modern"] span,
+[data-theme="modern"] div {
+  letter-spacing: -0.005em;
 }
 
 /* 모바일 date/time input 오버플로 방지 */
@@ -88,23 +463,23 @@ body:has([data-modal-overlay]) .modi-fab {
 }
 .markdown-body hr {
   border: none;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-line);
   margin: 0.6em 0;
 }
 .markdown-body blockquote {
-  border-left: 3px solid #c084fc;
+  border-left: 3px solid var(--color-primary-400);
   padding-left: 0.8em;
-  color: #6b7280;
+  color: var(--color-foreground-muted);
   margin: 0.4em 0;
 }
 .markdown-body code {
-  background: #f3f4f6;
+  background: var(--color-gray-100);
   padding: 0.15em 0.4em;
   border-radius: 4px;
   font-size: 0.85em;
 }
 .markdown-body pre {
-  background: #f3f4f6;
+  background: var(--color-gray-100);
   padding: 0.8em;
   border-radius: 8px;
   overflow-x: auto;
@@ -115,7 +490,7 @@ body:has([data-modal-overlay]) .modi-fab {
   padding: 0;
 }
 .markdown-body a {
-  color: #a855f7;
+  color: var(--color-primary-500);
   text-decoration: underline;
 }
 .markdown-body table {
@@ -125,11 +500,21 @@ body:has([data-modal-overlay]) .modi-fab {
   font-size: 0.9em;
 }
 .markdown-body th, .markdown-body td {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-line);
   padding: 0.3em 0.6em;
   text-align: left;
 }
 .markdown-body th {
-  background: #f9fafb;
+  background: var(--color-surface-muted);
   font-weight: 600;
+}
+
+/* 모던 테마에서는 markdown 본문 폰트 굵기도 가볍게 */
+[data-theme="modern"] .markdown-body h1,
+[data-theme="modern"] .markdown-body h2 {
+  font-weight: 500;
+}
+[data-theme="modern"] .markdown-body code,
+[data-theme="modern"] .markdown-body pre {
+  border-radius: 0;
 }

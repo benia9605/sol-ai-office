@@ -6,6 +6,8 @@
  */
 import { useState, useEffect } from 'react';
 import { fetchSummaries, SummaryRow, ROOM_LABELS, ROOM_ICONS } from '../services/summary.service';
+import { useTheme } from '../contexts/ThemeContext';
+import { SummariesPageModern } from './SummariesPage.modern';
 
 /** 필터 탭 목록 */
 const FILTER_TABS = [
@@ -38,6 +40,14 @@ function groupByDate(summaries: SummaryRow[]): Record<string, SummaryRow[]> {
 }
 
 export function SummariesPage() {
+  const { theme } = useTheme();
+  if (theme === 'modern') {
+    return <SummariesPageModern />;
+  }
+  return <SummariesPageModi />;
+}
+
+function SummariesPageModi() {
   const [summaries, setSummaries] = useState<SummaryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');

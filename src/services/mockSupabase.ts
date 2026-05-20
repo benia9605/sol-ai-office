@@ -16,7 +16,7 @@ import {
 
 const mockData: Record<string, any[]> = {
   user_profiles: [
-    { id: 'dev-profile', user_id: 'dev', name: '솔', bio: '1인 사업가', tone: 'friendly', response_length: 'medium', emoji_usage: 'moderate', email: 'dev@test.com' },
+    { id: 'dev-profile', user_id: 'dev', name: '솔', bio: '1인 사업가', tone: 'friendly', response_length: 'medium', emoji_usage: 'moderate', active_theme: 'modi', email: 'dev@test.com' },
   ],
   projects: projects.map(p => ({
     id: p.id, user_id: 'dev', name: p.name, emoji: p.emoji, color: p.color,
@@ -55,6 +55,7 @@ const mockData: Record<string, any[]> = {
     id: i.id, user_id: 'dev', title: i.title, content: i.content,
     source: i.source, link: i.link, tags: i.tags, created_at: i.createdAt,
     time: i.time, project: i.project, priority: i.priority,
+    starred: i.starred ?? false,
   })),
   readings: dummyReadings.map(r => ({
     id: r.id, user_id: 'dev', title: r.title, author: r.author,
@@ -74,7 +75,7 @@ const mockData: Record<string, any[]> = {
     created_at: sn.createdAt, updated_at: sn.updatedAt,
   })),
   journals: dummyRecords.map(r => ({
-    id: r.id, user_id: 'dev', type: r.recordType, date: r.date,
+    id: r.id, user_id: 'dev', record_type: r.recordType, date: r.date,
     time: r.time, title: r.title, mood: r.mood, energy: r.energy,
     tags: r.tags, project: r.project, conversation_id: r.conversationId,
     morning_data: r.morningData, evening_data: r.eveningData,

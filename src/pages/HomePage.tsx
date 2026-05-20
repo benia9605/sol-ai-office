@@ -1,10 +1,8 @@
 /**
  * @file src/pages/HomePage.tsx
  * @description 홈 페이지
- * - 보라 그라데이션 배경 (홈에만 적용)
- * - 상단: DashboardWidgets (4개 요약 카드)
- * - 하단: 오피스 방 카드 그리드
- * - useOutletContext()로 Layout의 openRoom 호출
+ * - 테마별 분기: 모던 → HomePage.modern.tsx (MUJI 톤), 모디 → 아래 기본 렌더
+ * - 모디 테마: 보라 그라데이션 배경 + DashboardWidgets + BriefingCard + RoomCard 그리드
  */
 import { useOutletContext } from 'react-router-dom';
 import { rooms, modiSecretary } from '../data';
@@ -12,8 +10,19 @@ import { RoomCard } from '../components/RoomCard';
 import { DashboardWidgets } from '../components/DashboardWidgets';
 import { BriefingCard } from '../components/BriefingCard';
 import { LayoutContext } from '../components/Layout';
+import { useTheme } from '../contexts/ThemeContext';
+import { HomePageModern } from './HomePage.modern';
 
 export function HomePage() {
+  const { theme } = useTheme();
+  if (theme === 'modern') {
+    return <HomePageModern />;
+  }
+
+  return <HomePageModi />;
+}
+
+function HomePageModi() {
   const { openRoom } = useOutletContext<LayoutContext>();
 
   return (

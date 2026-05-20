@@ -16,6 +16,7 @@ export interface UserProfileRow {
   tone: string;             // friendly / polite / formal
   response_length: string;  // short / medium / detailed
   emoji_usage: string;      // many / moderate / few
+  active_theme?: string;    // 'modi' | 'modern' — UI 테마 (docs/THEME_SYSTEM_PLAN.md)
   created_at: string;
   updated_at: string;
 }

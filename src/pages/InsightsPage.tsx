@@ -16,6 +16,8 @@ import { useProjects } from '../hooks/useProjects';
 import { useInsightSources } from '../hooks/useInsightSources';
 import { ItemDetailPopup } from '../components/ItemDetailPopup';
 import { ProjectSelect } from '../components/ProjectSelect';
+import { useTheme } from '../contexts/ThemeContext';
+import { InsightsPageModern } from './InsightsPage.modern';
 
 const isImagePath = (v: string) => v.startsWith('/') || v.startsWith('http');
 
@@ -49,6 +51,14 @@ const priorityWeight: Record<string, number> = { high: 0, medium: 1, low: 2 };
 const defaultPresetTags = ['트렌드', 'AI', '마케팅', '개발', '아이디어', '전략'];
 
 export function InsightsPage() {
+  const { theme } = useTheme();
+  if (theme === 'modern') {
+    return <InsightsPageModern />;
+  }
+  return <InsightsPageModi />;
+}
+
+function InsightsPageModi() {
   const { insights, add: addInsight, update: updateInsight, remove: removeInsight } = useInsights();
   const { projects } = useProjects();
   const projectColorMap = useMemo(() => {

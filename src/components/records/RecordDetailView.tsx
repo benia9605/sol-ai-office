@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { RecordItem, ListField } from '../../types';
 import { useProjects } from '../../hooks/useProjects';
 import { recordTypeConfig } from '../../utils/recordTemplates';
+import { useTheme } from '../../contexts/ThemeContext';
 import { RecordForm } from './RecordForm';
 import { EnergyGauge } from './EnergySelector';
 import { TiptapReadOnly } from '../tiptap/TiptapReadOnly';
@@ -72,6 +73,8 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
   const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
   const { projects } = useProjects();
+  const { theme } = useTheme();
+  const isModern = theme === 'modern';
   const cfg = recordTypeConfig[record.recordType];
 
   const dateLabel = new Date(record.date).toLocaleDateString('ko-KR', {
@@ -83,29 +86,49 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
     setEditing(false);
   };
 
-  /** 공통 섹션/리스트 props */
-  const lc = cfg.labelColor;
-  const ic = cfg.iconText;
-  const bc = cfg.bulletColor;
-  const bdc = cfg.borderAccent;
-  const bb = cfg.bgColor;
+  /** 공통 섹션/리스트 props (모던에선 진초록 액센트로 통일) */
+  const lc = isModern ? 'text-primary-500' : cfg.labelColor;
+  const ic = isModern ? 'text-primary-500' : cfg.iconText;
+  const bc = isModern ? 'bg-primary-500' : cfg.bulletColor;
+  const bdc = isModern ? 'border-primary-500' : cfg.borderAccent;
+  const bb = isModern ? 'bg-surface-muted' : cfg.bgColor;
 
   return (
     <div data-modal-overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-[#fff5f7] rounded-3xl shadow-hover w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className={`w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col ${
+        isModern
+          ? 'bg-surface border border-line'
+          : 'bg-[#fff5f7] rounded-3xl shadow-hover'
+      }`}>
         {/* 헤더 */}
-        <div className="px-6 pt-5 pb-4 flex items-center justify-between flex-shrink-0 bg-white/80 border-b border-gray-100">
-          <h2 className={`text-lg font-bold flex items-center gap-2 ${cfg.textColor}`}>
-            <div className={`w-8 h-8 rounded-xl ${cfg.bgColor} flex items-center justify-center`}>
-              <RecordTypeIcon type={record.recordType} size={18} className={cfg.iconText} />
+        <div className={`px-6 pt-5 pb-4 flex items-center justify-between flex-shrink-0 border-b border-line ${
+          isModern ? 'bg-surface' : 'bg-white/80'
+        }`}>
+          <h2 className={`text-lg flex items-center gap-2 ${
+            isModern ? 'font-normal text-foreground' : `font-bold ${cfg.textColor}`
+          }`}>
+            <div className={`w-8 h-8 flex items-center justify-center ${
+              isModern ? 'bg-surface-muted' : `rounded-xl ${cfg.bgColor}`
+            }`}>
+              <RecordTypeIcon
+                type={record.recordType}
+                size={18}
+                className={isModern ? 'text-primary-500' : cfg.iconText}
+              />
             </div>
             {record.title || cfg.label}
           </h2>
           <div className="flex items-center gap-2">
             {!editing && (
-              <button onClick={() => setEditing(true)}
-                className={`text-xs px-2.5 py-1 ${cfg.iconText} hover:${cfg.bgColor} rounded-lg transition-colors font-medium`}>
+              <button
+                onClick={() => setEditing(true)}
+                className={`text-xs px-2.5 py-1 transition-colors ${
+                  isModern
+                    ? 'text-foreground-muted hover:text-foreground'
+                    : `${cfg.iconText} hover:${cfg.bgColor} rounded-lg font-medium`
+                }`}
+              >
                 수정
               </button>
             )}
@@ -116,11 +139,20 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
                   onClose();
                 }
               }}
-              className="text-xs px-2 py-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className={`text-xs px-2 py-1 transition-colors ${
+                isModern
+                  ? 'text-foreground-faint hover:text-primary-500'
+                  : 'text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg'
+              }`}
             >
               삭제
             </button>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl px-2">×</button>
+            <button
+              onClick={onClose}
+              className={`text-xl px-2 transition-colors ${
+                isModern ? 'text-foreground-faint hover:text-foreground' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >×</button>
           </div>
         </div>
 
@@ -136,11 +168,17 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
           ) : (
             <>
               {/* 메타 정보 */}
-              <div className="bg-white rounded-2xl p-5 shadow-soft">
+              <div className={isModern ? 'border border-line p-5' : 'bg-white rounded-2xl p-5 shadow-soft'}>
                 <div className="flex items-center gap-3 mb-3 flex-wrap">
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${cfg.bgColor} ${cfg.textColor}`}>
-                    {cfg.label}
-                  </span>
+                  {isModern ? (
+                    <span className="text-[10px] tracking-[0.18em] uppercase text-primary-500">
+                      {cfg.label}
+                    </span>
+                  ) : (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${cfg.bgColor} ${cfg.textColor}`}>
+                      {cfg.label}
+                    </span>
+                  )}
                   <span className="text-sm text-gray-500">{dateLabel}</span>
                   {record.time && <span className="text-sm text-gray-400">{record.time}</span>}
                 </div>
@@ -159,7 +197,11 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
                       <span className="text-xs text-gray-400">프로젝트</span>
                       <button
                         onClick={() => { onClose(); if (proj) navigate(`/project/${proj.id}`); }}
-                        className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 font-medium transition-colors"
+                        className={`inline-flex items-center gap-1 text-xs transition-colors ${
+                          isModern
+                            ? 'border border-line px-2 py-0.5 text-foreground-muted hover:border-foreground hover:text-foreground'
+                            : 'px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 font-medium'
+                        }`}
                       >
                         {proj?.color && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: proj.color }} />}
                         {record.project} →
@@ -171,7 +213,14 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
                 {record.tags && record.tags.length > 0 && (
                   <div className="flex gap-1.5 flex-wrap">
                     {record.tags.map((tag) => (
-                      <span key={tag} className={`text-xs px-2 py-0.5 rounded-full ${cfg.bgColor} ${cfg.textColor} font-medium`}>#{tag}</span>
+                      <span
+                        key={tag}
+                        className={isModern
+                          ? 'text-xs text-foreground-faint border border-line px-2 py-0.5'
+                          : `text-xs px-2 py-0.5 rounded-full ${cfg.bgColor} ${cfg.textColor} font-medium`}
+                      >
+                        #{tag}
+                      </span>
                     ))}
                   </div>
                 )}
@@ -179,7 +228,7 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
 
               {/* ── 아침 일기 ── */}
               {record.recordType === 'morning' && record.morningData && (
-                <div className="bg-white rounded-2xl p-5 shadow-soft divide-y divide-gray-100">
+                <div className={isModern ? 'border border-line p-5 divide-y divide-line' : 'bg-white rounded-2xl p-5 shadow-soft divide-y divide-gray-100'}>
                   <Section icon={<GratitudeIcon size={13} className={ic} />} label="감사하게 여기는 것들" labelColor={lc} badgeBg={bb}>
                     <ListItems items={record.morningData.gratitude} bulletColor={bc} />
                   </Section>
@@ -202,7 +251,7 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
 
               {/* ── 저녁 일기 ── */}
               {record.recordType === 'evening' && record.eveningData && (
-                <div className="bg-white rounded-2xl p-5 shadow-soft divide-y divide-gray-100">
+                <div className={isModern ? 'border border-line p-5 divide-y divide-line' : 'bg-white rounded-2xl p-5 shadow-soft divide-y divide-gray-100'}>
                   <Section icon={<TrophyIcon size={13} className={ic} />} label="오늘 굉장한 일" labelColor={lc} badgeBg={bb}>
                     <ListItems items={record.eveningData.greatThings} bulletColor={bc} />
                   </Section>
@@ -221,7 +270,7 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
 
               {/* ── 주간 회고 ── */}
               {record.recordType === 'weekly' && record.weeklyData && (
-                <div className="bg-white rounded-2xl p-5 shadow-soft divide-y divide-gray-100">
+                <div className={isModern ? 'border border-line p-5 divide-y divide-line' : 'bg-white rounded-2xl p-5 shadow-soft divide-y divide-gray-100'}>
                   <Section icon={<TrophyIcon size={13} className={ic} />} label="이번 주 성취" labelColor={lc} badgeBg={bb}>
                     <ListItems items={record.weeklyData.achievements} bulletColor={bc} />
                   </Section>
@@ -241,7 +290,7 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
 
               {/* ── 메모 ── */}
               {record.recordType === 'memo' && record.memoBody && Object.keys(record.memoBody).length > 0 && (
-                <div className="bg-white rounded-2xl p-5 shadow-soft">
+                <div className={isModern ? 'border border-line p-5' : 'bg-white rounded-2xl p-5 shadow-soft'}>
                   <TiptapReadOnly content={record.memoBody} />
                 </div>
               )}

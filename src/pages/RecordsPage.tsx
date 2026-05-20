@@ -18,6 +18,8 @@ import { RecordForm } from '../components/records/RecordForm';
 import { RecordDetailView } from '../components/records/RecordDetailView';
 import { EnergyGauge } from '../components/records/EnergySelector';
 import { RecordCalendar } from '../components/records/RecordCalendar';
+import { useTheme } from '../contexts/ThemeContext';
+import { RecordsPageModern } from './RecordsPage.modern';
 
 type FilterTab = 'all' | RecordType;
 
@@ -84,6 +86,14 @@ const tabs: { id: FilterTab; label: string }[] = [
 ];
 
 export function RecordsPage() {
+  const { theme } = useTheme();
+  if (theme === 'modern') {
+    return <RecordsPageModern />;
+  }
+  return <RecordsPageModi />;
+}
+
+function RecordsPageModi() {
   const { records, loading, add: addRecord, update: updateRecord, remove: removeRecord } = useRecords();
   const { projects } = useProjects();
   const [filter, setFilter] = useState<FilterTab>('all');

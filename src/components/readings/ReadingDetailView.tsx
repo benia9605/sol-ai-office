@@ -13,6 +13,7 @@ import { StudyNoteCard } from './StudyNoteCard';
 import { StudyNoteEditor } from './StudyNoteEditor';
 import { generateBookToc } from '../../services/claudeApi';
 import { uploadImage } from '../../services/storage.service';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface ReadingDetailViewProps {
   reading: ReadingItem;
@@ -32,6 +33,8 @@ export function ReadingDetailView({
   onAddNote, onUpdateNote, onDeleteNote,
   onClose,
 }: ReadingDetailViewProps) {
+  const { theme } = useTheme();
+  const isModern = theme === 'modern';
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ ...reading });
   const [showNoteEditor, setShowNoteEditor] = useState(false);
@@ -134,9 +137,13 @@ export function ReadingDetailView({
 
   return (
     <div data-modal-overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#f0f7ff] rounded-3xl shadow-hover w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className={`w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col ${
+        isModern ? 'bg-surface border border-line' : 'bg-[#f0f7ff] rounded-3xl shadow-hover'
+      }`}>
         {/* 헤더 바 */}
-        <div className="px-6 pt-5 pb-3 flex items-center justify-between flex-shrink-0 bg-white/80 border-b border-blue-100">
+        <div className={`px-6 pt-5 pb-3 flex items-center justify-between flex-shrink-0 border-b border-line ${
+          isModern ? 'bg-surface' : 'bg-white/80'
+        }`}>
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2 min-w-0 flex-1">
             <span className="flex-shrink-0">
               {reading.coverImage
@@ -147,8 +154,14 @@ export function ReadingDetailView({
           </h2>
           <div className="flex items-center gap-2 flex-shrink-0">
             {!editing && (
-              <button onClick={() => { setForm({ ...reading }); setEditing(true); }}
-                className="text-xs px-2.5 py-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium whitespace-nowrap">
+              <button
+                onClick={() => { setForm({ ...reading }); setEditing(true); }}
+                className={`text-xs px-2.5 py-1 transition-colors whitespace-nowrap ${
+                  isModern
+                    ? 'text-foreground-muted hover:text-foreground'
+                    : 'text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium'
+                }`}
+              >
                 수정
               </button>
             )}
@@ -159,18 +172,27 @@ export function ReadingDetailView({
                   onClose();
                 }
               }}
-              className="text-xs px-2 py-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors whitespace-nowrap"
+              className={`text-xs px-2 py-1 transition-colors whitespace-nowrap ${
+                isModern
+                  ? 'text-foreground-faint hover:text-primary-500'
+                  : 'text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg'
+              }`}
             >
               삭제
             </button>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl px-2">×</button>
+            <button
+              onClick={onClose}
+              className={`text-xl px-2 transition-colors ${
+                isModern ? 'text-foreground-faint hover:text-foreground' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >×</button>
           </div>
         </div>
 
         {/* 스크롤 영역 */}
         <div className="flex-1 overflow-y-auto px-6 pt-5 pb-6 space-y-6">
           {/* ── 메타데이터 섹션 ── */}
-          <div className="bg-white rounded-2xl p-5 shadow-soft">
+          <div className={isModern ? 'border border-line p-5' : 'bg-white rounded-2xl p-5 shadow-soft'}>
             {!editing ? (
               <div className="flex gap-5">
                 {/* 왼쪽: 커버 이미지 (강좌: 정방형, 도서: 세로) */}
@@ -196,10 +218,14 @@ export function ReadingDetailView({
                         {cat.label}
                       </span>
                     )}
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      reading.status === 'reading' ? 'bg-blue-100 text-blue-600' :
-                      reading.status === 'completed' ? 'bg-green-100 text-green-600' :
-                      'bg-gray-100 text-gray-500'
+                    <span className={`text-[10px] px-2 py-0.5 font-medium ${
+                      isModern
+                        ? 'border border-primary-500 text-primary-500'
+                        : `rounded-full ${
+                            reading.status === 'reading' ? 'bg-blue-100 text-blue-600' :
+                            reading.status === 'completed' ? 'bg-green-100 text-green-600' :
+                            'bg-gray-100 text-gray-500'
+                          }`
                     }`}>
                       {reading.status === 'reading' ? '읽는 중' : reading.status === 'completed' ? '완독' : '예정'}
                     </span>
@@ -210,11 +236,14 @@ export function ReadingDetailView({
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-gray-400">진행률</span>
-                        <span className="text-xs text-blue-600 font-semibold">{pLabel} ({progress}%)</span>
+                        <span className={`text-xs font-semibold ${isModern ? 'text-primary-500' : 'text-blue-600'}`}>
+                          {pLabel} ({progress}%)
+                        </span>
                       </div>
-                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-400 rounded-full transition-all"
-                          style={{ width: `${progress}%` }} />
+                      <div className={`w-full bg-gray-100 overflow-hidden ${isModern ? 'h-px' : 'h-2 rounded-full'}`}>
+                        <div className={`h-full transition-all ${
+                          isModern ? 'bg-primary-500' : 'bg-blue-400 rounded-full'
+                        }`} style={{ width: `${progress}%` }} />
                       </div>
                     </div>
                   )}
@@ -241,12 +270,25 @@ export function ReadingDetailView({
                   {/* 태그 + 바로가기 */}
                   <div className="flex items-center gap-2 flex-wrap">
                     {reading.tags?.map((tag) => (
-                      <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 font-medium">#{tag}</span>
+                      <span
+                        key={tag}
+                        className={`text-[10px] px-1.5 py-0.5 font-medium ${
+                          isModern
+                            ? 'border border-line text-foreground-muted'
+                            : 'rounded-full bg-blue-50 text-blue-500'
+                        }`}
+                      >
+                        #{tag}
+                      </span>
                     ))}
                     {reading.link && (
                       <a href={reading.link} target="_blank" rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium">
+                        className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 font-medium transition-colors ${
+                          isModern
+                            ? 'border border-foreground text-foreground hover:bg-foreground hover:text-surface'
+                            : 'bg-blue-500 text-white hover:bg-blue-600 rounded-lg'
+                        }`}>
                         바로가기 ↗
                       </a>
                     )}
@@ -425,10 +467,26 @@ export function ReadingDetailView({
                 </div>
 
                 <div className="flex justify-end gap-2 pt-1">
-                  <button onClick={() => setEditing(false)}
-                    className="px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-100 rounded-lg">취소</button>
-                  <button onClick={handleSaveMetadata}
-                    className="px-3 py-1.5 text-xs text-white bg-blue-500 hover:bg-blue-600 rounded-lg font-medium">저장</button>
+                  <button
+                    onClick={() => setEditing(false)}
+                    className={`px-3 py-1.5 text-xs transition-colors ${
+                      isModern
+                        ? 'border border-line-strong text-foreground hover:border-foreground'
+                        : 'text-gray-500 hover:bg-gray-100 rounded-lg'
+                    }`}
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleSaveMetadata}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                      isModern
+                        ? 'border border-foreground bg-foreground text-surface hover:bg-foreground-muted hover:border-foreground-muted'
+                        : 'text-white bg-blue-500 hover:bg-blue-600 rounded-lg'
+                    }`}
+                  >
+                    저장
+                  </button>
                 </div>
               </div>
             )}
@@ -436,7 +494,7 @@ export function ReadingDetailView({
 
           {/* ── 목차 섹션 (도서 + 챕터가 있을 때) ── */}
           {reading.chapters && reading.chapters.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
+            <div className={isModern ? 'border border-line overflow-hidden' : 'bg-white rounded-2xl shadow-soft overflow-hidden'}>
               <button
                 onClick={() => setShowChapters(!showChapters)}
                 className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-gray-50 transition-colors"
@@ -454,16 +512,36 @@ export function ReadingDetailView({
                   {reading.chapters.map((ch, idx) => {
                     const done = writtenChapters.has(ch);
                     return (
-                      <div key={idx}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors ${
-                          done ? 'bg-green-50' : 'bg-gray-50'
-                        }`}>
-                        <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                          done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'
-                        }`}>
+                      <div
+                        key={idx}
+                        className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                          isModern
+                            ? done ? 'bg-primary-50' : 'bg-surface-muted'
+                            : `rounded-xl ${done ? 'bg-green-50' : 'bg-gray-50'}`
+                        }`}
+                      >
+                        <span
+                          className={`flex-shrink-0 w-5 h-5 flex items-center justify-center text-[10px] font-bold ${
+                            isModern
+                              ? done
+                                ? 'bg-primary-500 text-surface'
+                                : 'border border-line-strong text-foreground-faint'
+                              : `rounded-full ${
+                                  done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'
+                                }`
+                          }`}
+                        >
                           {done ? '✓' : idx + 1}
                         </span>
-                        <span className={`flex-1 truncate ${done ? 'text-green-700' : 'text-gray-600'}`}>{ch}</span>
+                        <span
+                          className={`flex-1 truncate ${
+                            isModern
+                              ? done ? 'text-primary-500' : 'text-foreground-muted'
+                              : done ? 'text-green-700' : 'text-gray-600'
+                          }`}
+                        >
+                          {ch}
+                        </span>
                         {!done && (
                           <button
                             onClick={() => {
@@ -471,7 +549,11 @@ export function ReadingDetailView({
                               setPreselectedChapter(ch);
                               setShowNoteEditor(true);
                             }}
-                            className="text-[10px] px-2 py-0.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors flex-shrink-0"
+                            className={`text-[10px] px-2 py-0.5 transition-colors flex-shrink-0 ${
+                              isModern
+                                ? 'text-primary-500 hover:bg-primary-50'
+                                : 'text-blue-500 hover:bg-blue-100 rounded-lg'
+                            }`}
                           >
                             노트 작성
                           </button>
@@ -494,7 +576,11 @@ export function ReadingDetailView({
               {!showNoteEditor && (
                 <button
                   onClick={() => { setEditingNote(null); setShowNoteEditor(true); }}
-                  className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-white rounded-xl shadow-soft hover:shadow-hover transition-all"
+                  className={`px-3 py-1.5 text-xs font-medium transition-all ${
+                    isModern
+                      ? 'border border-foreground text-foreground hover:bg-foreground hover:text-surface'
+                      : 'text-blue-600 bg-white rounded-xl shadow-soft hover:shadow-hover'
+                  }`}
                 >
                   + 노트 추가
                 </button>

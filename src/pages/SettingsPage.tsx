@@ -12,6 +12,9 @@ import { useAuth } from '../hooks/useAuth';
 import { Project } from '../types';
 import { uploadImage, deleteImage } from '../services/storage.service';
 import { NotificationSettings } from '../components/NotificationSettings';
+import { ThemePicker } from '../components/ThemePicker';
+import { useTheme } from '../contexts/ThemeContext';
+import { SettingsPageModern } from './SettingsPage.modern';
 
 const PROJECT_COLOR_PRESETS = [
   '#a855f7', '#ec4899', '#f97316', '#eab308',
@@ -73,12 +76,20 @@ const EMPTY_PROJECT: Omit<Project, 'id'> = {
 };
 
 export function SettingsPage() {
+  const { theme } = useTheme();
+  if (theme === 'modern') {
+    return <SettingsPageModern />;
+  }
+  return <SettingsPageModi />;
+}
+
+function SettingsPageModi() {
   const { user } = useAuth();
   const { profile, loading: profileLoading, save: saveProfile } = useUserProfile();
   const { projects, loading, add, update, remove, reorder } = useProjects();
 
-  // 내 정보 폼
-  const [profileForm, setProfileForm] = useState<Omit<UserProfile, 'id'>>({
+  // 내 정보 폼 (activeTheme은 ThemePicker가 직접 관리하므로 폼에서 제외)
+  const [profileForm, setProfileForm] = useState<Omit<UserProfile, 'id' | 'activeTheme'>>({
     name: '', bio: '', tone: 'polite', responseLength: 'short', emojiUsage: 'moderate',
   });
   const [profileEditing, setProfileEditing] = useState(false);
@@ -631,6 +642,9 @@ export function SettingsPage() {
         {/* 알림 설정 */}
         {user && <NotificationSettings userId={user.id} />}
 
+        {/* 테마 설정 */}
+        <ThemePicker />
+
         {/* 기타 설정 (placeholder) */}
         <section className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6">
           <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -641,7 +655,7 @@ export function SettingsPage() {
             기타 설정
           </h2>
           <div className="space-y-3">
-            {['AI 캐릭터 설정', '테마 설정', '데이터 관리'].map((label) => (
+            {['AI 캐릭터 설정', '데이터 관리'].map((label) => (
               <div
                 key={label}
                 className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-2xl"

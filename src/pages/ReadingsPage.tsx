@@ -16,6 +16,8 @@ import { ReadingDetailView } from '../components/readings/ReadingDetailView';
 import { searchBooks, getBookDetail, parseCategoryToTags, AladinSearchItem } from '../services/aladinApi';
 import { generateBookToc } from '../services/claudeApi';
 import { uploadImage } from '../services/storage.service';
+import { useTheme } from '../contexts/ThemeContext';
+import { ReadingsPageModern } from './ReadingsPage.modern';
 
 const statusStyle: Record<ReadingItem['status'], { label: string; cls: string }> = {
   reading:   { label: '읽는 중', cls: 'bg-blue-100 text-blue-600' },
@@ -24,6 +26,14 @@ const statusStyle: Record<ReadingItem['status'], { label: string; cls: string }>
 };
 
 export function ReadingsPage() {
+  const { theme } = useTheme();
+  if (theme === 'modern') {
+    return <ReadingsPageModern />;
+  }
+  return <ReadingsPageModi />;
+}
+
+function ReadingsPageModi() {
   const {
     readings, studyNotes,
     addReading: hookAddReading, updateReading: hookUpdateReading, removeReading: hookRemoveReading,

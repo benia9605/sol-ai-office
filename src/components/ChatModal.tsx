@@ -18,6 +18,7 @@ import { useChat } from '../hooks/useChat';
 import { createConversation, addMessage } from '../services/conversations.service';
 import { summarizeAllRooms, SummaryResult } from '../services/summary.service';
 import { MEETING_PARTICIPANTS } from '../services/meeting.service';
+import { useTheme } from '../contexts/ThemeContext';
 
 /** 방별 아이콘 컬러 (각 방 파스텔 톤의 진한 버전) */
 const roomIconColor: Record<string, string> = {
@@ -50,6 +51,8 @@ interface ChatModalProps {
 }
 
 export function ChatModal({ room, onClose }: ChatModalProps) {
+  const { theme } = useTheme();
+  const isModern = theme === 'modern';
   const { messages, setMessages, loading, sendMessage: sendChatMsg, stopGenerating, meetingPhase, startNewMeeting, startNewChat } = useChat({ roomId: room.id });
   const isMeeting = room.id === 'meeting';
   const accent = roomAccent[room.id] || roomAccent.strategy;
@@ -265,7 +268,9 @@ export function ChatModal({ room, onClose }: ChatModalProps) {
     <div className="fixed inset-0 z-50 lg:relative lg:z-auto lg:flex-shrink-0 lg:h-full">
       <div className="bg-white w-full h-full flex flex-col overflow-hidden">
         {/* 헤더 */}
-        <div className={`${room.color} px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0`}>
+        <div className={`px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 ${
+          isModern ? 'bg-surface border-b border-line' : room.color
+        }`}>
           <div className="flex items-center gap-3">
             <img
               src={room.image}

@@ -22,6 +22,7 @@ import { RecordDetailView } from '../components/records/RecordDetailView';
 import { defaultTaskCategories, defaultScheduleCategories } from '../data';
 import { recordTypeConfig } from '../utils/recordTemplates';
 import { GoalTimeline } from '../components/GoalTimeline';
+import { useTheme } from '../contexts/ThemeContext';
 
 
 // ── 더보기/접기 텍스트 ──
@@ -112,6 +113,8 @@ const GOAL_TYPE_OPTIONS: { value: GoalType; label: string; desc: string }[] = [
 ];
 
 export function ProjectDetailPage() {
+  const { theme } = useTheme();
+  const isModern = theme === 'modern';
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { projects, loading: pLoading } = useProjects();
@@ -442,7 +445,11 @@ export function ProjectDetailPage() {
   const visibleRecords = showAllRecords ? projectRecords : projectRecords.slice(0, 3);
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-gray-50 via-white to-primary-50/20 p-4 sm:p-6 lg:p-8">
+    <div className={`min-h-full p-4 sm:p-6 lg:p-8 ${
+      isModern
+        ? 'bg-surface'
+        : 'bg-gradient-to-br from-gray-50 via-white to-primary-50/20'
+    }`}>
       <div className="max-w-3xl mx-auto space-y-6">
         {/* 뒤로가기 */}
         <button onClick={() => navigate(-1)} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
@@ -450,7 +457,10 @@ export function ProjectDetailPage() {
         </button>
 
         {/* 프로젝트 헤더 */}
-        <section className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-6">
+        <section className={isModern
+          ? 'border border-line p-6'
+          : 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-6'
+        }>
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ backgroundColor: project.color + '20' }}>
               {project.image
@@ -498,7 +508,10 @@ export function ProjectDetailPage() {
         {/* 일정 · 인사이트 카드 */}
         <div className="grid grid-cols-2 gap-3">
           {/* 일정 카드 */}
-          <div className="p-4 rounded-2xl bg-[#fff3e0] border border-orange-100">
+          <div className={isModern
+            ? 'p-4 border border-line'
+            : 'p-4 rounded-2xl bg-[#fff3e0] border border-orange-100'
+          }>
             <div className="flex items-center gap-2 mb-3">
               <img src="/images/schedule.png" alt="일정" className="w-5 h-5 object-contain" />
               <span className="text-sm font-bold text-orange-700">일정</span>
@@ -534,7 +547,10 @@ export function ProjectDetailPage() {
           </div>
 
           {/* 인사이트 카드 */}
-          <div className="p-4 rounded-2xl bg-[#fffde7] border border-yellow-100">
+          <div className={isModern
+            ? 'p-4 border border-line'
+            : 'p-4 rounded-2xl bg-[#fffde7] border border-yellow-100'
+          }>
             <div className="flex items-center gap-2 mb-3">
               <img src="/images/insight.png" alt="인사이트" className="w-5 h-5 object-contain" />
               <span className="text-sm font-bold text-amber-700">인사이트</span>
@@ -583,7 +599,10 @@ export function ProjectDetailPage() {
         </div>
 
         {/* 기록 카드 */}
-        <div className="p-4 rounded-2xl bg-[#fff5f7] border border-pink-100">
+        <div className={isModern
+          ? 'p-4 border border-line'
+          : 'p-4 rounded-2xl bg-[#fff5f7] border border-pink-100'
+        }>
           <div className="flex items-center gap-2 mb-3">
             <img src="/images/diary.png" alt="기록" className="w-5 h-5 object-contain" />
             <span className="text-sm font-bold text-pink-700">기록</span>
@@ -640,7 +659,10 @@ export function ProjectDetailPage() {
         )}
 
         {/* 목표 섹션 */}
-        <section className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6">
+        <section className={isModern
+          ? 'border border-line p-4 sm:p-6'
+          : 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6'
+        }>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-800">목표</h2>
             <button

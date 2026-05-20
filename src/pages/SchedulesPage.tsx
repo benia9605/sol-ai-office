@@ -22,6 +22,8 @@ import { ProjectSelect } from '../components/ProjectSelect';
 import { CalendarView } from '../components/calendar/CalendarView';
 import { DateRangePicker } from '../components/calendar/DateRangePicker';
 import { downloadIcs } from '../utils/icsExport';
+import { useTheme } from '../contexts/ThemeContext';
+import { SchedulesPageModern } from './SchedulesPage.modern';
 
 const repeatLabels: Record<RepeatType, string> = {
   none: '없음', daily: '매일', weekly: '매주', monthly: '매월', yearly: '매년',
@@ -48,6 +50,14 @@ function RepeatIcon({ className = '' }: { className?: string }) {
 }
 
 export function SchedulesPage() {
+  const { theme } = useTheme();
+  if (theme === 'modern') {
+    return <SchedulesPageModern />;
+  }
+  return <SchedulesPageModi />;
+}
+
+function SchedulesPageModi() {
   const { schedules, add: addSchedule, update: updateSchedule, remove: removeSchedule } = useSchedules();
   const { tasks, updateTask, cycleStatus } = useTasks();
   const { projects } = useProjects();

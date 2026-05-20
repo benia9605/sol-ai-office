@@ -208,6 +208,7 @@ export interface InsightItem {
   time?: string;              // 기록시간 (HH:MM)
   project?: string;           // 프로젝트
   priority?: 'high' | 'medium' | 'low';  // 중요도
+  starred?: boolean;          // 즐겨찾기 (상단 고정용)
 }
 
 /** 독서 종류 카테고리 */

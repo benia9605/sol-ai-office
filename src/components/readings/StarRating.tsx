@@ -3,7 +3,9 @@
  * @description 1~5 별점 클릭 컴포넌트
  * - 읽기/편집 모드 지원
  * - 독서 아이템 상세에서 사용
+ * - 모디: 노란 별 / 모던: 진초록 별
  */
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface StarRatingProps {
   value: number;
@@ -12,6 +14,8 @@ interface StarRatingProps {
 }
 
 export function StarRating({ value, onChange, size = 'text-lg' }: StarRatingProps) {
+  const { theme } = useTheme();
+  const filledClass = theme === 'modern' ? 'text-primary-500' : 'text-amber-400';
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((star) => (
@@ -22,7 +26,7 @@ export function StarRating({ value, onChange, size = 'text-lg' }: StarRatingProp
           disabled={!onChange}
           className={`${size} transition-colors ${
             onChange ? 'cursor-pointer hover:scale-110' : 'cursor-default'
-          } ${star <= value ? 'text-amber-400' : 'text-gray-200'}`}
+          } ${star <= value ? filledClass : 'text-gray-200'}`}
         >
           ★
         </button>

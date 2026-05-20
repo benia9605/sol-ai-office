@@ -21,6 +21,8 @@ import { fetchAllGoals, GoalRow } from '../services/goals.service';
 import { SortableCategoryList } from '../components/SortableCategoryChip';
 import { CalendarView } from '../components/calendar/CalendarView';
 import { getTodayStr, getTomorrowStr } from '../utils/dateCalc';
+import { useTheme } from '../contexts/ThemeContext';
+import { TasksPageModern } from './TasksPage.modern';
 
 interface TasksLayoutContext {
   openRoom?: (room: unknown) => void;
@@ -69,6 +71,14 @@ const statusFilterOptions: { key: string; label: string }[] = [
 const priorityWeight: Record<TaskItem['priority'], number> = { high: 0, medium: 1, low: 2 };
 
 export function TasksPage() {
+  const { theme } = useTheme();
+  if (theme === 'modern') {
+    return <TasksPageModern />;
+  }
+  return <TasksPageModi />;
+}
+
+function TasksPageModi() {
   const { tasks, loading, cycleStatus, updateStatus, toggleStar, add, remove, updateTask } = useTasks();
   const { schedules, update: updateSchedule } = useSchedules();
   const { toggleCompletion, isCompletedToday, completedCount: getDailyCompletedCount } = useDailyCompletions();

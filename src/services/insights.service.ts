@@ -15,6 +15,7 @@ export interface InsightRow {
   link?: string;
   tags: string[];
   project?: string;
+  starred?: boolean;
   conversation_id?: string;
   created_at: string;
 }

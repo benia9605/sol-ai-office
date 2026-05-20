@@ -7,6 +7,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchUserProfile, upsertUserProfile, UserProfileRow } from '../services/userProfile.service';
 
+export type Theme = 'modi' | 'modern';
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -14,6 +16,7 @@ export interface UserProfile {
   tone: string;
   responseLength: string;
   emojiUsage: string;
+  activeTheme: Theme;
 }
 
 function toProfile(row: UserProfileRow): UserProfile {
@@ -24,6 +27,7 @@ function toProfile(row: UserProfileRow): UserProfile {
     tone: row.tone || 'polite',
     responseLength: row.response_length || 'short',
     emojiUsage: row.emoji_usage || 'moderate',
+    activeTheme: (row.active_theme as Theme) || 'modi',
   };
 }
 
@@ -34,6 +38,7 @@ const defaultProfile: UserProfile = {
   tone: 'polite',
   responseLength: 'short',
   emojiUsage: 'moderate',
+  activeTheme: 'modi',
 };
 
 /** 모든 useUserProfile 인스턴스 간 동기화를 위한 이벤트 */
@@ -65,7 +70,8 @@ export function useUserProfile() {
     return () => { listeners.delete(load); };
   }, [load]);
 
-  const save = useCallback(async (data: Omit<UserProfile, 'id'>) => {
+  // activeTheme은 ThemePicker가 별도 경로(userTheme.service.ts)로 저장하므로 save 시그니처에서 제외
+  const save = useCallback(async (data: Omit<UserProfile, 'id' | 'activeTheme'>) => {
     try {
       const row = await upsertUserProfile({
         name: data.name,
