@@ -6,7 +6,7 @@
  * - 알림 (NotificationSettings 그대로 호출)
  * - 프로젝트 관리 (간단 추가/편집/삭제)
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUserProfile, UserProfile } from '../hooks/useUserProfile';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
@@ -251,7 +251,7 @@ export function SettingsPageModern() {
               {profile.bio && (
                 <div className="pt-3 border-t border-line">
                   <p className="label mb-1.5">소개</p>
-                  <p className="text-sm text-foreground-muted leading-[1.7]">{profile.bio}</p>
+                  <BioSection bio={profile.bio} />
                 </div>
               )}
               <div className="pt-3 border-t border-line">
@@ -265,12 +265,6 @@ export function SettingsPageModern() {
             </div>
           )}
         </section>
-
-        {/* ── 테마 ── */}
-        <ThemePicker />
-
-        {/* ── 알림 ── */}
-        {user && <NotificationSettings userId={user.id} />}
 
         {/* ── 프로젝트 관리 ── */}
         <section className="space-y-3">
@@ -462,7 +456,51 @@ export function SettingsPageModern() {
           )}
         </section>
 
+        {/* ── 알림 ── */}
+        {user && <NotificationSettings userId={user.id} />}
+
+        {/* ── 테마 ── */}
+        <ThemePicker />
+
       </div>
     </main>
+  );
+}
+
+/* ─── 소개 펼치기/접기 (모디 BioSection 패턴) ─── */
+
+function BioSection({ bio }: { bio: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [needsToggle, setNeedsToggle] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (el) {
+      // 3줄 초과 여부 (line-height ~22px × 3 = 66px)
+      setNeedsToggle(el.scrollHeight > 68);
+    }
+  }, [bio]);
+
+  return (
+    <div>
+      <p
+        ref={textRef}
+        className={`text-sm text-foreground-muted leading-[1.7] ${
+          !expanded && needsToggle ? 'line-clamp-3' : ''
+        }`}
+      >
+        {bio}
+      </p>
+      {needsToggle && (
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="mt-1 text-xs text-foreground-faint hover:text-foreground transition-colors"
+        >
+          {expanded ? '접기' : '더보기'}
+        </button>
+      )}
+    </div>
   );
 }
