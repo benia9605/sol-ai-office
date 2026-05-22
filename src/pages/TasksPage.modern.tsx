@@ -814,7 +814,7 @@ function ListPaginated({
 
       {/* 페이지네이션 컨트롤 (페이지 2개 이상일 때만) */}
       {totalPages > 1 && (
-        <nav className="mt-10 flex items-center justify-between border-t border-line pt-5">
+        <nav className="mt-6 flex items-center justify-between">
           <button
             type="button"
             onClick={() => onPageChange(Math.max(0, safePage - 1))}

@@ -235,7 +235,7 @@ export function RecordsPageModern() {
           )}
 
           {totalPages > 1 && (
-            <nav className="mt-10 flex items-center justify-between border-t border-line pt-5">
+            <nav className="mt-6 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setPage(Math.max(0, safePage - 1))}
