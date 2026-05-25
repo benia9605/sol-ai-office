@@ -6,7 +6,8 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { StudyNote, NoteSection, NoteActionItem } from '../../types';
-import { TiptapEditor } from '../tiptap/TiptapEditor';
+import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 /** 노션 스타일 멀티셀렉트 드롭다운 */
 function ChapterMultiSelect({
@@ -142,6 +143,14 @@ const genId = () => Math.random().toString(36).slice(2, 9);
 
 export function StudyNoteEditor({ readingId, readingCategory, chapters, preselectedChapter, editingNote, onSave, onCancel }: StudyNoteEditorProps) {
   const isCourse = readingCategory === 'rcat-course';
+  const { profile } = useUserProfile();
+  const userName = profile.name || '나';
+
+  // 도서 본문 에디터 ref (하단 [Claude]/[질문] 버튼이 호출)
+  const editorRef = useRef<TiptapEditorHandle>(null);
+  // 강좌 섹션별 에디터 ref (마지막 활성/제일 마지막 섹션에 insert)
+  const sectionEditorRefs = useRef<Record<string, TiptapEditorHandle | null>>({});
+  const lastFocusedSectionRef = useRef<string | null>(null);
 
   const [date, setDate] = useState(editingNote?.date || new Date().toISOString().slice(0, 10));
   const [selectedChapters, setSelectedChapters] = useState<string[]>(
@@ -341,9 +350,11 @@ export function StudyNoteEditor({ readingId, readingCategory, chapters, preselec
                     className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-200"
                   />
                   <TiptapEditor
+                    ref={(h) => { sectionEditorRefs.current[section.id] = h; }}
                     content={section.content as Record<string, unknown>}
                     onChange={(json) => updateSectionContent(section.id, json)}
                     placeholder="내용을 입력하세요... 볼드, 하이라이트, 인용문, 이미지 등을 활용할 수 있습니다."
+                    userName={userName}
                   />
                 </div>
               ))}
@@ -405,16 +416,61 @@ export function StudyNoteEditor({ readingId, readingCategory, chapters, preselec
           <div>
             <label className="text-xs text-gray-500 mb-1 block">노트</label>
             <TiptapEditor
+              ref={editorRef}
               content={content}
               onChange={setContent}
               placeholder="스터디 노트를 작성하세요... 인용문, 체크리스트, 하이라이트 등을 활용해보세요."
+              userName={userName}
             />
           </div>
         </>
       )}
 
       {/* 버튼 */}
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end items-center gap-2">
+        {/* Claude / 질문 빠른 삽입 버튼 */}
+        <button
+          type="button"
+          onClick={() => {
+            if (isCourse) {
+              // 강좌: 마지막 활성 섹션 또는 첫 섹션에 삽입
+              const id = lastFocusedSectionRef.current
+                || Object.keys(sectionEditorRefs.current)[0];
+              sectionEditorRefs.current[id]?.insertClaudeBlock();
+            } else {
+              editorRef.current?.insertClaudeBlock();
+            }
+          }}
+          aria-label="Claude 대화 세트 삽입"
+          title="Claude 대화 세트"
+          className="px-2.5 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors inline-flex items-center gap-1.5"
+        >
+          <img src="/images/claude.png" alt="" className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (isCourse) {
+              const id = lastFocusedSectionRef.current
+                || Object.keys(sectionEditorRefs.current)[0];
+              sectionEditorRefs.current[id]?.insertQABlock();
+            } else {
+              editorRef.current?.insertQABlock();
+            }
+          }}
+          aria-label="질문 + 답변 삽입"
+          title="질문 + 답변"
+          className="px-2.5 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors inline-flex items-center gap-1.5"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        </button>
+
+        <span className="w-px h-5 bg-gray-200 mx-1" aria-hidden />
+
         <button
           onClick={onCancel}
           className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-xl transition-colors"

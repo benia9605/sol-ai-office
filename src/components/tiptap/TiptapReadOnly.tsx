@@ -34,7 +34,7 @@ export function TiptapReadOnly({ content }: TiptapReadOnlyProps) {
       TaskList,
       TaskItem.configure({ nested: true }),
       Link.configure({ openOnClick: true }),
-      Image,
+      Image.configure({ inline: true, allowBase64: true }),
       Table.configure({ resizable: false }),
       TableRow,
       TableHeader,

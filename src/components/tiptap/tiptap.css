@@ -49,31 +49,95 @@
   color: #374151;
 }
 
-/* 인용문 - 블로그 스타일 */
+/* 노트 박스 (blockquote) — 연회색 라운드 박스 */
 .tiptap blockquote {
-  border-left: 4px solid #60a5fa;
-  background: linear-gradient(135deg, #eff6ff 0%, #f0f7ff 100%);
+  background: #f5f5f4;
   padding: 14px 18px;
-  border-radius: 0 12px 12px 0;
-  margin: 16px 0;
-  font-style: italic;
+  border-radius: 12px;
+  margin: 10px 0;
   color: #374151;
-  position: relative;
-}
-
-.tiptap blockquote::before {
-  content: '\201C';
-  font-size: 2.5rem;
-  color: #93c5fd;
-  position: absolute;
-  top: -4px;
-  left: 8px;
-  line-height: 1;
+  font-style: normal;
+  border: none;
 }
 
 .tiptap blockquote p {
+  margin: 0.25em 0;
+  padding: 0;
+  font-style: normal;
+}
+
+.tiptap blockquote p:first-child {
+  margin-top: 0;
+}
+
+.tiptap blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* 박스 안 라벨 paragraph — 아이콘 + 텍스트 수직 가운데 정렬 */
+.tiptap blockquote p:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+/* 박스 안의 strong (라벨 텍스트) */
+.tiptap blockquote p:first-child strong {
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+/* 박스 안 인라인 이미지 (Claude/하트 아이콘) */
+.tiptap blockquote p:first-child img {
+  display: block;
+  width: 16px;
+  height: 16px;
   margin: 0;
-  padding-left: 20px;
+  flex-shrink: 0;
+}
+
+/* ───────────────────────────────────────────────
+   말풍선 스타일 — 솔 박스(오른쪽) / Claude 박스(왼쪽)
+   라벨 paragraph의 이미지 src 패턴으로 자동 구분 (:has)
+   ─────────────────────────────────────────────── */
+
+/* 솔 박스 — 오른쪽으로 살짝 들여쓰기 + 우측에 삼각형 꼬리 */
+.tiptap blockquote:has(p:first-child img[src*="heart-sol"]) {
+  margin-left: 36px;
+  margin-right: 0;
+  position: relative;
+}
+.tiptap blockquote:has(p:first-child img[src*="heart-sol"])::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  right: -7px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 8px solid #f5f5f4;
+}
+
+/* Claude 박스 — 왼쪽으로 살짝 들여쓰기 + 좌측에 삼각형 꼬리 */
+.tiptap blockquote:has(p:first-child img[src*="claude"]) {
+  margin-left: 0;
+  margin-right: 36px;
+  position: relative;
+}
+.tiptap blockquote:has(p:first-child img[src*="claude"])::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: -7px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-right: 8px solid #f5f5f4;
 }
 
 /* 리스트 */
@@ -142,11 +206,11 @@
   color: #9ca3af;
 }
 
-/* 하이라이트 */
+/* 하이라이트 — 네모낳게 (라운드 X) */
 .tiptap mark {
   background-color: #fef08a;
-  padding: 1px 4px;
-  border-radius: 3px;
+  padding: 1px 2px;
+  border-radius: 0;
 }
 
 /* 링크 */
@@ -279,4 +343,220 @@
   background: #e5e7eb;
   margin: 4px 4px;
   align-self: center;
+}
+
+/* ───────────────────────────────────────────────
+   BubbleMenu — 드래그 선택 시 인라인 텍스트 서식 팝업
+   귀엽고 밝고 몽글몽글한 톤 + z-index 최상위
+   ─────────────────────────────────────────────── */
+.tiptap-bubble-menu {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: linear-gradient(135deg, #fdf4ff 0%, #faf5ff 50%, #eef2ff 100%);
+  border: 1px solid #f3e8ff;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.18),
+              0 2px 6px rgba(168, 85, 247, 0.08);
+  z-index: 9999;
+}
+
+.tiptap-bubble-menu button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.75);
+  color: #6b7280;
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 180ms ease,
+              color 180ms ease,
+              box-shadow 180ms ease;
+  box-shadow: 0 1px 2px rgba(168, 85, 247, 0.06);
+}
+
+.tiptap-bubble-menu button:hover {
+  background: #ffffff;
+  color: #7c3aed;
+  transform: translateY(-1px) scale(1.08);
+  box-shadow: 0 4px 10px rgba(168, 85, 247, 0.2);
+}
+
+.tiptap-bubble-menu button:active {
+  transform: scale(0.92);
+  box-shadow: 0 1px 2px rgba(168, 85, 247, 0.08);
+}
+
+.tiptap-bubble-menu button.is-active {
+  background: #ede9fe;
+  color: #7c3aed;
+  box-shadow: inset 0 1px 3px rgba(124, 58, 237, 0.18);
+}
+
+.tiptap-bubble-menu .bubble-highlight-icon {
+  background: transparent;
+  color: inherit;
+  padding: 1px 5px;
+  font-weight: 600;
+  font-size: 11px;
+  border-radius: 0;
+}
+
+/* 동그란 점 구분자 */
+.tiptap-bubble-menu .bubble-divider {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #e9d5ff;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.tiptap-bubble-menu .bubble-color-btn {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.tiptap-bubble-menu .bubble-color-reset {
+  color: #d1d5db;
+  font-size: 11px;
+}
+.tiptap-bubble-menu .bubble-color-reset:hover {
+  color: #ef4444;
+}
+
+/* ───────────────────────────────────────────────
+   색상 팔레트 popover (글자색 / 형광)
+   ─────────────────────────────────────────────── */
+.tiptap-color-palette {
+  position: absolute;
+  z-index: 10000;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  min-width: 180px;
+}
+
+.tiptap-color-palette .palette-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #9ca3af;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.tiptap-color-palette .palette-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.tiptap-color-palette .palette-swatch {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.tiptap-color-palette .palette-swatch:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tiptap-color-palette .palette-reset {
+  margin-top: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: #6b7280;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms;
+}
+
+.tiptap-color-palette .palette-reset:hover {
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+/* ───────────────────────────────────────────────
+   커스텀 툴팁 — data-tip 속성에 텍스트 표시
+   툴바 + BubbleMenu 양쪽 모두 사용
+   ─────────────────────────────────────────────── */
+.tiptap-toolbar button[data-tip],
+.tiptap-bubble-menu button[data-tip] {
+  position: relative;
+}
+
+.tiptap-toolbar button[data-tip]::after,
+.tiptap-bubble-menu button[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(2px);
+  background: #1f2937;
+  color: #f9fafb;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 140ms ease, transform 140ms ease;
+  transition-delay: 0ms;
+  z-index: 10001;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  letter-spacing: 0.02em;
+}
+
+.tiptap-toolbar button[data-tip]:hover::after,
+.tiptap-bubble-menu button[data-tip]:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  transition-delay: 350ms;
+}
+
+/* 툴팁 화살표 */
+.tiptap-toolbar button[data-tip]::before,
+.tiptap-bubble-menu button[data-tip]::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: #1f2937;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 140ms ease;
+  transition-delay: 0ms;
+  z-index: 10001;
+}
+
+.tiptap-toolbar button[data-tip]:hover::before,
+.tiptap-bubble-menu button[data-tip]:hover::before {
+  opacity: 1;
+  transition-delay: 350ms;
 }
