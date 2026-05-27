@@ -10,7 +10,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { RecordItem, RecordType } from '../types';
 import { useRecords } from '../hooks/useRecords';
-import { RecordTypeSelector } from '../components/records/RecordTypeSelector';
 import { RecordForm } from '../components/records/RecordForm';
 import { RecordDetailView } from '../components/records/RecordDetailView';
 
@@ -210,11 +209,8 @@ export function RecordsPageModern() {
 
         {/* ── 기록 리스트 (날짜별 그룹) ── */}
         <section>
-          <div className="flex items-baseline justify-between border-b border-line pb-3">
+          <div className="border-b border-line pb-3">
             <h2 className="text-base font-normal">기록 보관함</h2>
-            <p className="text-xs text-foreground-faint tabular-nums">
-              {filtered.length}건 · {dateGroups.length}개 날짜
-            </p>
           </div>
 
           {loading ? (
@@ -269,7 +265,7 @@ export function RecordsPageModern() {
       {/* 유형 선택 — 오버레이 모달 */}
       {showSelector && (
         <div
-          className="fixed inset-0 z-50 bg-foreground/40 flex items-center justify-center p-5"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-5"
           onClick={(e) => { if (e.target === e.currentTarget) setShowSelector(false); }}
         >
           <div className="bg-surface border border-line w-full max-w-md p-6">
@@ -309,16 +305,23 @@ export function RecordsPageModern() {
         </div>
       )}
 
-      {/* 작성 폼 (RecordForm — 모디 톤 호출) */}
+      {/* 작성 폼 — 오버레이 모달 안에 RecordForm 렌더 */}
       {formType && (
-        <RecordForm
-          recordType={formType}
-          onSave={async (record) => {
-            await add(record);
-            setFormType(null);
-          }}
-          onCancel={() => setFormType(null)}
-        />
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+          onClick={(e) => { if (e.target === e.currentTarget) setFormType(null); }}
+        >
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <RecordForm
+              recordType={formType}
+              onSave={async (record) => {
+                await add(record);
+                setFormType(null);
+              }}
+              onCancel={() => setFormType(null)}
+            />
+          </div>
+        </div>
       )}
 
       {/* 상세 (RecordDetailView — 모디 톤 호출) */}
@@ -390,18 +393,16 @@ function RecordDateGroup({
   onItemClick: (r: RecordItem) => void;
 }) {
   const d = new Date(date);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(date);
-  target.setHours(0, 0, 0, 0);
-  const dayDiff = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
   // 같은 날 안에서는 시간 늦은 순 (저녁 → 아침)
   const sortedItems = [...items].sort((a, b) => (b.time || '').localeCompare(a.time || ''));
+  const isSingle = items.length === 1;
 
   return (
-    <div className="grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line">
-      {/* 좌측: 날짜만 (월/일/요일) */}
+    <div className={`relative grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line ${
+      isSingle ? 'items-center' : ''
+    }`}>
+      {/* 좌측: 날짜 (월/일/요일) */}
       <div>
         <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">
           {MONTHS_EN[d.getMonth()]}
@@ -414,11 +415,13 @@ function RecordDateGroup({
         </p>
       </div>
 
-      {/* 우측: 상단 N건 + 같은 날 행 사이 구분선 */}
+      {/* 우측: 다건일 때만 상단 N건 + 행 리스트 */}
       <div className="min-w-0">
-        <p className="text-right text-[10px] tabular-nums text-foreground-faint mb-0.5">
-          {items.length}건
-        </p>
+        {!isSingle && (
+          <p className="text-right text-[10px] tabular-nums text-primary-500 mb-0.5">
+            {items.length}건
+          </p>
+        )}
         <ul className="divide-y divide-line">
           {sortedItems.map((r) => (
             <RecordRow key={r.id} record={r} onClick={() => onItemClick(r)} />

@@ -4,7 +4,7 @@
  * - SVG 아이콘 + 타입별 테마 색상
  * - 기분(이모지) + 에너지(게이지바) 각각 독립 행
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { RecordItem, RecordType, MorningTemplate, EveningTemplate, WeeklyTemplate } from '../../types';
 import {
   recordTypeConfig, moods,
@@ -12,8 +12,10 @@ import {
 } from '../../utils/recordTemplates';
 import { ListFieldEditor } from './ListFieldEditor';
 import { EnergySelector } from './EnergySelector';
-import { TiptapEditor } from '../tiptap/TiptapEditor';
+import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { ProjectSelect } from '../ProjectSelect';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useUserProfile } from '../../hooks/useUserProfile';
 import {
   RecordTypeIcon,
   GratitudeIcon, SparkleIcon, AffirmationIcon, IdeaIcon, RocketIcon,
@@ -45,6 +47,11 @@ function FormSection({ icon, label, sectionBg, labelColor, badgeBg, children }: 
 
 export function RecordForm({ recordType, initialData, onSave, onCancel }: RecordFormProps) {
   const cfg = recordTypeConfig[recordType];
+  const { theme } = useTheme();
+  const isModern = theme === 'modern';
+  const { profile } = useUserProfile();
+  const userName = profile?.name || '나';
+  const memoEditorRef = useRef<TiptapEditorHandle>(null);
 
   const [title, setTitle] = useState(initialData?.title || '');
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().slice(0, 10));
@@ -228,10 +235,10 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
                 }
               }}
               disabled={aiDraftLoading}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl
-                bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-semibold
-                hover:from-pink-600 hover:to-purple-600 transition-all shadow-sm
-                disabled:opacity-60 disabled:cursor-not-allowed"
+              className={isModern
+                ? "inline-flex items-center gap-1.5 px-3.5 py-2 border border-primary-500 text-primary-500 text-xs hover:bg-primary-500 hover:text-surface transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                : "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-semibold hover:from-pink-600 hover:to-purple-600 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              }
             >
               {aiDraftLoading ? (
                 <>
@@ -279,7 +286,7 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
       {recordType === 'memo' && (
         <div>
           <label className="text-sm font-medium text-gray-600 block mb-1.5">본문</label>
-          <TiptapEditor content={memoBody} onChange={setMemoBody} />
+          <TiptapEditor ref={memoEditorRef} content={memoBody} onChange={setMemoBody} userName={userName} />
         </div>
       )}
 
@@ -312,7 +319,35 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
       </div>
 
       {/* 버튼 */}
-      <div className="flex justify-end gap-2 pt-1">
+      <div className="flex justify-end items-center gap-2 pt-1">
+        {/* 메모: Claude / 질문 빠른 삽입 */}
+        {recordType === 'memo' && (
+          <>
+            <button
+              type="button"
+              onClick={() => memoEditorRef.current?.insertClaudeBlock()}
+              aria-label="Claude 대화 세트 삽입"
+              title="Claude 대화 세트"
+              className="px-2.5 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors inline-flex items-center gap-1.5"
+            >
+              <img src="/images/claude.png" alt="" className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => memoEditorRef.current?.insertQABlock()}
+              aria-label="질문 + 답변 삽입"
+              title="질문 + 답변"
+              className="px-2.5 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors inline-flex items-center gap-1.5"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </button>
+            <span className="w-px h-5 bg-gray-200 mx-1" aria-hidden />
+          </>
+        )}
         <button onClick={onCancel} className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-xl">취소</button>
         <button onClick={handleSubmit} className={`px-4 py-2 text-sm text-white ${cfg.btnBg} ${cfg.btnHover} rounded-xl font-medium`}>
           {initialData ? '수정' : '추가'}

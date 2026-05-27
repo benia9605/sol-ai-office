@@ -101,32 +101,75 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
           ? 'bg-surface border border-line'
           : 'bg-[#fff5f7] rounded-3xl shadow-hover'
       }`}>
-        {/* 헤더 */}
-        <div className={`px-6 pt-5 pb-4 flex items-center justify-between flex-shrink-0 border-b border-line ${
+        {/* 헤더 — 모바일: 제목 줄 + 액션 줄 2단 / sm+: 한 줄 */}
+        <div className={`px-6 pt-5 pb-4 flex-shrink-0 border-b border-line ${
           isModern ? 'bg-surface' : 'bg-white/80'
         }`}>
-          <h2 className={`text-lg flex items-center gap-2 ${
-            isModern ? 'font-normal text-foreground' : `font-bold ${cfg.textColor}`
-          }`}>
-            <div className={`w-8 h-8 flex items-center justify-center ${
-              isModern ? 'bg-surface-muted' : `rounded-xl ${cfg.bgColor}`
+          {/* 1줄: 제목 + 닫기 */}
+          <div className="flex items-start justify-between gap-3">
+            <h2 className={`flex-1 min-w-0 text-lg flex items-center gap-2 ${
+              isModern ? 'font-normal text-foreground' : `font-bold ${cfg.textColor}`
             }`}>
-              <RecordTypeIcon
-                type={record.recordType}
-                size={18}
-                className={isModern ? 'text-primary-500' : cfg.iconText}
-              />
+              <div className={`w-8 h-8 flex-shrink-0 flex items-center justify-center ${
+                isModern ? 'bg-surface-muted' : `rounded-xl ${cfg.bgColor}`
+              }`}>
+                <RecordTypeIcon
+                  type={record.recordType}
+                  size={18}
+                  className={isModern ? 'text-primary-500' : cfg.iconText}
+                />
+              </div>
+              <span className="truncate">{record.title || cfg.label}</span>
+            </h2>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* sm 이상에서만 수정/삭제 인라인 */}
+              <div className="hidden sm:flex items-center gap-2">
+                {!editing && (
+                  <button
+                    onClick={() => setEditing(true)}
+                    className={`text-xs px-2.5 py-1 transition-colors ${
+                      isModern
+                        ? 'text-foreground-muted hover:text-foreground'
+                        : `${cfg.iconText} hover:${cfg.bgColor} rounded-lg font-medium`
+                    }`}
+                  >
+                    수정
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    if (window.confirm('이 기록을 삭제하시겠습니까?')) {
+                      onDelete(record.id);
+                      onClose();
+                    }
+                  }}
+                  className={`text-xs px-2 py-1 transition-colors ${
+                    isModern
+                      ? 'text-foreground-faint hover:text-primary-500'
+                      : 'text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg'
+                  }`}
+                >
+                  삭제
+                </button>
+              </div>
+              <button
+                onClick={onClose}
+                className={`text-xl px-2 transition-colors ${
+                  isModern ? 'text-foreground-faint hover:text-foreground' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >×</button>
             </div>
-            {record.title || cfg.label}
-          </h2>
-          <div className="flex items-center gap-2">
+          </div>
+
+          {/* 모바일 전용: 수정/삭제 아랫줄 */}
+          <div className="mt-3 flex items-center gap-2 sm:hidden">
             {!editing && (
               <button
                 onClick={() => setEditing(true)}
-                className={`text-xs px-2.5 py-1 transition-colors ${
+                className={`text-xs px-3 py-1.5 transition-colors ${
                   isModern
-                    ? 'text-foreground-muted hover:text-foreground'
-                    : `${cfg.iconText} hover:${cfg.bgColor} rounded-lg font-medium`
+                    ? 'border border-line text-foreground-muted hover:border-foreground hover:text-foreground'
+                    : `${cfg.iconText} ${cfg.bgColor} rounded-lg font-medium`
                 }`}
               >
                 수정
@@ -139,20 +182,14 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
                   onClose();
                 }
               }}
-              className={`text-xs px-2 py-1 transition-colors ${
+              className={`text-xs px-3 py-1.5 transition-colors ${
                 isModern
-                  ? 'text-foreground-faint hover:text-primary-500'
-                  : 'text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg'
+                  ? 'border border-line text-foreground-faint hover:border-primary-500 hover:text-primary-500'
+                  : 'text-red-400 bg-red-50 hover:bg-red-100 rounded-lg'
               }`}
             >
               삭제
             </button>
-            <button
-              onClick={onClose}
-              className={`text-xl px-2 transition-colors ${
-                isModern ? 'text-foreground-faint hover:text-foreground' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >×</button>
           </div>
         </div>
 
