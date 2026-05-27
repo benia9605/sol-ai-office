@@ -415,13 +415,8 @@ function RecordDateGroup({
         </p>
       </div>
 
-      {/* 우측: 다건일 때만 상단 N건 + 행 리스트 */}
+      {/* 우측: 행 리스트 */}
       <div className="min-w-0">
-        {!isSingle && (
-          <p className="text-right text-[10px] tabular-nums text-primary-500 mb-0.5">
-            {items.length}건
-          </p>
-        )}
         <ul className="divide-y divide-line">
           {sortedItems.map((r) => (
             <RecordRow key={r.id} record={r} onClick={() => onItemClick(r)} />
