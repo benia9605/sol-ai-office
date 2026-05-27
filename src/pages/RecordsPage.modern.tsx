@@ -396,12 +396,9 @@ function RecordDateGroup({
 
   // 같은 날 안에서는 시간 늦은 순 (저녁 → 아침)
   const sortedItems = [...items].sort((a, b) => (b.time || '').localeCompare(a.time || ''));
-  const isSingle = items.length === 1;
 
   return (
-    <div className={`relative grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line ${
-      isSingle ? 'items-center' : ''
-    }`}>
+    <div className="relative grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line items-center">
       {/* 좌측: 날짜 (월/일/요일) */}
       <div>
         <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">
