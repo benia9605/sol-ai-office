@@ -322,6 +322,60 @@ export interface RecordItem {
   createdAt: string;
 }
 
+// ── 콘텐츠 (유튜브) ──
+
+/** 연결된 유튜브 채널 */
+export interface YoutubeChannel {
+  id: string;                  // 내부 row id
+  channelId: string;           // 유튜브 채널 ID (UC...)
+  title: string;
+  thumbnail?: string;
+  subscriberCount?: number;
+  videoCount?: number;
+  connectedAt?: string;
+}
+
+/** 유튜브 영상 (채널 하위) */
+export interface YoutubeVideo {
+  id: string;
+  channelId: string;           // 유튜브 채널 ID
+  videoId: string;             // 유튜브 영상 ID
+  title: string;
+  thumbnail?: string;
+  publishedAt: string;         // ISO
+  viewCount?: number;
+  likeCount?: number;
+  commentCount?: number;
+  script?: string;             // 영상 자막/스크립트 (답글 생성 맥락용)
+}
+
+/** 답글 상태: 없음 / 초안 작성됨 / 발행됨 */
+export type YoutubeReplyStatus = 'none' | 'draft' | 'published';
+
+/** 유튜브 댓글 (영상 하위) */
+export interface YoutubeComment {
+  id: string;
+  commentId: string;           // 유튜브 댓글 ID
+  videoId: string;             // 유튜브 영상 ID
+  channelId: string;           // 유튜브 채널 ID
+  author: string;
+  authorThumbnail?: string;
+  text: string;
+  publishedAt: string;         // ISO
+  likeCount?: number;
+  replyStatus: YoutubeReplyStatus;
+  replyDraft?: string;         // AI 초안 또는 수동 수정본
+  repliedAt?: string;          // 발행 시각
+}
+
+/** 주간 콘텐츠 집계 (그래프 추이용) */
+export interface YoutubeWeeklyStat {
+  week: string;                // 'YYYY-Www' 또는 'M월 N주' 라벨
+  views: number;
+  comments: number;
+  videos: number;
+}
+
 /** 알림 설정 (프론트 camelCase) */
 export interface NotificationPreferences {
   taskDeadline: boolean;       // 마감 D-1, D-Day

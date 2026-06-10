@@ -186,6 +186,8 @@ VITE_ANTHROPIC_API_KEY=
 VITE_OPENAI_API_KEY=
 VITE_PERPLEXITY_API_KEY=
 VITE_VAPID_PUBLIC_KEY=
+VITE_YOUTUBE_API_KEY=    # 콘텐츠 메뉴: 채널/영상/댓글 공개 데이터 조회 (Google Cloud YouTube Data API v3 키)
+VITE_GOOGLE_CLIENT_ID=   # 콘텐츠 메뉴: 답글 발행용 OAuth (youtube.force-ssl). 웹 OAuth 클라이언트 ID
 ```
 
 ### 보안 주의사항

@@ -10,6 +10,7 @@ import {
   Room, ChatHistory, MenuItem, Project,
   ScheduleItem, TaskItem, InsightItem, ReadingItem, RecordItem,
   ScheduleCategory, InsightSource, ReadingCategory, StudyNote,
+  YoutubeChannel, YoutubeVideo, YoutubeComment,
 } from './types';
 
 export const rooms: Room[] = [
@@ -140,6 +141,7 @@ export const menuItems: MenuItem[] = [
   { id: 'insights',  label: '인사이트', emoji: '💡', image: '/images/insight.png',  path: '/insights' },
   { id: 'readings',  label: '스터디', emoji: '📚', image: '/images/book.png',     path: '/readings' },
   { id: 'records',   label: '기록',     emoji: '📝', image: '/images/diary.png',    path: '/records' },
+  { id: 'content',   label: '콘텐츠',   emoji: '🎬', image: '/images/content.svg',  path: '/content' },
   { id: 'summaries', label: '대화 요약', emoji: '📋', image: '/images/modi.png',     path: '/summaries' },
 ];
 
@@ -427,6 +429,32 @@ export const dummyRecords: RecordItem[] = [
     },
     createdAt: '2026-02-21T08:00:00Z',
   },
+];
+
+// ── 더미 데이터: 콘텐츠 (유튜브) ──
+
+export const dummyYoutubeChannels: YoutubeChannel[] = [
+  { id: 'yc1', channelId: 'UC_unmyung', title: '운명랩 TV', thumbnail: '/images/unmyunglab.png', subscriberCount: 3120, videoCount: 24, connectedAt: '2026-04-01T00:00:00Z' },
+  { id: 'yc2', channelId: 'UC_pte',     title: 'PTE 한국어', thumbnail: '/images/pte.png',        subscriberCount: 1840, videoCount: 12, connectedAt: '2026-04-10T00:00:00Z' },
+  { id: 'yc3', channelId: 'UC_solning', title: '쏠닝포인트', thumbnail: '/images/solningpoint.png', subscriberCount: 760,  videoCount: 7,  connectedAt: '2026-05-02T00:00:00Z' },
+];
+
+export const dummyYoutubeVideos: YoutubeVideo[] = [
+  { id: 'yv1', channelId: 'UC_unmyung', videoId: 'vid_001', title: '사주로 보는 2026년 운세 총정리', thumbnail: '/images/unmyunglab.png', publishedAt: '2026-05-26T09:00:00Z', viewCount: 8240, likeCount: 412, commentCount: 37, script: '안녕하세요 운명랩입니다. 오늘은 2026년 병오년 운세를 사주 기준으로 정리해볼게요. 먼저 대운과 세운의 차이부터 짚고, 일간별로 올해 조심할 점과 기회를 살펴봅니다. 신살은 이번 영상에서 깊게 다루지 않고 다음 편에서 따로 정리할 예정이에요. 리포트는 영상 설명란 링크에서 받으실 수 있습니다.' },
+  { id: 'yv2', channelId: 'UC_unmyung', videoId: 'vid_002', title: '대운 바뀌는 시기 알아보는 법', thumbnail: '/images/unmyunglab.png', publishedAt: '2026-05-19T09:00:00Z', viewCount: 5120, likeCount: 287, commentCount: 21 },
+  { id: 'yv3', channelId: 'UC_unmyung', videoId: 'vid_003', title: '궁합 잘 맞는 일주 TOP5', thumbnail: '/images/unmyunglab.png', publishedAt: '2026-05-12T09:00:00Z', viewCount: 12030, likeCount: 690, commentCount: 54 },
+  { id: 'yv4', channelId: 'UC_pte',     videoId: 'vid_101', title: 'PTE 스피킹 만점 받는 발음 팁', thumbnail: '/images/pte.png', publishedAt: '2026-05-24T09:00:00Z', viewCount: 3210, likeCount: 154, commentCount: 18, script: 'PTE 스피킹에서 발음(pronunciation)과 유창성(oral fluency) 점수를 올리는 핵심 팁을 다룹니다. 라이팅 템플릿은 이 영상에 없고, 별도 라이팅 영상에서 다룹니다. 첫째 연결발음, 둘째 강세, 셋째 속도 일정하게 유지하기.' },
+  { id: 'yv5', channelId: 'UC_pte',     videoId: 'vid_102', title: 'PTE 라이팅 템플릿 공개', thumbnail: '/images/pte.png', publishedAt: '2026-05-17T09:00:00Z', viewCount: 2480, likeCount: 121, commentCount: 9 },
+  { id: 'yv6', channelId: 'UC_solning', videoId: 'vid_201', title: '1인 사업가 시간관리 루틴', thumbnail: '/images/solningpoint.png', publishedAt: '2026-05-22T09:00:00Z', viewCount: 1540, likeCount: 88, commentCount: 12 },
+];
+
+export const dummyYoutubeComments: YoutubeComment[] = [
+  { id: 'cm1', commentId: 'c_001', videoId: 'vid_001', channelId: 'UC_unmyung', author: '하늘별', authorThumbnail: '', text: '올해 대운 바뀐다는데 이 영상 보고 정리됐어요! 혹시 신살도 다뤄주실 수 있나요?', publishedAt: '2026-05-31T14:20:00Z', likeCount: 12, replyStatus: 'none' },
+  { id: 'cm2', commentId: 'c_002', videoId: 'vid_001', channelId: 'UC_unmyung', author: 'mina_k', authorThumbnail: '', text: '리포트 어디서 받을 수 있나요?? 너무 궁금해요', publishedAt: '2026-05-30T10:05:00Z', likeCount: 5, replyStatus: 'draft', replyDraft: '안녕하세요 하늘별님! 영상이 도움이 됐다니 기뻐요 😊 리포트는 채널 설명란 링크에서 받으실 수 있어요. 신살 편도 곧 올릴게요!' },
+  { id: 'cm3', commentId: 'c_003', videoId: 'vid_003', channelId: 'UC_unmyung', author: '집사일상', authorThumbnail: '', text: '궁합 TOP5 너무 잘봤어요 ㅎㅎ 제 일주도 있어서 신기했어요', publishedAt: '2026-05-29T21:40:00Z', likeCount: 8, replyStatus: 'published', replyDraft: '봐주셔서 감사해요! 다음엔 비추천 조합도 준비해볼게요 🙌', repliedAt: '2026-05-30T08:00:00Z' },
+  { id: 'cm4', commentId: 'c_004', videoId: 'vid_101', channelId: 'UC_pte', author: 'studyhard', authorThumbnail: '', text: '발음 팁 덕분에 스피킹 79점 받았습니다!! 감사합니다', publishedAt: '2026-05-28T18:12:00Z', likeCount: 21, replyStatus: 'none' },
+  { id: 'cm5', commentId: 'c_005', videoId: 'vid_101', channelId: 'UC_pte', author: '제니퍼', authorThumbnail: '', text: '라이팅 템플릿도 영상 있나요? 찾는 중이에요', publishedAt: '2026-05-27T11:30:00Z', likeCount: 3, replyStatus: 'none' },
+  { id: 'cm6', commentId: 'c_006', videoId: 'vid_201', channelId: 'UC_solning', author: '워라밸지킴이', authorThumbnail: '', text: '루틴 따라해보고 있는데 오전 집중 시간 확보가 진짜 핵심이네요', publishedAt: '2026-05-26T09:50:00Z', likeCount: 6, replyStatus: 'none' },
 ];
 
 export const getDummyResponse = (aiName: string, roomId?: string): string => {

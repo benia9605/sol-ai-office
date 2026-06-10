@@ -19,6 +19,7 @@ import { RecordsPage } from './pages/RecordsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { SummariesPage } from './pages/SummariesPage';
+import { ContentPage } from './pages/ContentPage';
 
 function App() {
   const { user, loading } = useAuth();
@@ -67,6 +68,7 @@ function App() {
           <Route path="/records" element={<RecordsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/summaries" element={<SummariesPage />} />
+          <Route path="/content" element={<ContentPage />} />
           <Route path="/project/:projectId" element={<ProjectDetailPage />} />
         </Route>
       </Routes>
