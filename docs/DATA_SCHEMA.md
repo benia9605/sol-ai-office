@@ -99,5 +99,6 @@
 | `011_staff_output_actions.sql` | AI 액션 승인 큐(suggested→approved→dismissed) — HITL |
 | `012_report_comments.sql` | daily_reports에 comments(JSONB) — 리포트별 내 의견 |
 | `013_workspace_credits.sql` | 코인제 — workspaces.credits(잔액) + staff_usage(실행별 토큰·코인 로그) + deduct_credits() 함수 |
+| `014_office_data_workspace.sql` | 오피스/개인 분리 — insights·journals·youtube_channels/videos/comments에 workspace_id (NULL=개인, 값=오피스) |
 
 > ⚠️ **base 테이블(tasks·schedules·insights·journals·readings·projects·conversations·messages·goals·kpis·user_profiles 등)은 레포에 DDL이 없음** — 과거 Supabase에 직접 생성. 새로 환경을 만들 땐 이 문서를 기준으로 재생성 필요. (TODO: base 스키마 덤프를 `000_base_schema.sql`로 박제하면 완전 재현 가능)

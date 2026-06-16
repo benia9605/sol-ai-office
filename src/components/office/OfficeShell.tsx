@@ -128,11 +128,11 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
       {/* 메인 */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 flex-shrink-0 bg-white border-b border-gray-100 flex items-center justify-between px-5">
+          <span className="text-sm text-gray-400 truncate max-w-[55%]">{workspace.bizInfo || ''}</span>
           <div title="코인 잔액 — 직원이 일할 때마다 토큰 비용만큼 차감"
-            className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 ${coinPulse ? 'scale-125 text-amber-500' : 'text-gray-500'}`}>
+            className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 flex-shrink-0 ${coinPulse ? 'scale-125 text-amber-500' : 'text-gray-500'}`}>
             <span>🪙</span><span>{credits != null ? credits.toLocaleString() : '—'}</span>
           </div>
-          {workspace.bizInfo && <span className="text-sm text-gray-400 truncate max-w-[50%]">{workspace.bizInfo}</span>}
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">
