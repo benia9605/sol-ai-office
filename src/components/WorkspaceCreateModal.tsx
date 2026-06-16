@@ -5,7 +5,7 @@
  * - 토스앱st 몽글몽글: 둥근 카드 + 팝 애니메이션 + 소프트 톤
  * - 1단계: 정방형 버튼 2개(개인/회사, 이모지) → 2단계: 이미지+이름+(회사)사업정보
  */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createWorkspace, joinByInviteCode } from '../services/workspaces.service';
 import { Workspace, WorkspaceType } from '../types';
@@ -14,6 +14,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onCreated: (ws: Workspace) => void;
+  /** 열릴 때 시작 단계 ('join'이면 바로 코드 입력) */
+  initialStep?: 'choose' | 'join';
 }
 
 const ANIM = `
@@ -21,8 +23,8 @@ const ANIM = `
 @keyframes wsFade { from { opacity: 0; } to { opacity: 1; } }
 `;
 
-export function WorkspaceCreateModal({ open, onClose, onCreated }: Props) {
-  const [step, setStep] = useState<'choose' | 'form' | 'join'>('choose');
+export function WorkspaceCreateModal({ open, onClose, onCreated, initialStep = 'choose' }: Props) {
+  const [step, setStep] = useState<'choose' | 'form' | 'join'>(initialStep);
   const [type, setType] = useState<WorkspaceType>('office');
   const [name, setName] = useState('');
   const [bizInfo, setBizInfo] = useState('');
@@ -31,6 +33,11 @@ export function WorkspaceCreateModal({ open, onClose, onCreated }: Props) {
   const [code, setCode] = useState('');
   const [joinErr, setJoinErr] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // 열릴 때마다 지정된 시작 단계로 (코드로 합류 진입 등)
+  useEffect(() => {
+    if (open) { setStep(initialStep); setCode(''); setJoinErr(''); }
+  }, [open, initialStep]);
 
   if (!open) return null;
 

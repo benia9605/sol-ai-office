@@ -14,6 +14,7 @@ export function WorkspaceSwitcher() {
   const { personal, offices, activeWorkspaceId, activeWorkspace, setActiveWorkspace, reload } = useWorkspaceContext();
   const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [createStep, setCreateStep] = useState<'choose' | 'join'>('choose');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,15 +94,21 @@ export function WorkspaceSwitcher() {
 
           <div className="my-1 border-t border-gray-100" />
           <button
-            onClick={() => { setOpen(false); setShowCreate(true); }}
+            onClick={() => { setOpen(false); setCreateStep('choose'); setShowCreate(true); }}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-colors text-left"
           >
             <span className="text-base leading-none">＋</span> 추가하기
           </button>
+          <button
+            onClick={() => { setOpen(false); setCreateStep('join'); setShowCreate(true); }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-colors text-left"
+          >
+            <span className="text-base leading-none">🔑</span> 코드로 합류
+          </button>
         </div>
       )}
 
-      <WorkspaceCreateModal open={showCreate} onClose={() => setShowCreate(false)} onCreated={onCreated} />
+      <WorkspaceCreateModal open={showCreate} initialStep={createStep} onClose={() => setShowCreate(false)} onCreated={onCreated} />
     </div>
   );
 }

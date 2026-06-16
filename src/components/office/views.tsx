@@ -506,7 +506,7 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
             <button onClick={copyCode}
               className="text-xs px-3 py-2 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all flex-shrink-0">{copied ? '복사됨 ✓' : '복사'}</button>
           </div>
-          <p className="text-[11px] text-gray-400">이 코드를 멤버에게 공유하세요. 멤버는 워크스페이스 전환 → <b>코드로 합류</b>에서 입력하면 됩니다.</p>
+          <p className="text-[11px] text-gray-400">이 코드를 멤버에게 공유하세요. 멤버는 왼쪽 위 <b>워크스페이스 메뉴 → 🔑 코드로 합류</b>에서 이 코드를 입력하면 합류돼요.</p>
         </Card>
       )}
       <Card className="p-3">
