@@ -30,6 +30,7 @@ export interface YoutubeChannelRow {
   subscriber_count?: number;
   video_count?: number;
   connected_at?: string;
+  workspace_id?: string;
 }
 
 export interface YoutubeVideoRow {
@@ -43,6 +44,7 @@ export interface YoutubeVideoRow {
   like_count?: number;
   comment_count?: number;
   script?: string;
+  workspace_id?: string;
 }
 
 export interface YoutubeCommentRow {
@@ -58,24 +60,23 @@ export interface YoutubeCommentRow {
   reply_status: YoutubeReplyStatus;
   reply_draft?: string;
   replied_at?: string;
+  workspace_id?: string;
 }
 
 // ── 채널 ──
 
-export async function fetchChannels(): Promise<YoutubeChannelRow[]> {
+export async function fetchChannels(workspaceId?: string): Promise<YoutubeChannelRow[]> {
   const userId = await getCurrentUserId();
-  const { data, error } = await supabase
-    .from('youtube_channels')
-    .select('*')
-    .eq('user_id', userId)
-    .order('connected_at', { ascending: true });
+  let q = supabase.from('youtube_channels').select('*').eq('user_id', userId);
+  q = workspaceId ? q.eq('workspace_id', workspaceId) : q.is('workspace_id', null);
+  const { data, error } = await q.order('connected_at', { ascending: true });
   if (error) throw error;
   return data ?? [];
 }
 
 export async function insertChannel(c: {
   channelId: string; title: string; thumbnail?: string; subscriberCount?: number; videoCount?: number;
-}): Promise<YoutubeChannelRow> {
+}, workspaceId?: string): Promise<YoutubeChannelRow> {
   const userId = await getCurrentUserId();
   const { data, error } = await supabase
     .from('youtube_channels')
@@ -87,6 +88,7 @@ export async function insertChannel(c: {
       subscriber_count: c.subscriberCount ?? null,
       video_count: c.videoCount ?? null,
       connected_at: new Date().toISOString(),
+      workspace_id: workspaceId ?? null,
     })
     .select()
     .single();
@@ -104,13 +106,11 @@ export async function deleteChannelData(channelId: string): Promise<void> {
 
 // ── 영상 ──
 
-export async function fetchVideos(): Promise<YoutubeVideoRow[]> {
+export async function fetchVideos(workspaceId?: string): Promise<YoutubeVideoRow[]> {
   const userId = await getCurrentUserId();
-  const { data, error } = await supabase
-    .from('youtube_videos')
-    .select('*')
-    .eq('user_id', userId)
-    .order('published_at', { ascending: false });
+  let q = supabase.from('youtube_videos').select('*').eq('user_id', userId);
+  q = workspaceId ? q.eq('workspace_id', workspaceId) : q.is('workspace_id', null);
+  const { data, error } = await q.order('published_at', { ascending: false });
   if (error) throw error;
   return data ?? [];
 }
@@ -118,13 +118,14 @@ export async function fetchVideos(): Promise<YoutubeVideoRow[]> {
 export async function insertVideos(channelId: string, videos: {
   videoId: string; title: string; thumbnail?: string; publishedAt: string;
   viewCount?: number; likeCount?: number; commentCount?: number;
-}[]): Promise<YoutubeVideoRow[]> {
+}[], workspaceId?: string): Promise<YoutubeVideoRow[]> {
   if (videos.length === 0) return [];
   const userId = await getCurrentUserId();
   const rows = videos.map((v) => ({
     user_id: userId, channel_id: channelId, video_id: v.videoId, title: v.title,
     thumbnail: v.thumbnail ?? null, published_at: v.publishedAt,
     view_count: v.viewCount ?? null, like_count: v.likeCount ?? null, comment_count: v.commentCount ?? null,
+    workspace_id: workspaceId ?? null,
   }));
   const { data, error } = await supabase.from('youtube_videos').insert(rows).select();
   if (error) throw error;
@@ -134,13 +135,14 @@ export async function insertVideos(channelId: string, videos: {
 export async function insertComments(comments: {
   commentId: string; videoId: string; channelId: string; author: string;
   authorThumbnail?: string; text: string; publishedAt: string; likeCount?: number;
-}[]): Promise<YoutubeCommentRow[]> {
+}[], workspaceId?: string): Promise<YoutubeCommentRow[]> {
   if (comments.length === 0) return [];
   const userId = await getCurrentUserId();
   const rows = comments.map((c) => ({
     user_id: userId, comment_id: c.commentId, video_id: c.videoId, channel_id: c.channelId,
     author: c.author, author_thumbnail: c.authorThumbnail ?? null, text: c.text,
     published_at: c.publishedAt, like_count: c.likeCount ?? null, reply_status: 'none',
+    workspace_id: workspaceId ?? null,
   }));
   const { data, error } = await supabase.from('youtube_comments').insert(rows).select();
   if (error) throw error;
@@ -157,13 +159,11 @@ export async function updateVideoScript(id: string, script: string): Promise<voi
 
 // ── 댓글 ──
 
-export async function fetchComments(): Promise<YoutubeCommentRow[]> {
+export async function fetchComments(workspaceId?: string): Promise<YoutubeCommentRow[]> {
   const userId = await getCurrentUserId();
-  const { data, error } = await supabase
-    .from('youtube_comments')
-    .select('*')
-    .eq('user_id', userId)
-    .order('published_at', { ascending: false });
+  let q = supabase.from('youtube_comments').select('*').eq('user_id', userId);
+  q = workspaceId ? q.eq('workspace_id', workspaceId) : q.is('workspace_id', null);
+  const { data, error } = await q.order('published_at', { ascending: false });
   if (error) throw error;
   return data ?? [];
 }

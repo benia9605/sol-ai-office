@@ -52,14 +52,14 @@ function buildWeeklyStats(videos: YoutubeVideo[]): YoutubeWeeklyStat[] {
   return buckets;
 }
 
-export function ContentPage({ embedded }: { embedded?: boolean } = {}) {
+export function ContentPage({ embedded, workspaceId }: { embedded?: boolean; workspaceId?: string } = {}) {
   const { theme } = useTheme();
   const modern = theme === 'modern';
 
   const {
     channels, videos, comments, loading, usingDummy, hasApiKey, hasOAuth,
     refreshFromApi, addChannel, removeChannel, saveDraft, publish, saveScript,
-  } = useYoutube();
+  } = useYoutube(workspaceId);
 
   const [activeChannel, setActiveChannel] = useState<string>('all');
   const [metric, setMetric] = useState<'views' | 'comments' | 'videos'>('views');

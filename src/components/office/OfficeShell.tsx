@@ -143,7 +143,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             {view === 'todos' && <TodosView />}
             {view === 'schedule' && <ScheduleView workspace={workspace} />}
             {view === 'insights' && <InsightsView workspace={workspace} />}
-            {view === 'content' && <ContentPage embedded />}
+            {view === 'content' && <ContentPage embedded workspaceId={workspace.id} />}
             {view === 'log' && <LogView workspace={workspace} />}
             {view === 'members' && <MembersView workspace={workspace} />}
             {view === 'brand' && <BrandView workspace={workspace} />}

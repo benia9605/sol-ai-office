@@ -43,7 +43,7 @@ function toComment(r: YoutubeCommentRow): YoutubeComment {
   };
 }
 
-export function useYoutube() {
+export function useYoutube(workspaceId?: string) {
   const [channels, setChannels] = useState<YoutubeChannel[]>([]);
   const [videos, setVideos] = useState<YoutubeVideo[]>([]);
   const [comments, setComments] = useState<YoutubeComment[]>([]);
@@ -53,7 +53,7 @@ export function useYoutube() {
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const [ch, vd, cm] = await Promise.all([fetchChannels(), fetchVideos(), fetchComments()]);
+      const [ch, vd, cm] = await Promise.all([fetchChannels(workspaceId), fetchVideos(workspaceId), fetchComments(workspaceId)]);
       setChannels(ch.map(toChannel));
       setVideos(vd.map(toVideo));
       setComments(cm.map(toComment));
@@ -67,7 +67,7 @@ export function useYoutube() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [workspaceId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -128,13 +128,13 @@ export function useYoutube() {
       return;
     }
 
-    const chRow = await insertChannel(channel);
-    const vRows = await insertVideos(channel.channelId, vids);
-    const cRows = await insertComments(cms);
+    const chRow = await insertChannel(channel, workspaceId);
+    const vRows = await insertVideos(channel.channelId, vids, workspaceId);
+    const cRows = await insertComments(cms, workspaceId);
     setChannels((prev) => [...prev, toChannel(chRow)]);
     setVideos((prev) => [...vRows.map(toVideo), ...prev]);
     setComments((prev) => [...cRows.map(toComment), ...prev]);
-  }, [channels, usingDummy]);
+  }, [channels, usingDummy, workspaceId]);
 
   /** 채널 등록 해제 (채널 + 영상 + 댓글 제거) */
   const removeChannel = useCallback(async (channelId: string) => {
@@ -170,13 +170,13 @@ export function useYoutube() {
         setVideos((prev) => [...newVids.map((v) => ({ ...v, id: localId('vid') })), ...prev]);
         setComments((prev) => [...newCms.map((c) => ({ ...c, id: localId('cm') })), ...prev]);
       } else {
-        const vRows = await insertVideos(ch.channelId, newVids);
-        const cRows = await insertComments(newCms);
+        const vRows = await insertVideos(ch.channelId, newVids, workspaceId);
+        const cRows = await insertComments(newCms, workspaceId);
         setVideos((prev) => [...vRows.map(toVideo), ...prev]);
         setComments((prev) => [...cRows.map(toComment), ...prev]);
       }
     }
-  }, [channels, comments, videos, usingDummy, load]);
+  }, [channels, comments, videos, usingDummy, load, workspaceId]);
 
   /** 영상 스크립트 저장 */
   const saveScript = useCallback(async (videoRowId: string, script: string) => {
