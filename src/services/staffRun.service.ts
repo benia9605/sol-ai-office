@@ -129,6 +129,10 @@ function buildSystemPrompt(staff: Staff, workspace: Workspace, brand: BrandConte
   // ① 회사 브레인 (사장이 입력한 brand_contexts) — 모든 답변의 기준
   const brandBlock = brandContextToPrompt(brand, workspace.name + (workspace.bizInfo ? ` · ${workspace.bizInfo}` : ''));
   const extra = staff.prompt ? `\n[추가 지시]\n${staff.prompt}` : '';
+  // CS 직원 전용 — 정책/톤 주입 (정책 범위 내 응대 + 브랜드 톤)
+  const csBlock = (staff.typeKey === 'cs' && brand && (brand.csPolicies || brand.csTone))
+    ? `\n\n[CS 정책 — 반드시 이 범위 안에서만 안내]\n${brand.csPolicies || '(정책 미설정 — 단정 금지, 확인 안내)'}\n[CS 응대 톤]\n${brand.csTone || ''}`
+    : '';
   // ★ 수동(직접 시키기) 입력이 있으면 그것을 우선 수행, 없으면 설정된 일과
   const task = manualInput
     ? `\n\n[작업 지시 — 사장이 직접 시킨 일. 이것을 수행해라]\n${manualInput}`
@@ -138,7 +142,7 @@ function buildSystemPrompt(staff: Staff, workspace: Workspace, brand: BrandConte
     ? `\n\n[동료 직원들이 최근 알아낸 것 — 관련 있으면 반영해서 작업]\n${peerNotes.join('\n')}`
     : '';
   const schemaHint = OUTPUT_SCHEMA[type?.outputKind || ''] || '{}';
-  return `${base}\n\n${brandBlock}${extra}${task}${peer}\n\n결과는 한국어 마크다운으로. 첫 줄은 "# 한 줄 제목", 둘째 줄은 한 줄 요약, 이어서 본문(오늘 한 일·핵심·내일 제안).
+  return `${base}\n\n${brandBlock}${extra}${csBlock}${task}${peer}\n\n결과는 한국어 마크다운으로. 첫 줄은 "# 한 줄 제목", 둘째 줄은 한 줄 요약, 이어서 본문(오늘 한 일·핵심·내일 제안).
 그리고 맨 마지막에 반드시 아래 형식의 JSON 코드블록을 덧붙여라(UI 표시·자동 등록용):
 \`\`\`json
 { "output": ${schemaHint},

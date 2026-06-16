@@ -180,10 +180,13 @@ function buildSystem(staff: any, ws: any, bc: any, peerNotes: string[], routineL
   const base = BASE_SOP[staff.type_key] || `너는 ${staff.name}이다.`;
   const brand = brandBlock(bc, ws.name + (ws.biz_info ? ` · ${ws.biz_info}` : ''));
   const extra = staff.prompt ? `\n[추가 지시]\n${staff.prompt}` : '';
+  const csBlock = (staff.type_key === 'cs' && bc && (bc.cs_policies || bc.cs_tone))
+    ? `\n\n[CS 정책 — 반드시 이 범위 안에서만 안내]\n${bc.cs_policies || '(정책 미설정 — 단정 금지, 확인 안내)'}\n[CS 응대 톤]\n${bc.cs_tone || ''}`
+    : '';
   const task = `\n\n[오늘 수행할 일과 — 이 내용을 실제로 해줘]\n- ${routineLabel}`;
   const peer = peerNotes.length ? `\n\n[동료 직원들이 최근 알아낸 것 — 관련 있으면 반영]\n${peerNotes.join('\n')}` : '';
   const schemaHint = OUTPUT_SCHEMA[OUTPUT_KIND[staff.type_key] || ''] || '{}';
-  return `${base}\n\n${brand}${extra}${task}${peer}\n\n결과는 한국어 마크다운으로. 첫 줄 "# 한 줄 제목", 둘째 줄 한 줄 요약, 이어서 본문.
+  return `${base}\n\n${brand}${extra}${csBlock}${task}${peer}\n\n결과는 한국어 마크다운으로. 첫 줄 "# 한 줄 제목", 둘째 줄 한 줄 요약, 이어서 본문.
 그리고 맨 마지막에 반드시 아래 형식의 JSON 코드블록을 덧붙여라(UI 표시·자동 등록용):
 \`\`\`json
 { "output": ${schemaHint},

@@ -13,12 +13,12 @@ type Form = {
   identity: string; category: string; tone: string; target: string;
   usp: string; channels: string; pricePosition: string; adAngle: string;
   compliance: string; mainProducts: string; priceRange: string;
-  competitors: string; story: string; raw: string;
+  competitors: string; story: string; csPolicies: string; csTone: string; raw: string;
 };
 const EMPTY: Form = {
   identity: '', category: '', tone: '', target: '', usp: '', channels: '',
   pricePosition: '', adAngle: '', compliance: '', mainProducts: '',
-  priceRange: '', competitors: '', story: '', raw: '',
+  priceRange: '', competitors: '', story: '', csPolicies: '', csTone: '', raw: '',
 };
 
 function fromBC(bc: BrandContext): Form {
@@ -28,7 +28,7 @@ function fromBC(bc: BrandContext): Form {
     pricePosition: bc.pricePosition ?? '', adAngle: bc.adAngle ?? '',
     compliance: bc.compliance ?? '', mainProducts: bc.mainProducts ?? '',
     priceRange: bc.priceRange ?? '', competitors: bc.competitors ?? '',
-    story: bc.story ?? '', raw: bc.raw ?? '',
+    story: bc.story ?? '', csPolicies: bc.csPolicies ?? '', csTone: bc.csTone ?? '', raw: bc.raw ?? '',
   };
 }
 
@@ -118,6 +118,8 @@ export function BrandView({ workspace }: { workspace: Workspace }) {
           <Card className="p-5 space-y-4">
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">규제 · 자유 입력</div>
             <Field label="⚠️ 금지표현 (줄바꿈으로 여러 개)" k="compliance" textarea warn hint={"예: '평생 보장' 단정 금지\n'100% 무독성'은 근거 있을 때만"} />
+      <Field label="💬 CS 정책 (배송/교환/환불/파손 기준)" k="csPolicies" textarea hint={"예: 단순변심 교환은 수령 7일 내·왕복배송비 고객부담\n파손은 사진 확인 후 무료 재배송\n주문 제작품은 환불 불가"} />
+      <Field label="💬 CS 응대 톤" k="csTone" textarea hint="예: 정중한 존댓말, 이모지 최소, 먼저 공감 후 해결책. 환불은 정책 내 최대한 수용적으로" />
             <Field label="자유 서술 (AI에 그대로 전달)" k="raw" textarea hint="위 항목으로 안 담기는 추가 맥락을 자유롭게" />
           </Card>
 

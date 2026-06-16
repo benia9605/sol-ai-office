@@ -180,6 +180,8 @@ export interface BrandContext {
   priceRange?: string;     // 대표 가격대
   competitors?: string;    // 주요 경쟁사
   story?: string;          // 창업 스토리/차별점
+  csPolicies?: string;     // CS 정책 (배송/교환/환불/파손 기준)
+  csTone?: string;         // CS 응대 톤 (공감강도·이모지·환불태도)
   raw?: string;            // 자유 서술
   version?: number;
   updatedAt?: string;

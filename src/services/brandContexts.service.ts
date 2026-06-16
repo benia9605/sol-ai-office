@@ -25,6 +25,8 @@ interface BrandContextRow {
   price_range?: string;
   competitors?: string;
   story?: string;
+  cs_policies?: string;
+  cs_tone?: string;
   raw?: string;
   version?: number;
   updated_at?: string;
@@ -38,7 +40,7 @@ function fromRow(r: BrandContextRow): BrandContext {
     pricePosition: r.price_position ?? '', adAngle: r.ad_angle ?? '',
     compliance: r.compliance ?? '', mainProducts: r.main_products ?? '',
     priceRange: r.price_range ?? '', competitors: r.competitors ?? '',
-    story: r.story ?? '', raw: r.raw ?? '',
+    story: r.story ?? '', csPolicies: r.cs_policies ?? '', csTone: r.cs_tone ?? '', raw: r.raw ?? '',
     version: r.version ?? 1, updatedAt: r.updated_at,
   };
 }
@@ -59,6 +61,8 @@ function toRowPayload(fields: Partial<BrandContext>): Record<string, unknown> {
   if (fields.priceRange !== undefined) p.price_range = fields.priceRange;
   if (fields.competitors !== undefined) p.competitors = fields.competitors;
   if (fields.story !== undefined) p.story = fields.story;
+  if (fields.csPolicies !== undefined) p.cs_policies = fields.csPolicies;
+  if (fields.csTone !== undefined) p.cs_tone = fields.csTone;
   if (fields.raw !== undefined) p.raw = fields.raw;
   return p;
 }
