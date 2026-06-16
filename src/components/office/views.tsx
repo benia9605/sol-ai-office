@@ -7,7 +7,8 @@
 import { useEffect, useState } from 'react';
 import { Workspace, WorkspaceMember, TaskItem, DailyReport } from '../../types';
 import { useTasks } from '../../hooks/useTasks';
-import { fetchMembers } from '../../services/workspaces.service';
+import { fetchMembers, removeMember, changeMemberRole } from '../../services/workspaces.service';
+import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
 import { fetchInsights, InsightRow } from '../../services/insights.service';
@@ -261,27 +262,57 @@ export function LogView({ workspace }: { workspace: Workspace }) {
 /* ───────── 멤버 (실데이터) ───────── */
 export function MembersView({ workspace }: { workspace: Workspace }) {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
-  useEffect(() => {
-    fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([]));
-  }, [workspace.id]);
+  const [myId, setMyId] = useState('');
+  const [copied, setCopied] = useState(false);
+  const load = () => fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([]));
+  useEffect(() => { load(); getCurrentUserId().then(setMyId).catch(() => {}); /* eslint-disable-next-line */ }, [workspace.id]);
+
+  const iAmOwner = members.find(m => m.userId === myId)?.role === 'owner';
+  const copyCode = () => {
+    if (!workspace.inviteCode) return;
+    navigator.clipboard?.writeText(workspace.inviteCode);
+    setCopied(true); setTimeout(() => setCopied(false), 1500);
+  };
+  const kick = async (uid: string) => {
+    if (!confirm('이 멤버를 내보낼까요?')) return;
+    await removeMember(workspace.id, uid).catch(() => {}); load();
+  };
+  const toggleRole = async (m: WorkspaceMember) => {
+    await changeMemberRole(workspace.id, m.userId, m.role === 'owner' ? 'member' : 'owner').catch(() => {}); load();
+  };
 
   return (
     <>
       <ViewHead eyebrow="MEMBERS" title="멤버" sub={`멤버 ${members.length}명`} />
+      {/* 초대 코드 (오피스만) */}
+      {workspace.type === 'office' && workspace.inviteCode && (
+        <Card className="p-4 mb-3 space-y-2">
+          <div className="text-[11px] font-semibold text-gray-400 tracking-wide">초대 코드</div>
+          <div className="flex items-center gap-2">
+            <code className="text-lg font-bold text-primary-600 tracking-[0.2em] bg-primary-50 px-3 py-1.5 rounded-xl flex-1 text-center">{workspace.inviteCode}</code>
+            <button onClick={copyCode}
+              className="text-xs px-3 py-2 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all flex-shrink-0">{copied ? '복사됨 ✓' : '복사'}</button>
+          </div>
+          <p className="text-[11px] text-gray-400">이 코드를 멤버에게 공유하세요. 멤버는 워크스페이스 전환 → <b>코드로 합류</b>에서 입력하면 됩니다.</p>
+        </Card>
+      )}
       <Card className="p-3">
         {members.map(m => (
-          <div key={m.userId} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
-            <span className="w-9 h-9 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">
+          <div key={m.userId} className="flex items-center gap-2.5 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
+            <span className="w-9 h-9 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
               {(m.nickname || m.userId).slice(0, 1).toUpperCase()}
             </span>
-            <span className="text-sm font-medium text-gray-700 flex-1">{m.nickname || '멤버'}</span>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{m.role === 'owner' ? '오너' : '멤버'}</span>
+            <span className="text-sm font-medium text-gray-700 flex-1 min-w-0 truncate">{m.nickname || '멤버'}{m.userId === myId && ' (나)'}</span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{m.role === 'owner' ? '오너' : '멤버'}</span>
+            {iAmOwner && m.userId !== myId && (
+              <>
+                <button onClick={() => toggleRole(m)} className="text-[11px] text-gray-400 hover:text-primary-500 flex-shrink-0">{m.role === 'owner' ? '멤버로' : '오너로'}</button>
+                <button onClick={() => kick(m.userId)} className="text-[11px] text-rose-400 hover:text-rose-600 flex-shrink-0">내보내기</button>
+              </>
+            )}
           </div>
         ))}
         {members.length === 0 && <p className="text-xs text-gray-300 py-4 text-center">멤버를 불러오는 중…</p>}
-        <button className="w-full mt-1 flex items-center gap-2 p-3 rounded-2xl text-sm text-gray-400 hover:bg-gray-50 transition-colors">
-          <span>＋</span> 멤버 초대 <span className="text-[11px] text-gray-300">(Phase 6)</span>
-        </button>
       </Card>
     </>
   );

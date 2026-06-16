@@ -152,11 +152,30 @@ export async function joinByInviteCode(code: string): Promise<Workspace> {
     .from('workspaces')
     .select('*')
     .eq('invite_code', code.trim().toUpperCase())
-    .eq('type', 'team')
+    .eq('type', 'office')
     .maybeSingle();
   if (error) throw error;
   if (!ws) throw new Error('초대 코드를 찾을 수 없어요');
-  await supabase.from('workspace_members')
-    .insert({ workspace_id: ws.id, user_id: userId, role: 'member' });
+  // 이미 멤버면 중복 추가하지 않고 그대로 반환 (기존 유저 재합류 안전)
+  const { data: existing } = await supabase.from('workspace_members')
+    .select('user_id').eq('workspace_id', ws.id).eq('user_id', userId).maybeSingle();
+  if (!existing) {
+    await supabase.from('workspace_members')
+      .insert({ workspace_id: ws.id, user_id: userId, role: 'member' });
+  }
   return fromRow(ws);
+}
+
+/** 멤버 추방 (오너만) */
+export async function removeMember(workspaceId: string, userId: string): Promise<void> {
+  const { error } = await supabase.from('workspace_members')
+    .delete().eq('workspace_id', workspaceId).eq('user_id', userId);
+  if (error) throw error;
+}
+
+/** 멤버 역할 변경 (owner ↔ member) */
+export async function changeMemberRole(workspaceId: string, userId: string, role: 'owner' | 'member'): Promise<void> {
+  const { error } = await supabase.from('workspace_members')
+    .update({ role }).eq('workspace_id', workspaceId).eq('user_id', userId);
+  if (error) throw error;
 }

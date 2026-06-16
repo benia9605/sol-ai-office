@@ -7,7 +7,7 @@
  */
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { createWorkspace } from '../services/workspaces.service';
+import { createWorkspace, joinByInviteCode } from '../services/workspaces.service';
 import { Workspace, WorkspaceType } from '../types';
 
 interface Props {
@@ -22,17 +22,30 @@ const ANIM = `
 `;
 
 export function WorkspaceCreateModal({ open, onClose, onCreated }: Props) {
-  const [step, setStep] = useState<'choose' | 'form'>('choose');
+  const [step, setStep] = useState<'choose' | 'form' | 'join'>('choose');
   const [type, setType] = useState<WorkspaceType>('office');
   const [name, setName] = useState('');
   const [bizInfo, setBizInfo] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [code, setCode] = useState('');
+  const [joinErr, setJoinErr] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
 
-  const reset = () => { setStep('choose'); setType('office'); setName(''); setBizInfo(''); setImage(null); };
+  const reset = () => { setStep('choose'); setType('office'); setName(''); setBizInfo(''); setImage(null); setCode(''); setJoinErr(''); };
+
+  const join = async () => {
+    if (!code.trim() || busy) return;
+    setBusy(true); setJoinErr('');
+    try {
+      const ws = await joinByInviteCode(code);
+      onCreated(ws); handleClose();
+    } catch {
+      setJoinErr('초대 코드를 찾을 수 없어요. 다시 확인해주세요.');
+    } finally { setBusy(false); }
+  };
   const handleClose = () => { reset(); onClose(); };
   const pick = (t: WorkspaceType) => { setType(t); setStep('form'); };
 
@@ -92,16 +105,45 @@ export function WorkspaceCreateModal({ open, onClose, onCreated }: Props) {
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-[17px] font-extrabold text-gray-800">
-            {step === 'choose' ? '새로 만들기' : type === 'office' ? '회사 오피스' : '개인 공간'}
+            {step === 'choose' ? '새로 만들기' : step === 'join' ? '코드로 합류' : type === 'office' ? '회사 오피스' : '개인 공간'}
           </h2>
           <button onClick={handleClose} className="w-9 h-9 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center transition-colors active:scale-90">✕</button>
         </div>
 
         {/* 1단계: 타입 선택 */}
         {step === 'choose' && (
-          <div className="grid grid-cols-2 gap-3.5">
-            <TypeButton t="personal" emoji="🧸" label="개인 공간" desc="자기계발 · 기록장" />
-            <TypeButton t="office" emoji="🏢" label="회사 오피스" desc="AI 직원 · 리포트" />
+          <>
+            <div className="grid grid-cols-2 gap-3.5">
+              <TypeButton t="personal" emoji="🧸" label="개인 공간" desc="자기계발 · 기록장" />
+              <TypeButton t="office" emoji="🏢" label="회사 오피스" desc="AI 직원 · 리포트" />
+            </div>
+            <button onClick={() => setStep('join')}
+              className="w-full mt-4 text-center text-sm text-primary-500 hover:text-primary-600 transition-colors active:scale-95">
+              초대 코드가 있나요? <b>코드로 합류 →</b>
+            </button>
+          </>
+        )}
+
+        {/* 코드로 합류 */}
+        {step === 'join' && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">초대 코드</label>
+              <input autoFocus value={code}
+                onChange={(e) => { setCode(e.target.value.toUpperCase()); setJoinErr(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') join(); }}
+                placeholder="예: SIMOK1" maxLength={8}
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm tracking-[0.2em] text-center font-bold focus:outline-none focus:bg-white focus:border-primary-300 transition-colors" />
+              {joinErr && <p className="text-[11px] text-rose-500 mt-1.5">{joinErr}</p>}
+              <p className="text-[11px] text-gray-400 mt-2">오피스 오너에게 받은 6자리 코드를 입력하세요.</p>
+            </div>
+            <div className="flex gap-2.5">
+              <button onClick={() => setStep('choose')} className="px-5 py-3 rounded-2xl text-sm text-gray-500 hover:bg-gray-100 transition-colors active:scale-95">← 뒤로</button>
+              <button onClick={join} disabled={!code.trim() || busy}
+                className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all active:scale-[0.97] shadow-sm">
+                {busy ? '합류 중…' : '합류하기'}
+              </button>
+            </div>
           </div>
         )}
 
