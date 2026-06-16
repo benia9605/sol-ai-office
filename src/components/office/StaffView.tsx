@@ -148,6 +148,7 @@ function SavedCard({ item, onDelete }: { item: StaffSavedItem; onDelete: (id: st
     <Card className="group p-3 relative space-y-1">
       <button onClick={() => onDelete(item.id)} className="absolute top-2 right-2 text-[11px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">삭제</button>
       {p.type && <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary-50 text-primary-600">{p.type}</span>}
+      {p.thumbnailUrl && <img src={p.thumbnailUrl} alt="" className="w-full rounded-lg border border-gray-100" />}
       {(p.headline || p.title || p.coreLine) && <div className="text-sm font-bold text-gray-800 pr-8">{p.headline || p.title || p.coreLine}</div>}
       {p.sub && <div className="text-xs text-gray-500">{p.sub}</div>}
       {p.detail && <div className="text-xs text-gray-400">{p.detail}</div>}

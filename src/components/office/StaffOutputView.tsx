@@ -5,7 +5,9 @@
  * - 각 SOP 문서의 검증 답변 레이아웃 기준. 미구현 outputKind는 null(마크다운 본문만).
  * - 직원 순서대로 채워나감: ✅소싱 / ⬜CS·SNS·광고·모니터링·분석가·비주얼·운영매니저
  */
+import { useState } from 'react';
 import { Card } from './ui';
+import { generateImage, ratioToSize } from '../../services/imageGen.service';
 
 /* ═══════════ 공통 컴포넌트 (GPT 검증: 직원별 다른 UI, 내부 컴포넌트는 재사용) ═══════════ */
 const STAFF_META: Record<string, { emoji: string; label: string }> = {
@@ -651,6 +653,14 @@ function ShotRow({ s, grade }: { s: any; grade: string }) {
   );
 }
 function ImageBriefView({ d, onSave }: { d: any; onSave?: (itemType: string, payload: any) => void }) {
+  const [busy, setBusy] = useState<number | null>(null);
+  const [imgs, setImgs] = useState<Record<number, string>>({});
+  const gen = async (p: any, i: number) => {
+    setBusy(i);
+    try { const { url } = await generateImage(p.text, ratioToSize(p.ratio)); if (url) setImgs(prev => ({ ...prev, [i]: url })); }
+    catch (e: any) { alert(e?.message || '이미지 생성 실패 — gpt-image-1 권한/비용을 확인해주세요'); }
+    finally { setBusy(null); }
+  };
   const vd = d.visualDirection || {};
   const shots = Array.isArray(d.shotList) ? d.shotList : [];
   const prompts = Array.isArray(d.prompts) ? d.prompts : [];
@@ -690,8 +700,19 @@ function ImageBriefView({ d, onSave }: { d: any; onSave?: (itemType: string, pay
             {onSave && <button onClick={() => onSave('prompt', { ...p, title: (p.text ? String(p.text).slice(0, 30) : '프롬프트') })} title="프롬프트 보관" className={`text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all ${p.status ? '' : 'ml-auto'}`}>⭐</button>}
           </div>
           {p.text && <div className="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg p-2 break-all">{p.text}</div>}
-          <button onClick={() => navigator.clipboard?.writeText(String(p.text || ''))}
-            className="text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 active:scale-95 transition-all">복사</button>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => navigator.clipboard?.writeText(String(p.text || ''))}
+              className="text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 active:scale-95 transition-all">복사</button>
+            <button onClick={() => gen(p, i)} disabled={busy === i}
+              className="text-[11px] px-2 py-0.5 rounded-lg bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-50 active:scale-95 transition-all">{busy === i ? '생성 중…' : '🎨 이미지 생성'}</button>
+          </div>
+          {imgs[i] && (
+            <div className="space-y-1">
+              <img src={imgs[i]} alt="생성 이미지" className="w-full rounded-xl border border-gray-100" />
+              {onSave && <button onClick={() => onSave('image', { title: '생성 이미지', thumbnailUrl: imgs[i], prompt: p.text })}
+                className="text-[11px] text-gray-300 hover:text-amber-400 active:scale-90 transition-all">⭐ 이미지 보관</button>}
+            </div>
+          )}
         </Card>
       ))}
       {/* 네거티브 */}
