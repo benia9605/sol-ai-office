@@ -160,18 +160,31 @@ export async function inviteByEmail(workspaceId: string, email: string): Promise
   };
 }
 
-/** 초대 코드로 가입 */
+/**
+ * 초대 코드로 가입
+ * - 1차: RPC join_office_by_code (RLS 우회 — 멤버 아닌 사람도 코드로 조회+가입)
+ * - 2차 폴백: 직접 조회 (mock 모드 / RPC 미배포 환경, 또는 이미 멤버인 경우)
+ */
 export async function joinByInviteCode(code: string): Promise<Workspace> {
+  const norm = code.trim().toUpperCase();
   const userId = await getCurrentUserId();
-  const { data: ws, error } = await supabase
+
+  // 1) RPC (권장 경로)
+  const { data: rpcData, error: rpcErr } = await supabase.rpc('join_office_by_code', { p_code: norm });
+  if (!rpcErr && rpcData) {
+    const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+    if (row?.id) return fromRow(row);
+  }
+
+  // 2) 폴백: 직접 조회 (mock/사전배포/기존 멤버)
+  const { data: ws } = await supabase
     .from('workspaces')
     .select('*')
-    .eq('invite_code', code.trim().toUpperCase())
+    .eq('invite_code', norm)
     .eq('type', 'office')
     .maybeSingle();
-  if (error) throw error;
   if (!ws) throw new Error('초대 코드를 찾을 수 없어요');
-  // 이미 멤버면 중복 추가하지 않고 그대로 반환 (기존 유저 재합류 안전)
+
   const { data: existing } = await supabase.from('workspace_members')
     .select('user_id').eq('workspace_id', ws.id).eq('user_id', userId).maybeSingle();
   if (!existing) {

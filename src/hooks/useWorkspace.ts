@@ -44,9 +44,11 @@ export function useWorkspace() {
     localStorage.setItem(STORAGE_KEY, id ?? 'all');
   }, []);
 
-  // "전체" 제거 → 선택 없으면 개인 공간을 기본으로
+  // 앱 열 때: 저장된(마지막 연) 워크스페이스가 목록에 있으면 그대로 복원,
+  // 없거나(통합/삭제됨/다른 계정) 비어 있으면 개인 공간을 기본으로
   useEffect(() => {
-    if (loading || activeWorkspaceId !== null) return;
+    if (loading) return;
+    if (activeWorkspaceId && workspaces.some(w => w.id === activeWorkspaceId)) return;
     const p = workspaces.find(w => w.type === 'personal');
     if (p) setActiveWorkspace(p.id);
   }, [loading, activeWorkspaceId, workspaces, setActiveWorkspace]);
