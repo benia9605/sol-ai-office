@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Staff, StaffRoutine, DailyReport, Workspace, StaffOutputAction, ReportComment } from '../../types';
+import { Staff, StaffRoutine, DailyReport, Workspace, StaffOutputAction, ReportComment, StaffModel } from '../../types';
 import { getStaffType } from '../../data/staffCatalog';
 import { fetchStaff, fetchRoutines, setStaffState, deleteStaff, updateStaff, addRoutine, updateRoutine, deleteRoutine } from '../../services/staff.service';
 import { fetchReportsByStaff, addReportComment } from '../../services/dailyReports.service';
@@ -15,7 +15,7 @@ import { getInputForm } from '../../data/staffInputForms';
 import { ViewHead, Card, EmptyState } from './ui';
 import { MarkdownView } from './MarkdownView';
 import { StaffOutputView } from './StaffOutputView';
-import { HireStaffModal } from './HireStaffModal';
+import { HireStaffModal, MODEL_OPTIONS } from './HireStaffModal';
 
 function StatePill({ state }: { state: Staff['state'] }) {
   return state === 'working'
@@ -414,6 +414,14 @@ function StaffDetail({ staff, workspace, onBack, onChanged }: { staff: Staff; wo
   const [nameVal, setNameVal] = useState(staff.name);
   const [showPrompt, setShowPrompt] = useState(false);
   const [showRoutine, setShowRoutine] = useState(false);
+  const [showModel, setShowModel] = useState(false);
+  const modelLabel = (m: string) => MODEL_OPTIONS.find(o => o.key === m)?.label || m;
+  const changeModel = async (m: StaffModel) => {
+    setShowModel(false);
+    if (m === staff.model) return;
+    await updateStaff(staff.id, { model: m }).catch(() => {});
+    onChanged();
+  };
 
   const loadRoutines = () => fetchRoutines(staff.id).then(setRoutines).catch(() => setRoutines([]));
   const loadReports = () => fetchReportsByStaff(staff.id).then(setReports).catch(() => setReports([]));
@@ -514,7 +522,26 @@ function StaffDetail({ staff, workspace, onBack, onChanged }: { staff: Staff; wo
           <div className="text-sm text-gray-500">{type?.roleLine || ''}</div>
           <div className="flex items-center gap-2 mt-1.5">
             <StatePill state={state} />
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-white text-gray-500 border border-gray-100">{staff.model === 'sonnet' ? 'Sonnet' : 'Haiku'}</span>
+            <div className="relative">
+              <button onClick={() => setShowModel(s => !s)}
+                className="text-[11px] px-2 py-0.5 rounded-full bg-white text-gray-500 border border-gray-100 hover:border-primary-200 transition-colors">
+                🧠 {modelLabel(staff.model)} ▾
+              </button>
+              {showModel && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowModel(false)} />
+                  <div className="absolute z-20 top-7 left-0 w-56 bg-white rounded-2xl shadow-lg border border-gray-100 p-1.5">
+                    {MODEL_OPTIONS.map(o => (
+                      <button key={o.key} onClick={() => changeModel(o.key)}
+                        className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-colors ${staff.model === o.key ? 'bg-primary-50' : 'hover:bg-gray-50'}`}>
+                        <div className="text-[12px] font-medium text-gray-700">{o.label}{staff.model === o.key && ' ✓'}</div>
+                        <div className="text-[10px] text-gray-400">{o.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

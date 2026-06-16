@@ -96,10 +96,14 @@ const BASE_SOP: Record<string, string> = {
     '출력: 오늘 볼 것 3개(5요소)·운영상태 점검(직원 건강·누락)·중복/만료 정리·승인 대기 큐.',
 };
 
-const MODEL: Record<string, string> = {
-  sonnet: 'claude-sonnet-4-6',
-  haiku: 'claude-haiku-4-5-20251001',
+/** 직원 모델(StaffModel) → 실제 provider+model. research는 2단계라 별도 처리 */
+const MODEL_REGISTRY: Record<string, { provider: 'anthropic' | 'openai' | 'perplexity'; model: string }> = {
+  sonnet: { provider: 'anthropic', model: 'claude-sonnet-4-6' },
+  haiku: { provider: 'anthropic', model: 'claude-haiku-4-5-20251001' },
+  opus: { provider: 'anthropic', model: 'claude-opus-4-8' },
+  gpt: { provider: 'openai', model: 'gpt-4o' },
 };
+const RESEARCH_MODEL = { provider: 'perplexity' as const, model: 'sonar-pro' };
 
 /**
  * outputKind별 구조화 출력(JSON) 스키마 힌트.
@@ -410,11 +414,24 @@ async function runAndParse(staff: Staff, workspace: Workspace, opts: { tasks: st
   let title = '', summary = '', body = '';
   let actions: ParsedActs = { schedules: [], tasks: [], insights: [] };
   let contentJson: Record<string, unknown> | null = null;
+  const modelKey = staff.model || type?.defaultModel || 'sonnet';
   try {
-    const out = await sendWithModel(
-      { provider: 'anthropic', model: MODEL[staff.model] || MODEL.sonnet },
-      system, [{ role: 'user', content: userMsg }], 1500,
-    );
+    let out: string;
+    if (modelKey === 'research') {
+      // 1단계: Perplexity로 실시간 검색·시장조사
+      const research = await sendWithModel(
+        RESEARCH_MODEL,
+        `${system}\n\n[검색 단계] 위 작업에 필요한 최신 시장·경쟁사·가격·트렌드 정보를 검색해 핵심 사실과 수치를 출처와 함께 정리해줘.`,
+        [{ role: 'user', content: userMsg }], 1200,
+      );
+      // 2단계: Claude Sonnet으로 검색 결과를 전용 뷰용 JSON으로 구조화
+      out = await sendWithModel(
+        MODEL_REGISTRY.sonnet, system,
+        [{ role: 'user', content: `${userMsg}\n\n[검색 결과 — 아래 사실을 근거로 정리해라]\n${research}` }], 1500,
+      );
+    } else {
+      out = await sendWithModel(MODEL_REGISTRY[modelKey] || MODEL_REGISTRY.sonnet, system, [{ role: 'user', content: userMsg }], 1500);
+    }
     if (!out.trim()) throw new Error('empty');
     ({ title, summary, body } = parseReport(out));
     const parsed = parseJsonBlock(out);

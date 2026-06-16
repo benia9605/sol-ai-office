@@ -89,6 +89,14 @@ export interface StaffInputField {
 }
 
 /** 직원 타입 정의 (코드 카탈로그 상수) */
+/**
+ * 직원이 쓰는 AI 모델
+ * - sonnet/haiku/opus: Anthropic Claude
+ * - gpt: OpenAI GPT-4o (마케팅 카피 강점)
+ * - research: Perplexity 검색 → Claude 구조화 2단계 (실시간 시장조사)
+ */
+export type StaffModel = 'sonnet' | 'haiku' | 'opus' | 'gpt' | 'research';
+
 export interface StaffTypeDef {
   key: string;
   label: string;
@@ -96,6 +104,7 @@ export interface StaffTypeDef {
   roleLine: string;           // 역할 한 줄
   features: string[];         // 3대 기능
   outputKind: OutputKind;
+  defaultModel: StaffModel;   // 타입별 기본 모델(채용 시 적용, 변경 가능)
   defaultRoutines: string[];  // 기본 일과
   defaultPrompt: string;      // 채용 시 미리 채워지는 기본 프롬프트(편집 가능)
   promptPlaceholder: string;  // 비었을 때 힌트
@@ -108,7 +117,7 @@ export interface Staff {
   typeKey: string;
   name: string;
   prompt: string;
-  model: 'sonnet' | 'haiku';
+  model: StaffModel;
   state: 'working' | 'idle';
   createdAt: string;
 }

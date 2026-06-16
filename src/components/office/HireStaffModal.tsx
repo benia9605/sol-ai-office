@@ -8,7 +8,16 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { STAFF_TYPES } from '../../data/staffCatalog';
 import { hireStaff } from '../../services/staff.service';
-import { Staff, StaffTypeDef, Workspace } from '../../types';
+import { Staff, StaffTypeDef, StaffModel, Workspace } from '../../types';
+
+/** 모델 선택 옵션 (라벨 + 한 줄 설명) */
+export const MODEL_OPTIONS: { key: StaffModel; label: string; desc: string }[] = [
+  { key: 'sonnet', label: 'Claude Sonnet', desc: '균형·한국어 카피·구조 안정' },
+  { key: 'haiku', label: 'Claude Haiku', desc: '빠르고 저렴 · 집계/요약' },
+  { key: 'opus', label: 'Claude Opus', desc: '고급 추론 · 복잡한 판단' },
+  { key: 'gpt', label: 'GPT-4o', desc: '마케팅 카피 강점' },
+  { key: 'research', label: 'Perplexity → Claude', desc: '실시간 검색 + 구조화 (2단계)' },
+];
 
 const ANIM = `
 @keyframes hsPop { from { opacity:0; transform: translateY(12px) scale(.96);} to {opacity:1; transform:none;} }
@@ -24,7 +33,7 @@ interface Props {
 export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
   const [type, setType] = useState<StaffTypeDef | null>(null);
   const [name, setName] = useState('');
-  const [model, setModel] = useState<'sonnet' | 'haiku'>('sonnet');
+  const [model, setModel] = useState<StaffModel>('sonnet');
   const [prompt, setPrompt] = useState('');
   const [routines, setRoutines] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -36,6 +45,7 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
 
   const choose = (t: StaffTypeDef) => {
     setType(t); setName(t.label); setRoutines([...t.defaultRoutines]);
+    setModel(t.defaultModel); // 타입별 기본 모델 자동 적용 (변경 가능)
     setPrompt(t.defaultPrompt); // 기본 프롬프트 미리 채움 (편집 가능)
   };
   const toggleRoutine = (r: string) =>
@@ -87,13 +97,14 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">모델</label>
-              <div className="flex gap-2">
-                {(['sonnet', 'haiku'] as const).map(m => (
-                  <button key={m} onClick={() => setModel(m)}
-                    className={`flex-1 px-3 py-2.5 rounded-2xl text-sm font-medium transition-all active:scale-[0.97] border
-                      ${model === m ? 'bg-primary-500 text-white border-primary-500' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>
-                    {m === 'sonnet' ? 'Sonnet · 고품질' : 'Haiku · 저비용'}
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">모델 <span className="font-normal text-gray-400">· 직원 타입 추천값 자동 선택 (변경 가능)</span></label>
+              <div className="grid grid-cols-2 gap-2">
+                {MODEL_OPTIONS.map(o => (
+                  <button key={o.key} onClick={() => setModel(o.key)}
+                    className={`px-3 py-2 rounded-2xl text-left transition-all active:scale-[0.97] border
+                      ${model === o.key ? 'bg-primary-500 text-white border-primary-500' : 'bg-gray-50 text-gray-600 border-gray-100'}`}>
+                    <div className="text-[13px] font-semibold">{o.label}</div>
+                    <div className={`text-[10px] ${model === o.key ? 'text-white/80' : 'text-gray-400'}`}>{o.desc}</div>
                   </button>
                 ))}
               </div>

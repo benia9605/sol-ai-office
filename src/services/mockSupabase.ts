@@ -48,8 +48,8 @@ const mockData: Record<string, any[]> = {
     },
   ],
   staff: [
-    { id: 'staff-1', workspace_id: 'ws-simok', user_id: 'dev', type_key: 'sns', name: 'SNS 운영', prompt: '인스타 감성 톤, 원목 무드. 첫 줄 훅 강하게.', model: 'sonnet', state: 'working', created_at: new Date().toISOString() },
-    { id: 'staff-2', workspace_id: 'ws-simok', user_id: 'dev', type_key: 'monitor', name: '경쟁사 감시', prompt: '원목 가구 카테고리 경쟁사 가격/리뷰 변화 추적.', model: 'haiku', state: 'idle', created_at: new Date().toISOString() },
+    { id: 'staff-1', workspace_id: 'ws-simok', user_id: 'dev', type_key: 'sns', name: 'SNS 운영', prompt: '인스타 감성 톤, 원목 무드. 첫 줄 훅 강하게.', model: 'gpt', state: 'working', created_at: new Date().toISOString() },
+    { id: 'staff-2', workspace_id: 'ws-simok', user_id: 'dev', type_key: 'monitor', name: '경쟁사 감시', prompt: '원목 가구 카테고리 경쟁사 가격/리뷰 변화 추적.', model: 'research', state: 'idle', created_at: new Date().toISOString() },
   ],
   staff_routines: [
     { id: 'sr-1', staff_id: 'staff-1', workspace_id: 'ws-simok', label: '매일 09:00 게시물 초안 1건', schedule: 'daily', run_at: '09:00', enabled: true, created_at: new Date().toISOString() },
