@@ -15,7 +15,7 @@ import { sendPushToWorkspace } from '../_shared/push.ts';
 
 const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY')!;
 const MODEL: Record<string, string> = {
-  sonnet: 'claude-sonnet-4-20250514',
+  sonnet: 'claude-sonnet-4-6',
   haiku: 'claude-haiku-4-5-20251001',
 };
 const AI_TAG = '🤖 AI';

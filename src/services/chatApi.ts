@@ -22,15 +22,15 @@ interface ModelConfig {
 
 /** roomId → 모델 설정 */
 const MODEL_MAP: Record<string, ModelConfig> = {
-  strategy:  { provider: 'anthropic',  model: 'claude-sonnet-4-20250514' },   // 플래니
-  dev:       { provider: 'anthropic',  model: 'claude-opus-4-20250514' },     // 데비
-  meeting:   { provider: 'anthropic',  model: 'claude-sonnet-4-20250514' },   // 모디 (회의실)
-  secretary: { provider: 'anthropic',  model: 'claude-sonnet-4-20250514' },   // 모디 (비서)
+  strategy:  { provider: 'anthropic',  model: 'claude-sonnet-4-6' },   // 플래니
+  dev:       { provider: 'anthropic',  model: 'claude-opus-4-8' },     // 데비
+  meeting:   { provider: 'anthropic',  model: 'claude-sonnet-4-6' },   // 모디 (회의실)
+  secretary: { provider: 'anthropic',  model: 'claude-sonnet-4-6' },   // 모디 (비서)
   marketing: { provider: 'openai',     model: 'gpt-4o' },                     // 마키
   research:  { provider: 'perplexity', model: 'sonar-pro' },                  // 서치
 };
 
-const DEFAULT_CONFIG: ModelConfig = { provider: 'anthropic', model: 'claude-sonnet-4-20250514' };
+const DEFAULT_CONFIG: ModelConfig = { provider: 'anthropic', model: 'claude-sonnet-4-6' };
 
 /** Anthropic Claude API */
 async function callAnthropic(

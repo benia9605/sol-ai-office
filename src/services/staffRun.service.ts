@@ -97,7 +97,7 @@ const BASE_SOP: Record<string, string> = {
 };
 
 const MODEL: Record<string, string> = {
-  sonnet: 'claude-sonnet-4-20250514',
+  sonnet: 'claude-sonnet-4-6',
   haiku: 'claude-haiku-4-5-20251001',
 };
 
