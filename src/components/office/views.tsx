@@ -19,15 +19,25 @@ import { Spark, ViewHead, Card, EmptyState } from './ui';
 type Nav = (v: string) => void;
 
 /* ───────── 대시보드 ───────── */
-const SAMPLE_KPIS = [
-  { k: '주간 매출', v: '320', unit: '만원', up: true, sub: '+12%', spark: [180, 210, 190, 250, 280, 300, 320] },
-  { k: '전환율', v: '6.4', unit: '%', up: true, sub: '+0.8%', spark: [4.1, 4.8, 5.2, 5.0, 5.9, 6.1, 6.4] },
-  { k: '방문자', v: '2.3', unit: 'K', up: true, sub: '+18%', spark: [1.4, 1.6, 1.5, 1.9, 2.0, 2.2, 2.3] },
-  { k: '신규 문의', v: '47', unit: '건', up: false, sub: '-3%', spark: [52, 50, 49, 51, 48, 49, 47] },
+// KPI 지표 정의 — 값/추이는 실데이터 연동 시 채워짐 (분석가 직원/지표 연동 전엔 0)
+const KPI_METRICS: { k: string; unit: string }[] = [
+  { k: '주간 매출', unit: '만원' },
+  { k: '전환율', unit: '%' },
+  { k: '방문자', unit: 'K' },
+  { k: '신규 문의', unit: '건' },
 ];
+const FLAT_SPARK = [0, 0, 0, 0, 0, 0, 0];
+
+/** 워크스페이스 실데이터 기반 KPI (미연동 시 0). 추후 분석가 직원/지표 소스 연결 */
+type Kpi = { k: string; unit: string; value: number; spark: number[]; delta: number | null };
+function useDashboardKpis(_workspaceId: string): Kpi[] {
+  // TODO: 실데이터 연동 — 매출/전환율/방문자/문의 소스 연결 시 value·spark·delta 채우기
+  return KPI_METRICS.map((m) => ({ k: m.k, unit: m.unit, value: 0, spark: FLAT_SPARK, delta: null }));
+}
 
 export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; workspace: Workspace }) {
   const { tasks } = useTasks();
+  const kpis = useDashboardKpis(workspace.id);
   const open = tasks.filter(t => t.status !== 'completed');
   const [schedules, setSchedules] = useState<ScheduleRow[]>([]);
   const [insights, setInsights] = useState<InsightRow[]>([]);
@@ -64,20 +74,27 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
         <p className="text-sm text-gray-400 mt-0.5">{workspace.name} · 진행 중 할일 {open.length}건 · 멤버 {members.length}명</p>
       </div>
 
-      {/* KPI 스트립 */}
+      {/* KPI 스트립 — 실데이터 연동 전엔 0 (배포·연동 시 자동 반영) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-1">
-        {SAMPLE_KPIS.map((ins, i) => (
-          <Card key={i} className="p-4 transition-all hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-500">{ins.k}</span>
-              <span className={`text-xs font-semibold ${ins.up ? 'text-emerald-500' : 'text-rose-400'}`}>{ins.up ? '▲' : '▼'} {ins.sub}</span>
-            </div>
-            <div className="text-2xl font-extrabold text-gray-800 mt-1">{ins.v}<span className="text-sm font-semibold text-gray-400 ml-0.5">{ins.unit}</span></div>
-            <div className="mt-1"><Spark data={ins.spark} /></div>
-          </Card>
-        ))}
+        {kpis.map((kpi, i) => {
+          const empty = kpi.value === 0 && kpi.delta === null;
+          return (
+            <Card key={i} className="p-4 transition-all hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-500">{kpi.k}</span>
+                {kpi.delta === null
+                  ? <span className="text-xs font-semibold text-gray-300">—</span>
+                  : <span className={`text-xs font-semibold ${kpi.delta >= 0 ? 'text-emerald-500' : 'text-rose-400'}`}>{kpi.delta >= 0 ? '▲' : '▼'} {Math.abs(kpi.delta)}%</span>}
+              </div>
+              <div className={`text-2xl font-extrabold mt-1 ${empty ? 'text-gray-300' : 'text-gray-800'}`}>
+                {kpi.value.toLocaleString()}<span className="text-sm font-semibold text-gray-400 ml-0.5">{kpi.unit}</span>
+              </div>
+              <div className="mt-1"><Spark data={kpi.spark} /></div>
+            </Card>
+          );
+        })}
       </div>
-      <p className="text-[11px] text-gray-300 mb-4 pl-1">· KPI는 샘플 지표예요 (분석가 직원 연동 예정)</p>
+      <p className="text-[11px] text-gray-300 mb-4 pl-1">· 실데이터 연동 전이에요 — 지표 소스/분석가 직원 연동 시 자동으로 채워져요</p>
 
       {/* 브리핑 배너 */}
       <button onClick={() => onNavigate('briefing')}

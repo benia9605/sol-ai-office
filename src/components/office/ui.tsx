@@ -32,12 +32,15 @@ export function Spark({ data, h = 36 }: { data: number[]; h?: number }) {
   );
 }
 
-export function ViewHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
+export function ViewHead({ eyebrow, title, sub, action }: { eyebrow: string; title: string; sub?: string; action?: ReactNode }) {
   return (
-    <div className="mb-6">
-      <div className="text-[11px] font-bold uppercase tracking-widest text-primary-500 mb-1.5">{eyebrow}</div>
-      <h1 className="text-2xl font-extrabold text-gray-800">{title}</h1>
-      {sub && <p className="text-sm text-gray-400 mt-1">{sub}</p>}
+    <div className="mb-6 flex items-start justify-between gap-3">
+      <div>
+        <div className="text-[11px] font-bold uppercase tracking-widest text-primary-500 mb-1.5">{eyebrow}</div>
+        <h1 className="text-2xl font-extrabold text-gray-800">{title}</h1>
+        {sub && <p className="text-sm text-gray-400 mt-1">{sub}</p>}
+      </div>
+      {action && <div className="flex-shrink-0">{action}</div>}
     </div>
   );
 }

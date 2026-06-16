@@ -9,6 +9,38 @@ import { Workspace, BrandContext } from '../../types';
 import { fetchBrandContext, saveBrandContext } from '../../services/brandContexts.service';
 import { ViewHead, Card } from './ui';
 
+/** 사업을 잘 아는 AI(클로드/GPT)에게 회사 브레인 16개 항목을 최적으로 받아오는 프롬프트 */
+function buildBrandPrompt(bizName: string): string {
+  return `나는 "${bizName}"의 1인 AI 가상 오피스를 만들고 있어. 여기엔 마케팅·CS·콘텐츠 등 여러 AI 직원이 있고, 모두가 공유하는 "회사 브레인"(회사의 정체성·강점·규칙)을 먼저 채워야 해.
+
+너는 우리(${bizName}) 사업에 대해 그동안 나눈 대화/맥락을 잘 알고 있으니, 그걸 바탕으로 아래 항목들을 우리 사업에 맞게 **구체적이고 실전적으로** 작성해줘. 내가 그대로 복사해서 칸에 붙여넣을 거야.
+
+[작성 규칙]
+- 각 항목을 "■ 항목명" 다음 줄에 내용만 적어줘 (설명·서론 없이 바로).
+- 추상적 미사여구 말고, 실제 광고·CS·콘텐츠에 바로 쓸 수 있게 구체적으로.
+- 여러 개를 적는 항목(USP, 금지표현)은 한 줄에 하나씩 줄바꿈.
+- 확신이 안 서는 사실(가격·경쟁사 등)은 합리적으로 제안하되 끝에 "(확인 필요)"를 붙여줘.
+- 모르는 건 지어내지 말고 "(확인 필요)"로 비워둬.
+
+[채워줄 항목]
+■ 정체성 한 줄  (브랜드를 한 문장으로)
+■ 카테고리  (무엇을 파는 사업인지)
+■ 톤앤매너  (말투·분위기 키워드 + 피해야 할 톤)
+■ 주요 타겟  (핵심 고객층)
+■ 핵심 USP  (경쟁사 대비 강점, 여러 개 줄바꿈)
+■ 판매 채널  (스마트스토어/인스타 등)
+■ 가격 포지셔닝  (저가/중가/프리미엄 + 이유)
+■ 광고 소구점  (광고에서 밀 핵심 메시지)
+■ 주력 상품  (대표 상품 몇 개)
+■ 대표 가격대  (상품군별 가격 범위)
+■ 주요 경쟁사  (비교될 브랜드/몰)
+■ 창업 스토리·차별점  (시작 배경 + 결정적 차별점, 한 문단)
+■ 금지표현  (광고법·브랜드상 쓰면 안 되는 표현, 여러 개 줄바꿈)
+■ CS 정책  (배송/교환/환불/파손 기준)
+■ CS 응대 톤  (고객 응대 말투·원칙)
+■ 자유 서술  (위 항목에 안 담긴 중요한 맥락)`;
+}
+
 type Form = {
   identity: string; category: string; tone: string; target: string;
   usp: string; channels: string; pricePosition: string; adAngle: string;
@@ -37,6 +69,17 @@ export function BrandView({ workspace }: { workspace: Workspace }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(buildBrandPrompt(workspace.name));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      alert('복사에 실패했어요. 직접 선택해서 복사해주세요.');
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -85,7 +128,30 @@ export function BrandView({ workspace }: { workspace: Workspace }) {
 
   return (
     <>
-      <ViewHead eyebrow="COMPANY BRAIN" title="회사 브레인" sub="모든 AI 직원이 공유하는 회사의 정체성 · 한 번 입력하면 전 직원 프롬프트에 자동 반영" />
+      <ViewHead
+        eyebrow="COMPANY BRAIN"
+        title="회사 브레인"
+        sub="모든 AI 직원이 공유하는 회사의 정체성 · 한 번 입력하면 전 직원 프롬프트에 자동 반영"
+        action={
+          <button
+            onClick={copyPrompt}
+            title="클로드·GPT에 붙여넣어 항목을 자동으로 채워보세요"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-gray-200 text-xs font-semibold text-gray-600 hover:border-primary-400 hover:text-primary-600 transition-all active:scale-95"
+          >
+            {copied ? (
+              <>✓ 복사됨</>
+            ) : (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="11" height="11" rx="2" />
+                  <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+                </svg>
+                AI로 채우기 프롬프트
+              </>
+            )}
+          </button>
+        }
+      />
 
       {loading ? (
         <p className="text-xs text-gray-300 py-8 text-center">불러오는 중…</p>
