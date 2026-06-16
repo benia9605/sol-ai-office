@@ -172,12 +172,18 @@ function SourcingView({ d, onSave }: { d: any; onSave?: (itemType: string, paylo
 }
 
 /* ───────── ② 상세페이지: detail_builder · "페이지 빌더" ───────── */
-function DetailBuilderView({ d }: { d: any }) {
+function DetailBuilderView({ d, onSave }: { d: any; onSave?: (itemType: string, payload: any) => void }) {
   const brief = d.brief || {};
   const sections = Array.isArray(d.sections) ? d.sections : [];
   const copySection = (s: any) => [s.coreLine, s.subLine, ...(Array.isArray(s.bullets) ? s.bullets : []), s.cta].filter(Boolean).join('\n');
   return (
     <div className="space-y-3">
+      {onSave && (
+        <div className="flex justify-end">
+          <button onClick={() => onSave('page', { ...d, title: brief.productName || '상세페이지' })} title="완성 페이지 보관"
+            className="text-[11px] text-gray-300 hover:text-amber-400 active:scale-95 transition-all">⭐ 페이지 보관</button>
+        </div>
+      )}
       {/* 브리프 */}
       {(brief.productName || brief.target || brief.usp?.length || brief.banned?.length) && (
         <Card className="p-3 space-y-2">
@@ -242,7 +248,7 @@ function TicketSummaryBar({ s }: { s: any }) {
     </Card>
   );
 }
-function TicketListView({ d }: { d: any }) {
+function TicketListView({ d, onSave }: { d: any; onSave?: (itemType: string, payload: any) => void }) {
   const tickets = Array.isArray(d.tickets) ? d.tickets : [];
   if (!tickets.length && !d.summary) return null;
   return (
@@ -260,6 +266,7 @@ function TicketListView({ d }: { d: any }) {
               {senti && <span className={`text-[11px] px-2 py-0.5 rounded-full ${hot ? 'bg-rose-50 text-rose-500' : 'bg-gray-100 text-gray-500'}`}>{senti}</span>}
               <RiskChip level={t.riskLevel} />
               {t.needsHumanApproval && <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 ml-auto">⚠️ 승인 후 발송</span>}
+              {onSave && <button onClick={() => onSave('faq', { title: `${t.type || '답변'} 응대`, body: t.draft, question: t.customerMessage, answer: t.faqCandidate?.answer })} title="답변·FAQ 보관" className={`text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all ${t.needsHumanApproval ? '' : 'ml-auto'}`}>⭐</button>}
             </div>
             {t.customerMessage && <div className="text-xs text-gray-400 italic leading-relaxed">"{t.customerMessage}"</div>}
             {t.draft && (
@@ -786,8 +793,8 @@ export function StaffOutputView({ outputKind, data, onSave }: { outputKind?: str
   if (!data || typeof data !== 'object') return null;
   switch (outputKind) {
     case 'sourcing_brief': return <SourcingView d={data} onSave={onSave} />;
-    case 'detail_builder': return <DetailBuilderView d={data} />;
-    case 'ticket_list': return <TicketListView d={data} />;
+    case 'detail_builder': return <DetailBuilderView d={data} onSave={onSave} />;
+    case 'ticket_list': return <TicketListView d={data} onSave={onSave} />;
     case 'sns_queue': return <SnsQueueView d={data} onSave={onSave} />;
     case 'copy_variants': return <CopyVariantsView d={data} onSave={onSave} />;
     case 'monitor_digest': return <MonitorDigestView d={data} />;
