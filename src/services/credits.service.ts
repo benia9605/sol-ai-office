@@ -6,11 +6,26 @@
  */
 import { supabase } from './supabase';
 import { getCurrentUserId } from './auth';
+import { StaffUsage } from '../types';
 
 /** 코인 잔액 조회 */
 export async function fetchCredits(workspaceId: string): Promise<number> {
   const { data } = await supabase.from('workspaces').select('credits').eq('id', workspaceId).single();
   return (data as { credits?: number } | null)?.credits ?? 0;
+}
+
+/** 사용 내역(요금) 로그 조회 — 최근순 */
+export async function fetchUsage(workspaceId: string, limit = 100): Promise<StaffUsage[]> {
+  const { data } = await supabase
+    .from('staff_usage').select('*')
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return (data ?? []).map((r: any) => ({
+    id: r.id, workspaceId: r.workspace_id, staffId: r.staff_id ?? undefined, reportId: r.report_id ?? undefined,
+    model: r.model ?? undefined, inputTokens: r.input_tokens ?? 0, outputTokens: r.output_tokens ?? 0,
+    coins: r.coins ?? 0, createdAt: r.created_at,
+  }));
 }
 
 /** 코인 차감 + 사용 로그 기록. 차감 후 잔액 반환. */

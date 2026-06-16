@@ -352,6 +352,33 @@ export function LogView({ workspace }: { workspace: Workspace }) {
   );
 }
 
+/* ───────── 활동 로그 (AI 직원 리포트 타임라인) ───────── */
+export function ActivityView({ workspace }: { workspace: Workspace }) {
+  const [reports, setReports] = useState<DailyReport[]>([]);
+  useEffect(() => {
+    fetchReportsByWorkspace(workspace.id, 60).then(setReports).catch(() => setReports([]));
+  }, [workspace.id]);
+
+  return (
+    <>
+      <ViewHead eyebrow="ACTIVITY" title="활동 로그" sub={`AI 직원 리포트 ${reports.length}건`} />
+      {reports.length === 0 ? (
+        <EmptyState emoji="🧾" title="아직 활동이 없어요" sub="AI 직원이 일하면 리포트가 여기 타임라인으로 쌓여요" />
+      ) : (
+        <Card className="p-2">
+          {reports.map(r => (
+            <div key={r.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
+              <span className="w-2 h-2 rounded-full bg-primary-400 flex-shrink-0" />
+              <span className="text-sm text-gray-700 flex-1 truncate">🤖 {r.title}</span>
+              <span className="text-[11px] text-gray-400 flex-shrink-0">{r.date}</span>
+            </div>
+          ))}
+        </Card>
+      )}
+    </>
+  );
+}
+
 /* ───────── 멤버 (실데이터) ───────── */
 export function MembersView({ workspace }: { workspace: Workspace }) {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);

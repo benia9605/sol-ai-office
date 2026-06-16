@@ -123,6 +123,19 @@ export interface Staff {
   createdAt: string;
 }
 
+/** 직원 실행 사용 로그 (코인/토큰 기록 · DB staff_usage) */
+export interface StaffUsage {
+  id: string;
+  workspaceId: string;
+  staffId?: string;
+  reportId?: string;
+  model?: string;
+  inputTokens: number;
+  outputTokens: number;
+  coins: number;
+  createdAt: string;
+}
+
 /** 직원 일과 (DB) */
 export interface StaffRoutine {
   id: string;
