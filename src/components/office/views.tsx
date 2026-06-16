@@ -12,6 +12,8 @@ import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, addSchedule, deleteSchedule, ScheduleRow } from '../../services/schedules.service';
 import { fetchInsights, addInsight, deleteInsight, InsightRow } from '../../services/insights.service';
+import { fetchRecords, addRecord, deleteRecord, RecordRow } from '../../services/records.service';
+import { TiptapEditor } from '../tiptap/TiptapEditor';
 import { Spark, ViewHead, Card, EmptyState } from './ui';
 
 type Nav = (v: string) => void;
@@ -294,28 +296,57 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
   );
 }
 
-/* ───────── 기록 (직원 활동 = 리포트 타임라인) ───────── */
+/* ───────── 기록 (메모 — Tiptap) ───────── */
 export function LogView({ workspace }: { workspace: Workspace }) {
-  const [reports, setReports] = useState<DailyReport[]>([]);
-  useEffect(() => {
-    fetchReportsByWorkspace(workspace.id, 40).then(setReports).catch(() => setReports([]));
-  }, [workspace.id]);
+  const [memos, setMemos] = useState<RecordRow[]>([]);
+  const [writing, setWriting] = useState(false);
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState<any>(undefined);
+  const load = () => fetchRecords(workspace.id, 'memo').then(setMemos).catch(() => setMemos([]));
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
+
+  const save = async () => {
+    if (!title.trim() && !body) return;
+    await addRecord({
+      title: title.trim() || '메모', date: new Date().toISOString().split('T')[0],
+      record_type: 'memo', memo_body: body || {}, workspace_id: workspace.id,
+    } as Omit<RecordRow, 'id' | 'created_at'>).catch(() => {});
+    setTitle(''); setBody(undefined); setWriting(false); load();
+  };
+  const del = async (id: string) => { await deleteRecord(id).catch(() => {}); load(); };
 
   return (
     <>
-      <ViewHead eyebrow="ACTIVITY" title="기록" sub={`활동 ${reports.length}건`} />
-      {reports.length === 0 ? (
-        <EmptyState emoji="🧾" title="아직 활동이 없어요" sub="AI 직원이 일하면 활동이 여기 타임라인으로 쌓여요" />
-      ) : (
-        <Card className="p-2">
-          {reports.map(r => (
-            <div key={r.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
-              <span className="w-2 h-2 rounded-full bg-primary-400 flex-shrink-0" />
-              <span className="text-sm text-gray-700 flex-1 truncate">🤖 리포트 · {r.title}</span>
-              <span className="text-[11px] text-gray-400 flex-shrink-0">{r.date}</span>
-            </div>
-          ))}
+      <ViewHead eyebrow="MEMO" title="기록" sub={`메모 ${memos.length}개`} />
+      <div className="flex justify-end mb-3">
+        <button onClick={() => setWriting(v => !v)}
+          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 메모</button>
+      </div>
+      {writing && (
+        <Card className="p-4 mb-3 space-y-2.5">
+          <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="제목"
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 transition-colors" />
+          <div className="border border-gray-100 rounded-xl px-2 py-1 max-h-[55vh] overflow-y-auto">
+            <TiptapEditor content={body} onChange={setBody} placeholder="메모를 작성하세요..." />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => { setWriting(false); setTitle(''); setBody(undefined); }} className="px-3 py-1.5 rounded-xl text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={save} className="px-4 py-1.5 rounded-xl text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
+          </div>
         </Card>
+      )}
+      {memos.length === 0 ? (
+        <EmptyState emoji="📝" title="메모가 없어요" sub="＋ 메모로 자유롭게 기록하세요" />
+      ) : (
+        <div className="space-y-2">
+          {memos.map(m => (
+            <Card key={m.id} className="group p-4 flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 flex-1 truncate">📝 {m.title}</span>
+              <span className="text-[11px] text-gray-400 flex-shrink-0">{m.date}</span>
+              <button onClick={() => del(m.id)} className="text-[11px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">삭제</button>
+            </Card>
+          ))}
+        </div>
       )}
     </>
   );

@@ -24,17 +24,17 @@ export interface RecordRow {
   evening_data?: Record<string, unknown>;
   weekly_data?: Record<string, unknown>;
   memo_body?: Record<string, unknown>;
+  workspace_id?: string;
   created_at: string;
 }
 
-export async function fetchRecords(): Promise<RecordRow[]> {
+/** workspaceId 주면 그 워크스페이스(오피스), 없으면 개인(NULL). recordType 주면 그 종류만(예: 'memo') */
+export async function fetchRecords(workspaceId?: string, recordType?: string): Promise<RecordRow[]> {
   const userId = await getCurrentUserId();
-  const { data, error } = await supabase
-    .from('journals')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
+  let q = supabase.from('journals').select('*').eq('user_id', userId);
+  q = workspaceId ? q.eq('workspace_id', workspaceId) : q.is('workspace_id', null);
+  if (recordType) q = q.eq('record_type', recordType);
+  const { data, error } = await q.order('created_at', { ascending: false });
   if (error) throw error;
   return data ?? [];
 }
