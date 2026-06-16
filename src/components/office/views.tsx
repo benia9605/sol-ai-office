@@ -26,16 +26,46 @@ const SAMPLE_KPIS = [
   { k: '신규 문의', v: '47', unit: '건', up: false, sub: '-3%', spark: [52, 50, 49, 51, 48, 49, 47] },
 ];
 
-export function DashboardView({ onNavigate }: { onNavigate: Nav }) {
+export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; workspace: Workspace }) {
   const { tasks } = useTasks();
-  const open = tasks.filter(t => t.status !== 'completed').length;
+  const open = tasks.filter(t => t.status !== 'completed');
+  const [schedules, setSchedules] = useState<ScheduleRow[]>([]);
+  const [insights, setInsights] = useState<InsightRow[]>([]);
+  const [memos, setMemos] = useState<RecordRow[]>([]);
+  const [reports, setReports] = useState<DailyReport[]>([]);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  useEffect(() => {
+    fetchSchedules(workspace.id).then(setSchedules).catch(() => setSchedules([]));
+    fetchInsights(workspace.id).then(setInsights).catch(() => setInsights([]));
+    fetchRecords(workspace.id, 'memo').then(setMemos).catch(() => setMemos([]));
+    fetchReportsByWorkspace(workspace.id, 6).then(setReports).catch(() => setReports([]));
+    fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([]));
+  }, [workspace.id]);
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? '좋은 아침이에요' : hour < 18 ? '좋은 오후예요' : '좋은 저녁이에요';
+  const upcoming = schedules.filter(s => s.date >= todayStr).slice(0, 4);
+
+  const SecHead = ({ title, to }: { title: string; to?: string }) => (
+    <div className="flex items-center justify-between mb-2">
+      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{title}</span>
+      {to && <button onClick={() => onNavigate(to)} className="text-[11px] text-gray-400 hover:text-primary-500 transition-colors">전체 ›</button>}
+    </div>
+  );
+  const Empty = ({ t }: { t: string }) => <p className="text-xs text-gray-300 py-3 text-center">{t}</p>;
 
   return (
     <>
-      <ViewHead eyebrow="DASHBOARD" title="대시보드" sub={`진행 중 할일 ${open}건 · 핵심 지표 ${SAMPLE_KPIS.length}개`} />
+      {/* 인사말 히어로 */}
+      <div className="mb-5">
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}</p>
+        <h1 className="text-2xl font-extrabold text-gray-800 mt-1">{greeting} 👋</h1>
+        <p className="text-sm text-gray-400 mt-0.5">{workspace.name} · 진행 중 할일 {open.length}건 · 멤버 {members.length}명</p>
+      </div>
 
-      {/* KPI 스트립 (그래프가 박스 카드 안에) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      {/* KPI 스트립 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-1">
         {SAMPLE_KPIS.map((ins, i) => (
           <Card key={i} className="p-4 transition-all hover:shadow-md">
             <div className="flex items-center justify-between">
@@ -47,13 +77,11 @@ export function DashboardView({ onNavigate }: { onNavigate: Nav }) {
           </Card>
         ))}
       </div>
-      <p className="text-[11px] text-gray-300 mb-4 -mt-2 pl-1">· 샘플 지표예요. 실데이터 연동은 곧(Phase 5/8)</p>
+      <p className="text-[11px] text-gray-300 mb-4 pl-1">· KPI는 샘플 지표예요 (분석가 직원 연동 예정)</p>
 
-      {/* 오늘의 브리핑 배너 */}
-      <button
-        onClick={() => onNavigate('briefing')}
-        className="w-full flex items-center gap-3 p-4 rounded-[24px] bg-primary-500 text-white mb-4 transition-all active:scale-[0.99] hover:bg-primary-600 text-left"
-      >
+      {/* 브리핑 배너 */}
+      <button onClick={() => onNavigate('briefing')}
+        className="w-full flex items-center gap-3 p-4 rounded-[24px] bg-primary-500 text-white mb-4 transition-all active:scale-[0.99] hover:bg-primary-600 text-left">
         <span className="text-2xl">☀️</span>
         <span className="flex-1">
           <span className="block text-sm font-bold">오늘의 브리핑 읽기</span>
@@ -62,29 +90,77 @@ export function DashboardView({ onNavigate }: { onNavigate: Nav }) {
         <span className="text-white/50">›</span>
       </button>
 
-      {/* 빠른 요약 + 오피스 플로어 */}
-      <div className="grid sm:grid-cols-2 gap-3">
-        <Card className="p-5">
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">빠른 현황</div>
-          <div className="flex gap-6">
-            <button onClick={() => onNavigate('todos')} className="text-left">
-              <div className="text-2xl font-extrabold text-gray-800">{open}</div>
-              <div className="text-xs text-gray-400">진행 중 할일</div>
-            </button>
-            <button onClick={() => onNavigate('members')} className="text-left">
-              <div className="text-2xl font-extrabold text-gray-800">—</div>
-              <div className="text-xs text-gray-400">멤버</div>
-            </button>
-          </div>
+      {/* 다가오는 일정 + 내 할일 */}
+      <div className="grid sm:grid-cols-2 gap-3 mb-3">
+        <Card className="p-4">
+          <SecHead title="다가오는 일정" to="schedule" />
+          {upcoming.length ? upcoming.map(s => (
+            <div key={s.id} className="flex items-center gap-2 py-1.5">
+              <span className="text-[11px] font-bold text-gray-700 w-14 flex-shrink-0">{s.date.slice(5)}{s.time ? ' ' + s.time : ''}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
+              <span className="text-sm text-gray-600 truncate">{s.title}</span>
+            </div>
+          )) : <Empty t="예정된 일정이 없어요" />}
         </Card>
-        <button onClick={() => onNavigate('staff')} className="text-left">
-          <Card className="p-5 h-full hover:shadow-md transition-all">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">오피스 플로어</div>
-            <div className="flex items-center gap-2 text-gray-600"><span className="text-2xl">🤖</span><span className="text-sm">AI 직원을 채용해보세요 ›</span></div>
-            <div className="text-[11px] text-gray-300 mt-2">Phase 3에서 채용·자동 가동</div>
-          </Card>
-        </button>
+        <Card className="p-4">
+          <SecHead title="진행 중 할일" to="todos" />
+          {open.length ? open.slice(0, 5).map(t => (
+            <div key={t.id} className="flex items-center gap-2 py-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+              <span className="text-sm text-gray-600 truncate flex-1">{t.title}</span>
+              {t.priority === 'high' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-500 flex-shrink-0">긴급</span>}
+            </div>
+          )) : <Empty t="할일이 없어요" />}
+        </Card>
       </div>
+
+      {/* 최근 인사이트 + 최근 메모 */}
+      <div className="grid sm:grid-cols-2 gap-3 mb-3">
+        <Card className="p-4">
+          <SecHead title="최근 인사이트" to="insights" />
+          {insights.length ? insights.slice(0, 4).map(i => (
+            <div key={i.id} className="flex items-center gap-2 py-1.5">
+              <span className="text-sm">💡</span><span className="text-sm text-gray-600 truncate">{i.title}</span>
+            </div>
+          )) : <Empty t="인사이트가 없어요" />}
+        </Card>
+        <Card className="p-4">
+          <SecHead title="최근 메모" to="log" />
+          {memos.length ? memos.slice(0, 4).map(m => (
+            <div key={m.id} className="flex items-center gap-2 py-1.5">
+              <span className="text-sm">📝</span><span className="text-sm text-gray-600 truncate flex-1">{m.title}</span>
+              <span className="text-[10px] text-gray-300 flex-shrink-0">{m.date?.slice(5)}</span>
+            </div>
+          )) : <Empty t="메모가 없어요" />}
+        </Card>
+      </div>
+
+      {/* 활동 로그 (AI 직원) */}
+      <Card className="p-4 mb-3">
+        <SecHead title="AI 직원 활동" to="activity" />
+        {reports.length ? reports.slice(0, 5).map(r => (
+          <div key={r.id} className="flex items-center gap-2 py-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
+            <span className="text-sm text-gray-600 truncate flex-1">🤖 {r.title}</span>
+            <span className="text-[10px] text-gray-300 flex-shrink-0">{r.date?.slice(5)}</span>
+          </div>
+        )) : <Empty t="아직 활동이 없어요 — AI 직원을 채용하고 ‘지금 한 번’을 눌러보세요" />}
+      </Card>
+
+      {/* 멤버 */}
+      <Card className="p-4">
+        <SecHead title="멤버" to="members" />
+        {members.length ? (
+          <div className="flex flex-wrap gap-2">
+            {members.map(m => (
+              <span key={m.userId} className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-gray-50 text-xs text-gray-600">
+                <span className="w-5 h-5 rounded-full bg-primary-500 text-white flex items-center justify-center text-[10px] font-bold">{(m.nickname || m.userId).slice(0, 1).toUpperCase()}</span>
+                {m.nickname || '멤버'}{m.role === 'owner' && ' 👑'}
+              </span>
+            ))}
+          </div>
+        ) : <Empty t="멤버가 없어요" />}
+      </Card>
     </>
   );
 }

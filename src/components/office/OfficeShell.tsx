@@ -181,7 +181,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
 
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto">
-            {view === 'dashboard' && <DashboardView onNavigate={onNavigate} />}
+            {view === 'dashboard' && <DashboardView onNavigate={onNavigate} workspace={workspace} />}
             {view === 'briefing' && <BriefingView workspace={workspace} />}
             {view === 'staff' && <StaffView key={staffKey} workspace={workspace} onRan={refreshCredits} />}
             {view === 'todos' && <TodosView />}
