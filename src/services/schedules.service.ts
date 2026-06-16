@@ -26,14 +26,12 @@ export interface ScheduleRow {
   created_at: string;
 }
 
-export async function fetchSchedules(): Promise<ScheduleRow[]> {
+/** workspaceId 주면 그 워크스페이스(오피스), 없으면 개인(workspace_id NULL) */
+export async function fetchSchedules(workspaceId?: string): Promise<ScheduleRow[]> {
   const userId = await getCurrentUserId();
-  const { data, error } = await supabase
-    .from('schedules')
-    .select('*')
-    .eq('user_id', userId)
-    .order('date', { ascending: true });
-
+  let q = supabase.from('schedules').select('*').eq('user_id', userId);
+  q = workspaceId ? q.eq('workspace_id', workspaceId) : q.is('workspace_id', null);
+  const { data, error } = await q.order('date', { ascending: true });
   if (error) throw error;
   return data ?? [];
 }

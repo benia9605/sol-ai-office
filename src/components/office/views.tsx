@@ -10,7 +10,7 @@ import { useTasks } from '../../hooks/useTasks';
 import { fetchMembers, removeMember, changeMemberRole } from '../../services/workspaces.service';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
-import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
+import { fetchSchedules, addSchedule, deleteSchedule, ScheduleRow } from '../../services/schedules.service';
 import { fetchInsights, InsightRow } from '../../services/insights.service';
 import { Spark, ViewHead, Card, EmptyState } from './ui';
 
@@ -166,28 +166,62 @@ export function TodosView() {
 /* ───────── 일정 (실데이터 · 직원 자동 등록 포함) ───────── */
 export function ScheduleView({ workspace }: { workspace: Workspace }) {
   const [items, setItems] = useState<ScheduleRow[]>([]);
-  useEffect(() => {
-    fetchSchedules()
-      .then(rows => setItems(
-        rows.filter((r: any) => r.workspace_id === workspace.id)
-          .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || ''))),
-      ))
-      .catch(() => setItems([]));
-  }, [workspace.id]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: '', date: '', time: '', category: '', notes: '' });
+  const load = () => fetchSchedules(workspace.id)
+    .then(rows => setItems(rows.sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))))
+    .catch(() => setItems([]));
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
+
+  const save = async () => {
+    if (!form.title.trim() || !form.date) return;
+    await addSchedule({
+      title: form.title.trim(), date: form.date, time: form.time, project: '', color: '',
+      category: form.category || undefined, notes: form.notes || undefined, workspace_id: workspace.id,
+    } as Omit<ScheduleRow, 'id' | 'created_at'>).catch(() => {});
+    setForm({ title: '', date: '', time: '', category: '', notes: '' }); setShowForm(false); load();
+  };
+  const del = async (id: string) => { await deleteSchedule(id).catch(() => {}); load(); };
 
   return (
     <>
       <ViewHead eyebrow="SCHEDULE" title="일정" sub={`${items.length}건`} />
+      <div className="flex justify-end mb-3">
+        <button onClick={() => setShowForm(v => !v)}
+          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 일정 추가</button>
+      </div>
+      {showForm && (
+        <Card className="p-4 mb-3 space-y-2.5">
+          <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="제목"
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 transition-colors" />
+          <div className="flex gap-2">
+            <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}
+              className="flex-1 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 transition-colors" />
+            <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })}
+              className="px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 transition-colors" />
+          </div>
+          <input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="카테고리 (선택)"
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 transition-colors" />
+          <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="메모 (선택)" rows={2}
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm resize-none focus:outline-none focus:bg-white focus:border-primary-300 transition-colors" />
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-xl text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={save} disabled={!form.title.trim() || !form.date}
+              className="px-4 py-1.5 rounded-xl text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">저장</button>
+          </div>
+        </Card>
+      )}
       {items.length === 0 ? (
         <EmptyState emoji="📅" title="일정이 없어요" sub="직접 추가하거나, AI 직원이 ‘지금 실행’ 시 제안 일정을 자동 등록해요" />
       ) : (
         <Card className="p-2">
           {items.map(s => (
-            <div key={s.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
+            <div key={s.id} className="group flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
               <span className="text-xs font-bold text-gray-800 w-20 flex-shrink-0">{s.date.slice(5)}{s.time ? ' ' + s.time : ''}</span>
               <span className="w-2 h-2 rounded-full bg-primary-400 flex-shrink-0" />
               <span className="text-sm text-gray-700 flex-1">{s.title}</span>
               {s.category === '🤖 AI' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-600 flex-shrink-0">🤖 AI</span>}
+              <button onClick={() => del(s.id)} className="text-[11px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">삭제</button>
             </div>
           ))}
         </Card>
