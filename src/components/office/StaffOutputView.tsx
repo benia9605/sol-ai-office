@@ -127,7 +127,7 @@ function MarginStack({ m }: { m: any }) {
     </Card>
   );
 }
-function SourcingView({ d }: { d: any }) {
+function SourcingView({ d, onSave }: { d: any; onSave?: (itemType: string, payload: any) => void }) {
   const v: string = d.verdict || '';
   const vColor = v.includes('비추천') ? 'bg-rose-50 text-rose-600' : v.includes('추천') ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700';
   const s = d.scores || {};
@@ -141,6 +141,7 @@ function SourcingView({ d }: { d: any }) {
           {v && <span className={`text-sm font-bold px-3 py-1 rounded-full ${vColor}`}>{v}</span>}
           {d.score != null && <span className="text-sm text-gray-600 font-semibold">{d.score}/10</span>}
           {d.confidence && <span className="text-[11px] text-gray-400">· 신뢰도 {d.confidence}</span>}
+          {onSave && <button onClick={() => onSave('product', { ...d, title: d.persona || d.verdict })} title="상품 후보 보관" className="ml-auto text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all">⭐</button>}
         </div>
         {d.summary && <p className="text-sm text-gray-600">{d.summary}</p>}
       </div>
@@ -326,7 +327,7 @@ function CopyIconButton({ text, title = '전체 복사' }: { text: string; title
     </button>
   );
 }
-function SnsQueueView({ d }: { d: any }) {
+function SnsQueueView({ d, onSave }: { d: any; onSave?: (itemType: string, payload: any) => void }) {
   const posts = Array.isArray(d.posts) ? d.posts : [];
   if (!posts.length && !d.summary) return null;
   return (
@@ -345,6 +346,7 @@ function SnsQueueView({ d }: { d: any }) {
               {p.format && <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{p.format}</span>}
               {p.objective && <span className="px-2 py-0.5 rounded-full bg-primary-50 text-primary-600">{p.objective}</span>}
               {p.status && <span className="ml-auto text-gray-400">{p.status}</span>}
+              {onSave && <button onClick={() => onSave('post', { ...p, title: hookText || (p.body ? String(p.body).slice(0, 30) : '게시물') })} title="콘텐츠 보관" className={`text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all ${p.status ? '' : 'ml-auto'}`}>⭐</button>}
             </div>
             {/* 게시물 콘텐츠 — 연회색 박스 + 우상단 전체 복사 */}
             <div className="relative bg-gray-50 rounded-xl p-3 pr-9 space-y-2.5">
@@ -641,7 +643,7 @@ function ShotRow({ s, grade }: { s: any; grade: string }) {
     </div>
   );
 }
-function ImageBriefView({ d }: { d: any }) {
+function ImageBriefView({ d, onSave }: { d: any; onSave?: (itemType: string, payload: any) => void }) {
   const vd = d.visualDirection || {};
   const shots = Array.isArray(d.shotList) ? d.shotList : [];
   const prompts = Array.isArray(d.prompts) ? d.prompts : [];
@@ -678,6 +680,7 @@ function ImageBriefView({ d }: { d: any }) {
             {p.engine && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary-50 text-primary-500">{p.engine}</span>}
             {Array.isArray(p.useCase) && p.useCase.length > 0 && <span className="text-[10px] text-gray-400">{p.useCase.join(', ')}</span>}
             {p.status && <span className="ml-auto text-[10px] text-gray-400">{p.status}</span>}
+            {onSave && <button onClick={() => onSave('prompt', { ...p, title: (p.text ? String(p.text).slice(0, 30) : '프롬프트') })} title="프롬프트 보관" className={`text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all ${p.status ? '' : 'ml-auto'}`}>⭐</button>}
           </div>
           {p.text && <div className="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg p-2 break-all">{p.text}</div>}
           <button onClick={() => navigator.clipboard?.writeText(String(p.text || ''))}
@@ -782,14 +785,14 @@ function OpsDigestView({ d }: { d: any }) {
 export function StaffOutputView({ outputKind, data, onSave }: { outputKind?: string; data: any; onSave?: (itemType: string, payload: any) => void }) {
   if (!data || typeof data !== 'object') return null;
   switch (outputKind) {
-    case 'sourcing_brief': return <SourcingView d={data} />;
+    case 'sourcing_brief': return <SourcingView d={data} onSave={onSave} />;
     case 'detail_builder': return <DetailBuilderView d={data} />;
     case 'ticket_list': return <TicketListView d={data} />;
-    case 'sns_queue': return <SnsQueueView d={data} />;
+    case 'sns_queue': return <SnsQueueView d={data} onSave={onSave} />;
     case 'copy_variants': return <CopyVariantsView d={data} onSave={onSave} />;
     case 'monitor_digest': return <MonitorDigestView d={data} />;
     case 'metric_digest': return <MetricDigestView d={data} />;
-    case 'image_brief': return <ImageBriefView d={data} />;
+    case 'image_brief': return <ImageBriefView d={data} onSave={onSave} />;
     case 'ops_digest': return <OpsDigestView d={data} />;
     default: return null; // 미구현 outputKind는 마크다운 본문만 표시
   }
