@@ -14,10 +14,31 @@ import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
 import { sendPushToWorkspace } from '../_shared/push.ts';
 
 const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY')!;
-const MODEL: Record<string, string> = {
-  sonnet: 'claude-sonnet-4-6',
-  haiku: 'claude-haiku-4-5-20251001',
+const OPENAI_KEY = Deno.env.get('OPENAI_API_KEY') || '';
+const PERPLEXITY_KEY = Deno.env.get('PERPLEXITY_API_KEY') || '';
+
+/** 직원 모델 → provider+model (프론트 staffRun.MODEL_REGISTRY와 동기화) */
+const MODEL_REGISTRY: Record<string, { provider: string; model: string }> = {
+  sonnet: { provider: 'anthropic', model: 'claude-sonnet-4-6' },
+  haiku: { provider: 'anthropic', model: 'claude-haiku-4-5-20251001' },
+  opus: { provider: 'anthropic', model: 'claude-opus-4-8' },
+  gpt: { provider: 'openai', model: 'gpt-4o' },
 };
+const RESEARCH_MODEL = 'sonar-pro';
+/** 타입별 기본 모델 (프론트 staffCatalog.defaultModel과 동기화) */
+const DEFAULT_MODEL_BY_TYPE: Record<string, string> = {
+  sourcing: 'research', detail_page: 'sonnet', cs: 'sonnet', sns: 'gpt', ad: 'gpt',
+  monitor: 'research', analyst: 'haiku', visual: 'sonnet', ops: 'sonnet',
+};
+/** 모델 단가(USD per 1M) → 코인(1코인=$0.001) */
+const MODEL_COST: Record<string, { in: number; out: number }> = {
+  'claude-sonnet-4-6': { in: 3, out: 15 }, 'claude-haiku-4-5-20251001': { in: 1, out: 5 },
+  'claude-opus-4-8': { in: 15, out: 75 }, 'gpt-4o': { in: 2.5, out: 10 }, 'sonar-pro': { in: 3, out: 15 },
+};
+function coinsOf(model: string, inT: number, outT: number): number {
+  const c = MODEL_COST[model] || MODEL_COST['claude-sonnet-4-6'];
+  return Math.max(1, Math.ceil(((inT / 1e6) * c.in + (outT / 1e6) * c.out) * 1000));
+}
 const AI_TAG = '🤖 AI';
 const AI_COLOR = '#1b4332';
 
@@ -172,15 +193,34 @@ function buildSystem(staff: any, ws: any, bc: any, peerNotes: string[], routineL
 - actions: 실제 등록할 일정/할일/인사이트만(없으면 []). 외부 영향(발송·집행·발행)은 actions에 넣지 말고 본문에 "승인 필요"로만 적어라.`;
 }
 
-async function callAnthropic(model: string, system: string): Promise<string> {
+const USER_MSG = '오늘 너의 일과를 수행하고 결과를 일일 리포트로 정리해줘.';
+/** provider별 호출 (토큰 usage 포함). 프론트 sendWithModel과 동일 동작 */
+async function callLLM(provider: string, model: string, system: string, userMsg: string, maxTokens = 1500): Promise<{ text: string; inT: number; outT: number }> {
+  if (provider === 'openai') {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST', headers: { 'content-type': 'application/json', 'authorization': `Bearer ${OPENAI_KEY}` },
+      body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'system', content: system }, { role: 'user', content: userMsg }] }),
+    });
+    if (!res.ok) throw new Error(`openai ${res.status}`);
+    const j = await res.json();
+    return { text: j.choices?.[0]?.message?.content || '', inT: j.usage?.prompt_tokens || 0, outT: j.usage?.completion_tokens || 0 };
+  }
+  if (provider === 'perplexity') {
+    const res = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST', headers: { 'content-type': 'application/json', 'authorization': `Bearer ${PERPLEXITY_KEY}` },
+      body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'system', content: system }, { role: 'user', content: userMsg }] }),
+    });
+    if (!res.ok) throw new Error(`perplexity ${res.status}`);
+    const j = await res.json();
+    return { text: j.choices?.[0]?.message?.content || '', inT: j.usage?.prompt_tokens || 0, outT: j.usage?.completion_tokens || 0 };
+  }
   const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model, max_tokens: 1500, system, messages: [{ role: 'user', content: '오늘 너의 일과를 수행하고 결과를 일일 리포트로 정리해줘.' }] }),
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: 'user', content: userMsg }] }),
   });
   if (!res.ok) throw new Error(`anthropic ${res.status}`);
   const j = await res.json();
-  return j.content?.[0]?.text || '';
+  return { text: j.content?.[0]?.text || '', inT: j.usage?.input_tokens || 0, outT: j.usage?.output_tokens || 0 };
 }
 
 function parseReport(out: string) {
@@ -263,9 +303,23 @@ Deno.serve(async () => {
     const peerNotes = (reports ?? []).filter((x: any) => x.staff_id !== staff.id).slice(0, 6)
       .map((x: any) => `- ${x.title}${x.summary ? ' — ' + x.summary : ''}`);
 
-    let out = '';
-    try { out = await callAnthropic(MODEL[staff.model] || MODEL.sonnet, buildSystem(staff, ws, bc, peerNotes, r.label)); }
-    catch (e) { console.error('[office-staff-run] anthropic 실패:', e); continue; }
+    const system = buildSystem(staff, ws, bc, peerNotes, r.label);
+    const modelKey = staff.model || DEFAULT_MODEL_BY_TYPE[staff.type_key] || 'sonnet';
+    let out = '', coins = 0;
+    try {
+      if (modelKey === 'research') {
+        // Perplexity 검색 → Claude 구조화 2단계
+        const r1 = await callLLM('perplexity', RESEARCH_MODEL, `${system}\n\n[검색 단계] 위 작업에 필요한 최신 시장·경쟁사·가격·트렌드 정보를 검색해 핵심 사실과 수치를 출처와 함께 정리해줘.`, USER_MSG, 1200);
+        const r2 = await callLLM('anthropic', MODEL_REGISTRY.sonnet.model, system, `${USER_MSG}\n\n[검색 결과 — 아래 사실을 근거로 정리해라]\n${r1.text}`);
+        out = r2.text;
+        coins = coinsOf(RESEARCH_MODEL, r1.inT, r1.outT) + coinsOf(MODEL_REGISTRY.sonnet.model, r2.inT, r2.outT);
+      } else {
+        const cfg = MODEL_REGISTRY[modelKey] || MODEL_REGISTRY.sonnet;
+        const rr = await callLLM(cfg.provider, cfg.model, system, USER_MSG);
+        out = rr.text;
+        coins = coinsOf(cfg.model, rr.inT, rr.outT);
+      }
+    } catch (e) { console.error('[office-staff-run] LLM 실패:', e); continue; }
     if (!out.trim()) continue;
 
     const { title, summary, body } = parseReport(out);
@@ -279,6 +333,11 @@ Deno.serve(async () => {
       trigger: 'auto', output_kind: OUTPUT_KIND[staff.type_key] || null, content_json: contentJson,
     }).select('id').single();
     await queueActions(sb, staff, ws, rep?.id ?? null, acts);
+    // 코인 차감 + 사용 로그
+    if (coins > 0) {
+      await sb.rpc('deduct_credits', { ws_id: ws.id, amount: coins }).then(() => {}, () => {});
+      await sb.from('staff_usage').insert({ workspace_id: ws.id, staff_id: staff.id, report_id: rep?.id ?? null, user_id: staff.user_id, model: staff.model, coins }).then(() => {}, () => {});
+    }
     await sb.from('staff_routines').update({ last_run_at: new Date().toISOString() }).eq('id', r.id);
     await sendPushToWorkspace(sb, ws.id, { title: `${ws.name} · ${staff.name}`, body: title, url: '/' });
     ran++;
