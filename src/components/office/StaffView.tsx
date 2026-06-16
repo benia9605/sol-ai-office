@@ -403,7 +403,7 @@ function RoutineAddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (labe
 }
 
 /* ── 상세 ── */
-function StaffDetail({ staff, workspace, onBack, onChanged }: { staff: Staff; workspace: Workspace; onBack: () => void; onChanged: () => void }) {
+function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: Staff; workspace: Workspace; onBack: () => void; onChanged: () => void; onRan?: () => void }) {
   const type = getStaffType(staff.typeKey);
   const [routines, setRoutines] = useState<StaffRoutine[]>([]);
   const [reports, setReports] = useState<DailyReport[]>([]);
@@ -443,7 +443,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged }: { staff: Staff; wo
   const [manualMode, setManualMode] = useState<string | undefined>(undefined);
   const [manualOpen, setManualOpen] = useState(false);
   const openManual = (mode?: string) => { setManualMode(mode); setManualOpen(true); };
-  const onManualDone = async () => { await loadReports(); await loadActions(); };
+  const onManualDone = async () => { await loadReports(); await loadActions(); onRan?.(); };
 
   // ── 일일 리포트 페이지네이션 (10개씩) ──
   const PER = 10;
@@ -463,7 +463,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged }: { staff: Staff; wo
   };
   const run = async () => {
     setRunning(true);
-    try { await runStaffNow(staff, workspace); await loadReports(); await loadActions(); }
+    try { await runStaffNow(staff, workspace); await loadReports(); await loadActions(); onRan?.(); }
     catch (e) { console.error(e); alert('실행 실패'); }
     finally { setRunning(false); }
   };
@@ -645,7 +645,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged }: { staff: Staff; wo
 }
 
 /* ── 메인 ── */
-export function StaffView({ workspace }: { workspace: Workspace }) {
+export function StaffView({ workspace, onRan }: { workspace: Workspace; onRan?: () => void }) {
   const [list, setList] = useState<Staff[]>([]);
   const [selected, setSelected] = useState<Staff | null>(null);
   const [showHire, setShowHire] = useState(false);
@@ -661,7 +661,7 @@ export function StaffView({ workspace }: { workspace: Workspace }) {
   };
 
   if (selected) {
-    return <StaffDetail key={selected.id} staff={selected} workspace={workspace} onBack={() => setSelected(null)} onChanged={refresh} />;
+    return <StaffDetail key={selected.id} staff={selected} workspace={workspace} onBack={() => setSelected(null)} onChanged={refresh} onRan={onRan} />;
   }
 
   const working = list.filter(s => s.state === 'working').length;

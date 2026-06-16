@@ -16,6 +16,7 @@ import {
 import { StaffView } from './StaffView';
 import { BrandView } from './BrandView';
 import { ContentPage } from '../../pages/ContentPage';
+import { fetchCredits } from '../../services/credits.service';
 
 type ViewId = 'dashboard' | 'briefing' | 'staff' | 'todos' | 'schedule' | 'insights' | 'content' | 'log' | 'members' | 'brand';
 
@@ -36,6 +37,15 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
   const [staffKey, setStaffKey] = useState(0); // 🤖 직원 아이콘 누를 때마다 목록(홈)으로 리셋
   const onNavigate = (v: string) => setView(v as ViewId);
   const goNav = (id: ViewId) => { if (id === 'staff') setStaffKey(k => k + 1); setView(id); };
+
+  // ── 코인 잔액 ──
+  const [credits, setCredits] = useState<number | null>(null);
+  const [coinPulse, setCoinPulse] = useState(false);
+  useEffect(() => { fetchCredits(workspace.id).then(setCredits).catch(() => {}); }, [workspace.id]);
+  const refreshCredits = async () => {
+    const c = await fetchCredits(workspace.id).catch(() => null);
+    if (c != null) { setCredits(c); setCoinPulse(true); setTimeout(() => setCoinPulse(false), 900); }
+  };
 
   const { personal, offices, setActiveWorkspace, reload } = useWorkspaceContext();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -117,15 +127,19 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
 
       {/* 메인 */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 flex-shrink-0 bg-white border-b border-gray-100 flex items-center justify-end px-5">
-          {workspace.bizInfo && <span className="text-sm text-gray-400 truncate max-w-[60%]">{workspace.bizInfo}</span>}
+        <header className="h-14 flex-shrink-0 bg-white border-b border-gray-100 flex items-center justify-between px-5">
+          <div title="코인 잔액 — 직원이 일할 때마다 토큰 비용만큼 차감"
+            className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 ${coinPulse ? 'scale-125 text-amber-500' : 'text-gray-500'}`}>
+            <span>🪙</span><span>{credits != null ? credits.toLocaleString() : '—'}</span>
+          </div>
+          {workspace.bizInfo && <span className="text-sm text-gray-400 truncate max-w-[50%]">{workspace.bizInfo}</span>}
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto">
             {view === 'dashboard' && <DashboardView onNavigate={onNavigate} />}
             {view === 'briefing' && <BriefingView workspace={workspace} />}
-            {view === 'staff' && <StaffView key={staffKey} workspace={workspace} />}
+            {view === 'staff' && <StaffView key={staffKey} workspace={workspace} onRan={refreshCredits} />}
             {view === 'todos' && <TodosView />}
             {view === 'schedule' && <ScheduleView workspace={workspace} />}
             {view === 'insights' && <InsightsView workspace={workspace} />}

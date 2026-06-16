@@ -35,6 +35,7 @@ export interface Workspace {
   bizInfo?: string;      // 사업 정보 (어디서 하는 사업인지 · office용)
   type: WorkspaceType;
   inviteCode?: string;
+  credits?: number;      // 코인 잔액 (직원 실행 시 토큰 비용만큼 차감)
   createdBy: string;
   createdAt: string;
 }

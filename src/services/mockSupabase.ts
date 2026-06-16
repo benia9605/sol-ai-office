@@ -21,8 +21,8 @@ const mockData: Record<string, any[]> = {
   ],
   // ── 공유 워크스페이스 (로컬 테스트용: 개인 + 시목 팀) ──
   workspaces: [
-    { id: 'ws-personal', user_id: 'dev', name: '내 오피스', emoji: '👤', color: null, image_url: null, biz_info: null, type: 'personal', invite_code: null, created_by: 'dev', created_at: new Date().toISOString() },
-    { id: 'ws-simok', user_id: 'dev', name: '시목', emoji: '🪵', color: '#8d6e63', image_url: null, biz_info: '원목 가구/소품 · 스마트스토어·자사몰', type: 'office', invite_code: 'SIMOK1', created_by: 'dev', created_at: new Date().toISOString() },
+    { id: 'ws-personal', user_id: 'dev', name: '내 오피스', emoji: '👤', color: null, image_url: null, biz_info: null, type: 'personal', invite_code: null, credits: 10000, created_by: 'dev', created_at: new Date().toISOString() },
+    { id: 'ws-simok', user_id: 'dev', name: '시목', emoji: '🪵', color: '#8d6e63', image_url: null, biz_info: '원목 가구/소품 · 스마트스토어·자사몰', type: 'office', invite_code: 'SIMOK1', credits: 10000, created_by: 'dev', created_at: new Date().toISOString() },
   ],
   workspace_members: [
     { workspace_id: 'ws-personal', user_id: 'dev', role: 'owner', nickname: null, joined_at: new Date().toISOString() },
@@ -61,6 +61,8 @@ const mockData: Record<string, any[]> = {
   ],
   // AI 액션 승인 큐 (suggested→approved→dismissed)
   staff_output_actions: [],
+  // 코인제 — 직원 실행 사용 로그
+  staff_usage: [],
   projects: projects.map(p => ({
     id: p.id, user_id: 'dev', name: p.name, emoji: p.emoji, color: p.color,
     image: p.image, description: p.description, status: p.status ?? 'active',

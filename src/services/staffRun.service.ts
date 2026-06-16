@@ -5,7 +5,8 @@
  * - AI 호출 → 일일 리포트 생성·저장. (API 키 없거나 오류 시 데모 리포트로 폴백)
  * - 지금은 "지금 실행" 버튼으로 온디맨드. cron 자동화는 Edge Function으로 확장 예정.
  */
-import { sendWithModel } from './chatApi';
+import { sendWithModel, calcCoins } from './chatApi';
+import { deductCredits } from './credits.service';
 import { createReport, fetchReportsByWorkspace } from './dailyReports.service';
 import { fetchStaff, fetchRoutines } from './staff.service';
 import { createSuggestedActions } from './staffOutputActions.service';
@@ -396,6 +397,7 @@ export interface StaffRunResult {
   outputKind?: OutputKind;
   actions: ParsedActs;
   input?: Record<string, unknown>;
+  coins?: number;  // 이번 실행 소모 코인 (토큰 비용 환산)
 }
 
 /** AI 실행 + 파싱만 (저장 X) — 미리보기 결과 반환 */
@@ -415,22 +417,28 @@ async function runAndParse(staff: Staff, workspace: Workspace, opts: { tasks: st
   let actions: ParsedActs = { schedules: [], tasks: [], insights: [] };
   let contentJson: Record<string, unknown> | null = null;
   const modelKey = staff.model || type?.defaultModel || 'sonnet';
+  let coins = 0;
   try {
-    let out: string;
+    let out = '';
     if (modelKey === 'research') {
       // 1단계: Perplexity로 실시간 검색·시장조사
-      const research = await sendWithModel(
+      const r1 = await sendWithModel(
         RESEARCH_MODEL,
         `${system}\n\n[검색 단계] 위 작업에 필요한 최신 시장·경쟁사·가격·트렌드 정보를 검색해 핵심 사실과 수치를 출처와 함께 정리해줘.`,
         [{ role: 'user', content: userMsg }], 1200,
       );
       // 2단계: Claude Sonnet으로 검색 결과를 전용 뷰용 JSON으로 구조화
-      out = await sendWithModel(
+      const r2 = await sendWithModel(
         MODEL_REGISTRY.sonnet, system,
-        [{ role: 'user', content: `${userMsg}\n\n[검색 결과 — 아래 사실을 근거로 정리해라]\n${research}` }], 1500,
+        [{ role: 'user', content: `${userMsg}\n\n[검색 결과 — 아래 사실을 근거로 정리해라]\n${r1.text}` }], 1500,
       );
+      out = r2.text;
+      coins = calcCoins(RESEARCH_MODEL.model, r1.usage) + calcCoins(MODEL_REGISTRY.sonnet.model, r2.usage);
     } else {
-      out = await sendWithModel(MODEL_REGISTRY[modelKey] || MODEL_REGISTRY.sonnet, system, [{ role: 'user', content: userMsg }], 1500);
+      const cfg = MODEL_REGISTRY[modelKey] || MODEL_REGISTRY.sonnet;
+      const r = await sendWithModel(cfg, system, [{ role: 'user', content: userMsg }], 1500);
+      out = r.text;
+      coins = calcCoins(cfg.model, r.usage);
     }
     if (!out.trim()) throw new Error('empty');
     ({ title, summary, body } = parseReport(out));
@@ -456,7 +464,7 @@ async function runAndParse(staff: Staff, workspace: Workspace, opts: { tasks: st
     const nameTitle = type && type.label !== staff.name ? `${staff.name} (${type.label})` : staff.name;
     body = `## ${nameTitle}\n\n${opts.manualInput ? '**직접 시키기 입력**\n' + opts.manualInput + '\n\n' : ''}- 동료 직원 산출물 ${peerNotes.length}건 참고${peerNotes.length ? '\n' + peerNotes.join('\n') : ''}\n\n> 실제 AI 실행은 \`VITE_ANTHROPIC_API_KEY\` 설정 후 동작해요. (지금은 데모)`;
   }
-  return { title, summary, body, contentJson, outputKind: type?.outputKind, actions };
+  return { title, summary, body, contentJson, outputKind: type?.outputKind, actions, coins };
 }
 
 /** 결과 저장 (리포트 + 액션 큐). 미리보기 결과를 실제 저장. */
@@ -469,6 +477,10 @@ async function persistResult(staff: Staff, workspace: Workspace, result: StaffRu
   });
   const queued = await queueActions(staff, workspace, report.id, result.actions);
   if (queued > 0) report.body += `\n\n— 📌 제안 액션 ${queued}건이 승인 대기 중이에요`;
+  // 코인 차감 (이번 실행 토큰 비용)
+  if (result.coins) {
+    await deductCredits({ workspaceId: workspace.id, staffId: staff.id, reportId: report.id, model: staff.model, coins: result.coins }).catch(() => {});
+  }
   return report;
 }
 

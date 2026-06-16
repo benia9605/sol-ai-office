@@ -18,6 +18,7 @@ export interface WorkspaceRow {
   biz_info?: string;
   type: 'personal' | 'office';
   invite_code?: string;
+  credits?: number;
   created_by: string;
   created_at: string;
 }
@@ -26,8 +27,8 @@ function fromRow(r: WorkspaceRow): Workspace {
   return {
     id: r.id, name: r.name, emoji: r.emoji, color: r.color,
     imageUrl: r.image_url, bizInfo: r.biz_info,
-    type: r.type, inviteCode: r.invite_code, createdBy: r.created_by,
-    createdAt: r.created_at,
+    type: r.type, inviteCode: r.invite_code, credits: r.credits ?? undefined,
+    createdBy: r.created_by, createdAt: r.created_at,
   };
 }
 
