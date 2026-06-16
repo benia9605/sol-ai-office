@@ -36,10 +36,11 @@
 Frontend: React 18 + TypeScript + Tailwind CSS + Vite
 Backend:  Supabase (PostgreSQL + Auth + Storage)
 AI APIs:
-  - Claude Sonnet 4 (플래니/모디) — claude-sonnet-4-20250514
-  - Claude Opus 4 (데비) — claude-opus-4-20250514
-  - GPT-4o (마키)
-  - Perplexity Sonar Pro (서치)
+  - Claude Sonnet 4.6 (플래니/모디/대부분 직원) — claude-sonnet-4-6
+  - Claude Opus 4.8 (데비/고급 추론) — claude-opus-4-8
+  - Claude Haiku 4.5 (분석가/집계) — claude-haiku-4-5-20251001
+  - GPT-4o (마키/SNS·광고 카피) — gpt-4o
+  - Perplexity Sonar Pro (서치/소싱·모니터링 검색) — sonar-pro
 Auth:     Google OAuth (Supabase Auth)
 Editor:   Tiptap (스터디 노트/메모)
 Hosting:  Replit
@@ -189,6 +190,14 @@ VITE_VAPID_PUBLIC_KEY=
 VITE_YOUTUBE_API_KEY=    # 콘텐츠 메뉴: 채널/영상/댓글 공개 데이터 조회 (Google Cloud YouTube Data API v3 키)
 VITE_GOOGLE_CLIENT_ID=   # 콘텐츠 메뉴: 답글 발행용 OAuth (youtube.force-ssl). 웹 OAuth 클라이언트 ID
 ```
+
+### 키/시크릿 위치 (★ 두 환경 이름이 다름)
+| 환경 | 누가 씀 | 키 이름 | 상태 |
+|------|---------|---------|------|
+| **Replit Secrets** | 프론트(브라우저) — 지금 한 번·채팅·직접 시키기 | `VITE_ANTHROPIC_API_KEY` / `VITE_OPENAI_API_KEY` / `VITE_PERPLEXITY_API_KEY` (**`VITE_` 붙음**) | ✅ 등록됨 |
+| **Supabase Secrets** | edge function `office-staff-run`(매일 자동 cron) | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `PERPLEXITY_API_KEY` (**`VITE_` 없음**) | ✅ 등록 완료(2026-06-16) |
+
+> ⚠️ 같은 키라도 **Replit은 `VITE_` 붙이고, Supabase는 `VITE_` 뺀다.** edge 코드는 `Deno.env.get('ANTHROPIC_API_KEY')`로 읽음.
 
 ### 보안 주의사항
 - **`.env`, `.env.*` 파일은 절대 git에 커밋하지 않는다** (`.gitignore`에 등록됨)
