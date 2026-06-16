@@ -506,6 +506,12 @@ export async function runStaffNow(staff: Staff, workspace: Workspace): Promise<D
   return reports;
 }
 
+/** 단일 일과만 "지금 한 번" 실행 → 리포트 1개 (여러 번 반복 가능) */
+export async function runRoutineNow(staff: Staff, workspace: Workspace, label: string): Promise<DailyReport> {
+  const result = await runAndParse(staff, workspace, { tasks: [label] });
+  return persistResult(staff, workspace, result, 'auto');
+}
+
 /** 수동 미리보기 (직접 시키기 — 실행만, 저장 X) */
 export async function previewStaffManual(staff: Staff, workspace: Workspace, input: Record<string, string>): Promise<StaffRunResult> {
   const manualInput = inputToInstruction(input);

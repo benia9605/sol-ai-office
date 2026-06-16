@@ -10,7 +10,7 @@ import { saveItem, fetchSavedItems, deleteSavedItem } from '../../services/staff
 import { getStaffType } from '../../data/staffCatalog';
 import { fetchStaff, fetchRoutines, setStaffState, deleteStaff, updateStaff, addRoutine, updateRoutine, deleteRoutine } from '../../services/staff.service';
 import { fetchReportsByStaff, addReportComment } from '../../services/dailyReports.service';
-import { runStaffNow, previewStaffManual, saveStaffResult, StaffRunResult } from '../../services/staffRun.service';
+import { runStaffNow, runRoutineNow, previewStaffManual, saveStaffResult, StaffRunResult } from '../../services/staffRun.service';
 import { fetchActions, approveAction, dismissAction } from '../../services/staffOutputActions.service';
 import { getInputForm } from '../../data/staffInputForms';
 import { ViewHead, Card, EmptyState } from './ui';
@@ -480,6 +480,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
   const [showPrompt, setShowPrompt] = useState(false);
   const [showRoutine, setShowRoutine] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<StaffRoutine | null>(null);
+  const [runningRoutineId, setRunningRoutineId] = useState<string | null>(null);
   const [showModel, setShowModel] = useState(false);
   const modelLabel = (m: string) => MODEL_OPTIONS.find(o => o.key === m)?.label || m;
   const changeModel = async (m: StaffModel) => {
@@ -534,6 +535,14 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
   const remove = async () => {
     if (!confirm(`'${staff.name}' 직원을 해고할까요?`)) return;
     await deleteStaff(staff.id); onBack(); onChanged();
+  };
+  // 단일 일과만 실행 (여러 번 반복 가능)
+  const runRoutine = async (r: StaffRoutine) => {
+    if (runningRoutineId || running) return;
+    setRunningRoutineId(r.id);
+    try { await runRoutineNow(staff, workspace, r.label); await loadReports(); await loadActions(); onRan?.(); }
+    catch (e) { console.error(e); alert('실행 실패'); }
+    finally { setRunningRoutineId(null); }
   };
   const run = async () => {
     setRunning(true);
@@ -634,9 +643,9 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
         <div className="flex items-center justify-between h-9 mb-2">
           <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">매일 하는 일 (자동)</span>
           <div className="flex items-center gap-1.5">
-            <button onClick={run} disabled={running}
+            <button onClick={run} disabled={running || runningRoutineId !== null} title="모든 활성 일과를 한 번에 실행"
               className="px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 transition-all active:scale-95">
-              {running ? '실행 중…' : '▶ 지금 한 번'}
+              {running ? '실행 중…' : '▶ 전체 실행'}
             </button>
             <button onClick={() => setShowRoutine(true)}
               className="px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-50 text-primary-600 hover:bg-primary-100 transition-all active:scale-95">＋ 추가</button>
@@ -650,6 +659,10 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
               <span className={`text-sm flex-1 ${r.enabled ? 'text-gray-700' : 'text-gray-300 line-through'}`}>{r.label}</span>
               <button onClick={() => setEditingRoutine(r)} title="일정 수정"
                 className="text-[10px] text-gray-400 flex-shrink-0 hover:text-primary-500 transition-colors">{formatSchedule(r)} ✎</button>
+              <button onClick={() => runRoutine(r)} disabled={runningRoutineId !== null || running} title="이 업무만 지금 실행"
+                className="flex-shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-40 transition-all active:scale-95">
+                {runningRoutineId === r.id ? '실행 중…' : '▶ 실행'}
+              </button>
               <button onClick={() => removeRoutine(r.id)} title="삭제"
                 className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-rose-400 text-sm transition-all">×</button>
             </div>
