@@ -17,12 +17,55 @@ import {
 
 const mockData: Record<string, any[]> = {
   user_profiles: [
-    { id: 'dev-profile', user_id: 'dev', name: '솔', bio: '1인 사업가', tone: 'friendly', response_length: 'medium', emoji_usage: 'moderate', active_theme: 'modi', email: 'dev@test.com' },
+    { id: 'dev-profile', user_id: 'dev', name: '솔', bio: '1인 사업가', tone: 'friendly', response_length: 'medium', emoji_usage: 'moderate', active_theme: 'modern', email: 'dev@test.com' },
   ],
+  // ── 공유 워크스페이스 (로컬 테스트용: 개인 + 시목 팀) ──
+  workspaces: [
+    { id: 'ws-personal', user_id: 'dev', name: '내 오피스', emoji: '👤', color: null, image_url: null, biz_info: null, type: 'personal', invite_code: null, created_by: 'dev', created_at: new Date().toISOString() },
+    { id: 'ws-simok', user_id: 'dev', name: '시목', emoji: '🪵', color: '#8d6e63', image_url: null, biz_info: '원목 가구/소품 · 스마트스토어·자사몰', type: 'office', invite_code: 'SIMOK1', created_by: 'dev', created_at: new Date().toISOString() },
+  ],
+  workspace_members: [
+    { workspace_id: 'ws-personal', user_id: 'dev', role: 'owner', nickname: null, joined_at: new Date().toISOString() },
+    { workspace_id: 'ws-simok', user_id: 'dev', role: 'owner', nickname: null, joined_at: new Date().toISOString() },
+  ],
+  workspace_invites: [],
+  workspace_activities: [],
+  // ── 회사 브레인 (시목 초안 시드: 빈 4필드는 사장이 직접 채움) ──
+  brand_contexts: [
+    {
+      id: 'bc-simok', workspace_id: 'ws-simok', user_id: 'dev',
+      identity: '시목 — 오래 쓰는 원목 가구·소품. 기준 있는 선택, 장인정신과 자연.',
+      category: '원목 인테리어 가구/소품 (도마·식탁·생활소품)',
+      tone: '장인·자연·따뜻·담백·정중. 과장/최저가 강조 금지.',
+      target: '원목 인테리어를 선호하는 2030 신혼·자취 + 친환경/자연소재 니즈',
+      usp: '통원목 한 장 (집성 아님)\n천연오일 마감\n국내 수작업 / 제작과정 투명 공개',
+      channels: '네이버 스마트스토어, 인스타그램, 유튜브',
+      price_position: '프리미엄 (가격 정당화 필요)',
+      ad_angle: '품질 · 원목 · 오래가는',
+      compliance: "내구성 '평생 보장' 식 단정 금지\n'100% 무독성/친환경'은 근거(인증) 있을 때만\n효능·기능 과장 단정 금지",
+      main_products: '', price_range: '', competitors: '', story: '', raw: '',
+      version: 1, updated_at: new Date().toISOString(), created_at: new Date().toISOString(),
+    },
+  ],
+  staff: [
+    { id: 'staff-1', workspace_id: 'ws-simok', user_id: 'dev', type_key: 'sns', name: 'SNS 운영', prompt: '인스타 감성 톤, 원목 무드. 첫 줄 훅 강하게.', model: 'sonnet', state: 'working', created_at: new Date().toISOString() },
+    { id: 'staff-2', workspace_id: 'ws-simok', user_id: 'dev', type_key: 'monitor', name: '경쟁사 감시', prompt: '원목 가구 카테고리 경쟁사 가격/리뷰 변화 추적.', model: 'haiku', state: 'idle', created_at: new Date().toISOString() },
+  ],
+  staff_routines: [
+    { id: 'sr-1', staff_id: 'staff-1', workspace_id: 'ws-simok', label: '매일 09:00 게시물 초안 1건', schedule: 'daily', run_at: '09:00', enabled: true, created_at: new Date().toISOString() },
+    { id: 'sr-2', staff_id: 'staff-1', workspace_id: 'ws-simok', label: '주간 콘텐츠 캘린더 정리', schedule: 'weekly', run_at: null, enabled: true, created_at: new Date().toISOString() },
+    { id: 'sr-3', staff_id: 'staff-2', workspace_id: 'ws-simok', label: '매일 08:00 경쟁사 가격 스캔', schedule: 'daily', run_at: '08:00', enabled: true, created_at: new Date().toISOString() },
+  ],
+  daily_reports: [
+    { id: 'dr-seed-1', workspace_id: 'ws-simok', staff_id: 'staff-1', user_id: 'dev', date: '2026-06-13', title: '인스타 게시물 초안 1건 · 원목 무드', summary: '신상 도마 라이프스타일 컷 캡션 작성 완료', body: '## 오늘 한 일\n- 원목 도마 라이프스타일 게시물 초안 1건\n- 첫 줄 훅: "도마 하나 바꿨을 뿐인데"\n- 해시태그 12개 + 이미지 브리프 첨부\n\n## 내일 제안\n- 브런치 플레이팅 컷 릴스 스크립트', trigger: 'auto', output_kind: 'sns_queue', content_json: { posts: [{ date: '2026-06-13', channel: '인스타', format: '피드', objective: '저장', hook: { type: '공감', text: '도마 하나 바꿨을 뿐인데', score: 8 }, body: '매일 쓰는 도마일수록 관리가 중요하죠. 오일 한 번이면 새것처럼.', hashtags: { large: ['#원목도마'], medium: ['#주방살림'], small: ['#티크도마'], brand: ['#시목'] }, imageBrief: '자연광 주방, 도마 위 플레이팅 클로즈업', variants: ['A', 'B'], status: 'draft' }] }, input: null, status: 'done', model: 'sonnet', comments: [], created_at: new Date().toISOString() },
+  ],
+  // AI 액션 승인 큐 (suggested→approved→dismissed)
+  staff_output_actions: [],
   projects: projects.map(p => ({
     id: p.id, user_id: 'dev', name: p.name, emoji: p.emoji, color: p.color,
     image: p.image, description: p.description, status: p.status ?? 'active',
     priority: p.priority ?? 0, start_date: p.startDate, end_date: p.endDate,
+    workspace_id: 'ws-personal', is_shared: false,
     created_at: new Date().toISOString(),
   })),
   goals: [
@@ -41,6 +84,7 @@ const mockData: Record<string, any[]> = {
     id: s.id, user_id: 'dev', title: s.title, date: s.date, end_date: s.endDate ?? null, time: s.time,
     project: s.project, color: s.color, category: s.category,
     repeat: s.repeat ?? 'none', reminder: s.reminder, notes: s.notes, tags: s.tags,
+    workspace_id: 'ws-personal', is_shared: true,
     created_at: new Date().toISOString(),
   })),
   tasks: dummyTasks.map(t => ({
@@ -50,6 +94,7 @@ const mockData: Record<string, any[]> = {
     category: t.category, notes: t.notes, repeat: t.repeat, tags: t.tags,
     estimated_time: t.pomodoroEstimate, actual_time: t.pomodoroCompleted,
     conversation_id: t.conversationId,
+    workspace_id: 'ws-personal', is_shared: true, assignee_id: null,
     created_at: new Date().toISOString(),
   })),
   insights: dummyInsights.map(i => ({
@@ -57,6 +102,7 @@ const mockData: Record<string, any[]> = {
     source: i.source, link: i.link, tags: i.tags, created_at: i.createdAt,
     time: i.time, project: i.project, priority: i.priority,
     starred: i.starred ?? false,
+    workspace_id: 'ws-personal', is_shared: true,
   })),
   readings: dummyReadings.map(r => ({
     id: r.id, user_id: 'dev', title: r.title, author: r.author,
@@ -66,13 +112,16 @@ const mockData: Record<string, any[]> = {
     start_date: r.startDate, completed_date: r.completedDate,
     rating: r.rating, review: r.review, tags: r.tags, link: r.link,
     price: r.price, toc: r.toc, chapters: r.chapters, isbn13: r.isbn13,
+    workspace_id: 'ws-personal', is_shared: true, recommended_by: null,
     created_at: new Date().toISOString(),
   })),
-  study_notes: dummyStudyNotes.map(sn => ({
+  // 실제 테이블명은 reading_logs (스터디/독서 노트). action_items_json 컬럼 사용.
+  reading_logs: dummyStudyNotes.map(sn => ({
     id: sn.id, user_id: 'dev', reading_id: sn.readingId,
     date: sn.date, time: sn.time, chapter: sn.chapter,
     content: sn.content, raw_text: sn.rawText,
-    sections: sn.sections, action_items: sn.actionItems,
+    sections: sn.sections, action_items_json: sn.actionItems,
+    workspace_id: 'ws-personal', is_shared: true,
     created_at: sn.createdAt, updated_at: sn.updatedAt,
   })),
   journals: dummyRecords.map(r => ({
@@ -81,6 +130,7 @@ const mockData: Record<string, any[]> = {
     tags: r.tags, project: r.project, conversation_id: r.conversationId,
     morning_data: r.morningData, evening_data: r.eveningData,
     weekly_data: r.weeklyData, memo_body: r.memoBody,
+    workspace_id: 'ws-personal', is_shared: false,
     created_at: r.createdAt,
   })),
   youtube_channels: dummyYoutubeChannels.map(c => ({
@@ -124,9 +174,29 @@ const mockData: Record<string, any[]> = {
   ],
 };
 
-// ── auto increment ID ──
-let _nextId = 1000;
-function nextId() { return `mock-${++_nextId}`; }
+// ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
+// Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
+// 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
+const _LS_KEY = 'mock-db-v2';
+try {
+  const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
+  if (saved) {
+    const obj = JSON.parse(saved);
+    for (const k in obj) mockData[k] = obj[k];
+  } else if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(_LS_KEY, JSON.stringify(mockData));
+  }
+} catch { /* 파싱/쿼터 오류 무시 */ }
+
+function persistMock() {
+  try { if (typeof localStorage !== 'undefined') localStorage.setItem(_LS_KEY, JSON.stringify(mockData)); }
+  catch { /* 쿼터 초과 등 무시 */ }
+}
+
+// ── 유니크 ID (새로고침해도 충돌 안 나게 timestamp 기반) ──
+// 과거: 1000부터 카운트 → 새로고침마다 리셋되어 다른 직원이 같은 id를 받아 데이터가 섞이는 버그.
+let _seq = 0;
+function nextId() { return `mock-${Date.now().toString(36)}-${++_seq}`; }
 
 // ── Mock Query Builder ──
 
@@ -232,6 +302,7 @@ class MockQueryBuilder {
         created_at: item.created_at || new Date().toISOString(),
       }));
       mockData[this.table].push(...inserted);
+      persistMock();
       const result = inserted.length === 1 ? inserted[0] : inserted;
 
       if (this._single) return { data: result, error: null };
@@ -246,6 +317,7 @@ class MockQueryBuilder {
       rows.forEach(row => {
         Object.assign(row, this._payload, { updated_at: new Date().toISOString() });
       });
+      persistMock();
 
       if (this._single) return { data: rows[0] ?? null, error: null };
       if (this._maybeSingle) return { data: rows[0] ?? null, error: null };
@@ -259,6 +331,7 @@ class MockQueryBuilder {
       const ids = new Set(rows.map(r => r.id));
       mockData[this.table] = mockData[this.table].filter(r => !ids.has(r.id));
       this.data = mockData[this.table];
+      persistMock();
       return { data: rows, error: null };
     }
 
@@ -273,6 +346,7 @@ class MockQueryBuilder {
           mockData[this.table].push({ ...item, id: item.id || nextId(), user_id: item.user_id || 'dev', created_at: new Date().toISOString() });
         }
       }
+      persistMock();
       const result = items.length === 1 ? items[0] : items;
       if (this._single) return { data: result, error: null };
       if (this._maybeSingle) return { data: result, error: null };

@@ -15,6 +15,7 @@ import {
   TaskRow, fromDbStatus, toDbStatus,
 } from '../services/tasks.service';
 import { calcNextDate } from '../utils/dateCalc';
+import { useWorkspaceContext } from '../contexts/WorkspaceContext';
 
 const STATUS_CYCLE: TaskStatus[] = ['pending', 'in_progress', 'completed'];
 
@@ -36,6 +37,9 @@ function toTaskItem(row: TaskRow): TaskItem {
     pomodoroEstimate: row.estimated_time,
     pomodoroCompleted: row.actual_time,
     conversationId: row.conversation_id,
+    workspaceId: row.workspace_id,
+    isShared: row.is_shared,
+    assigneeId: row.assignee_id,
   };
 }
 
@@ -44,6 +48,7 @@ export function useTasks() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usingDummy, setUsingDummy] = useState(false);
+  const { activeWorkspaceId } = useWorkspaceContext();
 
   const load = useCallback(async () => {
     try {
@@ -266,5 +271,10 @@ export function useTasks() {
     }
   }, [usingDummy]);
 
-  return { tasks, loading, error, cycleStatus, updateStatus, toggleStar, add, remove, updateTask, reload: load };
+  // 활성 워크스페이스 필터 (null=통합이면 전체). 빈 workspaceId(레거시 행)는 통합/개인에서 보이게 유지.
+  const visibleTasks = activeWorkspaceId
+    ? tasks.filter((t) => t.workspaceId === activeWorkspaceId || !t.workspaceId)
+    : tasks;
+
+  return { tasks: visibleTasks, loading, error, cycleStatus, updateStatus, toggleStar, add, remove, updateTask, reload: load };
 }

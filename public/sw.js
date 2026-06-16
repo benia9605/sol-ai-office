@@ -18,7 +18,13 @@ self.addEventListener('activate', (event) => {
 
 // --- 푸시 알림 수신 ---
 self.addEventListener('push', (event) => {
-  const data = event.data ? event.data.json() : {};
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    console.error('[SW] push data parse error:', e);
+    data = { title: 'Teamie', body: '새 알림이 있습니다' };
+  }
   event.waitUntil(
     self.registration.showNotification(data.title || 'Teamie', {
       body: data.body || '',

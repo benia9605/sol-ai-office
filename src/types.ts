@@ -20,6 +20,181 @@ export interface Room {
   color: string;
 }
 
+// ── 공유 워크스페이스 ──
+
+/** 워크스페이스 종류: 개인 공간(자기계발) / 회사 오피스 */
+export type WorkspaceType = 'personal' | 'office';
+
+/** 워크스페이스 (사람 묶음 = 권한 경계) */
+export interface Workspace {
+  id: string;
+  name: string;
+  emoji?: string;
+  color?: string;
+  imageUrl?: string;     // 프로필 이미지 (URL 또는 base64)
+  bizInfo?: string;      // 사업 정보 (어디서 하는 사업인지 · office용)
+  type: WorkspaceType;
+  inviteCode?: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+/** 워크스페이스 멤버 */
+export interface WorkspaceMember {
+  workspaceId: string;
+  userId: string;
+  role: 'owner' | 'member';
+  nickname?: string;
+  joinedAt: string;
+  // 표시용(조인) — 선택
+  email?: string;
+  name?: string;
+}
+
+/** 이메일 초대 (가입 전 pending) */
+export interface WorkspaceInvite {
+  id: string;
+  workspaceId: string;
+  email: string;
+  invitedBy: string;
+  status: 'pending' | 'accepted' | 'revoked';
+  createdAt: string;
+}
+
+/**
+ * 현재 선택된 워크스페이스 컨텍스트.
+ * - null = 🌐 통합(모든 워크스페이스 모아보기)
+ * - 그 외 = 해당 워크스페이스만
+ */
+export type ActiveWorkspace = string | null;
+
+// ── AI 직원 시스템 (회사 오피스) ──
+
+/** 직원 산출물 종류 — 상세 UI 분기 키 */
+export type OutputKind =
+  | 'sourcing_brief' | 'detail_builder' | 'ticket_list'
+  | 'sns_queue' | 'copy_variants' | 'monitor_digest' | 'image_brief'
+  | 'generation_log' | 'keyword_table' | 'metric_digest' | 'review_diff'
+  | 'ops_digest';
+
+/** 직접 시키기(수동) 입력 폼 필드 */
+export interface StaffInputField {
+  name: string;
+  label: string;
+  type: 'text' | 'textarea' | 'number' | 'select' | 'multiselect' | 'duration';
+  options?: string[];
+  placeholder?: string;
+  required?: boolean;
+  showFor?: string[];  // 특정 모드에서만 표시 (없으면 항상 표시)
+}
+
+/** 직원 타입 정의 (코드 카탈로그 상수) */
+export interface StaffTypeDef {
+  key: string;
+  label: string;
+  emoji: string;
+  roleLine: string;           // 역할 한 줄
+  features: string[];         // 3대 기능
+  outputKind: OutputKind;
+  defaultRoutines: string[];  // 기본 일과
+  defaultPrompt: string;      // 채용 시 미리 채워지는 기본 프롬프트(편집 가능)
+  promptPlaceholder: string;  // 비었을 때 힌트
+}
+
+/** 고용된 직원 (DB) */
+export interface Staff {
+  id: string;
+  workspaceId: string;
+  typeKey: string;
+  name: string;
+  prompt: string;
+  model: 'sonnet' | 'haiku';
+  state: 'working' | 'idle';
+  createdAt: string;
+}
+
+/** 직원 일과 (DB) */
+export interface StaffRoutine {
+  id: string;
+  staffId: string;
+  label: string;
+  schedule: 'realtime' | 'daily' | 'weekly' | 'monthly';
+  runAt?: string;         // 'HH:MM'
+  dayOfWeek?: number;     // weekly: 0(일)~6(토)
+  dayOfMonth?: number;    // monthly: 1~31
+  enabled: boolean;
+}
+
+/**
+ * 회사 브레인 (워크스페이스 1:1) — AI 직원 시스템 프롬프트 ①계층
+ * 사장이 직접 입력. brand_contexts 테이블(009).
+ */
+export interface BrandContext {
+  id: string;
+  workspaceId: string;
+  identity?: string;       // 정체성 한 줄
+  category?: string;       // 카테고리
+  tone?: string;           // 톤앤매너
+  target?: string;         // 주요 타겟
+  usp?: string;            // 핵심 USP (줄바꿈 구분)
+  channels?: string;       // 판매 채널
+  pricePosition?: string;  // 가격 포지셔닝
+  adAngle?: string;        // 광고 소구점
+  compliance?: string;     // 금지표현/컴플라이언스 (줄바꿈 구분)
+  mainProducts?: string;   // 주력 상품
+  priceRange?: string;     // 대표 가격대
+  competitors?: string;    // 주요 경쟁사
+  story?: string;          // 창업 스토리/차별점
+  raw?: string;            // 자유 서술
+  version?: number;
+  updatedAt?: string;
+}
+
+/** 리포트 트리거 / 상태 */
+export type ReportTrigger = 'auto' | 'manual';
+export type ReportStatus = 'done' | 'failed';
+
+/** 리포트 코멘트 (사장 의견) */
+export interface ReportComment { text: string; at: string; }
+
+/** 직원 일일 리포트 (DB) — 실행 원장 + 산출물 통합 */
+export interface DailyReport {
+  id: string;
+  workspaceId: string;
+  staffId: string;
+  date: string;          // YYYY-MM-DD
+  title: string;
+  summary: string;
+  body: string;          // 마크다운 본문
+  trigger?: ReportTrigger;            // auto(일과) | manual(지금 시키기)
+  outputKind?: OutputKind;
+  contentJson?: Record<string, unknown> | null;  // 구조화 출력
+  input?: Record<string, unknown> | null;        // 수동 입력
+  status?: ReportStatus;
+  error?: string;
+  model?: string;
+  comments?: ReportComment[];
+  createdAt: string;
+}
+
+/** AI 액션 상태 / 종류 */
+export type ActionStatus = 'suggested' | 'approved' | 'dismissed';
+export type ActionType = 'schedule' | 'task' | 'insight';
+
+/** AI 직원이 제안한 액션 (승인 큐 — HITL) */
+export interface StaffOutputAction {
+  id: string;
+  workspaceId: string;
+  staffId?: string;
+  reportId?: string;
+  type: ActionType;
+  status: ActionStatus;
+  payload: Record<string, unknown>;   // 액션 내용(제목·날짜·우선순위 등)
+  promotedId?: string;                // 승인 시 생성된 실제 row id
+  approvedAt?: string;
+  createdAt: string;
+}
+
 export interface ChatMessage {
   id: string;
   roomId: string;
@@ -108,6 +283,8 @@ export interface Project {
   priority?: number;
   startDate?: string;    // YYYY-MM-DD
   endDate?: string;      // YYYY-MM-DD
+  workspaceId?: string;  // 소속 워크스페이스 (개인/팀)
+  isShared?: boolean;
 }
 
 /** 목표 유형 */
@@ -164,6 +341,8 @@ export interface ScheduleItem {
   reminder?: string;
   notes?: string;
   tags?: string[];
+  workspaceId?: string;
+  isShared?: boolean;
 }
 
 /** 할일 상태 */
@@ -187,6 +366,10 @@ export interface TaskItem {
   pomodoroBreakMin?: number;
   pomodoroCompleted?: number;
   conversationId?: string;
+  // ── 공유 워크스페이스 ──
+  workspaceId?: string;
+  isShared?: boolean;
+  assigneeId?: string;     // 담당자(추천받은 사람)
 }
 
 /** 인사이트 출처 */
@@ -209,6 +392,8 @@ export interface InsightItem {
   project?: string;           // 프로젝트
   priority?: 'high' | 'medium' | 'low';  // 중요도
   starred?: boolean;          // 즐겨찾기 (상단 고정용)
+  workspaceId?: string;
+  isShared?: boolean;
 }
 
 /** 독서 종류 카테고리 */
@@ -241,6 +426,9 @@ export interface ReadingItem {
   toc?: string;                  // 목차 원본 (HTML)
   chapters?: string[];           // 파싱된 챕터 목록 (노트 작성 시 드롭다운용)
   isbn13?: string;               // ISBN13 (알라딘 연동용)
+  workspaceId?: string;
+  isShared?: boolean;
+  recommendedBy?: string;        // 추천한 멤버
 }
 
 /** 강좌 노트 요약 섹션 */
@@ -271,6 +459,8 @@ export interface StudyNote {
   actionItems?: NoteActionItem[]; // 액션 아이템 체크리스트
   createdAt: string;
   updatedAt?: string;
+  workspaceId?: string;
+  isShared?: boolean;
 }
 
 /** 기록 유형 */
@@ -320,6 +510,8 @@ export interface RecordItem {
   weeklyData?: WeeklyTemplate;
   memoBody?: Record<string, unknown>; // Tiptap JSON
   createdAt: string;
+  workspaceId?: string;
+  isShared?: boolean;             // 일기는 기본 false(비공개)
 }
 
 // ── 콘텐츠 (유튜브) ──

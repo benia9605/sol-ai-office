@@ -239,6 +239,19 @@ VITE_GOOGLE_CLIENT_ID=   # 콘텐츠 메뉴: 답글 발행용 OAuth (youtube.for
 - Supabase는 `.update(payload).eq('id', id)` 체이닝 패턴을 사용하므로, `async`면 Promise에 `.eq()`을 호출하게 되어 체이닝이 깨집니다
 - 쓰기 연산은 `this`를 반환하고, 실행은 `_resolve()`에서 `await` 시점에 처리합니다
 
+### DB 변경 규칙 — 마이그레이션 + 스키마 백업 (필수)
+
+Supabase에 **테이블/컬럼을 추가·수정·삭제할 때마다** 아래 3가지를 반드시 함께 한다:
+
+1. **마이그레이션 파일 작성** — `supabase/migrations/NNN_설명.sql` (순차 넘버링: `001`, `002` …). 항상 **다음 번호**로 새 파일 생성. **이미 적용된 파일은 절대 수정하지 않는다** (변경은 새 번호로 추가).
+2. **스키마 백업 갱신** — [`docs/DATA_SCHEMA.md`](docs/DATA_SCHEMA.md)에 해당 테이블/컬럼 반영 (전체 스키마의 단일 백업).
+3. **Mock 3곳 동기화** — `types.ts` / `*.service.ts` / `mockSupabase.ts` (위 체크리스트).
+
+**작성 원칙:**
+- 적용은 Supabase **대시보드 SQL 에디터에서 수동** (`db push` 안 씀).
+- **존재 안전(idempotent)하게**: `ADD COLUMN IF NOT EXISTS` / `DROP POLICY IF EXISTS` / 없는 테이블 대비 `to_regclass('public.테이블') IS NULL` 가드. (환경에 따라 테이블이 없을 수 있음 — 예: `study_notes`는 과거 운영 DB에 없었음)
+- 컬럼은 **nullable + default**로 추가해 무중단. `NOT NULL`은 백필 후 별도 단계.
+
 ### DB status 매핑
 ```
 프론트 'pending' ↔ DB 'todo'

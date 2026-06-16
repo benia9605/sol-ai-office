@@ -27,7 +27,7 @@ function toProfile(row: UserProfileRow): UserProfile {
     tone: row.tone || 'polite',
     responseLength: row.response_length || 'short',
     emojiUsage: row.emoji_usage || 'moderate',
-    activeTheme: (row.active_theme as Theme) || 'modi',
+    activeTheme: (row.active_theme as Theme) || 'modern',
   };
 }
 
@@ -38,7 +38,7 @@ const defaultProfile: UserProfile = {
   tone: 'polite',
   responseLength: 'short',
   emojiUsage: 'moderate',
-  activeTheme: 'modi',
+  activeTheme: 'modern',
 };
 
 /** 모든 useUserProfile 인스턴스 간 동기화를 위한 이벤트 */

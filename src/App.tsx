@@ -8,6 +8,8 @@ import { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { updateLastAccess, hasActiveSubscription, subscribePush } from './services/pushNotification.service';
+import { WorkspaceProvider, useWorkspaceContext } from './contexts/WorkspaceContext';
+import { OfficeShell } from './components/office/OfficeShell';
 import { LoginPage } from './pages/LoginPage';
 import { Layout } from './components/Layout';
 import { HomePage } from './pages/HomePage';
@@ -54,6 +56,25 @@ function App() {
 
   if (!user) {
     return <LoginPage />;
+  }
+
+  return (
+    <WorkspaceProvider>
+      <AppShell />
+    </WorkspaceProvider>
+  );
+}
+
+/**
+ * 활성 워크스페이스 종류에 따라 셸 분기:
+ * - office → 회사 오피스 셸(OfficeShell)
+ * - personal / 전체(null) → 기존 개인 앱(라우터 + Layout)
+ */
+function AppShell() {
+  const { activeWorkspace } = useWorkspaceContext();
+
+  if (activeWorkspace?.type === 'office') {
+    return <OfficeShell workspace={activeWorkspace} />;
   }
 
   return (

@@ -30,6 +30,9 @@ export interface TaskRow {
   conversation_id?: string;
   completed_at?: string;
   created_at: string;
+  workspace_id?: string;
+  is_shared?: boolean;
+  assignee_id?: string;
 }
 
 /** 프론트 status → DB status */
@@ -89,6 +92,9 @@ export async function addTask(task: {
   category?: string;
   tags?: string[];
   conversation_id?: string;
+  workspace_id?: string;
+  is_shared?: boolean;
+  assignee_id?: string;
 }): Promise<TaskRow> {
   const userId = await getCurrentUserId();
   const { data, error } = await supabase
@@ -109,6 +115,10 @@ export async function addTask(task: {
       category: task.category || null,
       tags: task.tags || null,
       conversation_id: task.conversation_id || null,
+      // 공유 워크스페이스 (제공 시에만 세팅 — 빌드 C에서 채움)
+      ...(task.workspace_id ? { workspace_id: task.workspace_id } : {}),
+      ...(task.is_shared !== undefined ? { is_shared: task.is_shared } : {}),
+      ...(task.assignee_id ? { assignee_id: task.assignee_id } : {}),
     })
     .select()
     .single();

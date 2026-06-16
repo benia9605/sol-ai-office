@@ -150,8 +150,86 @@ Vault 적용 후 schedule-reminder succeeded 확인 완료.
 
 ---
 
-## 검증된 사실
+## 검증된 사실 (pg_cron 문제)
 - Edge Function 자체는 정상 동작 (curl로 test-push 호출 → sent: 2 성공)
-- 브라우저 로컬 알림 정상 (SW, Push 구독, VAPID 키 일치 확인)
 - pg_cron 스케줄 타이밍 정상 (UTC 시간 맞음)
-- **유일한 문제는 pg_cron → Edge Function 호출 시 인증 정보 전달 방식이었음**
+- **pg_cron → Edge Function 호출 시 인증 정보 전달 방식 문제 → Vault로 해결**
+
+---
+
+## 2차 문제: 푸시 알림이 기기에 도달하지 않음 (2026-03-29)
+
+### 증상
+- pg_cron 정상 실행 (succeeded), notification_log에 기록도 남음
+- Apple Push Service (web.push.apple.com) → HTTP 201 반환
+- FCM (fcm.googleapis.com) → HTTP 201 반환
+- **그런데 폰에 알림이 하나도 안 옴**
+
+### 진단 과정
+1. pg_cron 잡 목록 확인 → 7개 모두 `active` ✓
+2. Vault 시크릿 확인 → 등록됨 ✓
+3. push_subscriptions 확인 → Apple + FCM 2기기 등록됨 ✓
+4. notification_preferences → 8개 항목 모두 `true` ✓
+5. notification_log → evening-journal 등 정상 기록됨 ✓
+6. test-push 디버그 버전 배포 → Apple 201, FCM 201 확인
+7. VAPID 키 일치 확인 → Replit `VITE_VAPID_PUBLIC_KEY` = Supabase Secrets `VAPID_PUBLIC_KEY` ✓
+
+**결론**: 서버 → 푸시 서비스 전달은 성공, 문제는 **암호화 페이로드가 깨져서 기기에서 복호화 실패**
+
+### 원인: `_shared/push.ts` 암호화 버그 2개
+
+#### 버그 1: aes128gcm 패딩 바이트 위치 (RFC 8188 위반)
+
+```typescript
+// 잘못된 코드 (패딩 구분자가 앞에)
+const padded = new Uint8Array([2, ...new TextEncoder().encode(payloadStr)]);
+
+// 수정 (패딩 구분자가 뒤에 — RFC 8188 규격)
+const padded = new Uint8Array([...new TextEncoder().encode(payloadStr), 2]);
+```
+
+RFC 8188: 마지막 레코드 형식 = `content || 0x02 || zeros`
+- 브라우저가 복호화 후 뒤에서부터 구분자(0x02)를 찾아 content를 분리
+- 구분자가 앞에 있으면 파싱 실패 → push 이벤트에서 data.json() 에러
+
+#### 버그 2: HKDF IKM/salt 뒤바뀜 (RFC 8291 위반)
+
+```typescript
+// 잘못된 코드 (IKM과 salt가 반대)
+const authHkdfKey = await crypto.subtle.importKey(
+  'raw', clientAuth, { name: 'HKDF' }, false, ['deriveBits'],    // ← clientAuth를 IKM으로
+);
+const prk = await crypto.subtle.deriveBits(
+  { name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(sharedSecret), info: authInfo },
+  authHkdfKey, 256,                                                // ← sharedSecret을 salt로
+);
+
+// 수정 (RFC 8291: IKM=ecdh_secret, salt=auth_secret)
+const sharedHkdfKey = await crypto.subtle.importKey(
+  'raw', new Uint8Array(sharedSecret), { name: 'HKDF' }, false, ['deriveBits'],  // ← sharedSecret이 IKM
+);
+const prk = await crypto.subtle.deriveBits(
+  { name: 'HKDF', hash: 'SHA-256', salt: clientAuth, info: authInfo },           // ← clientAuth가 salt
+  sharedHkdfKey, 256,
+);
+```
+
+RFC 8291: `IKM = HKDF(salt=auth_secret, ikm=ecdh_secret, info=key_info, 32)`
+- HMAC은 비대칭: HMAC(key, msg) ≠ HMAC(msg, key)
+- IKM/salt가 뒤바뀌면 완전히 다른 키가 유도 → 암호화 결과를 브라우저가 복호화 불가
+
+### 왜 201이 반환됐나?
+- Apple/FCM 푸시 서비스는 **암호화된 blob을 그대로 전달만** 함
+- 푸시 서비스는 복호화 키가 없으므로 payload 유효성을 검증할 수 없음
+- HTTP 201 = "메시지를 수락했다"는 의미일 뿐, 기기에서 복호화 성공을 보장하지 않음
+
+### 수정 내용
+1. `supabase/functions/_shared/push.ts` — 패딩 바이트 + HKDF 파라미터 수정
+2. `public/sw.js` — push 이벤트에 try/catch 추가 (복호화 실패 시 fallback 알림)
+3. 8개 Edge Function 전부 재배포
+4. notification_log 오늘자 정리 (잘못된 "발송 완료" 기록 삭제)
+
+### 교훈
+- Web Push 암호화(aes128gcm + VAPID)는 RFC 규격대로 정확히 구현해야 함
+- 푸시 서비스의 201 응답은 기기 전달 성공을 의미하지 않음
+- 암호화 문제 디버깅 시 push 서비스 응답만으로는 판단 불가 → SW에 에러 핸들링 필수

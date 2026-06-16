@@ -19,6 +19,8 @@ export interface ProjectRow {
   start_date?: string;
   end_date?: string;
   created_at: string;
+  workspace_id?: string;
+  is_shared?: boolean;
 }
 
 export async function fetchProjects(): Promise<ProjectRow[]> {

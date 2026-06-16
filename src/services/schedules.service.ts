@@ -21,6 +21,8 @@ export interface ScheduleRow {
   reminder?: string;
   notes?: string;
   tags?: string[];
+  workspace_id?: string;
+  is_shared?: boolean;
   created_at: string;
 }
 

@@ -12,6 +12,7 @@ import { ChatHistory } from '../types';
 import { menuItems, rooms, modiSecretary } from '../data';
 import { useProjects } from '../hooks/useProjects';
 import { fetchRecentConversations, RecentConversation } from '../services/conversations.service';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 interface NewSidebarProps {
   isOpen: boolean;
@@ -88,6 +89,9 @@ export function NewSidebar({ isOpen, onClose, onSelectHistory }: NewSidebarProps
             ✕
           </button>
         </div>
+
+        {/* 워크스페이스 전환 (Notion/Slack식 — 팀 워크스페이스 있을 때만) */}
+        <WorkspaceSwitcher />
 
         {/* 메뉴 섹션 */}
         <nav className="px-3 pt-4 lg:pt-4">

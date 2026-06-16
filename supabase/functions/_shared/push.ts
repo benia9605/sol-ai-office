@@ -116,14 +116,14 @@ async function encryptPayload(
     ...localPublicKey,
   ]);
 
-  const authHkdfKey = await crypto.subtle.importKey(
-    'raw', clientAuth, { name: 'HKDF' }, false, ['deriveBits'],
+  const sharedHkdfKey = await crypto.subtle.importKey(
+    'raw', new Uint8Array(sharedSecret), { name: 'HKDF' }, false, ['deriveBits'],
   );
 
   const prk = new Uint8Array(
     await crypto.subtle.deriveBits(
-      { name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(sharedSecret), info: authInfo },
-      authHkdfKey,
+      { name: 'HKDF', hash: 'SHA-256', salt: clientAuth, info: authInfo },
+      sharedHkdfKey,
       256,
     ),
   );
@@ -149,7 +149,7 @@ async function encryptPayload(
     'raw', cekBits, { name: 'AES-GCM' }, false, ['encrypt'],
   );
 
-  const padded = new Uint8Array([2, ...new TextEncoder().encode(payloadStr)]);
+  const padded = new Uint8Array([...new TextEncoder().encode(payloadStr), 2]);
 
   const encrypted = new Uint8Array(
     await crypto.subtle.encrypt(
@@ -275,6 +275,27 @@ export async function sendPushToUsers(
   await Promise.allSettled(
     userIds.map((id) => sendPushToUser(supabaseClient, id, payload)),
   );
+}
+
+// ── 워크스페이스 멤버 전원에게 전송 (공유 항목/AI 리포트용) ──
+// 빌드 B: 공유 워크스페이스의 알림은 멤버 전원에게. actor(행위자) 본인은 제외.
+export async function sendPushToWorkspace(
+  supabaseClient: any,
+  workspaceId: string,
+  payload: PushPayload,
+  excludeUserId?: string,
+): Promise<void> {
+  const { data: members } = await supabaseClient
+    .from('workspace_members')
+    .select('user_id')
+    .eq('workspace_id', workspaceId);
+
+  if (!members?.length) return;
+
+  const userIds = [...new Set(members.map((m: any) => m.user_id))]
+    .filter((id) => id !== excludeUserId) as string[];
+
+  await sendPushToUsers(supabaseClient, userIds, payload);
 }
 
 // ── 알림 설정 확인 ──

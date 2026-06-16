@@ -51,8 +51,8 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  // 초기 상태는 localStorage 또는 'modi'. 깜빡임 최소화를 위해 동기 결정.
-  const [theme, setThemeState] = useState<Theme>(() => readLocalStorage() ?? 'modi');
+  // 초기 상태는 localStorage 또는 'modern'(기본). 깜빡임 최소화를 위해 동기 결정.
+  const [theme, setThemeState] = useState<Theme>(() => readLocalStorage() ?? 'modern');
   const [ready, setReady] = useState(false);
 
   // 마운트 시 DOM 즉시 반영 (FOUC 최소화)

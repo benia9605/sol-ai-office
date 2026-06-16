@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+/* ============================================================
+ * 밋업 — MUJI-inspired design tokens
+ * Pure white surfaces, restrained type, generous whitespace,
+ * hairline borders, no shadows or rounded corners by default.
+ * Single teal touchpoint is reserved for the BrandMark dot and
+ * the dashboard "Featured Meetup" label.
+ * ============================================================ */
+
+:root {
+  /* iOS / Android PWA safe area insets — overlap with status bar &
+   * home indicator. Defaults to 0 on browsers without notch. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  --background: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #f7f7f5;
+
+  --foreground: #1a1a1a;
+  --foreground-muted: #6b6b6b;
+  --foreground-faint: #a1a1a1;
+
+  --line: #e8e6e1;
+  --line-strong: #c9c6bf;
+
+  --accent: #1a1a1a;
+  --accent-foreground: #ffffff;
+  --accent-teal: #0a4145;
+  --accent-amber: #b5862c;      /* 지각 등 중간 상태 강조 (warm ochre) */
+
+  --danger: #b54a3a;
+  --danger-bg: #fbf1ef;
+}
+
+@theme inline {
+  /* expose safe-area as Tailwind spacing tokens for utility classes:
+   * pt-safe / pb-safe / pl-safe / pr-safe */
+  --spacing-safe-top: var(--safe-top);
+  --spacing-safe-bottom: var(--safe-bottom);
+  --spacing-safe-left: var(--safe-left);
+  --spacing-safe-right: var(--safe-right);
+
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-faint: var(--foreground-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-teal: var(--accent-teal);
+  --color-accent-amber: var(--accent-amber);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+}
+
+html,
+body {
+  /* 좌우 스와이프로 페이지가 튀어나가는 것 + iOS 오버스크롤 바운스 방지 */
+  overscroll-behavior: none;
+  /* 가로 패닝/핀치 확대 차단 — 세로 스크롤만 허용 */
+  touch-action: pan-y;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Pretendard", "Noto Sans KR", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+  /* PWA / standalone: 상태바와 홈 인디케이터를 피해서 본문 콘텐츠 보호.
+   * 좌우는 가로 노치(랜드스케이프 X 위치)까지 고려. */
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+  /* 가로 스크롤 절대 금지 */
+  overflow-x: hidden;
+  /* iOS 더블탭 확대 비활성 */
+  -webkit-text-size-adjust: 100%;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+.label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--foreground-faint);
+  font-weight: 500;
+}
+
+/* Horizontally scrollable rows (e.g. mobile nav) without the visible
+   scrollbar. Falls back to default scrollbar on browsers that don't
+   support these properties. */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================
+ * Rich text editor (Tiptap) — MUJI-aligned typography for the
+ * editor canvas and read-only render output.
+ * ============================================================ */
+.prose-meetup h2 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: var(--foreground);
+}
+.prose-meetup h3 {
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin-top: 1.25em;
+  margin-bottom: 0.4em;
+  color: var(--foreground);
+}
+.prose-meetup p {
+  margin: 0.6em 0;
+}
+.prose-meetup ul,
+.prose-meetup ol {
+  margin: 0.6em 0;
+  padding-left: 1.4em;
+}
+.prose-meetup ul {
+  list-style: disc;
+}
+.prose-meetup ol {
+  list-style: decimal;
+}
+.prose-meetup li {
+  margin: 0.25em 0;
+}
+.prose-meetup li > p {
+  margin: 0;
+}
+.prose-meetup blockquote {
+  border-left: 2px solid var(--line-strong);
+  padding-left: 0.9em;
+  color: var(--foreground-muted);
+  margin: 0.8em 0;
+}
+.prose-meetup pre {
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  padding: 0.75em 1em;
+  font-size: 0.85em;
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+.prose-meetup code {
+  background: var(--surface-muted);
+  padding: 0.1em 0.35em;
+  font-size: 0.92em;
+}
+.prose-meetup pre code {
+  background: transparent;
+  padding: 0;
+}
+.prose-meetup hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 1.5em 0;
+}
+.prose-meetup a {
+  color: var(--accent-teal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* Tiptap placeholder */
+.tiptap p.is-editor-empty:first-child::before {
+  color: var(--foreground-faint);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

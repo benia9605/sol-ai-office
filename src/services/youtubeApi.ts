@@ -111,12 +111,12 @@ export async function fetchChannelVideos(channelId: string, uploadsPlaylistId: s
   }));
 }
 
-/** 영상의 최상위 댓글 조회 (최신순) */
+/** 영상의 최상위 댓글 조회 (최신순) — 채널 주인이 이미 답글 단 건 'published'로 표시 */
 export async function fetchVideoComments(channelId: string, videoId: string, max = 20): Promise<YoutubeComment[]> {
   let data: any;
   try {
     data = await api('commentThreads', {
-      part: 'snippet',
+      part: 'snippet,replies',   // replies까지 받아 기존 답글 감지
       videoId,
       order: 'time',
       maxResults: String(max),
@@ -129,6 +129,10 @@ export async function fetchVideoComments(channelId: string, videoId: string, max
 
   return (data.items || []).map((it: any): YoutubeComment => {
     const top = it.snippet?.topLevelComment?.snippet || {};
+    // 채널 주인(우리)이 단 답글이 이미 있으면 '답변완료'로 인식
+    const replies: any[] = it.replies?.comments || [];
+    const ownerReply = replies.find((r) => r.snippet?.authorChannelId?.value === channelId);
+
     return {
       id: '',
       commentId: it.snippet?.topLevelComment?.id || it.id,
@@ -139,7 +143,9 @@ export async function fetchVideoComments(channelId: string, videoId: string, max
       text: top.textDisplay || top.textOriginal || '',
       publishedAt: top.publishedAt,
       likeCount: Number(top.likeCount) || 0,
-      replyStatus: 'none',
+      replyStatus: ownerReply ? 'published' : 'none',
+      replyDraft: ownerReply ? (ownerReply.snippet?.textOriginal || ownerReply.snippet?.textDisplay || '') : undefined,
+      repliedAt: ownerReply ? ownerReply.snippet?.publishedAt : undefined,
     };
   });
 }

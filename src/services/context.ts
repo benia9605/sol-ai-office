@@ -101,8 +101,14 @@ function formatProjects(
 /**
  * 시스템 프롬프트 빌드
  * @param roomId - 방 ID (strategy, marketing, dev, research, meeting, secretary)
+ * @param opts.workspaceId - (빌드 B) 지정 시 해당 워크스페이스 데이터만 주입.
+ *   교차 워크스페이스 누수 방지(예: 시목 방에서 운명랩 KPI 노출 차단).
+ *   null/미지정이면 기존처럼 유저의 전체 데이터(통합).
  */
-export async function buildSystemPrompt(roomId: string): Promise<string> {
+export async function buildSystemPrompt(
+  roomId: string,
+  opts?: { workspaceId?: string | null },
+): Promise<string> {
   const today = new Date().toISOString().split('T')[0];
   const userId = await getCurrentUserId();
 
@@ -147,6 +153,17 @@ export async function buildSystemPrompt(roomId: string): Promise<string> {
       .then(({ data }) => data ?? []),
   ]);
 
+  // ── 워크스페이스 스코핑 (빌드 B) ──
+  // ws 지정 시 해당 워크스페이스 데이터만 → AI가 다른 브랜드/공간 정보를 못 봄.
+  const ws = opts?.workspaceId ?? null;
+  const sProjects = ws ? projects.filter(p => p.workspace_id === ws) : projects;
+  const _pids = new Set(sProjects.map(p => p.id));
+  const sGoals = ws ? goals.filter(g => _pids.has(g.project_id)) : goals;
+  const _gids = new Set(sGoals.map(g => g.id));
+  const sKpis = ws ? kpis.filter(k => _gids.has(k.goal_id)) : kpis;
+  const sSchedules = ws ? schedules.filter((s: any) => s.workspace_id === ws) : schedules;
+  const sTasks = ws ? tasks.filter((t: any) => t.workspace_id === ws) : tasks;
+
   // 컨텍스트 조합
   let context = '\n\n---\n\n';
 
@@ -160,13 +177,13 @@ export async function buildSystemPrompt(roomId: string): Promise<string> {
 
   // 2. 프로젝트 & 목표 & KPI
   context += `## 현재 프로젝트 & 목표\n`;
-  context += formatProjects(projects, goals, kpis);
+  context += formatProjects(sProjects, sGoals, sKpis);
   context += '\n';
 
   // 3. 일정
-  if (schedules.length > 0) {
+  if (sSchedules.length > 0) {
     context += `## 다가오는 일정 (7일 이내)\n`;
-    for (const s of schedules.slice(0, 10)) {
+    for (const s of sSchedules.slice(0, 10)) {
       context += `- ${s.date}${s.time ? ' ' + s.time : ''}: ${s.title}`;
       if (s.project) context += ` [${s.project}]`;
       context += '\n';
@@ -175,9 +192,9 @@ export async function buildSystemPrompt(roomId: string): Promise<string> {
   }
 
   // 4. 할일
-  if (tasks.length > 0) {
+  if (sTasks.length > 0) {
     context += `## 진행 중인 할일\n`;
-    for (const t of tasks.slice(0, 15)) {
+    for (const t of sTasks.slice(0, 15)) {
       const icon = t.status === 'in_progress' ? '🔄' : '⬜';
       const priority = t.priority === 'high' ? ' 🔴' : t.priority === 'urgent' ? ' 🔥' : '';
       context += `- ${icon} ${t.title}${priority}`;

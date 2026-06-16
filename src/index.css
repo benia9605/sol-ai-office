@@ -151,6 +151,11 @@ body {
   border-radius: 0;
 }
 
+/* 오피스 셸은 "몽글(라운드)" 존 — 위 직사각형 오버라이드를 무력화 (콘텐츠 메뉴 포함) */
+[data-theme="modern"] .office-shell .rounded-3xl { border-radius: 1.5rem; }
+[data-theme="modern"] .office-shell .rounded-2xl { border-radius: 1rem; }
+[data-theme="modern"] .office-shell .rounded-xl  { border-radius: 0.75rem; }
+
 /* 2) 그림자 제거 + 1px hairline 경계로 대체
    inset box-shadow 방식: border-box 영향 없고 기존 레이아웃 안 깨짐 */
 [data-theme="modern"] .shadow-soft {
@@ -508,6 +513,14 @@ body:has([data-modal-overlay]) .modi-fab {
   background: var(--color-surface-muted);
   font-weight: 600;
 }
+
+/* 일일 리포트 본문 — 채팅보다 문장 간격·줄간격 여유있게 (가독성) */
+.report-md p { margin: 0.7em 0; line-height: 1.8; }
+.report-md li { margin: 0.35em 0; line-height: 1.75; }
+.report-md ul, .report-md ol { margin: 0.6em 0; }
+.report-md h2 { font-size: 0.95rem; font-weight: 600; margin-top: 1.2em; margin-bottom: 0.55em; }
+.report-md h3 { font-size: 0.875rem; font-weight: 600; margin-top: 1em; margin-bottom: 0.4em; }
+.report-md h1 { font-size: 1rem; font-weight: 700; margin-top: 0.6em; margin-bottom: 0.5em; }
 
 /* 모던 테마에서는 markdown 본문 폰트 굵기도 가볍게 */
 [data-theme="modern"] .markdown-body h1,

@@ -116,7 +116,7 @@ export function CommentReplyCard({
               <button
                 onClick={() => setScriptOpen((v) => !v)}
                 className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full transition-colors ${
-                  video.script ? 'bg-blue-50 text-blue-500 hover:bg-blue-100' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                  video.script ? 'bg-primary-50 text-primary-500 hover:bg-primary-100' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                 }`}
               >
                 <DocIcon size={10} className="flex-shrink-0" />
@@ -127,19 +127,22 @@ export function CommentReplyCard({
         </div>
       </div>
 
-      {/* 스크립트 편집 */}
+      {/* 스크립트 편집 (수동 붙여넣기) */}
       {scriptOpen && video && (
         <div className="mt-3 pl-10 space-y-2">
+          <p className="text-[11px] text-gray-400 leading-relaxed">
+            💡 유튜브는 남의 영상 자막을 자동으로 못 가져와요. <b>영상 더보기 → 스크립트 표시 → 전체 복사</b> 후 아래에 붙여넣으면 답글 생성에 활용해요.
+          </p>
           <textarea
             value={scriptText}
             onChange={(e) => setScriptText(e.target.value)}
-            placeholder="이 영상의 자막/스크립트를 붙여넣으면, 답글 생성 시 맥락으로 사용해요"
+            placeholder="유튜브에서 복사한 자막/스크립트를 여기에 붙여넣기"
             rows={4}
-            className="w-full px-3 py-2 bg-blue-50/40 border border-blue-100 rounded-lg text-xs resize-y focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="w-full px-3 py-2 bg-primary-50/40 border border-primary-100 rounded-lg text-xs resize-y focus:outline-none focus:ring-2 focus:ring-primary-200"
           />
           <div className="flex justify-end gap-2">
             <button onClick={() => { setScriptText(video.script ?? ''); setScriptOpen(false); }} className="px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-100 rounded-lg">닫기</button>
-            <button onClick={() => { onSaveScript(video.id, scriptText); setScriptOpen(false); }} className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg">스크립트 저장</button>
+            <button onClick={() => { onSaveScript(video.id, scriptText); setScriptOpen(false); }} className="px-3 py-1.5 text-xs font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg">스크립트 저장</button>
           </div>
         </div>
       )}
@@ -160,7 +163,7 @@ export function CommentReplyCard({
               <button
                 onClick={handleGenerate}
                 disabled={generating}
-                className="px-2.5 py-1 text-xs font-medium text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-all disabled:opacity-50 flex items-center gap-1"
+                className="px-2.5 py-1 text-xs font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-all disabled:opacity-50 flex items-center gap-1"
               >
                 {generating ? (
                   <>
@@ -180,7 +183,7 @@ export function CommentReplyCard({
             readOnly={published}
             placeholder="AI로 답글을 생성하거나 직접 작성하세요"
             rows={3}
-            className={`w-full px-3 py-2 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-200 ${
+            className={`w-full px-3 py-2 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-200 ${
               published ? 'bg-green-50 border-green-100 text-gray-600' : 'bg-gray-50 border-gray-200'
             }`}
           />

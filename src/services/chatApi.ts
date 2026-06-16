@@ -165,3 +165,21 @@ export async function sendChatMessage(
       return callAnthropic(config, systemPrompt, messages, maxTokens, signal);
   }
 }
+
+/** 모델을 직접 지정해서 호출 (AI 직원 실행 엔진용) */
+export async function sendWithModel(
+  config: { provider: 'anthropic' | 'openai' | 'perplexity'; model: string },
+  systemPrompt: string,
+  messages: ChatMessage[],
+  maxTokens = 1500,
+  signal?: AbortSignal,
+): Promise<string> {
+  switch (config.provider) {
+    case 'openai':
+      return callOpenAI(config, systemPrompt, messages, maxTokens, signal);
+    case 'perplexity':
+      return callPerplexity(config, systemPrompt, messages, maxTokens, signal);
+    default:
+      return callAnthropic(config, systemPrompt, messages, maxTokens, signal);
+  }
+}

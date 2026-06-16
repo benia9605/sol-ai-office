@@ -52,7 +52,7 @@ function buildWeeklyStats(videos: YoutubeVideo[]): YoutubeWeeklyStat[] {
   return buckets;
 }
 
-export function ContentPage() {
+export function ContentPage({ embedded }: { embedded?: boolean } = {}) {
   const { theme } = useTheme();
   const modern = theme === 'modern';
 
@@ -75,10 +75,11 @@ export function ContentPage() {
 
   // ── 테마 토큰 ──
   const T = {
-    page: modern ? 'min-h-full bg-surface text-foreground' : 'min-h-full bg-[#fffef5]',
-    container: modern
-      ? 'mx-auto max-w-5xl px-5 sm:px-8 py-10 sm:py-14 space-y-10'
-      : 'max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6',
+    // embedded(오피스 셸 내부): 자체 배경/컨테이너 없이 오피스 레이아웃에 녹아듦
+    page: embedded ? 'text-foreground' : (modern ? 'min-h-full bg-surface text-foreground' : 'min-h-full bg-[#fffef5]'),
+    container: embedded
+      ? 'space-y-6'
+      : (modern ? 'mx-auto max-w-5xl px-5 sm:px-8 py-10 sm:py-14 space-y-10' : 'max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6'),
     accentText: modern ? 'text-primary-600' : 'text-amber-600',
     chipActive: modern ? 'bg-primary-500 text-white' : 'bg-amber-500 text-white',
     chipIdle: 'bg-gray-100 text-gray-500 hover:bg-gray-200',
@@ -180,7 +181,13 @@ export function ContentPage() {
     <div className={T.page}>
       <div className={T.container}>
         {/* ── 헤더 ── */}
-        {modern ? (
+        {embedded ? (
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-widest text-primary-500 mb-1.5">CONTENT</div>
+            <h1 className="text-2xl font-extrabold text-gray-800">콘텐츠</h1>
+            <p className="text-sm text-gray-400 mt-1">채널 {channels.length} · 영상 {videos.length} · 댓글 {comments.length}{usingDummy && ' · 목업'}</p>
+          </div>
+        ) : modern ? (
           <section>
             <p className="label">Content</p>
             <h1 className="mt-4 text-4xl font-light leading-[1.25] sm:text-5xl">콘텐츠</h1>
