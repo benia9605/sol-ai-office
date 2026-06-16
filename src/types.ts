@@ -136,6 +136,18 @@ export interface StaffUsage {
   createdAt: string;
 }
 
+/** 직원 보관함 항목 (DB staff_saved_items) — 리포트에서 ⭐로 저장한 산출물 */
+export interface StaffSavedItem {
+  id: string;
+  workspaceId: string;
+  staffId?: string;
+  outputKind?: string;
+  itemType?: string;
+  payload: Record<string, unknown>;
+  note?: string;
+  createdAt: string;
+}
+
 /** 직원 일과 (DB) */
 export interface StaffRoutine {
   id: string;

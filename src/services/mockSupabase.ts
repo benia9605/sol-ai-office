@@ -63,6 +63,8 @@ const mockData: Record<string, any[]> = {
   staff_output_actions: [],
   // 코인제 — 직원 실행 사용 로그
   staff_usage: [],
+  // 직원 보관함 — ⭐로 저장한 산출물
+  staff_saved_items: [],
   projects: projects.map(p => ({
     id: p.id, user_id: 'dev', name: p.name, emoji: p.emoji, color: p.color,
     image: p.image, description: p.description, status: p.status ?? 'active',

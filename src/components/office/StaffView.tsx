@@ -5,7 +5,8 @@
  */
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Staff, StaffRoutine, DailyReport, Workspace, StaffOutputAction, ReportComment, StaffModel } from '../../types';
+import { Staff, StaffRoutine, DailyReport, Workspace, StaffOutputAction, ReportComment, StaffModel, StaffSavedItem } from '../../types';
+import { saveItem, fetchSavedItems, deleteSavedItem } from '../../services/staffSavedItems.service';
 import { getStaffType } from '../../data/staffCatalog';
 import { fetchStaff, fetchRoutines, setStaffState, deleteStaff, updateStaff, addRoutine, updateRoutine, deleteRoutine } from '../../services/staff.service';
 import { fetchReportsByStaff, addReportComment } from '../../services/dailyReports.service';
@@ -99,7 +100,7 @@ function ReportComments({ reportId, initial }: { reportId: string; initial?: Rep
 }
 
 /* ── 리포트 카드 (펼침) ── */
-function ReportCard({ r }: { r: DailyReport }) {
+function ReportCard({ r, onSave }: { r: DailyReport; onSave?: (itemType: string, payload: any) => void }) {
   const [open, setOpen] = useState(false);
   return (
     <Card className="p-4">
@@ -119,7 +120,7 @@ function ReportCard({ r }: { r: DailyReport }) {
             <div className="text-[10px] text-amber-600 bg-amber-50 rounded-lg px-2 py-1 inline-block">🧪 데모 미리보기 — API 키 설정 시 실제 데이터로 채워져요</div>
           )}
           {r.contentJson && (
-            <StaffOutputView outputKind={r.outputKind} data={r.contentJson} />
+            <StaffOutputView outputKind={r.outputKind} data={r.contentJson} onSave={onSave} />
           )}
           {r.body && (
             <Card className="p-3 space-y-1.5">
@@ -131,6 +132,46 @@ function ReportCard({ r }: { r: DailyReport }) {
         </div>
       )}
     </Card>
+  );
+}
+
+/* ── 직원 보관함 (⭐ 저장한 산출물 · 타입별 라벨) ── */
+const SAVED_LABEL: Record<string, string> = {
+  copy_variants: '저장된 카피', sns_queue: '콘텐츠 보관함', sourcing_brief: '상품 후보 보관함',
+  image_brief: '이미지·프롬프트', detail_builder: '완성 페이지', ticket_list: 'FAQ·답변 모음',
+  monitor_digest: '경쟁사 워치리스트', metric_digest: '지표 스냅샷', ops_digest: '보관함',
+};
+function SavedCard({ item, onDelete }: { item: StaffSavedItem; onDelete: (id: string) => void }) {
+  const p = item.payload as any;
+  const copyText = [p.headline, p.sub, p.detail, p.cta, p.body, p.text, p.coreLine].filter(Boolean).join('\n');
+  return (
+    <Card className="group p-3 relative space-y-1">
+      <button onClick={() => onDelete(item.id)} className="absolute top-2 right-2 text-[11px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">삭제</button>
+      {p.type && <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary-50 text-primary-600">{p.type}</span>}
+      {(p.headline || p.title || p.coreLine) && <div className="text-sm font-bold text-gray-800 pr-8">{p.headline || p.title || p.coreLine}</div>}
+      {p.sub && <div className="text-xs text-gray-500">{p.sub}</div>}
+      {p.detail && <div className="text-xs text-gray-400">{p.detail}</div>}
+      {(p.body || p.text) && <div className="text-xs text-gray-600 whitespace-pre-wrap line-clamp-3">{p.body || p.text}</div>}
+      {p.cta && <div className="text-xs text-primary-600 font-medium">→ {p.cta}</div>}
+      <div className="flex items-center gap-2 pt-0.5">
+        {copyText && <button onClick={() => navigator.clipboard?.writeText(copyText)} className="text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 active:scale-95 transition-all">복사</button>}
+        {p.variantId && <span className="text-[10px] text-gray-300">{p.variantId}</span>}
+      </div>
+    </Card>
+  );
+}
+function SavedLibrary({ items, outputKind, onDelete }: { items: StaffSavedItem[]; outputKind?: string; onDelete: (id: string) => void }) {
+  if (items.length === 0) return null;
+  const label = SAVED_LABEL[outputKind || ''] || '보관함';
+  return (
+    <div className="mb-4">
+      <div className="flex items-center h-9 mb-2">
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">⭐ {label} <span className="text-gray-300">({items.length})</span></span>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-2">
+        {items.map(it => <SavedCard key={it.id} item={it} onDelete={onDelete} />)}
+      </div>
+    </div>
   );
 }
 
@@ -408,6 +449,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
   const [routines, setRoutines] = useState<StaffRoutine[]>([]);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [actions, setActions] = useState<StaffOutputAction[]>([]);
+  const [savedItems, setSavedItems] = useState<StaffSavedItem[]>([]);
   const [state, setState] = useState(staff.state);
   const [running, setRunning] = useState(false);
   const [editName, setEditName] = useState(false);
@@ -427,12 +469,20 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
   const loadReports = () => fetchReportsByStaff(staff.id).then(setReports).catch(() => setReports([]));
   const loadActions = () => fetchActions(workspace.id, 'suggested', staff.id)
     .then(setActions).catch(() => setActions([]));
+  const loadSaved = () => fetchSavedItems(workspace.id, staff.id).then(setSavedItems).catch(() => setSavedItems([]));
   useEffect(() => {
     fetchRoutines(staff.id).then(setRoutines).catch(() => setRoutines([]));
     loadReports();
     loadActions();
+    loadSaved();
     // eslint-disable-next-line
   }, [staff.id]);
+
+  const onSaveItem = async (itemType: string, payload: any) => {
+    await saveItem({ workspaceId: workspace.id, staffId: staff.id, outputKind: type?.outputKind, itemType, payload }).catch(() => {});
+    loadSaved();
+  };
+  const onDeleteSaved = async (id: string) => { await deleteSavedItem(id).catch(() => {}); loadSaved(); };
 
   const approve = async (a: StaffOutputAction) => { await approveAction(a).catch(() => {}); await loadActions(); };
   const dismiss = async (id: string) => { await dismissAction(id).catch(() => {}); await loadActions(); };
@@ -619,7 +669,10 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
         </div>
       )}
 
-      {/* 4. 일일 리포트 1열 + 페이지네이션 */}
+      {/* 4. 직원 보관함 (⭐ 저장 — 타입별 전용 작업공간) */}
+      <SavedLibrary items={savedItems} outputKind={type?.outputKind} onDelete={onDeleteSaved} />
+
+      {/* 5. 일일 리포트 1열 + 페이지네이션 */}
       <div className="mb-4">
         <div className="flex items-center justify-between h-9 mb-2">
           <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">일일 리포트</span>
@@ -632,7 +685,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
           )}
         </div>
         <div className="space-y-2">
-          {pageReports.map(r => <ReportCard key={r.id} r={r} />)}
+          {pageReports.map(r => <ReportCard key={r.id} r={r} onSave={onSaveItem} />)}
           {reports.length === 0 && <EmptyState emoji="📄" title="아직 리포트가 없어요" sub="일과가 돌거나 ‘지금 한 번’을 누르면 쌓여요" />}
         </div>
       </div>

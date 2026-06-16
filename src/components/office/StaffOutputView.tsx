@@ -391,7 +391,7 @@ function AdCompliance({ cc }: { cc: any }) {
     </Section>
   );
 }
-function CopyVariantsView({ d }: { d: any }) {
+function CopyVariantsView({ d, onSave }: { d: any; onSave?: (itemType: string, payload: any) => void }) {
   const sets = Array.isArray(d.sets) ? d.sets : [];
   const tg = d.targeting || {};
   const aud = tg.audience || {};
@@ -418,7 +418,10 @@ function CopyVariantsView({ d }: { d: any }) {
             <Card key={i} className="p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary-50 text-primary-600">{s.type || '카피'}</span>
-                {s.status && <span className="text-[10px] text-gray-400">{s.status}</span>}
+                <div className="flex items-center gap-1.5">
+                  {s.status && <span className="text-[10px] text-gray-400">{s.status}</span>}
+                  {onSave && <button onClick={() => onSave('copy', s)} title="보관함에 저장" className="text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all">⭐</button>}
+                </div>
               </div>
               {(s.headline || s.sub || s.detail || s.cta) && (
                 <div className="relative bg-gray-50 rounded-xl p-2.5 pr-9 space-y-1">
@@ -776,14 +779,14 @@ function OpsDigestView({ d }: { d: any }) {
 }
 
 /* ───────── 분기 ───────── */
-export function StaffOutputView({ outputKind, data }: { outputKind?: string; data: any }) {
+export function StaffOutputView({ outputKind, data, onSave }: { outputKind?: string; data: any; onSave?: (itemType: string, payload: any) => void }) {
   if (!data || typeof data !== 'object') return null;
   switch (outputKind) {
     case 'sourcing_brief': return <SourcingView d={data} />;
     case 'detail_builder': return <DetailBuilderView d={data} />;
     case 'ticket_list': return <TicketListView d={data} />;
     case 'sns_queue': return <SnsQueueView d={data} />;
-    case 'copy_variants': return <CopyVariantsView d={data} />;
+    case 'copy_variants': return <CopyVariantsView d={data} onSave={onSave} />;
     case 'monitor_digest': return <MonitorDigestView d={data} />;
     case 'metric_digest': return <MetricDigestView d={data} />;
     case 'image_brief': return <ImageBriefView d={data} />;
