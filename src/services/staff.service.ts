@@ -5,11 +5,11 @@
  */
 import { supabase } from './supabase';
 import { getCurrentUserId } from './auth';
-import { Staff, StaffRoutine } from '../types';
+import { Staff, StaffRoutine, StaffModel } from '../types';
 
 interface StaffRow {
   id: string; workspace_id: string; user_id: string; type_key: string;
-  name: string; prompt?: string; model: 'sonnet' | 'haiku'; state: 'working' | 'idle';
+  name: string; prompt?: string; model: StaffModel; state: 'working' | 'idle';
   created_at: string;
 }
 interface RoutineRow {
@@ -48,7 +48,7 @@ export async function hireStaff(input: {
   typeKey: string;
   name: string;
   prompt: string;
-  model: 'sonnet' | 'haiku';
+  model: StaffModel;
   routines: string[];
 }): Promise<Staff> {
   const userId = await getCurrentUserId();
@@ -120,13 +120,15 @@ export async function addRoutine(
   return toRoutine(data);
 }
 
-/** 일과 수정 (켜기/끄기·내용·시간) */
-export async function updateRoutine(id: string, fields: { label?: string; schedule?: StaffRoutine['schedule']; runAt?: string; enabled?: boolean }): Promise<void> {
+/** 일과 수정 (켜기/끄기·내용·주기·시간·요일·날짜) */
+export async function updateRoutine(id: string, fields: { label?: string; schedule?: StaffRoutine['schedule']; runAt?: string; enabled?: boolean; dayOfWeek?: number; dayOfMonth?: number }): Promise<void> {
   const payload: Record<string, unknown> = {};
   if (fields.label !== undefined) payload.label = fields.label;
   if (fields.schedule !== undefined) payload.schedule = fields.schedule;
   if (fields.runAt !== undefined) payload.run_at = fields.runAt || null;
   if (fields.enabled !== undefined) payload.enabled = fields.enabled;
+  if (fields.dayOfWeek !== undefined) payload.day_of_week = fields.dayOfWeek ?? null;
+  if (fields.dayOfMonth !== undefined) payload.day_of_month = fields.dayOfMonth ?? null;
   if (Object.keys(payload).length === 0) return;
   const { error } = await supabase.from('staff_routines').update(payload).eq('id', id);
   if (error) throw error;

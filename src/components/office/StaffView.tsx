@@ -344,13 +344,28 @@ function formatSchedule(r: StaffRoutine): string {
 
 type RoutineOpts = { schedule: StaffRoutine['schedule']; runAt?: string; dayOfWeek?: number; dayOfMonth?: number };
 
-function RoutineAddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (label: string, opts: RoutineOpts) => Promise<void> }) {
-  const [label, setLabel] = useState('');
-  const [schedule, setSchedule] = useState<'daily' | 'weekly' | 'monthly'>('daily');
-  const [hasTime, setHasTime] = useState(true);
-  const [time, setTime] = useState('09:00');
-  const [dow, setDow] = useState(1);
-  const [dom, setDom] = useState(1);
+/**
+ * 일과 일정 모달
+ * - fixedLabel(수정): 내용 고정 + 일정만 조정
+ * - labelOptions(추가): 직원 기본 업무 중에서 선택 (자유 입력 X — 실행 안정성)
+ */
+function RoutineScheduleModal({
+  fixedLabel, labelOptions, initial, onClose, onSubmit,
+}: {
+  fixedLabel?: string;
+  labelOptions?: string[];
+  initial?: { schedule: 'daily' | 'weekly' | 'monthly'; runAt?: string; dayOfWeek?: number; dayOfMonth?: number };
+  onClose: () => void;
+  onSubmit: (label: string, opts: RoutineOpts) => Promise<void>;
+}) {
+  const isEdit = !!fixedLabel;
+  const opts = labelOptions ?? [];
+  const [label, setLabel] = useState(fixedLabel ?? opts[0] ?? '');
+  const [schedule, setSchedule] = useState<'daily' | 'weekly' | 'monthly'>(initial?.schedule ?? 'daily');
+  const [hasTime, setHasTime] = useState(initial ? !!initial.runAt : true);
+  const [time, setTime] = useState(initial?.runAt || '09:00');
+  const [dow, setDow] = useState(initial?.dayOfWeek ?? 1);
+  const [dom, setDom] = useState(initial?.dayOfMonth ?? 1);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -358,7 +373,7 @@ function RoutineAddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (labe
     setBusy(true);
     const useTime = schedule === 'daily' ? hasTime : true;
     try {
-      await onAdd(label, {
+      await onSubmit(label, {
         schedule,
         runAt: useTime ? time : undefined,
         dayOfWeek: schedule === 'weekly' ? dow : undefined,
@@ -380,15 +395,22 @@ function RoutineAddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (labe
       <div className="bg-white rounded-[32px] shadow-2xl w-[440px] max-w-[92vw] p-7 space-y-4"
         style={{ animation: 'pmPop .22s cubic-bezier(.2,.9,.25,1)' }} onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-[17px] font-extrabold text-gray-800">＋ 일과 추가</h2>
+          <h2 className="text-[17px] font-extrabold text-gray-800">{isEdit ? '일정 수정' : '＋ 일과 추가'}</h2>
           <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center active:scale-90">✕</button>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-1.5">일과 내용</label>
-          <input autoFocus value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submit(); }}
-            placeholder="예: 게시물 초안 1건 작성"
-            className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300" />
+          <label className="block text-xs font-semibold text-gray-500 mb-1.5">일과 {isEdit ? '' : '(직원 기본 업무에서 선택)'}</label>
+          {isEdit ? (
+            <div className="px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm text-gray-700">{fixedLabel}</div>
+          ) : opts.length === 0 ? (
+            <p className="px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm text-gray-400">추가할 수 있는 기본 업무가 없어요 (이미 다 추가됨)</p>
+          ) : (
+            <select value={label} onChange={e => setLabel(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300">
+              {opts.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          )}
         </div>
 
         <div>
@@ -435,7 +457,7 @@ function RoutineAddModal({ onClose, onAdd }: { onClose: () => void; onAdd: (labe
           <button onClick={onClose} className="px-5 py-3 rounded-2xl text-sm text-gray-500 hover:bg-gray-100 transition-colors active:scale-95">취소</button>
           <button onClick={submit} disabled={!label.trim() || busy}
             className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all active:scale-[0.97]">
-            {busy ? '추가 중…' : '추가'}
+            {busy ? '저장 중…' : (isEdit ? '저장' : '추가')}
           </button>
         </div>
       </div>
@@ -457,6 +479,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
   const [nameVal, setNameVal] = useState(staff.name);
   const [showPrompt, setShowPrompt] = useState(false);
   const [showRoutine, setShowRoutine] = useState(false);
+  const [editingRoutine, setEditingRoutine] = useState<StaffRoutine | null>(null);
   const [showModel, setShowModel] = useState(false);
   const modelLabel = (m: string) => MODEL_OPTIONS.find(o => o.key === m)?.label || m;
   const changeModel = async (m: StaffModel) => {
@@ -535,6 +558,15 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
     try { const r = await addRoutine(staff.id, workspace.id, label, opts); setRoutines(prev => [...prev, r]); }
     catch { loadRoutines(); }
   };
+  const handleEditRoutine = async (label: string, opts: RoutineOpts) => {
+    if (!editingRoutine) return;
+    const id = editingRoutine.id;
+    setRoutines(prev => prev.map(x => x.id === id ? { ...x, label, ...opts } : x));
+    await updateRoutine(id, { schedule: opts.schedule, runAt: opts.runAt, dayOfWeek: opts.dayOfWeek, dayOfMonth: opts.dayOfMonth }).catch(loadRoutines);
+  };
+  // 추가 가능한 기본 업무 (이미 등록된 건 제외 — 자유 입력 대신 정해진 업무만)
+  const existingLabels = new Set(routines.map(r => r.label));
+  const availableRoutines = (type?.defaultRoutines ?? []).filter(l => !existingLabels.has(l));
 
   return (
     <>
@@ -616,7 +648,8 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
               <button onClick={() => toggleRoutine(r)} title={r.enabled ? '끄기' : '켜기'}
                 className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] text-white transition-colors ${r.enabled ? 'bg-primary-500' : 'bg-gray-300'}`}>✓</button>
               <span className={`text-sm flex-1 ${r.enabled ? 'text-gray-700' : 'text-gray-300 line-through'}`}>{r.label}</span>
-              <span className="text-[10px] text-gray-400 flex-shrink-0">{formatSchedule(r)}</span>
+              <button onClick={() => setEditingRoutine(r)} title="일정 수정"
+                className="text-[10px] text-gray-400 flex-shrink-0 hover:text-primary-500 transition-colors">{formatSchedule(r)} ✎</button>
               <button onClick={() => removeRoutine(r.id)} title="삭제"
                 className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-rose-400 text-sm transition-all">×</button>
             </div>
@@ -693,7 +726,20 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
 
       {manualOpen && <ManualRunModal staff={staff} workspace={workspace} fields={inputForm} presetMode={manualMode} emoji={type?.emoji} onClose={() => setManualOpen(false)} onDone={onManualDone} />}
       {showPrompt && <PromptModal staff={staff} onClose={() => setShowPrompt(false)} onSaved={onChanged} />}
-      {showRoutine && <RoutineAddModal onClose={() => setShowRoutine(false)} onAdd={handleAddRoutine} />}
+      {showRoutine && <RoutineScheduleModal labelOptions={availableRoutines} onClose={() => setShowRoutine(false)} onSubmit={handleAddRoutine} />}
+      {editingRoutine && (
+        <RoutineScheduleModal
+          fixedLabel={editingRoutine.label}
+          initial={{
+            schedule: editingRoutine.schedule === 'realtime' ? 'daily' : editingRoutine.schedule,
+            runAt: editingRoutine.runAt,
+            dayOfWeek: editingRoutine.dayOfWeek,
+            dayOfMonth: editingRoutine.dayOfMonth,
+          }}
+          onClose={() => setEditingRoutine(null)}
+          onSubmit={handleEditRoutine}
+        />
+      )}
     </>
   );
 }

@@ -121,7 +121,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
   );
 
   return (
-    <div className="office-shell h-screen flex bg-gray-50 text-gray-800">
+    <div className="office-shell h-[100dvh] overflow-hidden flex bg-gray-50 text-gray-800">
       {/* 좌측 아이콘 레일 (PC) */}
       <aside className="w-[76px] flex-shrink-0 bg-white border-r border-gray-100 hidden lg:flex flex-col items-center py-4 gap-1">
         {/* 프로필 = 워크스페이스 전환 토글 */}
@@ -181,7 +181,8 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
 
       {/* 메인 */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 flex-shrink-0 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-5 gap-2">
+        <header className="flex-shrink-0 bg-white border-b border-gray-100 pt-[env(safe-area-inset-top)]">
+         <div className="h-14 flex items-center justify-between px-4 sm:px-5 gap-2">
           {/* 모바일: 워크스페이스 버튼(더보기 열기) / PC: 사업 정보 */}
           <button onClick={() => setMoreOpen(true)} className="lg:hidden flex items-center gap-1.5 min-w-0 active:scale-95 transition-transform">
             <span className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center text-lg flex-shrink-0">
@@ -195,6 +196,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 flex-shrink-0 hover:opacity-70 active:scale-95 ${coinPulse ? 'scale-125 text-amber-500' : 'text-gray-500'}`}>
             <span>🪙</span><span>{credits != null ? credits.toLocaleString() : '—'}</span>
           </button>
+         </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6">
