@@ -11,7 +11,7 @@ import { fetchMembers, removeMember, changeMemberRole } from '../../services/wor
 import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, addSchedule, deleteSchedule, ScheduleRow } from '../../services/schedules.service';
-import { fetchInsights, InsightRow } from '../../services/insights.service';
+import { fetchInsights, addInsight, deleteInsight, InsightRow } from '../../services/insights.service';
 import { Spark, ViewHead, Card, EmptyState } from './ui';
 
 type Nav = (v: string) => void;
@@ -233,31 +233,59 @@ export function ScheduleView({ workspace }: { workspace: Workspace }) {
 /* ───────── 인사이트 (실데이터 · 직원 AI 제안 포함) ───────── */
 export function InsightsView({ workspace }: { workspace: Workspace }) {
   const [list, setList] = useState<InsightRow[]>([]);
-  useEffect(() => {
-    fetchInsights()
-      .then(rows => setList(rows.filter((r: any) => r.workspace_id === workspace.id)))
-      .catch(() => setList([]));
-  }, [workspace.id]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: '', content: '', source: '', link: '', tags: '' });
+  const load = () => fetchInsights(workspace.id).then(setList).catch(() => setList([]));
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
+
+  const fieldCls = 'w-full px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 transition-colors';
+  const save = async () => {
+    if (!form.title.trim()) return;
+    await addInsight({
+      title: form.title.trim(), content: form.content, source: form.source || '직접 입력', link: form.link || undefined,
+      tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      workspace_id: workspace.id,
+    } as Omit<InsightRow, 'id' | 'created_at' | 'conversation_id'>).catch(() => {});
+    setForm({ title: '', content: '', source: '', link: '', tags: '' }); setShowForm(false); load();
+  };
+  const del = async (id: string) => { await deleteInsight(id).catch(() => {}); load(); };
 
   return (
     <>
       <ViewHead eyebrow="INSIGHTS" title="인사이트" sub={`인사이트 ${list.length}건`} />
-      <Card className="p-5 mb-3">
-        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">주간 매출 추이 (샘플)</div>
-        <div className="text-3xl font-extrabold text-gray-800 mb-2">320<span className="text-base text-gray-400 ml-1">만원</span></div>
-        <Spark data={[180, 210, 190, 250, 280, 300, 320]} h={64} />
-      </Card>
+      <div className="flex justify-end mb-3">
+        <button onClick={() => setShowForm(v => !v)}
+          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 인사이트 추가</button>
+      </div>
+      {showForm && (
+        <Card className="p-4 mb-3 space-y-2.5">
+          <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="제목" className={fieldCls} />
+          <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="내용" rows={3} className={`${fieldCls} resize-none`} />
+          <div className="flex gap-2">
+            <input value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} placeholder="출처 (선택)" className={fieldCls} />
+            <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="태그 (쉼표로)" className={fieldCls} />
+          </div>
+          <input value={form.link} onChange={e => setForm({ ...form, link: e.target.value })} placeholder="링크 (선택)" className={fieldCls} />
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-xl text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={save} disabled={!form.title.trim()}
+              className="px-4 py-1.5 rounded-xl text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">저장</button>
+          </div>
+        </Card>
+      )}
       {list.length === 0 ? (
-        <EmptyState emoji="💡" title="아직 인사이트가 없어요" sub="AI 직원이 ‘지금 실행’ 시 트렌드·소구점을 자동으로 도출해요" />
+        <EmptyState emoji="💡" title="아직 인사이트가 없어요" sub="직접 추가하거나, AI 직원이 트렌드·소구점을 자동 도출해요" />
       ) : (
         <div className="space-y-2">
           {list.map(i => (
-            <Card key={i.id} className="p-4">
+            <Card key={i.id} className="group p-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-gray-800 flex-1">{i.title}</span>
                 {i.tags?.includes('🤖 AI') && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-600 flex-shrink-0">🤖 {i.source}</span>}
+                <button onClick={() => del(i.id)} className="text-[11px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">삭제</button>
               </div>
-              {i.content && i.content !== i.title && <p className="text-xs text-gray-500 mt-1">{i.content}</p>}
+              {i.content && i.content !== i.title && <p className="text-xs text-gray-500 mt-1 whitespace-pre-wrap">{i.content}</p>}
+              {i.link && <a href={i.link} target="_blank" rel="noreferrer" className="text-[11px] text-primary-500 mt-1 inline-block break-all">{i.link}</a>}
             </Card>
           ))}
         </div>

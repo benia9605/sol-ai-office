@@ -17,17 +17,16 @@ export interface InsightRow {
   project?: string;
   starred?: boolean;
   conversation_id?: string;
+  workspace_id?: string;
   created_at: string;
 }
 
-export async function fetchInsights(): Promise<InsightRow[]> {
+/** workspaceId 주면 그 워크스페이스(오피스), 없으면 개인(workspace_id NULL) */
+export async function fetchInsights(workspaceId?: string): Promise<InsightRow[]> {
   const userId = await getCurrentUserId();
-  const { data, error } = await supabase
-    .from('insights')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
+  let q = supabase.from('insights').select('*').eq('user_id', userId);
+  q = workspaceId ? q.eq('workspace_id', workspaceId) : q.is('workspace_id', null);
+  const { data, error } = await q.order('created_at', { ascending: false });
   if (error) throw error;
   return data ?? [];
 }
