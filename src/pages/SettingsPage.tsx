@@ -14,6 +14,7 @@ import { uploadImage, deleteImage } from '../services/storage.service';
 import { NotificationSettings } from '../components/NotificationSettings';
 import { ThemePicker } from '../components/ThemePicker';
 import { useTheme } from '../contexts/ThemeContext';
+import { WorkspaceSettingsCard } from '../components/WorkspaceSettingsCard';
 import { SettingsPageModern } from './SettingsPage.modern';
 
 const PROJECT_COLOR_PRESETS = [
@@ -191,6 +192,9 @@ function SettingsPageModi() {
     <div className="min-h-full bg-gradient-to-br from-gray-50 via-white to-primary-50/20 p-4 sm:p-6 lg:p-8">
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-xl font-bold text-gray-800">설정</h1>
+
+        {/* 내 공간 (워크스페이스 이름/이미지) */}
+        <WorkspaceSettingsCard />
 
         {/* 내 정보 */}
         <section className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6">

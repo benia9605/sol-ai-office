@@ -14,6 +14,7 @@ import { Project } from '../types';
 import { uploadImage, deleteImage } from '../services/storage.service';
 import { NotificationSettings } from '../components/NotificationSettings';
 import { ThemePicker } from '../components/ThemePicker';
+import { WorkspaceSettingsCard } from '../components/WorkspaceSettingsCard';
 
 const EMOJI_PRESETS = [
   '📁', '🚀', '💡', '🎯', '📊', '🛒', '🎨', '📱',
@@ -134,6 +135,9 @@ export function SettingsPageModern() {
             프로필 · 테마 · 알림 · 프로젝트 관리
           </p>
         </section>
+
+        {/* ── 내 공간 (워크스페이스 이름/이미지) ── */}
+        <WorkspaceSettingsCard />
 
         {/* ── 내 정보 ── */}
         <section className="space-y-5">
