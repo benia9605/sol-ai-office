@@ -37,12 +37,17 @@ export async function addReportComment(reportId: string, text: string): Promise<
   return next;
 }
 
-export async function fetchReportsByStaff(staffId: string): Promise<DailyReport[]> {
+// 목록용 경량 컬럼 — 큰 컬럼(content_json·body·input·comments) 제외 (egress 절감)
+//  → 본문은 펼칠 때 fetchReportById로 단건 조회
+const LIST_COLS = 'id, workspace_id, staff_id, date, title, summary, trigger, output_kind, status, model, created_at';
+
+export async function fetchReportsByStaff(staffId: string, limit = 20): Promise<DailyReport[]> {
   const { data, error } = await supabase
     .from('daily_reports')
-    .select('*')
+    .select(LIST_COLS)
     .eq('staff_id', staffId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(limit);
   if (error) throw error;
   return (data ?? []).map(toReport);
 }
@@ -50,12 +55,23 @@ export async function fetchReportsByStaff(staffId: string): Promise<DailyReport[
 export async function fetchReportsByWorkspace(workspaceId: string, limit = 20): Promise<DailyReport[]> {
   const { data, error } = await supabase
     .from('daily_reports')
-    .select('*')
+    .select(LIST_COLS)
     .eq('workspace_id', workspaceId)
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
   return (data ?? []).map(toReport);
+}
+
+/** 단건 전체 조회 (본문·content_json·comments 포함) — 리포트 펼칠 때만 */
+export async function fetchReportById(id: string): Promise<DailyReport | null> {
+  const { data, error } = await supabase
+    .from('daily_reports')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toReport(data) : null;
 }
 
 export async function createReport(args: {

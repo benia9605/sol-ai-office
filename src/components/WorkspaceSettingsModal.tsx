@@ -7,6 +7,7 @@ import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Workspace } from '../types';
 import { updateWorkspace } from '../services/workspaces.service';
+import { uploadImage } from '../services/storage.service';
 
 const EMOJIS = ['🏢', '🧸', '👤', '🚀', '💼', '🌱', '⭐', '🔥', '🎯', '🛒', '🎨', '💡', '📚', '🏠', '☕', '🐰'];
 
@@ -19,7 +20,8 @@ interface Props {
 export function WorkspaceSettingsModal({ workspace, onClose, onSaved }: Props) {
   const [name, setName] = useState(workspace.name);
   const [emoji, setEmoji] = useState(workspace.emoji || (workspace.type === 'office' ? '🏢' : '🧸'));
-  const [image, setImage] = useState<string | null>(workspace.imageUrl ?? null);
+  const [image, setImage] = useState<string | null>(workspace.imageUrl ?? null); // 표시용(기존 URL 또는 새 미리보기)
+  const [imageFile, setImageFile] = useState<File | null>(null); // 새로 고른 파일만
   const [bizInfo, setBizInfo] = useState(workspace.bizInfo ?? '');
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -29,8 +31,9 @@ export function WorkspaceSettingsModal({ workspace, onClose, onSaved }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) { alert('이미지는 2MB 이하로 올려주세요.'); return; }
+    setImageFile(file);
     const reader = new FileReader();
-    reader.onload = () => setImage(reader.result as string);
+    reader.onload = () => setImage(reader.result as string); // 미리보기용만
     reader.readAsDataURL(file);
   };
 
@@ -38,10 +41,12 @@ export function WorkspaceSettingsModal({ workspace, onClose, onSaved }: Props) {
     if (!name.trim() || busy) return;
     setBusy(true);
     try {
+      // 새 파일이면 Storage 업로드 → URL, 아니면 기존 image(URL) 유지, 제거했으면 undefined
+      const imageUrl = imageFile ? await uploadImage(imageFile, 'workspaces') : (image || undefined);
       await updateWorkspace(workspace.id, {
         name,
         emoji,
-        imageUrl: image || undefined,
+        imageUrl,
         bizInfo: isOffice ? bizInfo.trim() : undefined,
       });
       await onSaved();

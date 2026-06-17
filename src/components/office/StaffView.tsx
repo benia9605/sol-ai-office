@@ -9,7 +9,7 @@ import { Staff, StaffRoutine, DailyReport, Workspace, StaffOutputAction, ReportC
 import { saveItem, fetchSavedItems, deleteSavedItem } from '../../services/staffSavedItems.service';
 import { getStaffType } from '../../data/staffCatalog';
 import { fetchStaff, fetchRoutines, setStaffState, deleteStaff, updateStaff, addRoutine, updateRoutine, deleteRoutine } from '../../services/staff.service';
-import { fetchReportsByStaff, addReportComment } from '../../services/dailyReports.service';
+import { fetchReportsByStaff, fetchReportById, addReportComment } from '../../services/dailyReports.service';
 import { runStaffNow, runRoutineNow, previewStaffManual, saveStaffResult, StaffRunResult } from '../../services/staffRun.service';
 import { fetchActions, approveAction, dismissAction } from '../../services/staffOutputActions.service';
 import { getInputForm } from '../../data/staffInputForms';
@@ -102,9 +102,24 @@ function ReportComments({ reportId, initial }: { reportId: string; initial?: Rep
 /* ── 리포트 카드 (펼침) ── */
 function ReportCard({ r, onSave }: { r: DailyReport; onSave?: (itemType: string, payload: any) => void }) {
   const [open, setOpen] = useState(false);
+  const [full, setFull] = useState<DailyReport | null>(null); // 본문은 펼칠 때 단건 로드 (egress 절감)
+  const [loading, setLoading] = useState(false);
+
+  const toggle = async () => {
+    const next = !open;
+    setOpen(next);
+    if (next && !full) {
+      setLoading(true);
+      try { setFull(await fetchReportById(r.id)); }
+      catch { /* 무시 — 본문 없이 표시 */ }
+      finally { setLoading(false); }
+    }
+  };
+
+  const d = full ?? r;
   return (
     <Card className="p-4">
-      <button onClick={() => setOpen(o => !o)} className="w-full text-left">
+      <button onClick={toggle} className="w-full text-left">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${r.trigger === 'manual' ? 'bg-violet-50 text-violet-500' : 'bg-gray-100 text-gray-400'}`}>{r.trigger === 'manual' ? '👤 수동' : '🕒 자동'}</span>
@@ -116,19 +131,20 @@ function ReportCard({ r, onSave }: { r: DailyReport; onSave?: (itemType: string,
       </button>
       {open && (
         <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
-          {r.contentJson && (r.contentJson as { _demo?: boolean })._demo && (
+          {loading && <p className="text-xs text-gray-300 py-2 text-center">불러오는 중…</p>}
+          {d.contentJson && (d.contentJson as { _demo?: boolean })._demo && (
             <div className="text-[10px] text-amber-600 bg-amber-50 rounded-lg px-2 py-1 inline-block">🧪 데모 미리보기 — API 키 설정 시 실제 데이터로 채워져요</div>
           )}
-          {r.contentJson && (
-            <StaffOutputView outputKind={r.outputKind} data={r.contentJson} onSave={onSave} />
+          {d.contentJson && (
+            <StaffOutputView outputKind={d.outputKind} data={d.contentJson} onSave={onSave} />
           )}
-          {r.body && (
+          {d.body && (
             <Card className="p-3 space-y-1.5">
-              {r.contentJson && <div className="text-[11px] font-semibold text-gray-400 tracking-wide">상세 보고서</div>}
-              <MarkdownView text={r.body} className="report-md" />
+              {d.contentJson && <div className="text-[11px] font-semibold text-gray-400 tracking-wide">상세 보고서</div>}
+              <MarkdownView text={d.body} className="report-md" />
             </Card>
           )}
-          <ReportComments reportId={r.id} initial={r.comments} />
+          {!loading && <ReportComments reportId={r.id} initial={d.comments} />}
         </div>
       )}
     </Card>

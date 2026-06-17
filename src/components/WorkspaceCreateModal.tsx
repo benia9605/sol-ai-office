@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createWorkspace, joinByInviteCode } from '../services/workspaces.service';
+import { uploadImage } from '../services/storage.service';
 import { Workspace, WorkspaceType } from '../types';
 
 interface Props {
@@ -28,7 +29,8 @@ export function WorkspaceCreateModal({ open, onClose, onCreated, initialStep = '
   const [type, setType] = useState<WorkspaceType>('office');
   const [name, setName] = useState('');
   const [bizInfo, setBizInfo] = useState('');
-  const [image, setImage] = useState<string | null>(null);
+  const [image, setImage] = useState<string | null>(null); // 미리보기(base64) — 저장 안 함
+  const [imageFile, setImageFile] = useState<File | null>(null); // 실제 업로드 파일
   const [busy, setBusy] = useState(false);
   const [code, setCode] = useState('');
   const [joinErr, setJoinErr] = useState('');
@@ -41,7 +43,7 @@ export function WorkspaceCreateModal({ open, onClose, onCreated, initialStep = '
 
   if (!open) return null;
 
-  const reset = () => { setStep('choose'); setType('office'); setName(''); setBizInfo(''); setImage(null); setCode(''); setJoinErr(''); };
+  const reset = () => { setStep('choose'); setType('office'); setName(''); setBizInfo(''); setImage(null); setImageFile(null); setCode(''); setJoinErr(''); };
 
   const join = async () => {
     if (!code.trim() || busy) return;
@@ -60,8 +62,9 @@ export function WorkspaceCreateModal({ open, onClose, onCreated, initialStep = '
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) { alert('이미지는 2MB 이하로 올려주세요.'); return; }
+    setImageFile(file);
     const reader = new FileReader();
-    reader.onload = () => setImage(reader.result as string);
+    reader.onload = () => setImage(reader.result as string); // 미리보기용만
     reader.readAsDataURL(file);
   };
 
@@ -69,8 +72,10 @@ export function WorkspaceCreateModal({ open, onClose, onCreated, initialStep = '
     if (!name.trim() || busy) return;
     setBusy(true);
     try {
+      // 이미지는 Storage 업로드 후 URL만 저장 (base64 DB 저장 금지 — egress)
+      const imageUrl = imageFile ? await uploadImage(imageFile, 'workspaces') : undefined;
       const ws = await createWorkspace(type, name, {
-        imageUrl: image || undefined,
+        imageUrl,
         bizInfo: type === 'office' ? bizInfo.trim() || undefined : undefined,
       });
       onCreated(ws);

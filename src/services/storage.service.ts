@@ -11,7 +11,7 @@ const BUCKET = 'uploads';
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 
-export type StorageFolder = 'projects' | 'readings' | 'notes' | 'sources';
+export type StorageFolder = 'projects' | 'readings' | 'notes' | 'sources' | 'workspaces';
 
 /**
  * 이미지를 Supabase Storage에 업로드하고 public URL을 반환
