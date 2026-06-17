@@ -106,11 +106,10 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
         <p className="text-sm text-gray-400 mt-0.5">{workspace.name} · 진행 중 할일 {open.length}건 · 멤버 {members.length}명</p>
       </div>
 
-      {/* KPI 스트립 — 실데이터 연동 전엔 0 (배포·연동 시 자동 반영) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-1">
-        {kpis.map((kpi, i) => {
-          const empty = kpi.value === 0 && kpi.delta === null;
-          return (
+      {/* KPI 스트립 — 실데이터 있을 때만 표시 (연동 전엔 빈 그래프 숨김) */}
+      {kpis.some(k => k.value > 0 || k.delta !== null) && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          {kpis.map((kpi, i) => (
             <Card key={i} className="p-4 transition-all hover:shadow-md">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-500">{kpi.k}</span>
@@ -118,15 +117,14 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
                   ? <span className="text-xs font-semibold text-gray-300">—</span>
                   : <span className={`text-xs font-semibold ${kpi.delta >= 0 ? 'text-emerald-500' : 'text-rose-400'}`}>{kpi.delta >= 0 ? '▲' : '▼'} {Math.abs(kpi.delta)}%</span>}
               </div>
-              <div className={`text-2xl font-extrabold mt-1 ${empty ? 'text-gray-300' : 'text-gray-800'}`}>
+              <div className="text-2xl font-extrabold mt-1 text-gray-800">
                 {kpi.value.toLocaleString()}<span className="text-sm font-semibold text-gray-400 ml-0.5">{kpi.unit}</span>
               </div>
               <div className="mt-1"><Spark data={kpi.spark} /></div>
             </Card>
-          );
-        })}
-      </div>
-      <p className="text-[11px] text-gray-300 mb-4 pl-1">· 실데이터 연동 전이에요 — 지표 소스/분석가 직원 연동 시 자동으로 채워져요</p>
+          ))}
+        </div>
+      )}
 
       {/* 브리핑 배너 */}
       <button onClick={() => onNavigate('briefing')}
