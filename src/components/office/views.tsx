@@ -13,6 +13,7 @@ import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, addSchedule, deleteSchedule, ScheduleRow } from '../../services/schedules.service';
 import { fetchInsights, addInsight, deleteInsight, InsightRow } from '../../services/insights.service';
 import { fetchRecords, addRecord, deleteRecord, RecordRow } from '../../services/records.service';
+import { fetchExternalKpis, ExternalKpiRow } from '../../services/externalKpis.service';
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { Spark, ViewHead, Card, EmptyState } from './ui';
 
@@ -37,20 +38,33 @@ function ClaudeQuickButtons({ onClaude, onQA }: { onClaude: () => void; onQA: ()
 type Nav = (v: string) => void;
 
 /* ───────── 대시보드 ───────── */
-// KPI 지표 정의 — 값/추이는 실데이터 연동 시 채워짐 (분석가 직원/지표 연동 전엔 0)
-const KPI_METRICS: { k: string; unit: string }[] = [
-  { k: '주간 매출', unit: '만원' },
-  { k: '전환율', unit: '%' },
-  { k: '방문자', unit: 'K' },
-  { k: '신규 문의', unit: '건' },
-];
 const FLAT_SPARK = [0, 0, 0, 0, 0, 0, 0];
 
-/** 워크스페이스 실데이터 기반 KPI (미연동 시 0). 추후 분석가 직원/지표 소스 연결 */
+// 외부 KPI(원/raw) → 대시보드 카드 단위 변환
+const KPI_DEFS: { k: string; unit: string; pick: (r: ExternalKpiRow) => number | null }[] = [
+  { k: '주간 매출', unit: '만원', pick: (r) => (r.revenue != null ? Math.round(r.revenue / 10000) : null) },
+  { k: '전환율',   unit: '%',   pick: (r) => r.conversion_rate },
+  { k: '방문자',   unit: 'K',   pick: (r) => (r.visitors != null ? Math.round((r.visitors / 1000) * 10) / 10 : null) },
+  { k: '신규 문의', unit: '건',  pick: (r) => (r.inquiries ?? r.orders) },
+];
+
 type Kpi = { k: string; unit: string; value: number; spark: number[]; delta: number | null };
-function useDashboardKpis(_workspaceId: string): Kpi[] {
-  // TODO: 실데이터 연동 — 매출/전환율/방문자/문의 소스 연결 시 value·spark·delta 채우기
-  return KPI_METRICS.map((m) => ({ k: m.k, unit: m.unit, value: 0, spark: FLAT_SPARK, delta: null }));
+
+/** 워크스페이스 KPI — external_kpis(외부 앱 PUSH) 기반. 미연동/데이터 없으면 0·플랫 */
+function useDashboardKpis(workspaceId: string): Kpi[] {
+  const [rows, setRows] = useState<ExternalKpiRow[]>([]);
+  useEffect(() => {
+    fetchExternalKpis(workspaceId, 7).then(setRows).catch(() => setRows([]));
+  }, [workspaceId]);
+
+  return KPI_DEFS.map((def) => {
+    const series = rows.map((r) => def.pick(r)).filter((v): v is number => v != null);
+    if (series.length === 0) return { k: def.k, unit: def.unit, value: 0, spark: FLAT_SPARK, delta: null };
+    const value = series[series.length - 1];
+    const prev = series.length > 1 ? series[series.length - 2] : null;
+    const delta = prev && prev !== 0 ? Math.round(((value - prev) / prev) * 100) : null;
+    return { k: def.k, unit: def.unit, value, spark: series.length > 1 ? series : [series[0], series[0]], delta };
+  });
 }
 
 export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; workspace: Workspace }) {
