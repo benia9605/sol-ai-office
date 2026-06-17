@@ -4,7 +4,7 @@
  * - 실데이터: 할일(useTasks, 워크스페이스 필터됨) · 멤버(fetchMembers)
  * - 샘플/빈 상태: 대시보드 KPI·브리핑·일정·인사이트·기록 (실연동은 Phase 4~5)
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Workspace, WorkspaceMember, TaskItem, DailyReport } from '../../types';
 import { useTasks } from '../../hooks/useTasks';
 import { fetchMembers, removeMember, changeMemberRole } from '../../services/workspaces.service';
@@ -13,8 +13,26 @@ import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, addSchedule, deleteSchedule, ScheduleRow } from '../../services/schedules.service';
 import { fetchInsights, addInsight, deleteInsight, InsightRow } from '../../services/insights.service';
 import { fetchRecords, addRecord, deleteRecord, RecordRow } from '../../services/records.service';
-import { TiptapEditor } from '../tiptap/TiptapEditor';
+import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { Spark, ViewHead, Card, EmptyState } from './ui';
+
+/** 클로드/질문 빠른삽입 버튼 (스터디노트와 동일 UX) */
+function ClaudeQuickButtons({ onClaude, onQA }: { onClaude: () => void; onQA: () => void }) {
+  return (
+    <div className="flex items-center gap-1">
+      <button type="button" onClick={onClaude} title="Claude 대화 세트 (나 / Claude)"
+        className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors inline-flex items-center">
+        <img src="/images/claude.png" alt="Claude" className="w-4 h-4" />
+      </button>
+      <button type="button" onClick={onQA} title="질문 + 답변"
+        className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors inline-flex items-center">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+      </button>
+    </div>
+  );
+}
 
 type Nav = (v: string) => void;
 
@@ -330,8 +348,21 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
   const [list, setList] = useState<InsightRow[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', content: '', source: '', link: '', tags: '' });
+  const contentRef = useRef<HTMLTextAreaElement>(null);
   const load = () => fetchInsights(workspace.id).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
+
+  // 커서 위치에 템플릿 삽입 (content는 plain text라 텍스트 템플릿으로)
+  const insertTpl = (tpl: string) => {
+    const el = contentRef.current;
+    const cur = form.content;
+    const pos = el ? el.selectionStart : cur.length;
+    const next = cur.slice(0, pos) + tpl + cur.slice(pos);
+    setForm(f => ({ ...f, content: next }));
+    requestAnimationFrame(() => { if (el) { el.focus(); const c = pos + tpl.length; el.setSelectionRange(c, c); } });
+  };
+  const insertClaude = () => insertTpl(`${form.content && !form.content.endsWith('\n') ? '\n' : ''}[나]\n\n[Claude]\n\n`);
+  const insertQA = () => insertTpl(`${form.content && !form.content.endsWith('\n') ? '\n' : ''}[질문]\n\n[답변]\n\n`);
 
   const fieldCls = 'w-full px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 transition-colors';
   const save = async () => {
@@ -355,7 +386,11 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
       {showForm && (
         <Card className="p-4 mb-3 space-y-2.5">
           <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="제목" className={fieldCls} />
-          <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="내용" rows={3} className={`${fieldCls} resize-none`} />
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-gray-500">내용</label>
+            <ClaudeQuickButtons onClaude={insertClaude} onQA={insertQA} />
+          </div>
+          <textarea ref={contentRef} value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="내용" rows={4} className={`${fieldCls} resize-none`} />
           <div className="flex gap-2">
             <input value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} placeholder="출처 (선택)" className={fieldCls} />
             <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="태그 (쉼표로)" className={fieldCls} />
@@ -395,6 +430,7 @@ export function LogView({ workspace }: { workspace: Workspace }) {
   const [writing, setWriting] = useState(false);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState<any>(undefined);
+  const editorRef = useRef<TiptapEditorHandle>(null);
   const load = () => fetchRecords(workspace.id, 'memo').then(setMemos).catch(() => setMemos([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
 
@@ -419,8 +455,14 @@ export function LogView({ workspace }: { workspace: Workspace }) {
         <Card className="p-4 mb-3 space-y-2.5">
           <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="제목"
             className="w-full px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 transition-colors" />
+          <div className="flex justify-end">
+            <ClaudeQuickButtons
+              onClaude={() => editorRef.current?.insertClaudeBlock()}
+              onQA={() => editorRef.current?.insertQABlock()}
+            />
+          </div>
           <div className="border border-gray-100 rounded-xl px-2 py-1 max-h-[55vh] overflow-y-auto">
-            <TiptapEditor content={body} onChange={setBody} placeholder="메모를 작성하세요..." />
+            <TiptapEditor ref={editorRef} content={body} onChange={setBody} placeholder="메모를 작성하세요..." />
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setWriting(false); setTitle(''); setBody(undefined); }} className="px-3 py-1.5 rounded-xl text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
