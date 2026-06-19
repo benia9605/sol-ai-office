@@ -692,7 +692,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
         <div className="mb-4">
           <div className="flex items-center h-9 mb-2"><span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">직접 시키기 (수동)</span></div>
           {modeOptions.length > 0 ? (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {modeOptions.map(m => (
                 <button key={m} onClick={() => openManual(m)}
                   className="flex flex-col items-center justify-center gap-2 py-6 px-2 rounded-[24px] bg-primary-50 border border-primary-100 hover:bg-primary-100 hover:shadow-md active:scale-95 transition-all">
