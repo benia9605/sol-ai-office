@@ -11,7 +11,7 @@ const BUCKET = 'uploads';
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 
-export type StorageFolder = 'projects' | 'readings' | 'notes' | 'sources' | 'workspaces';
+export type StorageFolder = 'projects' | 'readings' | 'notes' | 'sources' | 'workspaces' | 'visuals';
 
 /**
  * 이미지를 Supabase Storage에 업로드하고 public URL을 반환
@@ -38,6 +38,16 @@ export async function uploadImage(file: File, folder: StorageFolder): Promise<st
     .getPublicUrl(fileName);
 
   return urlData.publicUrl;
+}
+
+/**
+ * data URL(base64)을 Storage에 업로드하고 public URL 반환 (생성 이미지용 — DB에 base64 저장 방지)
+ */
+export async function uploadDataUrl(dataUrl: string, folder: StorageFolder): Promise<string> {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  const file = new File([blob], `gen-${Date.now()}.png`, { type: blob.type || 'image/png' });
+  return uploadImage(file, folder);
 }
 
 /**

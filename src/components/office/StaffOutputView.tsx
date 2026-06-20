@@ -8,6 +8,8 @@
 import { useState } from 'react';
 import { Card } from './ui';
 import { generateImage, ratioToSize } from '../../services/imageGen.service';
+import { uploadDataUrl } from '../../services/storage.service';
+import { deductCredits } from '../../services/credits.service';
 
 /* ═══════════ 공통 컴포넌트 (GPT 검증: 직원별 다른 UI, 내부 컴포넌트는 재사용) ═══════════ */
 const STAFF_META: Record<string, { emoji: string; label: string }> = {
@@ -683,12 +685,23 @@ function ShotRow({ s, grade }: { s: any; grade: string }) {
     </div>
   );
 }
-function ImageBriefView({ d, onSave }: { d: any; onSave?: (itemType: string, payload: any) => void }) {
+function ImageBriefView({ d, onSave, workspaceId, staffId, onCredits }: { d: any; onSave?: (itemType: string, payload: any) => void; workspaceId?: string; staffId?: string; onCredits?: () => void }) {
   const [busy, setBusy] = useState<number | null>(null);
   const [imgs, setImgs] = useState<Record<number, string>>({});
   const gen = async (p: any, i: number) => {
     setBusy(i);
-    try { const { url } = await generateImage(p.text, ratioToSize(p.ratio)); if (url) setImgs(prev => ({ ...prev, [i]: url })); }
+    try {
+      const { url: dataUrl, coins } = await generateImage(p.text, ratioToSize(p.ratio));
+      if (!dataUrl) return;
+      // base64 그대로 저장하면 egress 폭증 → Storage 업로드 후 URL만 사용 (실패 시 dataURL 폴백)
+      let url = dataUrl;
+      try { url = await uploadDataUrl(dataUrl, 'visuals'); } catch { /* 업로드 실패 시 미리보기는 dataURL */ }
+      setImgs(prev => ({ ...prev, [i]: url }));
+      // 코인 차감 (워크스페이스 컨텍스트 있을 때만)
+      if (workspaceId && coins > 0) {
+        try { await deductCredits({ workspaceId, staffId, model: 'gpt-image-1', coins }); onCredits?.(); } catch { /* 차감 실패 무시 */ }
+      }
+    }
     catch (e: any) { alert(e?.message || '이미지 생성 실패 — gpt-image-1 권한/비용을 확인해주세요'); }
     finally { setBusy(null); }
   };
@@ -841,7 +854,7 @@ function OpsDigestView({ d }: { d: any }) {
 }
 
 /* ───────── 분기 ───────── */
-export function StaffOutputView({ outputKind, data, onSave }: { outputKind?: string; data: any; onSave?: (itemType: string, payload: any) => void }) {
+export function StaffOutputView({ outputKind, data, onSave, workspaceId, staffId, onCredits }: { outputKind?: string; data: any; onSave?: (itemType: string, payload: any) => void; workspaceId?: string; staffId?: string; onCredits?: () => void }) {
   if (!data || typeof data !== 'object') return null;
   switch (outputKind) {
     case 'sourcing_brief': return <SourcingView d={data} onSave={onSave} />;
@@ -851,7 +864,7 @@ export function StaffOutputView({ outputKind, data, onSave }: { outputKind?: str
     case 'copy_variants': return <CopyVariantsView d={data} onSave={onSave} />;
     case 'monitor_digest': return <MonitorDigestView d={data} />;
     case 'metric_digest': return <MetricDigestView d={data} />;
-    case 'image_brief': return <ImageBriefView d={data} onSave={onSave} />;
+    case 'image_brief': return <ImageBriefView d={data} onSave={onSave} workspaceId={workspaceId} staffId={staffId} onCredits={onCredits} />;
     case 'ops_digest': return <OpsDigestView d={data} />;
     default: return null; // 미구현 outputKind는 마크다운 본문만 표시
   }

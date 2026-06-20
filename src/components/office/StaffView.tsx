@@ -100,7 +100,7 @@ function ReportComments({ reportId, initial }: { reportId: string; initial?: Rep
 }
 
 /* ── 리포트 카드 (펼침) ── */
-function ReportCard({ r, onSave }: { r: DailyReport; onSave?: (itemType: string, payload: any) => void }) {
+function ReportCard({ r, onSave, onCredits }: { r: DailyReport; onSave?: (itemType: string, payload: any) => void; onCredits?: () => void }) {
   const [open, setOpen] = useState(false);
   const [full, setFull] = useState<DailyReport | null>(null); // 본문은 펼칠 때 단건 로드 (egress 절감)
   const [loading, setLoading] = useState(false);
@@ -136,7 +136,7 @@ function ReportCard({ r, onSave }: { r: DailyReport; onSave?: (itemType: string,
             <div className="text-[10px] text-amber-600 bg-amber-50 rounded-lg px-2 py-1 inline-block">🧪 데모 미리보기 — API 키 설정 시 실제 데이터로 채워져요</div>
           )}
           {d.contentJson && (
-            <StaffOutputView outputKind={d.outputKind} data={d.contentJson} onSave={onSave} />
+            <StaffOutputView outputKind={d.outputKind} data={d.contentJson} onSave={onSave} workspaceId={d.workspaceId} staffId={d.staffId} onCredits={onCredits} />
           )}
           {d.body && (
             <Card className="p-3 space-y-1.5">
@@ -748,7 +748,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
           )}
         </div>
         <div className="space-y-2">
-          {pageReports.map(r => <ReportCard key={r.id} r={r} onSave={onSaveItem} />)}
+          {pageReports.map(r => <ReportCard key={r.id} r={r} onSave={onSaveItem} onCredits={onRan} />)}
           {reports.length === 0 && <EmptyState emoji="📄" title="아직 리포트가 없어요" sub="일과가 돌거나 ‘지금 한 번’을 누르면 쌓여요" />}
         </div>
       </div>
