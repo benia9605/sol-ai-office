@@ -11,6 +11,7 @@ import { createReport, fetchReportsByWorkspace } from './dailyReports.service';
 import { fetchStaff, fetchRoutines } from './staff.service';
 import { createSuggestedActions } from './staffOutputActions.service';
 import { getStaffType } from '../data/staffCatalog';
+import { MODE_DIRECTIVES } from '../data/staffInputForms';
 import { fetchBrandContext, brandContextToPrompt } from './brandContexts.service';
 import { Staff, Workspace, DailyReport, BrandContext, ReportTrigger, OutputKind } from '../types';
 
@@ -135,7 +136,7 @@ function buildSystemPrompt(staff: Staff, workspace: Workspace, brand: BrandConte
     : '';
   // ★ 수동(직접 시키기) 입력이 있으면 그것을 우선 수행, 없으면 설정된 일과
   const task = manualInput
-    ? `\n\n[작업 지시 — 사장이 직접 시킨 일. 이것을 수행해라]\n${manualInput}`
+    ? `\n\n[작업 지시 — 오직 아래 작업만 수행. 지시에 없는 다른 산출물·형식은 내지 마라. 회사 브레인 맥락을 실전으로 구체화하고 일반론·뜬구름은 금지]\n${manualInput}`
     : (tasks.length ? `\n\n[오늘 수행할 일과 — 이 내용을 실제로 해줘]\n${tasks.map(t => '- ' + t).join('\n')}` : '');
   // ★ 동료 직원들의 최근 산출물 주입 → 서로의 결과를 참고해 협업
   const peer = peerNotes.length
@@ -252,11 +253,15 @@ function parseReport(out: string): { title: string; summary: string; body: strin
 }
 
 /** 입력 객체(직접 시키기) → 지시문 */
-function inputToInstruction(input: Record<string, string>): string {
-  return Object.entries(input)
+function inputToInstruction(typeKey: string, input: Record<string, string>): string {
+  const fields = Object.entries(input)
     .filter(([, v]) => v != null && String(v).trim())
     .map(([k, v]) => `- ${k}: ${v}`)
     .join('\n');
+  // 모드별 전용 지시문을 맨 앞에 강하게 (모드가 안 갈라지는 문제 해결)
+  const mode = input.mode;
+  const directive = mode ? MODE_DIRECTIVES[typeKey]?.[mode] : undefined;
+  return directive ? `[이번 작업 — 이것만 수행]\n${directive}\n\n[입력]\n${fields}` : fields;
 }
 
 /** 데모 폴백용 outputKind별 샘플 구조 데이터 — API 키 없이도 전용 뷰를 미리 확인 */
@@ -514,7 +519,7 @@ export async function runRoutineNow(staff: Staff, workspace: Workspace, label: s
 
 /** 수동 미리보기 (직접 시키기 — 실행만, 저장 X) */
 export async function previewStaffManual(staff: Staff, workspace: Workspace, input: Record<string, string>): Promise<StaffRunResult> {
-  const manualInput = inputToInstruction(input);
+  const manualInput = inputToInstruction(staff.typeKey, input);
   const result = await runAndParse(staff, workspace, { tasks: [], manualInput });
   return { ...result, input };
 }
