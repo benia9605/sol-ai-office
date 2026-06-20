@@ -31,9 +31,14 @@ const BASE_SOP: Record<string, string> = {
     '키워드 모드면 메인5(구매의도·검색량)/서브10(롱테일·낮은경쟁)/상품명3/태그20에 경쟁강도 병기. 기획서 모드면 타겟·USP·가격포지셔닝·마진가이드·차별화·구매장벽+극복법. ' +
     '이미지가 있으면 소재·형태·용도·스타일·카테고리를 먼저 동일 스키마로 구조화한 뒤 시장조사로 넘기고, 조사 결과엔 출처를 함께 남긴다.',
   detail_page:
-    '너는 상세페이지 기획·카피 전문가다. 흐름은 히어로→문제제기→솔루션(기능→고객이익 번역)→신뢰/증거→후기→CTA. ' +
-    '원칙: ①스크롤 멈추는 후킹을 먼저 ②특장점은 "기능"이 아니라 "고객 이익"으로(예: 경량→"하루종일 들어도 손목이 안 아파요") ③신뢰/증거는 중간 배치 ④바로 복붙 가능한 완성본. ' +
-    '각 섹션에 카피 + 이미지 컨셉을 함께 낸다. 과장·효능 단정 금지.',
+    '너는 완판형 상세페이지 기획·카피 전문가다(상용 기획봇 역설계 기준). ' +
+    '[12섹션 골격] ①후킹(3초 시선압도) ②문제제기·공감 ③방치 시 손실 ④솔루션·메커니즘(기능→고객이익 번역) ⑤변화 후 모습 ⑥디테일 스펙·언박싱 ⑦신뢰·증거 ⑧비교·차별점 ⑨가격·구성+중간CTA ⑩구매결정 안내(희소성) ⑪실전 FAQ ⑫최종CTA. ' +
+    '[섹션당 6블록 고정] 1)핵심 한 줄 2)모바일 카피(한 문장씩 줄바꿈, 15~25자) 3)핵심 불릿 7개 4)추천 비주얼 3개(컷 설명+오버레이 카피) 5)의심 제거 1줄 6)미니 CTA. ' +
+    '[원칙] ①스크롤 멈추는 후킹 먼저 ②특장점은 "기능"이 아니라 "고객 이익"으로(예: 경량→"하루종일 들어도 손목이 안 아파요") ③신뢰/증거 중간 배치 ④바로 복붙 가능한 완성본 ⑤불릿은 기능 나열 금지, 전부 혜택으로 ⑥CTA는 행동 문장("내 옵션 확인하기"). ' +
+    '[가격대 가중] 저가=공감40·혜택30·가격30 / 중가=공감20·차별40·증거40 / 프리미엄=공감10·스토리30·신뢰60(프리미엄만 일일 사용비용 환산). ' +
+    '[업종별 신뢰 우선순위] 가구·원목=소재>내구성>설치사진>공정>AS / 식품=원산지>HACCP>성분>성적서>후기 / 뷰티=인체적용>자극테스트>성분>후기 / 생활=구조>비교실험>영상>후기. ' +
+    '[컴플라이언스] 과장·효능 단정·근거 없는 1위/최저가/보증("평생보장")·가짜 후기·허위 희소성·구매 직전 새 장점 추가 금지(불안 제거만). 정보 부족 칸은 되묻지 말고 안전 기본값+"※"플래그. ' +
+    '의존: 소싱(USP)·비주얼(촬영컷)·CS(후기 불만). 산출 끝에 비주얼/광고/분석가에 넘길 것 명시.',
   cs:
     '너는 브랜드의 CS 매니저다 — 고객을 이기려는 게 아니라 브랜드 신뢰를 지킨다. 불편을 먼저 끌어안고 정책 안에서 최대한 해결한다. ' +
     '[분류] 유형(배송/교환환불/상품문의/후기[공개·별도]/주문변경/기타) × 긴급도(즉시/일반/낮음) × 감정(긍정/중립/불만/격앙) + 처리상태 + 승인필요(true/false). 법적 언급·환불 강경·경쟁사·탈퇴 언급은 이탈위험 신호. ' +
@@ -114,7 +119,7 @@ const RESEARCH_MODEL = { provider: 'perplexity' as const, model: 'sonar-pro' };
  */
 const OUTPUT_SCHEMA: Record<string, string> = {
   sourcing_brief: '{"verdict":"추천|보류|비추천","score":8,"confidence":"높음|중간|낮음","summary":"","reasons":[],"scores":{"trend":{"score":2,"reason":""},"entry":{"score":1,"reason":""},"target":{"score":2,"reason":""},"margin":{"score":2,"reason":""},"diff":{"score":1,"reason":""}},"margin":{"price":0,"cost":0,"platformFee":0,"packagingShipping":0,"expectedAdCost":0,"netProfit":0,"netRate":"","breakEvenMonthlyQty":0},"persona":"","channels":[],"risks":[],"nextActions":[{"type":"task","title":"","priority":"high|medium|low","owner":""}],"handoff":{"detailPage":[],"ads":[],"sns":[],"visual":[],"monitor":[]},"sources":[{"title":"","url":"","type":"","confidence":""}]}',
-  detail_builder: '{"brief":{"productName":"","target":"","usp":[],"customerPain":[],"banned":[]},"sections":[{"key":"hero|problem|solution|trust|review|cta","title":"","objective":"","coreLine":"","subLine":"","bullets":[],"visual":"","cta":"","status":"draft"}],"visualSlots":[{"sectionKey":"","imageType":"","brief":""}],"complianceCheck":{"pass":true,"flags":[],"bannedExpressionsFound":[]},"handoff":{"visual":[],"ads":[],"analyst":[]}}',
+  detail_builder: '{"brief":{"productName":"","target":"","usp":[],"customerPain":[],"banned":[],"priceTier":"","industry":""},"sections":[{"key":"hook|empathy|loss|solution|after|detail|trust|compare|price|decision|faq|cta","title":"","objective":"","coreLine":"","subLine":"","bullets":["불릿7개"],"visual":"추천비주얼3","cta":"","status":"draft"}],"visualSlots":[{"sectionKey":"","imageType":"","brief":""}],"complianceCheck":{"pass":true,"flags":[],"bannedExpressionsFound":[]},"handoff":{"visual":[],"ads":[],"analyst":[]}}',
   ticket_list: '{"summary":{"total":0,"urgent":0,"needsHumanApproval":0,"faqCandidates":0,"negativeReviews":0},"tickets":[{"id":"","type":"","urgency":"즉시|일반|낮음","sentiment":"긍정|중립|불만|격앙","riskLevel":"high|medium|low","customerMessage":"","draft":"","needsConfirm":[],"needsHumanApproval":false,"approvalReason":"","status":"신규|답변초안|approval_waiting|완료|보류","faqCandidate":{"shouldCreate":false,"question":"","answer":""},"nextActions":[{"target":"","title":""}]}]}',
   sns_queue: '{"summary":{"total":0,"needsApproval":0,"scheduled":0,"needsVisual":0,"mix":{"info":0,"empathy":0,"product":0,"ugc":0,"behind":0},"warnings":[]},"posts":[{"id":"","date":"","time":"","channel":"","format":"","objective":"","contentType":"","hook":{"type":"","text":"","score":0},"body":"","cta":{"type":"","text":""},"hashtags":{"large":[],"medium":[],"small":[],"brand":[]},"imageBrief":"","variants":[{"label":"A","angle":"","hook":"","body":""}],"status":"draft","nextActions":[{"target":"","title":""}]}]}',
   copy_variants: '{"product":{"name":"","price":0,"channels":[],"goal":"","angle":""},"sets":[{"variantId":"AD-001","type":"감성|기능|가격","headline":"","sub":"","detail":"","cta":"","imageDirection":"","recommendedChannels":[],"expectedMetric":[],"caution":"","status":"test"}],"targeting":{"keywords":[],"audience":{"core":[],"lookalike":[],"interest":[],"exclude":[]},"budgetSplit":{"test":{"emotional":33,"functional":33,"price":33},"scale":{"winner":70,"support":20,"newTest":10}}},"channelGuide":{"instagram":"","naver":"","kakao":""},"complianceCheck":{"exaggeration":true,"unverifiedNo1":true,"lowestPrice":true,"healthClaim":true,"landingConsistencyRequired":true},"handoff":{"sns":[],"analyst":[],"landing":[],"ownerApproval":[]}}',
