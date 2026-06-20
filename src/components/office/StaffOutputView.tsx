@@ -174,16 +174,47 @@ function SourcingView({ d, onSave }: { d: any; onSave?: (itemType: string, paylo
 }
 
 /* ───────── ② 상세페이지: detail_builder · "페이지 빌더" ───────── */
+/** 6섹션 → 스마트스토어 붙여넣기용 HTML */
+function buildSmartstoreHtml(d: any): string {
+  const esc = (s: any) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const sections = Array.isArray(d.sections) ? d.sections : [];
+  return sections.map((s: any) => {
+    const bullets = Array.isArray(s.bullets) && s.bullets.length
+      ? `\n  <ul>${s.bullets.map((b: any) => `<li>${esc(b)}</li>`).join('')}</ul>` : '';
+    return [
+      `<section>`,
+      `  <h2>${esc(s.title || s.key)}</h2>`,
+      s.coreLine ? `  <p><strong>${esc(s.coreLine)}</strong></p>` : '',
+      s.subLine ? `  <p>${esc(s.subLine)}</p>` : '',
+      bullets,
+      s.cta ? `  <p>${esc(s.cta)}</p>` : '',
+      `</section>`,
+    ].filter(Boolean).join('\n');
+  }).join('\n\n');
+}
+
 function DetailBuilderView({ d, onSave }: { d: any; onSave?: (itemType: string, payload: any) => void }) {
   const brief = d.brief || {};
   const sections = Array.isArray(d.sections) ? d.sections : [];
+  const [htmlCopied, setHtmlCopied] = useState(false);
   const copySection = (s: any) => [s.coreLine, s.subLine, ...(Array.isArray(s.bullets) ? s.bullets : []), s.cta].filter(Boolean).join('\n');
+  const copyHtml = async () => {
+    try { await navigator.clipboard.writeText(buildSmartstoreHtml(d)); setHtmlCopied(true); setTimeout(() => setHtmlCopied(false), 1800); } catch { /* ignore */ }
+  };
   return (
     <div className="space-y-3">
-      {onSave && (
-        <div className="flex justify-end">
-          <button onClick={() => onSave('page', { ...d, title: brief.productName || '상세페이지' })} title="완성 페이지 보관"
-            className="text-[11px] text-gray-300 hover:text-amber-400 active:scale-95 transition-all">⭐ 페이지 보관</button>
+      {(sections.length > 0 || onSave) && (
+        <div className="flex justify-end items-center gap-2">
+          {sections.length > 0 && (
+            <button onClick={copyHtml} title="스마트스토어에 붙여넣을 HTML 복사"
+              className="text-[11px] px-2 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all">
+              {htmlCopied ? '복사됨 ✓' : '⧉ HTML 복사'}
+            </button>
+          )}
+          {onSave && (
+            <button onClick={() => onSave('page', { ...d, title: brief.productName || '상세페이지' })} title="완성 페이지 보관"
+              className="text-[11px] text-gray-300 hover:text-amber-400 active:scale-95 transition-all">⭐ 페이지 보관</button>
+          )}
         </div>
       )}
       {/* 브리프 */}
