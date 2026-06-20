@@ -199,7 +199,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-6">
           <div className="max-w-4xl mx-auto">
             {view === 'dashboard' && <DashboardView onNavigate={onNavigate} workspace={workspace} />}
             {view === 'briefing' && <BriefingView workspace={workspace} />}
