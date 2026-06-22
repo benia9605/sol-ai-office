@@ -29,6 +29,7 @@ const MODE_ICON: Record<string, string> = {
   '분석': '🔍', '키워드': '🔑', '기획서': '📋', '기획': '📋',
   '문의': '💬', 'FAQ': '❓', '후기': '🛡', '리뷰': '🛡',
   '캘린더': '📅', '캡션': '✍️', '릴스': '🎬', '스크립트': '🎬',
+  '하루': '📅', '주간': '🗓️', '정리': '🧹', '일정': '🗓️',
 };
 function modeIcon(label: string): string {
   for (const k in MODE_ICON) if (label.includes(k)) return MODE_ICON[k];
@@ -47,6 +48,7 @@ const OUTPUT_INFO: Record<string, { emoji: string; title: string; desc: string }
   image_brief:    { emoji: '📸', title: '비주얼 브리프', desc: '이미지 프롬프트(미드저니/나노바나나) + 목업 합성 + 필수 촬영컷 리스트' },
   generation_log: { emoji: '🧱', title: '생성 로그', desc: '건수·소요시간·성공/실패 타임라인' },
   ops_digest:     { emoji: '🧭', title: '운영 다이제스트', desc: '전 직원 취합 · 오늘 볼 것 3개 + 미완료·실행실패·중복 정리' },
+  schedule_plan:  { emoji: '🗓️', title: '일정 계획', desc: '하루·주간 타임블록 + 미배치·경고 (승인하면 캘린더에 등록)' },
 };
 
 function OutputKindArea({ outputKind }: { outputKind: string }) {
@@ -156,6 +158,7 @@ const SAVED_LABEL: Record<string, string> = {
   copy_variants: '저장된 카피', sns_queue: '콘텐츠 보관함', sourcing_brief: '상품 후보 보관함',
   image_brief: '이미지·프롬프트', detail_builder: '완성 페이지', ticket_list: 'FAQ·답변 모음',
   monitor_digest: '경쟁사 워치리스트', metric_digest: '지표 스냅샷', ops_digest: '보관함',
+  schedule_plan: '저장된 일정안',
 };
 function SavedCard({ item, onDelete }: { item: StaffSavedItem; onDelete: (id: string) => void }) {
   const p = item.payload as any;

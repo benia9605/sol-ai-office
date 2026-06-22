@@ -9,6 +9,8 @@ import { sendWithModel, calcCoins } from './chatApi';
 import { deductCredits } from './credits.service';
 import { createReport, fetchReportsByWorkspace } from './dailyReports.service';
 import { fetchStaff, fetchRoutines } from './staff.service';
+import { fetchSchedules } from './schedules.service';
+import { fetchTasks } from './tasks.service';
 import { createSuggestedActions } from './staffOutputActions.service';
 import { getStaffType } from '../data/staffCatalog';
 import { MODE_DIRECTIVES } from '../data/staffInputForms';
@@ -93,6 +95,12 @@ const BASE_SOP: Record<string, string> = {
     '[컴플라이언스·저작권·역할] 건강식품 효능 암시 연출 금지. 순수 AI 생성물 저작권 약함 → 핵심 제품 페이지(상세 메인컷·크리티컬 광고)는 실제 촬영+보정 기준, AI는 목업·컨셉·보완용. ' +
     '받는 입력: 광고(이미지 방향)·SNS(이미지/릴스 브리프)·소싱(촬영컷)·상세페이지(이미지 슬롯). 채택 결과는 상세/광고/SNS로 넘긴다. ' +
     '출력: 촬영컷 리스트(MUST/NICE)·프롬프트(6덩어리+비율+엔진)·네거티브·후보/채택 상태.',
+  scheduler:
+    '너는 사장의 개인 일정 비서다 — 시간을 지켜주고 현실적인 하루·한 주를 설계한다. ' +
+    '[원칙] ①고정 약속(fixedEvents)·이미 잡힌 일정을 먼저 고정 ②활동 가능 시간(workHours) 안에서만 배치 ③꼭 할 일(mustDo)·미완료 할일을 우선순위·소요시간 기준으로 빈 시간에 채움 ④블록 사이 이동·휴식 버퍼를 두고 하루를 과적하지 않음(못 넣은 건 "미배치"로 분리하고 이유) ⑤집중이 필요한 딥워크는 집중 시간대(보통 오전)에, 가벼운 일·회의는 오후에 ⑥컨디션·선호(note)를 반영, 저녁/개인 시간 보호. ' +
+    '[현실성] 시간은 HH:MM, 길이는 현실적으로(회의 30~60분, 딥워크 60~120분). 무리한 일정은 줄이거나 다른 날로 분산 제안. 빈손 금지 — 정보 부족하면 합리적 기본값으로 짜고 "※확인"으로 표시. ' +
+    '[권한] 외부 사람과의 약속을 임의로 만들지 마라(제안만). 등록은 항상 제안→사장 승인. 결과의 각 일정 블록은 반드시 actions의 type="schedule"(title·date YYYY-MM-DD·time HH:MM)로 내보내 승인 시 캘린더에 등록되게 한다. 회사 브레인·추가 지시의 시간 선호를 따른다. ' +
+    '출력: 날짜·요약·타임블록(시간·제목·유형·우선순위·메모)·미배치(이유)·경고(과부하 등)·팁.',
   ops:
     '너는 전사 운영매니저다 — AI 직원들이 말만 하고 끝나지 않게 실행을 추적하고, 사장의 시간을 지킨다. 보고서가 아니라 의사결정 인터페이스: 오늘 사장이 무엇을 결정해야 하는지만 뽑는다. ' +
     '[취합] 어제 전 직원(소싱/CS/SNS/광고/모니터링/분석가/비주얼) 산출물·넘긴 것 + 미완료·미배정 할일 + 실행 실패 + 승인 대기(HITL) + 기한 임박 + 액션 미연결 인사이트. 직원별 확인 질문(소싱=품절/과잉? 광고=승인 대기? 분석가=이상치 담당 지정됐나? 비주얼=채택/재생성 멈췄나? CS=발송 승인 대기?). ' +
@@ -126,10 +134,11 @@ const OUTPUT_SCHEMA: Record<string, string> = {
   monitor_digest: '{"summary":[],"alerts":[{"level":"red|orange|green","title":"","change":"","impact":"","recommendation":"","source":{"url":"","title":"","sourceType":"","checkedAt":"","confidence":"high|medium|low"},"status":"action_required"}],"compareTable":[{"name":"","price":0,"composition":"","reviewStrength":"","difference":"","recommendedResponse":""}],"changeLog":[{"item":"","before":"","after":"","delta":"","level":"red|orange|green"}],"trends":[{"keyword":"","delta":"","meaning":"","citations":[{"url":"","sourceType":"","checkedAt":""}]}],"strategy":{"summary":"","actions":[{"target":"ads|sns|detailPage|analyst","title":""}]},"limitations":[],"handoff":{"ads":[],"sns":[],"detailPage":[],"analyst":[],"sourcing":[]}}',
   metric_digest: '{"summary":[],"kpis":[{"group":"","name":"","label":"","value":0,"displayValue":"","compareValue":0,"delta":"","signal":"green|orange|red","interpretation":""}],"anomalies":[{"level":"red|orange","metric":"","title":"","current":"","previous":"","delta":"","meaning":"","hypothesis":"","evidence":[],"confidence":"high|medium|low","nextAction":"","owner":[]}],"actions":[{"priority":1,"title":"","owner":"","reason":"","metricsToCheck":[],"approvalRequired":true}],"dataSource":[{"source":"","metrics":[],"period":"","confidence":""}],"confidence":"high|medium|low","limitations":[]}',
   image_brief: '{"visualDirection":{"mood":[],"colors":[],"props":[],"avoid":[]},"shotList":[{"id":"","grade":"must|nice","type":"","label":"","purpose":"","useCases":[],"ratio":"1:1|4:5|9:16|16:9","status":"planned"}],"prompts":[{"id":"","shotId":"","text":"","ratio":"4:5","engine":"imagen|nanobanana|gptimage","useCase":[],"status":"candidate"}],"negativePrompt":[],"candidates":[{"id":"","promptId":"","thumbnailUrl":"","status":"candidate|selected|needs_edit|regenerate|discard","notes":""}],"handoff":{"detailPage":[],"ads":[],"sns":[]}}',
+  schedule_plan: '{"date":"","period":"day|week","summary":"","plan":[{"date":"YYYY-MM-DD","time":"HH:MM","endTime":"HH:MM","title":"","type":"work|deepwork|meeting|personal|break|todo|errand","priority":"high|medium|low","note":""}],"unscheduled":[{"title":"","reason":""}],"warnings":[],"tips":[]}',
   ops_digest: '{"top3":[{"rank":1,"level":"red|orange|green","area":"","title":"","whyNow":"","decisionNeeded":"","recommendation":"","owners":[],"status":"action_required","sourceStaff":"","sourceOutputKind":""}],"staffHealth":[{"staff":"","status":"ok|warning|error","completed":0,"waiting":0,"failed":0,"issues":[]}],"approvalQueue":{"adSpend":[],"snsPublish":[],"csSend":[],"detailPage":[],"visual":[],"sourcing":[]},"missed":[{"level":"orange","sourceStaff":"","targetStaff":"","issue":"","recommendation":""}],"suggestedTasks":[{"title":"","owner":"","source":"","priority":"orange"}],"duplicates":[],"staleInsights":[],"limitations":[]}',
 };
 
-function buildSystemPrompt(staff: Staff, workspace: Workspace, brand: BrandContext | null, peerNotes: string[], tasks: string[], manualInput?: string): string {
+function buildSystemPrompt(staff: Staff, workspace: Workspace, brand: BrandContext | null, peerNotes: string[], tasks: string[], manualInput?: string, extraContext?: string): string {
   const type = getStaffType(staff.typeKey);
   const base = BASE_SOP[staff.typeKey] || `너는 ${type?.label || 'AI 직원'}이다.`;
   // ① 회사 브레인 (사장이 입력한 brand_contexts) — 모든 답변의 기준
@@ -147,8 +156,10 @@ function buildSystemPrompt(staff: Staff, workspace: Workspace, brand: BrandConte
   const peer = peerNotes.length
     ? `\n\n[동료 직원들이 최근 알아낸 것 — 관련 있으면 반영해서 작업]\n${peerNotes.join('\n')}`
     : '';
+  // 일정 비서 등 — 현재 일정/할일 같은 실시간 맥락 주입
+  const ctxBlock = extraContext ? `\n\n${extraContext}` : '';
   const schemaHint = OUTPUT_SCHEMA[type?.outputKind || ''] || '{}';
-  return `${base}\n\n${brandBlock}${extra}${csBlock}${task}${peer}\n\n결과는 한국어 마크다운으로. 첫 줄은 "# 한 줄 제목", 둘째 줄은 한 줄 요약, 이어서 본문(오늘 한 일·핵심·내일 제안).
+  return `${base}\n\n${brandBlock}${extra}${csBlock}${task}${peer}${ctxBlock}\n\n결과는 한국어 마크다운으로. 첫 줄은 "# 한 줄 제목", 둘째 줄은 한 줄 요약, 이어서 본문(오늘 한 일·핵심·내일 제안).
 그리고 맨 마지막에 반드시 아래 형식의 JSON 코드블록을 덧붙여라(UI 표시·자동 등록용):
 \`\`\`json
 { "output": ${schemaHint},
@@ -241,6 +252,38 @@ async function collectPeerNotes(staff: Staff, workspace: Workspace): Promise<str
   } catch {
     return [];
   }
+}
+
+/** 일정 비서 전용 — 오늘 날짜 + 이미 잡힌 일정(개인+오피스) + 미완료 할일을 프롬프트 맥락으로 */
+async function collectSchedulerContext(workspace: Workspace): Promise<string> {
+  try {
+    const [office, personal, tasks] = await Promise.all([
+      fetchSchedules(workspace.id).catch(() => []),
+      fetchSchedules().catch(() => []),
+      fetchTasks().catch(() => []),
+    ]);
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const horizon = new Date(now.getTime() + 8 * 86400000).toISOString().split('T')[0];
+    const dow = ['일', '월', '화', '수', '목', '금', '토'][now.getDay()];
+    const all = [...(office as any[]), ...(personal as any[])];
+    const seen = new Set<string>();
+    const upcoming = all
+      .filter(s => s?.date && s.date >= todayStr && s.date <= horizon)
+      .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))
+      .filter(s => { const k = s.id || s.date + s.time + s.title; if (seen.has(k)) return false; seen.add(k); return true; })
+      .slice(0, 25)
+      .map(s => `- ${s.date}${s.time ? ' ' + s.time : ''} ${s.title}`);
+    const openTasks = (tasks as any[])
+      .filter(t => t?.status !== 'done' && t?.title)
+      .slice(0, 25)
+      .map(t => `- ${t.title}${t.due_date ? ` (마감 ${t.due_date})` : ''}${t.priority && t.priority !== 'medium' ? ` [${t.priority}]` : ''}`);
+    let block = `[오늘 날짜] ${todayStr} (${dow}요일) — date 필드는 이 기준으로 채워라`;
+    if (upcoming.length) block += `\n[이미 잡힌 일정 — 이 시간들과 겹치지 않게 짜라]\n${upcoming.join('\n')}`;
+    else block += `\n[이미 잡힌 일정] 없음`;
+    if (openTasks.length) block += `\n[미완료 할일 — 빈 시간에 배치 후보로 고려]\n${openTasks.join('\n')}`;
+    return block;
+  } catch { return ''; }
 }
 
 function parseReport(out: string): { title: string; summary: string; body: string } {
@@ -384,6 +427,20 @@ const DEMO_SAMPLE: Record<string, Record<string, unknown>> = {
     candidates: [{ id: 'IMG-001', promptId: 'PROMPT-001', thumbnailUrl: '', status: 'selected', notes: '대표 이미지로 적합' }, { id: 'IMG-002', promptId: 'PROMPT-001', thumbnailUrl: '', status: 'candidate', notes: '' }],
     handoff: { detailPage: ['히어로 사용씬 배치'], ads: ['감성형 광고 이미지'], sns: ['피드 라이프스타일 컷'] },
   },
+  schedule_plan: {
+    date: '오늘', period: 'day',
+    summary: '오전은 집중 업무, 오후는 미팅·정리로 배치했어요. 저녁은 개인 시간으로 비워뒀습니다.',
+    plan: [
+      { time: '09:00', endTime: '10:30', title: '상세페이지 카피 마무리 (딥워크)', type: 'deepwork', priority: 'high', note: '집중 잘되는 오전에 배치' },
+      { time: '10:30', endTime: '10:45', title: '휴식', type: 'break', priority: 'low', note: '' },
+      { time: '11:00', endTime: '12:00', title: '신상품 소싱 후보 검토', type: 'work', priority: 'medium', note: '' },
+      { time: '14:00', endTime: '14:40', title: '거래처 미팅', type: 'meeting', priority: 'high', note: '고정 약속' },
+      { time: '15:00', endTime: '16:00', title: '인스타 콘텐츠 점검', type: 'work', priority: 'medium', note: '' },
+    ],
+    unscheduled: [{ title: '광고 카피 A/B 설계', reason: '오늘 시간 부족 — 내일 오전 추천' }],
+    warnings: ['오후 일정이 다소 촘촘해요. 미팅이 길어지면 16시 작업을 내일로 미뤄도 돼요.'],
+    tips: ['승인하면 캘린더에 등록돼요. 시간이 안 맞으면 일정 정리·조정으로 다시 시켜보세요.'],
+  },
   ops_digest: {
     top3: [
       { rank: 1, level: 'red', area: '매출', title: 'A몰 가격 인하 대응 없음', whyNow: '전환율 하락과 경쟁사 가격 인하가 겹쳤습니다.', decisionNeeded: '가격 유지 + 관리카드 메시지 강화로 대응할까요?', recommendation: '가격 인하는 보류하고 메시지 대응을 추천합니다.', owners: ['monitor', 'ad', 'detail_page'], status: 'action_required', sourceStaff: 'monitor', sourceOutputKind: 'monitor_digest' },
@@ -417,11 +474,12 @@ export interface StaffRunResult {
 /** AI 실행 + 파싱만 (저장 X) — 미리보기 결과 반환 */
 async function runAndParse(staff: Staff, workspace: Workspace, opts: { tasks: string[]; manualInput?: string }): Promise<StaffRunResult> {
   const type = getStaffType(staff.typeKey);
-  const [peerNotes, brand] = await Promise.all([
+  const [peerNotes, brand, extraContext] = await Promise.all([
     collectPeerNotes(staff, workspace),
     fetchBrandContext(workspace.id).catch(() => null),
+    staff.typeKey === 'scheduler' ? collectSchedulerContext(workspace) : Promise.resolve(''),
   ]);
-  const system = buildSystemPrompt(staff, workspace, brand, peerNotes, opts.tasks, opts.manualInput);
+  const system = buildSystemPrompt(staff, workspace, brand, peerNotes, opts.tasks, opts.manualInput, extraContext);
   const today = new Date().toISOString().split('T')[0];
   const userMsg = opts.manualInput
     ? '사장이 직접 시킨 작업을 수행하고 결과를 정리해줘.'

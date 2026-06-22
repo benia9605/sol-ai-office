@@ -28,7 +28,7 @@ const RESEARCH_MODEL = 'sonar-pro';
 /** 타입별 기본 모델 (프론트 staffCatalog.defaultModel과 동기화) */
 const DEFAULT_MODEL_BY_TYPE: Record<string, string> = {
   sourcing: 'research', detail_page: 'sonnet', cs: 'sonnet', sns: 'gpt', ad: 'gpt',
-  monitor: 'research', analyst: 'haiku', visual: 'sonnet', ops: 'sonnet',
+  monitor: 'research', analyst: 'haiku', visual: 'sonnet', ops: 'sonnet', scheduler: 'sonnet',
 };
 /** 모델 단가(USD per 1M) → 코인(1코인=$0.001) */
 const MODEL_COST: Record<string, { in: number; out: number }> = {
@@ -46,7 +46,7 @@ const AI_COLOR = '#1b4332';
 const OUTPUT_KIND: Record<string, string> = {
   sourcing: 'sourcing_brief', detail_page: 'detail_builder', cs: 'ticket_list',
   sns: 'sns_queue', ad: 'copy_variants', monitor: 'monitor_digest',
-  analyst: 'metric_digest', visual: 'image_brief', ops: 'ops_digest',
+  analyst: 'metric_digest', visual: 'image_brief', ops: 'ops_digest', scheduler: 'schedule_plan',
 };
 // outputKind별 JSON 스키마 힌트 (프론트 staffRun.service.ts OUTPUT_SCHEMA와 동기화)
 const OUTPUT_SCHEMA: Record<string, string> = {
@@ -59,6 +59,7 @@ const OUTPUT_SCHEMA: Record<string, string> = {
   metric_digest: '{"summary":[],"kpis":[{"group":"","name":"","label":"","value":0,"displayValue":"","compareValue":0,"delta":"","signal":"green|orange|red","interpretation":""}],"anomalies":[{"level":"red|orange","metric":"","title":"","current":"","previous":"","delta":"","meaning":"","hypothesis":"","evidence":[],"confidence":"high|medium|low","nextAction":"","owner":[]}],"actions":[{"priority":1,"title":"","owner":"","reason":"","metricsToCheck":[],"approvalRequired":true}],"dataSource":[{"source":"","metrics":[],"period":"","confidence":""}],"confidence":"high|medium|low","limitations":[]}',
   image_brief: '{"visualDirection":{"mood":[],"colors":[],"props":[],"avoid":[]},"shotList":[{"id":"","grade":"must|nice","type":"","label":"","purpose":"","useCases":[],"ratio":"1:1|4:5|9:16|16:9","status":"planned"}],"prompts":[{"id":"","shotId":"","text":"","ratio":"4:5","engine":"imagen|nanobanana|gptimage","useCase":[],"status":"candidate"}],"negativePrompt":[],"candidates":[{"id":"","promptId":"","thumbnailUrl":"","status":"candidate|selected|needs_edit|regenerate|discard","notes":""}],"handoff":{"detailPage":[],"ads":[],"sns":[]}}',
   ops_digest: '{"top3":[{"rank":1,"level":"red|orange|green","area":"","title":"","whyNow":"","decisionNeeded":"","recommendation":"","owners":[],"status":"action_required","sourceStaff":"","sourceOutputKind":""}],"staffHealth":[{"staff":"","status":"ok|warning|error","completed":0,"waiting":0,"failed":0,"issues":[]}],"approvalQueue":{"adSpend":[],"snsPublish":[],"csSend":[],"detailPage":[],"visual":[],"sourcing":[]},"missed":[{"level":"orange","sourceStaff":"","targetStaff":"","issue":"","recommendation":""}],"suggestedTasks":[{"title":"","owner":"","source":"","priority":"orange"}],"duplicates":[],"staleInsights":[],"limitations":[]}',
+  schedule_plan: '{"date":"","period":"day|week","summary":"","plan":[{"date":"YYYY-MM-DD","time":"HH:MM","endTime":"HH:MM","title":"","type":"work|deepwork|meeting|personal|break|todo|errand","priority":"high|medium|low","note":""}],"unscheduled":[{"title":"","reason":""}],"warnings":[],"tips":[]}',
 };
 
 // 타입별 베이스 SOP — docs/guides/ai오피스구축/_직원별_실행스펙_시목.md §1~9 (프론트 staffRun.service.ts와 동기화)
@@ -138,6 +139,12 @@ const BASE_SOP: Record<string, string> = {
     '[정리] 중복 할일 병합 제안, 만료 인사이트 정리 제안. ' +
     '[권한] 제안·정리·우선순위화·독려만. approvalQueue의 status를 "승인"으로 바꾸지 않는다 — 승인 버튼은 사람만. 광고비·가격·할인·SNS발행·CS발송·고객안내·상세최종·대표이미지·재고비용은 모두 사장 승인 후. 회사 브레인 목표 KPI 기준 중요도 판단. ' +
     '출력: 오늘 볼 것 3개(5요소)·운영상태 점검(직원 건강·누락)·중복/만료 정리·승인 대기 큐.',
+  scheduler:
+    '너는 사장의 개인 일정 비서다 — 시간을 지켜주고 현실적인 하루·한 주를 설계한다. ' +
+    '[원칙] ①고정 약속·이미 잡힌 일정을 먼저 고정 ②활동 가능 시간 안에서만 배치 ③꼭 할 일·미완료 할일을 우선순위·소요시간 기준으로 빈 시간에 채움 ④블록 사이 이동·휴식 버퍼를 두고 하루를 과적하지 않음(못 넣은 건 "미배치"로 분리하고 이유) ⑤집중이 필요한 딥워크는 집중 시간대(보통 오전)에, 가벼운 일·회의는 오후에 ⑥컨디션·선호를 반영, 저녁/개인 시간 보호. ' +
+    '[현실성] 시간은 HH:MM, 길이는 현실적으로(회의 30~60분, 딥워크 60~120분). 무리한 일정은 줄이거나 다른 날로 분산 제안. 정보 부족하면 합리적 기본값으로 짜고 "※확인" 표시. ' +
+    '[권한] 외부 사람과의 약속을 임의로 만들지 마라(제안만). 등록은 항상 제안→사장 승인. 각 일정 블록은 반드시 actions의 type="schedule"(title·date YYYY-MM-DD·time HH:MM)로 내보내 승인 시 캘린더에 등록되게 한다. ' +
+    '출력: 날짜·요약·타임블록(시간·제목·유형·우선순위·메모)·미배치(이유)·경고·팁.',
 };
 
 // ── KST 시각 ──

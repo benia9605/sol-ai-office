@@ -129,6 +129,19 @@ export const STAFF_INPUT_FORMS: Record<string, StaffInputField[]> = {
     { name: 'mode', label: '모드', type: 'select', required: true, options: ['촬영컷 리스트', '이미지 프롬프트', '목업 합성', '텍스트 합성', '상세 슬롯 설계'] },
   ],
 
+  // 🗓️ 일정 비서
+  scheduler: [
+    { name: 'date', label: '날짜/기간', type: 'text', placeholder: '예: 오늘 / 내일 / 6월 23일', showFor: ['하루 일정 짜기', '일정 정리·조정'] },
+    { name: 'mustDo', label: '꼭 해야 할 일', type: 'textarea', placeholder: '꼭 끝낼 일을 한 줄에 하나씩 (대략 걸리는 시간도)', showFor: ['하루 일정 짜기', '주간 일정 짜기'] },
+    { name: 'fixedEvents', label: '고정 일정·약속', type: 'textarea', placeholder: '예: 14:00 거래처 미팅\n19:00 운동 (시간 정해진 것만)', showFor: ['하루 일정 짜기', '주간 일정 짜기'] },
+    { name: 'workHours', label: '활동 가능 시간대', type: 'text', placeholder: '예: 09:00~18:00, 점심 12~13시', showFor: ['하루 일정 짜기', '주간 일정 짜기'] },
+    { name: 'weekGoals', label: '이번 주 목표', type: 'textarea', placeholder: '이번 주에 진척낼 목표 (줄바꿈)', showFor: ['주간 일정 짜기'] },
+    { name: 'currentSchedule', label: '현재 일정 붙여넣기', type: 'textarea', placeholder: '지금 잡혀 있는 일정들', showFor: ['일정 정리·조정'] },
+    { name: 'issue', label: '뭘 바꾸고 싶은지', type: 'textarea', placeholder: '예: 너무 빡빡해 / 오전에 몰아줘 / 회의 사이 여유 넣어줘', showFor: ['일정 정리·조정'] },
+    { name: 'note', label: '컨디션·선호(선택)', type: 'text', placeholder: '예: 오전 집중 잘됨 / 저녁은 비워줘', showFor: ['하루 일정 짜기', '주간 일정 짜기'] },
+    { name: 'mode', label: '모드', type: 'select', required: true, options: ['하루 일정 짜기', '주간 일정 짜기', '일정 정리·조정'] },
+  ],
+
   // 🧭 운영 매니저
   ops: [
     { name: 'focus', label: '특별히 볼 것(선택)', type: 'text', placeholder: '예: 광고 승인 / 매출 / 비우면 전체' },
@@ -202,6 +215,14 @@ export const MODE_DIRECTIVES: Record<string, Record<string, string>> = {
     '목업 합성': '이번엔 "목업 합성 브리프"만. 제품 형태·색·나뭇결·비율 유지하고 배경에만 자연스럽게 합성(원근·그림자·조명 일치). 떠 보임·제품 변형 금지. 추천 엔진 gpt-image-1.',
     '텍스트 합성': '이번엔 "텍스트 합성 브리프"만. 제품 안 가리는 여백에 한글 1~2줄, 폰트 톤·색(차콜/크림)·위치 지정, 가격 문구는 실제와 일치. 대표컷은 한글 깨짐 우려로 사람 후편집 권장. 제품 위 텍스트 덮기 금지.',
     '상세 슬롯 설계': '이번엔 "상세페이지 이미지 슬롯 순서"만. 히어로→정면→소재→두께→사용→사이즈→관리→선물→무드 순으로 슬롯별 컷·문구 방향. AI 이미지는 시안/보완용, 메인컷은 실촬영 기준 표기.',
+  },
+  scheduler: {
+    '하루 일정 짜기':
+      '이번엔 "하루 타임블록 계획"만. 고정 일정(fixedEvents)을 먼저 고정하고, 활동 시간(workHours) 안에서 꼭 할 일(mustDo)을 우선순위·소요시간 기준으로 빈 시간에 배치. 블록 사이 이동·휴식 여유를 두고 하루를 과적하지 마(못 넣은 건 "내일/보류"로 분리). 컨디션(note: 오전 집중 등) 반영. 각 블록을 반드시 actions의 type="schedule"(title·date·time HH:MM)로 내라 — 사장이 승인하면 캘린더에 등록된다. 외부 약속을 대신 잡지 말 것(제안만).',
+    '주간 일정 짜기':
+      '이번엔 "주간 일정 배분"만. 이번 주 목표(weekGoals)·꼭 할 일(mustDo)·고정 일정(fixedEvents)을 요일별로 균형 있게 분산(마감 임박·중요도 우선, 한 날 몰림 방지). 요일별 무엇을·왜 그 날인지 한 줄. 각 항목을 actions의 type="schedule"(title·date YYYY-MM-DD·time)로 내라(시간 미정이면 time 비움). 과부하 날은 분산 제안. 등록은 제안→승인.',
+    '일정 정리·조정':
+      '이번엔 붙여넣은 현재 일정(currentSchedule)을 issue 요청대로 "재배치"만. 무리한 구간 완화·여유 삽입·우선순위 재정렬. 새 일을 임의로 만들지 말고 있는 일정을 옮기는 데 집중(꼭 필요한 보충만 제안). 바뀐 일정만 actions의 type="schedule"로 내고, 무엇을 왜 옮겼는지 한 줄씩.',
   },
   ops: {
     '전사 브리핑': '이번엔 "오늘 볼 것 3개"(반드시 3개 이하)만 메인으로 — ①매출·전환 직격 ②사장 승인 대기(병목) ③재시도·기한 임박 순, 각 5요소(level🔴🟠🟢·area·title·whyNow·decision). 끝에 직원 건강(성공/실패/미실행 카운트+예시)·승인 대기 큐. 승인 status를 절대 "승인"으로 바꾸지 마(결정은 사람만).',

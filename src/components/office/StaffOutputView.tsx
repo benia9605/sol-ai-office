@@ -853,6 +853,73 @@ function OpsDigestView({ d }: { d: any }) {
   );
 }
 
+/* ───────── 🗓️ 일정 비서 (schedule_plan) ───────── */
+const PLAN_TYPE: Record<string, { emoji: string; cls: string }> = {
+  deepwork: { emoji: '🎯', cls: 'bg-violet-50 text-violet-600' },
+  work: { emoji: '💼', cls: 'bg-blue-50 text-blue-600' },
+  meeting: { emoji: '👥', cls: 'bg-amber-50 text-amber-600' },
+  personal: { emoji: '🌿', cls: 'bg-emerald-50 text-emerald-600' },
+  break: { emoji: '☕', cls: 'bg-gray-100 text-gray-400' },
+  todo: { emoji: '✅', cls: 'bg-primary-50 text-primary-600' },
+  errand: { emoji: '🚶', cls: 'bg-orange-50 text-orange-500' },
+};
+function SchedulePlanView({ d }: { d: any }) {
+  const plan: any[] = Array.isArray(d.plan) ? d.plan : [];
+  const unscheduled: any[] = Array.isArray(d.unscheduled) ? d.unscheduled : [];
+  const warnings: any[] = Array.isArray(d.warnings) ? d.warnings : [];
+  const tips: any[] = Array.isArray(d.tips) ? d.tips : [];
+  const dot = (p: string) => p === 'high' ? '🔴' : p === 'low' ? '⚪' : '🟠';
+  return (
+    <div className="space-y-2.5">
+      {(d.date || d.summary) && (
+        <Section>
+          {d.date && <div className="text-[11px] font-semibold text-primary-500 mb-0.5">{String(d.date)}{d.period === 'week' ? ' · 주간' : ''}</div>}
+          {d.summary && <p className="text-sm text-gray-700 leading-relaxed">{d.summary}</p>}
+        </Section>
+      )}
+      {plan.length > 0 && (
+        <Section label="일정 계획 (승인하면 캘린더에 등록돼요)">
+          <div className="space-y-1">
+            {plan.map((b, i) => {
+              const t = PLAN_TYPE[b.type] || { emoji: '•', cls: 'bg-gray-50 text-gray-500' };
+              return (
+                <div key={i} className="flex items-start gap-2 py-1.5 border-b border-gray-50 last:border-0">
+                  <div className="text-[11px] font-semibold text-gray-500 tabular-nums w-[88px] flex-shrink-0 pt-0.5">
+                    {b.date ? <span className="text-gray-300 block text-[10px]">{String(b.date).slice(5)}</span> : null}
+                    {b.time || '—'}{b.endTime ? `~${b.endTime}` : ''}
+                  </div>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${t.cls}`}>{t.emoji}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm text-gray-700 leading-snug">{dot(b.priority)} {b.title}</div>
+                    {b.note && <div className="text-[11px] text-gray-400 mt-0.5">{b.note}</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Section>
+      )}
+      {unscheduled.length > 0 && (
+        <Section label="미배치 — 오늘 못 넣은 일">
+          <div className="space-y-1">
+            {unscheduled.map((u, i) => (
+              <div key={i} className="text-xs text-gray-600 flex items-start gap-1.5">
+                <span className="text-gray-300">·</span><span>{u.title}{u.reason ? <span className="text-gray-400"> — {u.reason}</span> : null}</span>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+      {warnings.length > 0 && (
+        <Card className="p-3 bg-amber-50/60 border-amber-100 space-y-1">
+          {warnings.map((w, i) => <div key={i} className="text-xs text-amber-700 flex items-start gap-1.5"><span>⚠️</span><span>{String(w)}</span></div>)}
+        </Card>
+      )}
+      {tips.length > 0 && <div className="text-[11px] text-gray-400">💡 {tips.join(' · ')}</div>}
+    </div>
+  );
+}
+
 /* ───────── 분기 ───────── */
 export function StaffOutputView({ outputKind, data, onSave, workspaceId, staffId, onCredits }: { outputKind?: string; data: any; onSave?: (itemType: string, payload: any) => void; workspaceId?: string; staffId?: string; onCredits?: () => void }) {
   if (!data || typeof data !== 'object') return null;
@@ -866,6 +933,7 @@ export function StaffOutputView({ outputKind, data, onSave, workspaceId, staffId
     case 'metric_digest': return <MetricDigestView d={data} />;
     case 'image_brief': return <ImageBriefView d={data} onSave={onSave} workspaceId={workspaceId} staffId={staffId} onCredits={onCredits} />;
     case 'ops_digest': return <OpsDigestView d={data} />;
+    case 'schedule_plan': return <SchedulePlanView d={data} />;
     default: return null; // 미구현 outputKind는 마크다운 본문만 표시
   }
 }

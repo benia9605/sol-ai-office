@@ -76,7 +76,7 @@ export type OutputKind =
   | 'sourcing_brief' | 'detail_builder' | 'ticket_list'
   | 'sns_queue' | 'copy_variants' | 'monitor_digest' | 'image_brief'
   | 'generation_log' | 'keyword_table' | 'metric_digest' | 'review_diff'
-  | 'ops_digest';
+  | 'ops_digest' | 'schedule_plan';
 
 /** 직접 시키기(수동) 입력 폼 필드 */
 export interface StaffInputField {
