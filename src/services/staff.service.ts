@@ -84,11 +84,12 @@ export async function setStaffState(id: string, state: 'working' | 'idle'): Prom
   if (error) throw error;
 }
 
-/** 이름/프롬프트 수정 */
-export async function updateStaff(id: string, fields: { name?: string; prompt?: string }): Promise<void> {
+/** 이름/프롬프트/모델 수정 */
+export async function updateStaff(id: string, fields: { name?: string; prompt?: string; model?: StaffModel }): Promise<void> {
   const payload: Record<string, unknown> = {};
   if (fields.name !== undefined) payload.name = fields.name.trim();
   if (fields.prompt !== undefined) payload.prompt = fields.prompt;
+  if (fields.model !== undefined) payload.model = fields.model;
   if (Object.keys(payload).length === 0) return;
   const { error } = await supabase.from('staff').update(payload).eq('id', id);
   if (error) throw error;

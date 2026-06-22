@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Staff, StaffRoutine, DailyReport, Workspace, StaffOutputAction, ReportComment, StaffModel, StaffSavedItem } from '../../types';
 import { saveItem, fetchSavedItems, deleteSavedItem } from '../../services/staffSavedItems.service';
-import { getStaffType } from '../../data/staffCatalog';
+import { getStaffType, routineGuide } from '../../data/staffCatalog';
 import { fetchStaff, fetchRoutines, setStaffState, deleteStaff, updateStaff, addRoutine, updateRoutine, deleteRoutine } from '../../services/staff.service';
 import { fetchReportsByStaff, fetchReportById, addReportComment } from '../../services/dailyReports.service';
 import { runStaffNow, runRoutineNow, previewStaffManual, saveStaffResult, StaffRunResult } from '../../services/staffRun.service';
@@ -496,7 +496,9 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
   const [showPrompt, setShowPrompt] = useState(false);
   const [showRoutine, setShowRoutine] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<StaffRoutine | null>(null);
+  const [expandedRoutine, setExpandedRoutine] = useState<string | null>(null);
   const [runningRoutineId, setRunningRoutineId] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
   const [showModel, setShowModel] = useState(false);
   const modelLabel = (m: string) => MODEL_OPTIONS.find(o => o.key === m)?.label || m;
   const changeModel = async (m: StaffModel) => {
@@ -654,6 +656,38 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
         </div>
       </div>
 
+      {/* 온보딩 가이드 — 이 직원이 무슨 일을 하고 어떻게 쓰는지 */}
+      {type?.guide && (
+        <div className="rounded-[24px] bg-white border border-gray-100 shadow-sm p-4 mb-4">
+          <div className="flex items-start gap-2.5">
+            <span className="text-lg flex-shrink-0 mt-0.5">💡</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-gray-600 leading-relaxed">{type.guide}</p>
+              <button onClick={() => setShowGuide(s => !s)}
+                className="mt-2 text-[11px] font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                {showGuide ? '접기 ▲' : '이렇게 쓰세요 ▾'}
+              </button>
+            </div>
+          </div>
+          {showGuide && (
+            <div className="mt-3 pt-3 border-t border-gray-100 grid sm:grid-cols-3 gap-2.5">
+              <div className="rounded-2xl bg-gray-50 p-3">
+                <div className="text-xs font-bold text-gray-700 mb-1">🕒 매일 하는 일</div>
+                <p className="text-[11px] text-gray-500 leading-relaxed">정해진 일과를 자동으로 처리해요. 일과를 누르면 무슨 일인지 설명이 나오고, ✎로 주기·시간을 직접 정해요.</p>
+              </div>
+              <div className="rounded-2xl bg-gray-50 p-3">
+                <div className="text-xs font-bold text-gray-700 mb-1">▶ 직접 시키기</div>
+                <p className="text-[11px] text-gray-500 leading-relaxed">필요할 때 모드를 골라 그 자리에서 작업을 시켜요. 모드마다 입력칸이 달라요.</p>
+              </div>
+              <div className="rounded-2xl bg-gray-50 p-3">
+                <div className="text-xs font-bold text-gray-700 mb-1">⚙️ 셋팅</div>
+                <p className="text-[11px] text-gray-500 leading-relaxed">🧠 모델 · 📝 프롬프트(성격·지시)를 바꿔 직원을 우리 브랜드에 맞춰요. 회사 브레인은 전 직원에 자동 반영돼요.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 1. 매일 하는 일 (자동) — 최상단 */}
       <div className="mb-4">
         <div className="flex items-center justify-between h-9 mb-2">
@@ -668,21 +702,34 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
           </div>
         </div>
         <Card className="p-2">
-          {routines.map(r => (
-            <div key={r.id} className="group flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors">
-              <button onClick={() => toggleRoutine(r)} title={r.enabled ? '끄기' : '켜기'}
-                className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] text-white transition-colors ${r.enabled ? 'bg-primary-500' : 'bg-gray-300'}`}>✓</button>
-              <span className={`text-sm flex-1 ${r.enabled ? 'text-gray-700' : 'text-gray-300 line-through'}`}>{r.label}</span>
-              <button onClick={() => setEditingRoutine(r)} title="일정 수정"
-                className="text-[10px] text-gray-400 flex-shrink-0 hover:text-primary-500 transition-colors">{formatSchedule(r)} ✎</button>
-              <button onClick={() => runRoutine(r)} disabled={runningRoutineId !== null || running} title="이 업무만 지금 실행"
-                className="flex-shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-40 transition-all active:scale-95">
-                {runningRoutineId === r.id ? '실행 중…' : '▶ 실행'}
-              </button>
-              <button onClick={() => removeRoutine(r.id)} title="삭제"
-                className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-rose-400 text-sm transition-all">×</button>
-            </div>
-          ))}
+          {routines.map(r => {
+            const guide = routineGuide(r.label);
+            const open = expandedRoutine === r.id;
+            return (
+              <div key={r.id}>
+                <div className="group flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors">
+                  <button onClick={() => toggleRoutine(r)} title={r.enabled ? '끄기' : '켜기'}
+                    className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] text-white transition-colors flex-shrink-0 ${r.enabled ? 'bg-primary-500' : 'bg-gray-300'}`}>✓</button>
+                  <button onClick={() => guide && setExpandedRoutine(open ? null : r.id)} title={guide ? '무슨 일인지 보기' : undefined}
+                    className={`text-sm flex-1 min-w-0 text-left flex items-center gap-1 ${r.enabled ? 'text-gray-700' : 'text-gray-300 line-through'} ${guide ? 'cursor-pointer hover:text-primary-600' : 'cursor-default'} transition-colors`}>
+                    <span className="truncate">{r.label}</span>
+                    {guide && <span className={`text-[9px] text-gray-300 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>}
+                  </button>
+                  <button onClick={() => setEditingRoutine(r)} title="주기·시간 설정"
+                    className="text-[10px] text-gray-400 flex-shrink-0 hover:text-primary-500 transition-colors">{formatSchedule(r)} ✎</button>
+                  <button onClick={() => runRoutine(r)} disabled={runningRoutineId !== null || running} title="이 업무만 지금 실행"
+                    className="flex-shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-40 transition-all active:scale-95">
+                    {runningRoutineId === r.id ? '실행 중…' : '▶ 실행'}
+                  </button>
+                  <button onClick={() => removeRoutine(r.id)} title="삭제"
+                    className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-rose-400 text-sm transition-all flex-shrink-0">×</button>
+                </div>
+                {open && guide && (
+                  <p className="mx-2 mb-2 -mt-0.5 px-3 py-2 rounded-xl bg-primary-50/60 text-[12px] text-gray-600 leading-relaxed">{guide}</p>
+                )}
+              </div>
+            );
+          })}
           {routines.length === 0 && <p className="text-xs text-gray-300 py-3 text-center">＋ 추가로 일과를 만들어보세요</p>}
         </Card>
       </div>

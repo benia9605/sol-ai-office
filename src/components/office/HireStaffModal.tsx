@@ -6,7 +6,7 @@
  */
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { STAFF_TYPES } from '../../data/staffCatalog';
+import { STAFF_TYPES, routineGuide } from '../../data/staffCatalog';
 import { hireStaff } from '../../services/staff.service';
 import { Staff, StaffTypeDef, StaffModel, Workspace } from '../../types';
 
@@ -90,6 +90,12 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
         {/* 2단계: 설정 */}
         {type && (
           <div className="space-y-4">
+            {/* 가이드 — 이 직원이 무슨 일을 하는지 */}
+            <div className="rounded-2xl bg-primary-50/60 border border-primary-100 p-3.5 flex items-start gap-2.5">
+              <span className="text-base flex-shrink-0">💡</span>
+              <p className="text-[12px] text-gray-600 leading-relaxed">{type.guide}</p>
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">이름</label>
               <input value={name} onChange={e => setName(e.target.value)}
@@ -111,15 +117,21 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">매일 하는 일</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">매일 하는 일 <span className="font-normal text-gray-400">· 주기·시간은 채용 후 일과 ✎에서 설정</span></label>
               <div className="space-y-1.5">
-                {type.defaultRoutines.map(r => (
-                  <button key={r} onClick={() => toggleRoutine(r)}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-left transition-colors">
-                    <span className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] text-white ${routines.includes(r) ? 'bg-primary-500' : 'bg-gray-300'}`}>✓</span>
-                    <span className="text-sm text-gray-700">{r}</span>
-                  </button>
-                ))}
+                {type.defaultRoutines.map(r => {
+                  const guide = routineGuide(r);
+                  return (
+                    <button key={r} onClick={() => toggleRoutine(r)}
+                      className="w-full flex items-start gap-2 px-3 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-left transition-colors">
+                      <span className={`w-4 h-4 mt-0.5 rounded-md flex items-center justify-center text-[10px] text-white flex-shrink-0 ${routines.includes(r) ? 'bg-primary-500' : 'bg-gray-300'}`}>✓</span>
+                      <span className="min-w-0">
+                        <span className="block text-sm text-gray-700">{r}</span>
+                        {guide && <span className="block text-[11px] text-gray-400 leading-relaxed mt-0.5">{guide}</span>}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

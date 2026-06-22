@@ -103,10 +103,11 @@ export interface StaffTypeDef {
   label: string;
   emoji: string;
   roleLine: string;           // 역할 한 줄
+  guide: string;              // 온보딩 가이드 — 이 직원이 무슨 일을 하고 어떻게 쓰는지 (상단 표시)
   features: string[];         // 3대 기능
   outputKind: OutputKind;
   defaultModel: StaffModel;   // 타입별 기본 모델(채용 시 적용, 변경 가능)
-  defaultRoutines: string[];  // 기본 일과
+  defaultRoutines: string[];  // 기본 일과 (행동 라벨만 — 시간/주기는 일과 ✎로 설정)
   defaultPrompt: string;      // 채용 시 미리 채워지는 기본 프롬프트(편집 가능)
   promptPlaceholder: string;  // 비었을 때 힌트
 }

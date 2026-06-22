@@ -53,6 +53,40 @@ const EMPTY: Form = {
   priceRange: '', competitors: '', story: '', csPolicies: '', csTone: '', raw: '',
 };
 
+/**
+ * 입력 필드 — ⚠️ 반드시 모듈 스코프(컴포넌트 밖)에 둔다.
+ * BrandView 안에 정의하면 키 입력마다 setForm→리렌더로 Field가 매번 "새 컴포넌트"가 되어
+ * React가 <input>을 언마운트/리마운트 → 한 글자 칠 때마다 포커스가 풀리고 화면이 튄다.
+ */
+type FieldProps = {
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  hint?: string;
+  textarea?: boolean;
+  warn?: boolean;
+};
+function Field({ label, value, onChange, hint, textarea, warn }: FieldProps) {
+  return (
+    <div>
+      <label className={`block text-xs font-semibold mb-1 ${warn ? 'text-rose-500' : 'text-gray-600'}`}>{label}</label>
+      {textarea ? (
+        <textarea
+          value={value} onChange={onChange} rows={3}
+          placeholder={hint}
+          className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none resize-none leading-relaxed"
+        />
+      ) : (
+        <input
+          value={value} onChange={onChange}
+          placeholder={hint}
+          className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none"
+        />
+      )}
+    </div>
+  );
+}
+
 function fromBC(bc: BrandContext): Form {
   return {
     identity: bc.identity ?? '', category: bc.category ?? '', tone: bc.tone ?? '',
@@ -107,23 +141,9 @@ export function BrandView({ workspace }: { workspace: Workspace }) {
     }
   };
 
-  const Field = ({ label, k, hint, textarea, warn }: { label: string; k: keyof Form; hint?: string; textarea?: boolean; warn?: boolean }) => (
-    <div>
-      <label className={`block text-xs font-semibold mb-1 ${warn ? 'text-rose-500' : 'text-gray-600'}`}>{label}</label>
-      {textarea ? (
-        <textarea
-          value={form[k]} onChange={set(k)} rows={3}
-          placeholder={hint}
-          className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none resize-none leading-relaxed"
-        />
-      ) : (
-        <input
-          value={form[k]} onChange={set(k)}
-          placeholder={hint}
-          className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none"
-        />
-      )}
-    </div>
+  /** k 키에 바인딩된 Field 헬퍼 (Field 자체는 모듈 스코프 — 위 정의 참고) */
+  const f = (label: string, k: keyof Form, hint?: string, opts?: { textarea?: boolean; warn?: boolean }) => (
+    <Field label={label} value={form[k]} onChange={set(k)} hint={hint} textarea={opts?.textarea} warn={opts?.warn} />
   );
 
   return (
@@ -159,34 +179,34 @@ export function BrandView({ workspace }: { workspace: Workspace }) {
         <div className="space-y-3">
           <Card className="p-5 space-y-4">
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">기본 정체성</div>
-            <Field label="정체성 한 줄" k="identity" hint="예: 시목 — 오래 쓰는 원목 가구·소품. 기준 있는 선택." />
-            <Field label="카테고리" k="category" hint="예: 원목 인테리어 가구/소품" />
-            <Field label="톤앤매너" k="tone" hint="예: 장인·자연·따뜻·담백. 과장 금지." />
-            <Field label="주요 타겟" k="target" hint="예: 2030 신혼·자취 + 친환경 니즈" />
+            {f('정체성 한 줄', 'identity', '예: 시목 — 오래 쓰는 원목 가구·소품. 기준 있는 선택.')}
+            {f('카테고리', 'category', '예: 원목 인테리어 가구/소품')}
+            {f('톤앤매너', 'tone', '예: 장인·자연·따뜻·담백. 과장 금지.')}
+            {f('주요 타겟', 'target', '예: 2030 신혼·자취 + 친환경 니즈')}
           </Card>
 
           <Card className="p-5 space-y-4">
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">강점 · 판매</div>
-            <Field label="핵심 USP (줄바꿈으로 여러 개)" k="usp" textarea hint={'예: 통원목 한 장\n천연오일 마감\n국내 수작업'} />
-            <Field label="판매 채널" k="channels" hint="예: 네이버 스마트스토어, 인스타그램" />
-            <Field label="가격 포지셔닝" k="pricePosition" hint="예: 프리미엄 (가격 정당화 필요)" />
-            <Field label="광고 소구점" k="adAngle" hint="예: 품질 · 원목 · 오래가는" />
+            {f('핵심 USP (줄바꿈으로 여러 개)', 'usp', '예: 통원목 한 장\n천연오일 마감\n국내 수작업', { textarea: true })}
+            {f('판매 채널', 'channels', '예: 네이버 스마트스토어, 인스타그램')}
+            {f('가격 포지셔닝', 'pricePosition', '예: 프리미엄 (가격 정당화 필요)')}
+            {f('광고 소구점', 'adAngle', '예: 품질 · 원목 · 오래가는')}
           </Card>
 
           <Card className="p-5 space-y-4">
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">상품 · 시장 <span className="text-gray-300 normal-case">(채울수록 직원이 똑똑해져요)</span></div>
-            <Field label="주력 상품" k="mainProducts" hint="예: 티크 도마, OO 원목 식탁" />
-            <Field label="대표 가격대" k="priceRange" hint="예: 3~5만원 (소품) / 20~40만원 (식탁)" />
-            <Field label="주요 경쟁사" k="competitors" hint="예: OO몰, △△브랜드" />
-            <Field label="창업 스토리 · 차별점" k="story" textarea hint="시목이 어떻게 시작됐고 결정적 차별점은 무엇인지 한 문단" />
+            {f('주력 상품', 'mainProducts', '예: 티크 도마, OO 원목 식탁')}
+            {f('대표 가격대', 'priceRange', '예: 3~5만원 (소품) / 20~40만원 (식탁)')}
+            {f('주요 경쟁사', 'competitors', '예: OO몰, △△브랜드')}
+            {f('창업 스토리 · 차별점', 'story', '시목이 어떻게 시작됐고 결정적 차별점은 무엇인지 한 문단', { textarea: true })}
           </Card>
 
           <Card className="p-5 space-y-4">
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">규제 · 자유 입력</div>
-            <Field label="⚠️ 금지표현 (줄바꿈으로 여러 개)" k="compliance" textarea warn hint={"예: '평생 보장' 단정 금지\n'100% 무독성'은 근거 있을 때만"} />
-      <Field label="💬 CS 정책 (배송/교환/환불/파손 기준)" k="csPolicies" textarea hint={"예: 단순변심 교환은 수령 7일 내·왕복배송비 고객부담\n파손은 사진 확인 후 무료 재배송\n주문 제작품은 환불 불가"} />
-      <Field label="💬 CS 응대 톤" k="csTone" textarea hint="예: 정중한 존댓말, 이모지 최소, 먼저 공감 후 해결책. 환불은 정책 내 최대한 수용적으로" />
-            <Field label="자유 서술 (AI에 그대로 전달)" k="raw" textarea hint="위 항목으로 안 담기는 추가 맥락을 자유롭게" />
+            {f('⚠️ 금지표현 (줄바꿈으로 여러 개)', 'compliance', "예: '평생 보장' 단정 금지\n'100% 무독성'은 근거 있을 때만", { textarea: true, warn: true })}
+            {f('💬 CS 정책 (배송/교환/환불/파손 기준)', 'csPolicies', "예: 단순변심 교환은 수령 7일 내·왕복배송비 고객부담\n파손은 사진 확인 후 무료 재배송\n주문 제작품은 환불 불가", { textarea: true })}
+            {f('💬 CS 응대 톤', 'csTone', '예: 정중한 존댓말, 이모지 최소, 먼저 공감 후 해결책. 환불은 정책 내 최대한 수용적으로', { textarea: true })}
+            {f('자유 서술 (AI에 그대로 전달)', 'raw', '위 항목으로 안 담기는 추가 맥락을 자유롭게', { textarea: true })}
           </Card>
 
           <div className="flex items-center gap-3 pt-1 pb-6">
