@@ -89,8 +89,13 @@ const mockData: Record<string, any[]> = {
     project: s.project, color: s.color, category: s.category,
     repeat: s.repeat ?? 'none', reminder: s.reminder, notes: s.notes, tags: s.tags,
     workspace_id: 'ws-personal', is_shared: true,
+    // 플랜 지원 (migration 021)
+    completed: s.completed ?? false, completed_at: s.completedAt ?? null,
+    is_milestone: s.isMilestone ?? false, plan_id: s.planId ?? null,
+    phase: s.phase ?? null, sort_order: s.sortOrder ?? 0, generated_by: s.generatedBy ?? 'manual',
     created_at: new Date().toISOString(),
   })),
+  schedule_plans: [],
   tasks: dummyTasks.map(t => ({
     id: t.id, user_id: 'dev', title: t.title, project: t.project,
     goal_id: t.goalId, status: t.status === 'pending' ? 'todo' : t.status === 'completed' ? 'done' : t.status,

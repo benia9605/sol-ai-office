@@ -381,6 +381,43 @@ export interface ScheduleItem {
   tags?: string[];
   workspaceId?: string;
   isShared?: boolean;
+  // ── 플랜(roll-out plan) 지원 (migration 021) ──
+  completed?: boolean;        // 체크리스트 완료
+  completedAt?: string;
+  isMilestone?: boolean;      // 절대 놓치면 안 되는 마감
+  planId?: string;            // 소속 플랜
+  phase?: string;             // 주차/단계 키 (schedule_plans.phases의 key)
+  sortOrder?: number;         // 같은 날 내 정렬
+  generatedBy?: string;       // 'manual' | 'ai' | staffId — AI 자동 생성 구분
+}
+
+/** 플랜 단계(주차) 정의 */
+export interface SchedulePhase {
+  key: string;     // 예: '0','1' …
+  tag: string;     // 예: 'WEEK 0'
+  name: string;    // 예: '이사 & 첫 콘텐츠'
+}
+/** 플랜 카테고리(타입) 정의 */
+export interface SchedulePlanCategory {
+  key: string;     // 예: 'content'
+  label: string;   // 예: '숏폼'
+  color: string;   // hex
+}
+/** 일정 플랜 (D-day 프로젝트 — 주차별 체크리스트의 컨테이너) */
+export interface SchedulePlan {
+  id: string;
+  name: string;
+  emoji?: string;
+  goal?: string;            // 목표 (예: 방문 30명+)
+  description?: string;
+  targetDate?: string;      // D-day
+  startDate?: string;
+  phases: SchedulePhase[];
+  categories: SchedulePlanCategory[];
+  status: 'active' | 'done' | 'archived';
+  generatedBy: 'manual' | 'ai';
+  workspaceId?: string;
+  createdAt?: string;
 }
 
 /** 할일 상태 */

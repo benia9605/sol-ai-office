@@ -34,8 +34,8 @@ function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-export function SchedulesPageModern() {
-  const { schedules, add: addSchedule, update: updateSchedule, remove: removeSchedule } = useSchedules();
+export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: string; embedded?: boolean } = {}) {
+  const { schedules, add: addSchedule, update: updateSchedule, remove: removeSchedule, toggleComplete } = useSchedules(workspaceId);
   const { tasks, updateTask } = useTasks();
   const { projects } = useProjects();
   const [taskCategories] = useState(defaultTaskCategories);
@@ -136,9 +136,9 @@ export function SchedulesPageModern() {
     }
   };
 
-  return (
-    <main className="min-h-full bg-surface text-foreground">
-      <div className="mx-auto max-w-5xl px-5 sm:px-8 py-10 sm:py-14 space-y-14 sm:space-y-16">
+  const inner = (
+    <>
+      <div className={embedded ? 'space-y-12' : 'mx-auto max-w-5xl px-5 sm:px-8 py-10 sm:py-14 space-y-14 sm:space-y-16'}>
 
         {/* ── Page Header ── */}
         <section className="flex items-end justify-between gap-6 flex-wrap">
@@ -236,6 +236,7 @@ export function SchedulesPageModern() {
                 items={items}
                 categories={categories}
                 onItemClick={setSelectedItem}
+                onToggleComplete={toggleComplete}
               />
             ))
           )}
@@ -264,8 +265,9 @@ export function SchedulesPageModern() {
           onClose={() => setSelectedTaskItem(null)}
         />
       )}
-    </main>
+    </>
   );
+  return embedded ? inner : <main className="min-h-full bg-surface text-foreground">{inner}</main>;
 }
 
 /* ─────────────────────────────────────────────────────── */
@@ -614,11 +616,13 @@ function MonthGroup({
   items,
   categories,
   onItemClick,
+  onToggleComplete,
 }: {
   monthKey: string;
   items: ScheduleItem[];
   categories: ScheduleCategory[];
   onItemClick: (s: ScheduleItem) => void;
+  onToggleComplete: (id: string) => void;
 }) {
   const [y, m] = monthKey.split('-').map(Number);
   const monthLabel = `${y}.${String(m).padStart(2, '0')} · ${MONTHS_EN[m - 1]}`;
@@ -637,8 +641,21 @@ function MonthGroup({
               <button
                 type="button"
                 onClick={() => onItemClick(s)}
-                className="w-full grid grid-cols-[88px_1fr_auto] items-center gap-5 py-5 pl-5 pr-4 sm:pl-6 hover:bg-surface-muted transition-colors text-left"
+                className={`w-full grid grid-cols-[28px_88px_1fr_auto] items-center gap-3 sm:gap-5 py-5 pl-4 pr-4 sm:pl-5 hover:bg-surface-muted transition-colors text-left ${s.completed ? 'opacity-55' : ''}`}
               >
+                {/* 완료 체크 (체크리스트) */}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); onToggleComplete(s.id); }}
+                  aria-label={s.completed ? '완료 취소' : '완료'}
+                  className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center transition-colors ${
+                    s.completed ? 'bg-primary-500 border-primary-500 text-white' : 'border-foreground-faint text-transparent hover:border-primary-400'
+                  }`}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                </span>
+
                 {/* 왼쪽: 날짜 (좌측 컬러 라인 + 큰 숫자) */}
                 <div className="flex items-stretch gap-3 border-r border-line pr-4">
                   <span
@@ -664,7 +681,11 @@ function MonthGroup({
                 {/* 가운데: 제목 + 메타 */}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 min-w-0">
-                    <p className="text-base truncate">{s.title}</p>
+                    {s.isMilestone && <span className="shrink-0" title="절대 놓치면 안 되는 마감">🚩</span>}
+                    <p className={`text-base truncate ${s.completed ? 'line-through text-foreground-faint' : ''}`}>{s.title}</p>
+                    {s.generatedBy && s.generatedBy !== 'manual' && (
+                      <span className="shrink-0 text-[10px] px-1.5 py-0.5 leading-none bg-primary-50 text-primary-600 rounded-full" title="AI 일정 비서가 만든 일정">🤖 AI</span>
+                    )}
                     {cat && cc && (
                       <span
                         className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 leading-none shrink-0"

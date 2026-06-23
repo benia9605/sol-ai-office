@@ -48,7 +48,8 @@
 | 테이블 | 컬럼 |
 |---|---|
 | `tasks` | id, user_id, title, type, project, goal_id, status('todo'\|'in_progress'\|'done'), priority, starred, due_date, category, notes, repeat, tags, estimated_time, actual_time, conversation_id, completed_at, **workspace_id**, **is_shared**, **assignee_id**, created_at |
-| `schedules` | id, user_id, title, date, end_date, time, project, color, category, repeat, reminder, notes, tags, **workspace_id**, **is_shared**, created_at |
+| `schedules` | id, user_id, title, date, end_date, time, project, color, category, repeat, reminder, notes, tags, **workspace_id**, **is_shared**, **completed**, **completed_at**, **is_milestone**, **plan_id**, **phase**, **sort_order**, **generated_by**, created_at · 플랜 컬럼은 021에서 추가 |
+| `schedule_plans` (플랜 — D-day 프로젝트) | id, user_id, **workspace_id**, name, emoji, goal, description, target_date, start_date, phases(jsonb 주차정의), categories(jsonb 카테고리정의), status('active'\|'done'\|'archived'), generated_by('manual'\|'ai'), created_at · 021에서 신설. 소속 일정은 `schedules.plan_id`로 연결 |
 | `insights` | id, user_id, title, content, source, link, tags, project, priority, starred, time, **workspace_id**, **is_shared**, created_at |
 | `readings` | id, user_id, title, author, category, total_pages, current_page, total_lessons, current_lesson, status, cover_emoji, cover_image, start_date, completed_date, rating, review, tags, link, price, toc, chapters, isbn13, **workspace_id**, **is_shared**, **recommended_by**, created_at |
 | `reading_logs` (스터디/독서 노트) | id, user_id, reading_id, date, time, chapter, content(jsonb), raw_text, sections(jsonb), **action_items_json**(jsonb), **workspace_id**, **is_shared**, created_at, updated_at · ⚠️ 실제 테이블명은 `reading_logs`(코드/서비스 기준). 워크스페이스 컬럼은 007에서 추가 |
