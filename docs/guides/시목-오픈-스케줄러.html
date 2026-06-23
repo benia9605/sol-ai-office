@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>시목 오픈 스케줄러</title>
+<style>
+  :root{
+    --bg:#f5f5f7;
+    --surface:#ffffff;
+    --ink:#1d1d1f;
+    --ink-soft:#6e6e73;
+    --ink-faint:#aeaeb2;
+    --line:#e5e5e7;
+    --wood:#9a6b43;
+    --wood-soft:#bb8a5e;
+    --wood-wash:#f3ebe1;
+    --red:#e0584b;
+    --green:#34a853;
+    --blue:#0a84ff;
+    --shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.06);
+    --radius:14px;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Pretendard","Apple SD Gothic Neo",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--ink);line-height:1.45;padding:24px 16px 80px;}
+  .wrap{max-width:1080px;margin:0 auto;}
+
+  /* header */
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
+  .titleblock h1{font-size:28px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:10px;}
+  .titleblock .leaf{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--wood),var(--wood-soft));display:grid;place-items:center;color:#fff;font-size:16px;}
+  .titleblock p{color:var(--ink-soft);font-size:14px;margin-top:6px;}
+  .titleblock .dday{color:var(--wood);font-weight:600;}
+
+  .progresswrap{min-width:230px;flex:1;max-width:300px;}
+  .progresswrap .plabel{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-bottom:7px;}
+  .progresswrap .pcount{font-weight:600;color:var(--ink);}
+  .bar{height:9px;background:var(--line);border-radius:6px;overflow:hidden;}
+  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--wood-soft),var(--wood));border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+  /* segmented control */
+  .seg{display:inline-flex;background:#e9e9eb;border-radius:10px;padding:3px;margin-bottom:18px;}
+  .seg button{border:none;background:transparent;font:inherit;font-size:13px;font-weight:500;color:var(--ink);padding:7px 18px;border-radius:8px;cursor:pointer;transition:.2s;}
+  .seg button.on{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12);font-weight:600;}
+
+  /* calendar */
+  .cal{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+  .calhead{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line);}
+  .calhead div{padding:12px 0;text-align:center;font-size:12px;font-weight:600;color:var(--ink-soft);}
+  .calhead div:first-child{color:var(--red);}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);}
+  .cell{min-height:104px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 7px 9px;cursor:pointer;position:relative;transition:background .15s;display:flex;flex-direction:column;gap:4px;}
+  .cell:nth-child(7n){border-right:none;}
+  .cell.empty{background:#fafafa;cursor:default;}
+  .cell:not(.empty):hover{background:var(--wood-wash);}
+  .cell.sel{background:var(--wood-wash);box-shadow:inset 0 0 0 2px var(--wood);}
+  .daynum{font-size:13px;font-weight:600;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;}
+  .cell.sun .daynum{color:var(--red);}
+  .cell.today .daynum{background:var(--red);color:#fff;}
+  .cell.open .daynum{background:var(--wood);color:#fff;}
+  .pills{display:flex;flex-direction:column;gap:3px;overflow:hidden;}
+  .pill{font-size:10.5px;line-height:1.3;padding:2px 6px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;}
+  .pill.setup{background:#eaf3ec;color:#2c7a45;}
+  .pill.infra{background:#e8f0fb;color:#1a6fd4;}
+  .pill.mkt{background:#fbeee8;color:#c8632e;}
+  .pill.content{background:var(--wood-wash);color:var(--wood);}
+  .pill.sns{background:#e7f3f0;color:#1f8a6d;}
+  .pill.ad{background:#fde9ef;color:#c43168;}
+  .pill.run{background:#f0eafb;color:#7c4dd6;}
+  .pill.milestone{background:var(--red);color:#fff;font-weight:600;}
+  .cell .dot{position:absolute;bottom:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--green);display:none;}
+  .cell.alldone .dot{display:block;}
+  .cell .cnt{position:absolute;bottom:6px;right:8px;font-size:9.5px;color:var(--ink-faint);font-weight:600;}
+  .cell.alldone .cnt{display:none;}
+
+  /* week label rows in grid */
+  .weekband{grid-column:1/-1;background:#fbfaf8;border-bottom:1px solid var(--line);padding:6px 14px;font-size:11px;font-weight:700;letter-spacing:.02em;color:var(--wood);display:flex;align-items:center;gap:8px;}
+  .weekband .wtag{background:var(--wood-wash);color:var(--wood);padding:1px 8px;border-radius:20px;font-size:10px;}
+
+  /* detail panel */
+  .detail{margin-top:20px;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 22px 8px;display:none;}
+  .detail.show{display:block;animation:rise .3s ease;}
+  @keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .detail h2{font-size:19px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .detail .dsub{color:var(--ink-soft);font-size:13px;margin:4px 0 16px;}
+  .badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;}
+  .badge.openday{background:var(--wood);color:#fff;}
+  .badge.rest{background:#e9e9eb;color:var(--ink-soft);}
+
+  .tasklist{display:flex;flex-direction:column;}
+  .task{display:flex;align-items:flex-start;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .task:last-child{border-bottom:none;}
+  .check{width:23px;height:23px;border-radius:50%;border:2px solid var(--ink-faint);flex-shrink:0;margin-top:1px;display:grid;place-items:center;transition:.2s;}
+  .check svg{width:13px;height:13px;opacity:0;transform:scale(.5);transition:.2s;}
+  .task.done .check{background:var(--green);border-color:var(--green);}
+  .task.done .check svg{opacity:1;transform:scale(1);}
+  .tbody{flex:1;min-width:0;}
+  .tbody .tt{font-size:14.5px;font-weight:500;transition:.2s;}
+  .task.done .tt{color:var(--ink-faint);text-decoration:line-through;}
+  .tbody .tmeta{display:flex;gap:7px;align-items:center;margin-top:4px;flex-wrap:wrap;}
+  .tag{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:5px;}
+  .tag.setup{background:#eaf3ec;color:#2c7a45;}
+  .tag.infra{background:#e8f0fb;color:#1a6fd4;}
+  .tag.mkt{background:#fbeee8;color:#c8632e;}
+  .tag.content{background:var(--wood-wash);color:var(--wood);}
+  .tag.sns{background:#e7f3f0;color:#1f8a6d;}
+  .tag.ad{background:#fde9ef;color:#c43168;}
+  .tag.run{background:#f0eafb;color:#7c4dd6;}
+  .tag.milestone{background:var(--red);color:#fff;}
+  .tag.unmyung{background:#efe7f5;color:#8a4fc4;}
+  .video{font-size:12.5px;color:var(--ink-soft);}
+
+  /* milestone list */
+  .miles{margin-top:20px;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;}
+  .miles h3{font-size:15px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+  .miles .msub{font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;}
+  .mrow{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .mrow:last-child{border-bottom:none;}
+  .mrow .mcheck{width:21px;height:21px;border-radius:6px;border:2px solid var(--ink-faint);flex-shrink:0;display:grid;place-items:center;transition:.2s;}
+  .mrow .mcheck svg{width:12px;height:12px;opacity:0;transition:.2s;}
+  .mrow.done .mcheck{background:var(--red);border-color:var(--red);}
+  .mrow.done .mcheck svg{opacity:1;}
+  .mrow .mdate{font-size:12px;font-weight:700;color:var(--red);width:74px;flex-shrink:0;}
+  .mrow .mtext{font-size:13.5px;font-weight:500;flex:1;}
+  .mrow.done .mtext{color:var(--ink-faint);text-decoration:line-through;}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:16px 2px 0;font-size:11.5px;color:var(--ink-soft);}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+
+  .reset{margin-top:24px;text-align:center;}
+  .reset button{background:none;border:none;color:var(--ink-faint);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline;}
+
+  footer{text-align:center;color:var(--ink-faint);font-size:11.5px;margin-top:20px;}
+
+  @media(max-width:680px){
+    body{padding:16px 8px 60px;}
+    .cell{min-height:74px;padding:5px 4px;}
+    .pills{display:none;}
+    .daynum{font-size:12px;width:22px;height:22px;}
+    .cell .cnt{font-size:9px;}
+    .titleblock h1{font-size:22px;}
+    .calhead div{font-size:11px;padding:9px 0;}
+    .cell .hasdot{position:absolute;top:7px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--wood-soft);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="titleblock">
+      <h1><span class="leaf">木</span> 시목 오픈 스케줄러</h1>
+      <p>6/25 이사 → <span class="dday">7/25(토) 오픈</span> · 목표 방문 30명+ &nbsp;|&nbsp; 날짜를 눌러 그날 할 일을 확인하고 체크하세요</p>
+    </div>
+    <div class="progresswrap">
+      <div class="plabel"><span>전체 진행률</span><span class="pcount" id="pcount">0 / 0</span></div>
+      <div class="bar"><i id="pbar"></i></div>
+    </div>
+  </header>
+
+  <div class="seg" id="seg">
+    <button data-m="6" class="on">6월</button>
+    <button data-m="7">7월</button>
+  </div>
+
+  <div class="cal">
+    <div class="calhead"><div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:#eaf3ec"></i>셋업</span>
+    <span><i style="background:#e8f0fb"></i>인프라/온라인</span>
+    <span><i style="background:var(--wood-wash)"></i>숏폼(셋팅 N일차)</span>
+    <span><i style="background:#e7f3f0"></i>스레드·당근</span>
+    <span><i style="background:#fde9ef"></i>메타광고</span>
+    <span><i style="background:#f0eafb"></i>운영</span>
+    <span><i style="background:var(--red)"></i>핵심 마감</span>
+    <span><i style="background:#efe7f5"></i>운명랩</span>
+  </div>
+
+  <div class="detail" id="detail"></div>
+
+  <div class="miles">
+    <h3>🚩 절대 놓치면 안 되는 마감일</h3>
+    <p class="msub">이게 밀리면 전체가 밀려요. 따로 체크해두세요.</p>
+    <div id="mileslist"></div>
+  </div>
+
+  <div class="reset"><button id="resetbtn">모든 체크 초기화</button></div>
+  <footer>로컬에 자동 저장됩니다 · 같은 브라우저에서 열면 체크가 유지돼요</footer>
+
+</div>
+
+<script>
+const CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+// ---- schedule data ----
+// type: setup, infra, mkt, content(숏폼), sns(스레드·당근), ad(메타광고), run, milestone, unmyung
+const DATA = {
+  // WEEK 0
+  "6-25":{week:0,label:null,rest:true,tasks:[{t:"🚚 이사. 짐 정리, 2층 매장 공간 완전히 비우기",type:"setup"}]},
+  "6-26":{tasks:[{t:"매장 실측 (벽·바닥·창·콘센트 위치)",type:"setup"},{t:"빈 공간 사진 많이 찍어두기",type:"setup"},{t:"📹 [예고편] '빈 매장 첫 공개' before 영상",type:"content"}]},
+  "6-27":{tasks:[{t:"레이아웃 종이에 그리기 (가구 배치)",type:"setup"},{t:"시트지·집기 발주 리스트 작성",type:"setup"},{t:"📹 [예고편] '여기에 뭐가 들어올지' 둘러보기",type:"content"}]},
+  "6-28":{tasks:[{t:"⏰ 시트지·페인트·집기 온라인 발주 마감 (배송 3~5일!)",type:"milestone"},{t:"📱 스레드+당근 '시목 매장 준비 시작합니다' 첫 예고",type:"sns"},{t:"운명랩 스레드 1개 (와디즈 감사 글)",type:"unmyung"}]},
+  // WEEK 1 — 셋팅 시리즈 시작 (6/29 = 1일차)
+  "6-29":{week:1,tasks:[{t:"매장 공간 보수 시작 (벽·바닥 점검, 손볼 곳)",type:"setup"},{t:"시트지 붙이기 시작",type:"setup"},{t:"💰 가격정책 초안 — 원가·마진 계산",type:"infra"},{t:"📹 셋팅 1일차 — '보수 시작, 시트지 첫날'",type:"content"}]},
+  "6-30":{tasks:[{t:"시트지 이어붙이기, 조명 점검·교체",type:"setup"},{t:"💰 패키지 구성 기획 (단품 vs 세트)",type:"infra"},{t:"📹 셋팅 2일차 — '벽 바뀌니 분위기가' 비교",type:"content"},{t:"📱 스레드 '셋팅 일기' 글 1개",type:"sns"}]},
+  "7-1":{tasks:[{t:"시트지 마무리, 청소",type:"setup"},{t:"🌐 홈페이지 점검 — 실결제 테스트 1건 성공",type:"milestone"},{t:"📹 셋팅 3일차 — '시트지 완성, 공간 정돈'",type:"content"}]},
+  "7-2":{tasks:[{t:"가구 배치 레이아웃 최종 확정",type:"setup"},{t:"🌐 결제 오류 시 수정 의뢰",type:"infra"},{t:"📹 셋팅 4일차 — '여기엔 이게, 저기엔 저게' 배치 계획",type:"content"}]},
+  "7-3":{tasks:[{t:"디스플레이 소품·집기 준비 (선반·행거·POP)",type:"setup"},{t:"💰 오픈세일 여부 결정 (할인율·기간·사은품)",type:"infra"},{t:"📹 셋팅 5일차 — '소품 언박싱'",type:"content"},{t:"📱 스레드+당근 '셋팅 중간 공유' 글",type:"sns"}]},
+  "7-4":{tasks:[{t:"조명·식물 디테일, 포토존 자리 잡기",type:"setup"},{t:"📍 당근 비즈프로필/플레이스 가입 시작",type:"infra"},{t:"📹 셋팅 6일차 — '가구 오기 전 빈 공간 마지막'",type:"content"}]},
+  "7-5":{rest:true,tasks:[{t:"예비일 — 보수·셋팅 마무리 (가구 받을 준비 완료)",type:"setup"},{t:"📹 셋팅 7일차 — '일주일 변화 몰아보기'",type:"content"}]},
+  // WEEK 2 — 가구 입고 (아버님 창고 → 약 2주 점진 운반 + 1·2층 제품 정리)
+  "7-6":{week:2,tasks:[{t:"🪑 가구 입고 시작 — 아버님 창고 1차 운반 (메인 대형 가구)",type:"setup"},{t:"운반 가구 1·2층 임시 배치",type:"setup"},{t:"📹 셋팅 8일차 — '가구 들어오는 날' (임팩트 최고)",type:"content"},{t:"📱 스레드+당근 '드디어 가구가 들어왔어요' 글",type:"sns"}]},
+  "7-7":{tasks:[{t:"🪑 가구 2차 운반, 1층 창고 제품 분류 시작",type:"setup"},{t:"🌐 홈페이지 상품 등록 점검 (재고·옵션·배송비)",type:"infra"},{t:"📹 셋팅 9일차 — '이 제품은 이렇게 만들어져요'",type:"content"}]},
+  "7-8":{tasks:[{t:"🪑 가구 운반 + 2층 매장 1차 배치 (큰 것부터)",type:"setup"},{t:"💳 결제 전 과정 최종 테스트 (장바구니→결제→메일)",type:"infra"},{t:"📹 셋팅 10일차 — '가구 들어찬 모습' 비포애프터",type:"content"}]},
+  "7-9":{tasks:[{t:"🪑 가구 운반 + 1층 창고 재고 시스템화",type:"setup"},{t:"📹 셋팅 11일차 — '창고 정리 / 재고 구경'",type:"content"},{t:"📱 스레드 '셋팅 일기' 글 1개",type:"sns"}]},
+  "7-10":{tasks:[{t:"🪑 가구 운반 마무리 단계, 2층 디스플레이 1차",type:"setup"},{t:"🏷️ 가격표·POP·명함·포장재 점검",type:"infra"},{t:"📹 셋팅 12일차 — '디스플레이 잡히는 과정'",type:"content"}]},
+  "7-11":{tasks:[{t:"🪑 남은 가구 정리, 제품별 위치 확정",type:"setup"},{t:"📹 셋팅 13일차 — '매장 거의 다 찼다' 중간 투어",type:"content"},{t:"📱 당근 동네 글 '곧 오픈해요' 1개",type:"sns"}]},
+  "7-12":{rest:true,tasks:[{t:"매장 최종 디스플레이 완성 (오픈 모드)",type:"setup"},{t:"광고 소재 추리기 (사진·영상)",type:"mkt"},{t:"📹 셋팅 14일차 — 'D-13, 거의 완성'",type:"content"},{t:"운명랩 스레드 1개 + 당근 글 1개",type:"unmyung"}]},
+  // WEEK 3 — 마케팅 풀가동 (메타광고 본격 시작)
+  "7-13":{week:3,tasks:[{t:"📍 당근 플레이스 완성 (사진·영업시간·위치·소개글)",type:"milestone"},{t:"📣 메타 광고 계정·픽셀 세팅, 소재 3종 준비 (감성/제품/오픈예고)",type:"ad"},{t:"📹 셋팅 15일차 — '매장 완성!' 풀투어 (광고 소재 겸용)",type:"content"}]},
+  "7-14":{tasks:[{t:"🎉 오픈 정식 공지 (날짜·시간·위치·혜택 전부 공개)",type:"milestone"},{t:"📱 스레드+당근 오픈 공지 글 (예약 안내 포함)",type:"sns"},{t:"📹 셋팅 16일차 — '오픈 이벤트 내용 공개'",type:"content"}]},
+  "7-15":{tasks:[{t:"📣 메타 광고 ON (오픈 10일 전 = 학습 골든타임)",type:"ad"},{t:"📹 셋팅 17일차 — 광고용 짧은 릴스",type:"content"}]},
+  "7-16":{tasks:[{t:"📣 메타 광고 반응 체크·예산 조정",type:"ad"},{t:"📱 당근 동네 홍보 글 1개",type:"sns"},{t:"📹 셋팅 18일차 — '단골될 이유 / USP'",type:"content"}]},
+  "7-17":{tasks:[{t:"📋 오픈 방문 예약 접수 시작 (DM·폼·당근채팅)",type:"milestone"},{t:"📹 셋팅 19일차 — '오픈날 이런 거 준비했어요' 티저",type:"content"},{t:"📱 스레드 예약 유도 글",type:"sns"}]},
+  "7-18":{tasks:[{t:"✅ 인프라 전체 최종 점검 마감 (결제·플레이스·재고 OK)",type:"milestone"},{t:"📣 메타 광고 소재 A/B 교체 (반응 좋은 것 증액)",type:"ad"},{t:"📹 셋팅 20일차 — 부부 인터뷰 '왜 시목을 열었나'",type:"content"}]},
+  "7-19":{tasks:[{t:"오픈 1주 전 리허설 (동선·응대 시뮬레이션)",type:"run"},{t:"📹 셋팅 21일차 — 'D-6' 카운트다운 시작",type:"content"},{t:"📱 당근+스레드 'D-6, 예약 받아요' 글",type:"sns"}]},
+  // WEEK 4 — 카운트다운 & 오픈
+  "7-20":{week:4,rest:false,tasks:[{t:"📣 메타 광고 성과 중간 점검·예산 막판 조정",type:"ad"},{t:"예약자 명단 정리",type:"run"},{t:"📹 셋팅 22일차 — 'D-5' 매장 디테일 자랑",type:"content"}]},
+  "7-21":{tasks:[{t:"오픈 당일 역할 분담 확정 (응대/계산/안내)",type:"run"},{t:"📹 셋팅 23일차 — 'D-4' 오픈 혜택 다시 안내",type:"content"},{t:"📱 스레드 'D-4' 글",type:"sns"}]},
+  "7-22":{tasks:[{t:"다과·웰컴 선물·이벤트 물품 준비",type:"run"},{t:"📹 셋팅 24일차 — 'D-3, 이런 분들 오시면 좋아요'",type:"content"}]},
+  "7-23":{tasks:[{t:"📨 예약자 전체 리마인드 발송 (당근/DM/문자)",type:"milestone"},{t:"📱 당근+스레드 'D-2' 막판 모객 글",type:"sns"},{t:"📹 셋팅 25일차 — 'D-2' 매장 마지막 점검",type:"content"}]},
+  "7-24":{tasks:[{t:"🧹 최종 청소·디스플레이·결제 확인",type:"run"},{t:"일찍 자기",type:"run"},{t:"📹 셋팅 26일차 — 'D-1, 내일 봐요!' 설렘 영상",type:"content"}]},
+  "7-25":{open:true,tasks:[{t:"🎉 오픈! 방문객 응대",type:"milestone"},{t:"📹 셋팅 27일차(피날레) — 오픈 당일 실시간 스토리/라이브",type:"content"},{t:"📱 스레드+당근 '오픈했어요!' 현장 글 + 후기 요청",type:"sns"}]},
+};
+
+const WEEKINFO = {
+  0:{tag:"WEEK 0",name:"이사 & 첫 콘텐츠"},
+  1:{tag:"WEEK 1",name:"공간 보수·시트지·셋팅 (가구 전)"},
+  2:{tag:"WEEK 2",name:"가구 입고 & 제품 정리 (2주 운반)"},
+  3:{tag:"WEEK 3",name:"마케팅 풀가동 ⭐"},
+  4:{tag:"WEEK 4",name:"카운트다운 & 오픈"},
+};
+
+const TYPENAME = {setup:"셋업",infra:"인프라",mkt:"마케팅",content:"숏폼",sns:"스레드·당근",ad:"메타광고",run:"운영",milestone:"핵심 마감",unmyung:"운명랩"};
+
+const MILESTONES = [
+  {date:"6-28",label:"6/28 일",t:"시트지·집기 발주 완료 (배송기간 감안)"},
+  {date:"7-1",label:"7/1 수",t:"홈페이지 실결제 테스트 1건 성공"},
+  {date:"7-6",label:"7/6 월",t:"가구 입고 시작 (아버님 창고 → 2주 운반)"},
+  {date:"7-11",label:"7/11 토",t:"가구 운반·제품 위치 정리 완료"},
+  {date:"7-13",label:"7/13 일",t:"당근 플레이스 완성 + 매장 풀투어 영상"},
+  {date:"7-14",label:"7/14 월",t:"오픈 정식 공지 발표"},
+  {date:"7-15",label:"7/15 화",t:"메타 광고 ON"},
+  {date:"7-17",label:"7/17 목",t:"오픈 예약 접수 시작"},
+  {date:"7-18",label:"7/18 금",t:"결제·플레이스·재고 인프라 최종 OK"},
+  {date:"7-23",label:"7/23 수",t:"예약자 리마인드 발송"},
+];
+
+// ---- state ----
+const KEY="simok_schedule_v1";
+let state = JSON.parse(localStorage.getItem(KEY) || "{}");
+function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+function id(date,i){return date+"#"+i;}
+function isDone(date,i){return !!state[id(date,i)];}
+function toggle(date,i){const k=id(date,i);state[k]=!state[k];save();render();}
+
+let curMonth=6, selected=null;
+
+// ---- build calendar ----
+function daysInfo(month){
+  // June 2026: 1=Mon? compute. We'll start grids at correct weekday.
+  const year=2026;
+  const first=new Date(year,month-1,1);
+  const startDay=first.getDay(); // 0 Sun
+  const dim=new Date(year,month,0).getDate();
+  return {startDay,dim};
+}
+
+function dateKey(month,day){return month+"-"+day;}
+
+function totalTasks(){
+  let total=0,done=0;
+  for(const d in DATA){DATA[d].tasks.forEach((t,i)=>{total++;if(isDone(d,i))done++;});}
+  return {total,done};
+}
+
+function render(){
+  // progress
+  const {total,done}=totalTasks();
+  document.getElementById("pcount").textContent=done+" / "+total;
+  document.getElementById("pbar").style.width=(total?Math.round(done/total*100):0)+"%";
+
+  // grid
+  const grid=document.getElementById("grid");
+  grid.innerHTML="";
+  const {startDay,dim}=daysInfo(curMonth);
+  // leading blanks
+  for(let i=0;i<startDay;i++){const c=document.createElement("div");c.className="cell empty";grid.appendChild(c);}
+  let lastWeek=-1;
+  for(let day=1;day<=dim;day++){
+    const k=dateKey(curMonth,day);
+    const info=DATA[k];
+    const dow=new Date(2026,curMonth-1,day).getDay();
+    const cell=document.createElement("div");
+    cell.className="cell";
+    if(dow===0)cell.classList.add("sun");
+    if(k==="7-25")cell.classList.add("open");
+    if(selected===k)cell.classList.add("sel");
+    let inner=`<div class="daynum">${day}</div>`;
+    if(info){
+      // all done?
+      const allDone=info.tasks.length>0 && info.tasks.every((t,i)=>isDone(k,i));
+      if(allDone)cell.classList.add("alldone");
+      const pills=info.tasks.slice(0,3).map(t=>{
+        const isMile=t.type==="milestone";
+        const short=t.t.replace(/^[^\wㄱ-힣]*/,"").slice(0,9);
+        return `<div class="pill ${t.type}">${short}</div>`;
+      }).join("");
+      inner+=`<div class="pills">${pills}</div>`;
+      inner+=`<div class="dot"></div><div class="cnt">${info.tasks.filter((t,i)=>isDone(k,i)).length}/${info.tasks.length}</div>`;
+      inner+=`<div class="hasdot"></div>`;
+      cell.onclick=()=>{selected=(selected===k?null:k);renderDetail();render();if(selected){setTimeout(()=>document.getElementById("detail").scrollIntoView({behavior:"smooth",block:"nearest"}),60);}};
+    }else{
+      cell.classList.add("empty");
+    }
+    cell.innerHTML=inner;
+    grid.appendChild(cell);
+  }
+  renderMiles();
+}
+
+function renderDetail(){
+  const det=document.getElementById("detail");
+  if(!selected || !DATA[selected]){det.className="detail";det.innerHTML="";return;}
+  const info=DATA[selected];
+  const [m,d]=selected.split("-");
+  const dow=["일","월","화","수","목","금","토"][new Date(2026,m-1,d).getDay()];
+  let badge="";
+  if(selected==="7-25")badge=`<span class="badge openday">🎉 오픈 DAY</span>`;
+  else if(info.rest)badge=`<span class="badge rest">예비일/여유</span>`;
+  let wk = "";
+  // find week of this date
+  let wkNum=null;for(const key in DATA){if(DATA[key].week!==undefined && key<=selected){wkNum=DATA[key].week;}}
+  if(wkNum!==null && WEEKINFO[wkNum])wk=`${WEEKINFO[wkNum].tag} · ${WEEKINFO[wkNum].name}`;
+
+  let html=`<h2>${m}월 ${d}일 <span style="color:var(--ink-soft);font-weight:600;font-size:16px">(${dow})</span> ${badge}</h2>`;
+  html+=`<p class="dsub">${wk}</p>`;
+  html+=`<div class="tasklist">`;
+  info.tasks.forEach((t,i)=>{
+    const done=isDone(selected,i);
+    const isVideo=t.t.includes("📹")||t.t.includes("📱");
+    html+=`<div class="task ${done?'done':''}" data-i="${i}">
+      <div class="check">${CHECK}</div>
+      <div class="tbody">
+        <div class="tt ${isVideo?'video':''}">${t.t}</div>
+        <div class="tmeta"><span class="tag ${t.type}">${TYPENAME[t.type]}</span></div>
+      </div>
+    </div>`;
+  });
+  html+=`</div>`;
+  det.className="detail show";
+  det.innerHTML=html;
+  det.querySelectorAll(".task").forEach(el=>{
+    el.onclick=()=>toggle(selected,parseInt(el.dataset.i));
+  });
+}
+
+function renderMiles(){
+  const box=document.getElementById("mileslist");
+  box.innerHTML="";
+  MILESTONES.forEach(m=>{
+    // milestone tied to a task done? we mark milestone-type tasks. Use a dedicated key.
+    const mk="MILE#"+m.date;
+    const done=!!state[mk];
+    const row=document.createElement("div");
+    row.className="mrow"+(done?" done":"");
+    row.innerHTML=`<div class="mcheck">${CHECK}</div><div class="mdate">${m.label}</div><div class="mtext">${m.t}</div>`;
+    row.onclick=()=>{state[mk]=!state[mk];save();renderMiles();};
+    box.appendChild(row);
+  });
+}
+
+// segmented control
+document.getElementById("seg").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  document.querySelectorAll("#seg button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");
+  curMonth=parseInt(b.dataset.m);
+  render();
+});
+
+document.getElementById("resetbtn").onclick=()=>{
+  if(confirm("모든 체크를 초기화할까요? 되돌릴 수 없어요.")){state={};save();render();renderDetail();}
+};
+
+render();
+</script>
+</body>
+</html>
