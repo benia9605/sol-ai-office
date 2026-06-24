@@ -449,10 +449,20 @@ export const dummyYoutubeVideos: YoutubeVideo[] = [
 ];
 
 export const dummyYoutubeComments: YoutubeComment[] = [
-  { id: 'cm1', commentId: 'c_001', videoId: 'vid_001', channelId: 'UC_unmyung', author: '하늘별', authorThumbnail: '', text: '올해 대운 바뀐다는데 이 영상 보고 정리됐어요! 혹시 신살도 다뤄주실 수 있나요?', publishedAt: '2026-05-31T14:20:00Z', likeCount: 12, replyStatus: 'none' },
+  { id: 'cm1', commentId: 'c_001', videoId: 'vid_001', channelId: 'UC_unmyung', author: '하늘별', authorThumbnail: '', text: '올해 대운 바뀐다는데 이 영상 보고 정리됐어요! 혹시 신살도 다뤄주실 수 있나요?', publishedAt: '2026-05-31T14:20:00Z', likeCount: 12, replyStatus: 'none',
+    replies: [
+      { commentId: 'r_001a', author: '사주초보', authorThumbnail: '', text: '저도 신살 영상 너무 기다려요!', publishedAt: '2026-06-01T09:00:00Z', likeCount: 1, isOwner: false },
+    ], replyCount: 1 },
   { id: 'cm2', commentId: 'c_002', videoId: 'vid_001', channelId: 'UC_unmyung', author: 'mina_k', authorThumbnail: '', text: '리포트 어디서 받을 수 있나요?? 너무 궁금해요', publishedAt: '2026-05-30T10:05:00Z', likeCount: 5, replyStatus: 'draft', replyDraft: '안녕하세요 하늘별님! 영상이 도움이 됐다니 기뻐요 😊 리포트는 채널 설명란 링크에서 받으실 수 있어요. 신살 편도 곧 올릴게요!' },
-  { id: 'cm3', commentId: 'c_003', videoId: 'vid_003', channelId: 'UC_unmyung', author: '집사일상', authorThumbnail: '', text: '궁합 TOP5 너무 잘봤어요 ㅎㅎ 제 일주도 있어서 신기했어요', publishedAt: '2026-05-29T21:40:00Z', likeCount: 8, replyStatus: 'published', replyDraft: '봐주셔서 감사해요! 다음엔 비추천 조합도 준비해볼게요 🙌', repliedAt: '2026-05-30T08:00:00Z' },
-  { id: 'cm4', commentId: 'c_004', videoId: 'vid_101', channelId: 'UC_pte', author: 'studyhard', authorThumbnail: '', text: '발음 팁 덕분에 스피킹 79점 받았습니다!! 감사합니다', publishedAt: '2026-05-28T18:12:00Z', likeCount: 21, replyStatus: 'none' },
+  { id: 'cm3', commentId: 'c_003', videoId: 'vid_003', channelId: 'UC_unmyung', author: '집사일상', authorThumbnail: '', text: '궁합 TOP5 너무 잘봤어요 ㅎㅎ 제 일주도 있어서 신기했어요', publishedAt: '2026-05-29T21:40:00Z', likeCount: 8, replyStatus: 'published', replyDraft: '봐주셔서 감사해요! 다음엔 비추천 조합도 준비해볼게요 🙌', repliedAt: '2026-05-30T08:00:00Z',
+    replies: [
+      { commentId: 'r_003a', author: '운명랩', authorThumbnail: '', text: '봐주셔서 감사해요! 다음엔 비추천 조합도 준비해볼게요 🙌', publishedAt: '2026-05-30T08:00:00Z', likeCount: 3, isOwner: true },
+      { commentId: 'r_003b', author: '집사일상', authorThumbnail: '', text: '오 비추천 조합도 너무 궁금해요!', publishedAt: '2026-05-30T09:15:00Z', likeCount: 1, isOwner: false },
+    ], replyCount: 2 },
+  { id: 'cm4', commentId: 'c_004', videoId: 'vid_101', channelId: 'UC_pte', author: 'studyhard', authorThumbnail: '', text: '발음 팁 덕분에 스피킹 79점 받았습니다!! 감사합니다', publishedAt: '2026-05-28T18:12:00Z', likeCount: 21, replyStatus: 'none',
+    replies: [
+      { commentId: 'r_004a', author: '영어덕후', authorThumbnail: '', text: '저도 이 영상 보고 점수 올랐어요 ㅎㅎ', publishedAt: '2026-05-29T10:00:00Z', likeCount: 2, isOwner: false },
+    ], replyCount: 1 },
   { id: 'cm5', commentId: 'c_005', videoId: 'vid_101', channelId: 'UC_pte', author: '제니퍼', authorThumbnail: '', text: '라이팅 템플릿도 영상 있나요? 찾는 중이에요', publishedAt: '2026-05-27T11:30:00Z', likeCount: 3, replyStatus: 'none' },
   { id: 'cm6', commentId: 'c_006', videoId: 'vid_201', channelId: 'UC_solning', author: '워라밸지킴이', authorThumbnail: '', text: '루틴 따라해보고 있는데 오전 집중 시간 확보가 진짜 핵심이네요', publishedAt: '2026-05-26T09:50:00Z', likeCount: 6, replyStatus: 'none' },
 ];

@@ -620,6 +620,17 @@ export interface YoutubeVideo {
 export type YoutubeReplyStatus = 'none' | 'draft' | 'published';
 
 /** 유튜브 댓글 (영상 하위) */
+/** 유튜브에 이미 달린 답글 1개 (내 답글 + 다른 사람 답글 모두) */
+export interface YoutubeCommentReply {
+  commentId: string;           // 유튜브 답글 ID
+  author: string;
+  authorThumbnail?: string;
+  text: string;
+  publishedAt: string;         // ISO
+  likeCount?: number;
+  isOwner?: boolean;           // 채널 주인(나)이 단 답글
+}
+
 export interface YoutubeComment {
   id: string;
   commentId: string;           // 유튜브 댓글 ID
@@ -633,6 +644,8 @@ export interface YoutubeComment {
   replyStatus: YoutubeReplyStatus;
   replyDraft?: string;         // AI 초안 또는 수동 수정본
   repliedAt?: string;          // 발행 시각
+  replies?: YoutubeCommentReply[];  // 유튜브에 이미 달린 답글들(내 것 + 남의 것)
+  replyCount?: number;         // 답글 총 개수(가져온 것보다 많을 수 있음)
 }
 
 /** 주간 콘텐츠 집계 (그래프 추이용) */

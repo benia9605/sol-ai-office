@@ -16,7 +16,7 @@
  */
 import { supabase } from './supabase';
 import { getCurrentUserId } from './auth';
-import type { YoutubeReplyStatus } from '../types';
+import type { YoutubeReplyStatus, YoutubeCommentReply } from '../types';
 
 const CLAUDE_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 
@@ -60,6 +60,8 @@ export interface YoutubeCommentRow {
   reply_status: YoutubeReplyStatus;
   reply_draft?: string;
   replied_at?: string;
+  replies?: YoutubeCommentReply[];
+  reply_count?: number;
   workspace_id?: string;
 }
 
@@ -135,13 +137,21 @@ export async function insertVideos(channelId: string, videos: {
 export async function insertComments(comments: {
   commentId: string; videoId: string; channelId: string; author: string;
   authorThumbnail?: string; text: string; publishedAt: string; likeCount?: number;
+  replyStatus?: YoutubeReplyStatus; replyDraft?: string; repliedAt?: string;
+  replies?: YoutubeCommentReply[]; replyCount?: number;
 }[], workspaceId?: string): Promise<YoutubeCommentRow[]> {
   if (comments.length === 0) return [];
   const userId = await getCurrentUserId();
   const rows = comments.map((c) => ({
     user_id: userId, comment_id: c.commentId, video_id: c.videoId, channel_id: c.channelId,
     author: c.author, author_thumbnail: c.authorThumbnail ?? null, text: c.text,
-    published_at: c.publishedAt, like_count: c.likeCount ?? null, reply_status: 'none',
+    published_at: c.publishedAt, like_count: c.likeCount ?? null,
+    // 수집 시 감지된 답글 상태/내용 보존 (예전엔 'none' 하드코딩 → 죄다 미답글 버그)
+    reply_status: c.replyStatus ?? 'none',
+    reply_draft: c.replyDraft ?? null,
+    replied_at: c.repliedAt ?? null,
+    replies: c.replies ?? null,
+    reply_count: c.replyCount ?? null,
     workspace_id: workspaceId ?? null,
   }));
   const { data, error } = await supabase.from('youtube_comments').insert(rows).select();
@@ -206,7 +216,7 @@ async function callClaude(prompt: string, maxTokens = 1024): Promise<string> {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     }),

@@ -40,6 +40,7 @@ function toComment(r: YoutubeCommentRow): YoutubeComment {
     author: r.author, authorThumbnail: r.author_thumbnail, text: r.text,
     publishedAt: r.published_at, likeCount: r.like_count, replyStatus: r.reply_status,
     replyDraft: r.reply_draft, repliedAt: r.replied_at,
+    replies: r.replies ?? undefined, replyCount: r.reply_count ?? undefined,
   };
 }
 
@@ -151,7 +152,13 @@ export function useYoutube(workspaceId?: string) {
     }
   }, [usingDummy, load]);
 
-  /** YouTube에서 새 영상/댓글만 병합 (기존 댓글의 답글 상태는 보존) */
+  /**
+   * YouTube에서 새 영상/댓글 병합 + 기존 댓글의 답글 상태 재동기화
+   * - 새 영상/댓글: 추가
+   * - 기존 댓글 중 유튜브엔 내(채널 주인) 답글이 달렸는데 앱에선 아직 '미답글'인 것 → '발행됨'으로 동기화
+   *   (예전에 이미 답글 단 댓글이 계속 '미답글'로 뜨는 문제 해결)
+   * - 앱에서 직접 단 초안/발행 상태는 보존 (덮어쓰지 않음)
+   */
   const refreshFromApi = useCallback(async () => {
     if (!hasYoutubeApiKey() || channels.length === 0) {
       await load();
@@ -159,12 +166,24 @@ export function useYoutube(workspaceId?: string) {
     }
     const existingCommentIds = new Set(comments.map((c) => c.commentId));
     const existingVideoIds = new Set(videos.map((v) => v.videoId));
+    const byCommentId = new Map(comments.map((c) => [c.commentId, c]));
 
     for (const ch of channels) {
       const { videos: vids, comments: cms } = await collectChannel(ch.channelId);
       const newVids = vids.filter((v) => !existingVideoIds.has(v.videoId));
       const newCms = cms.filter((c) => !existingCommentIds.has(c.commentId));
-      if (newVids.length === 0 && newCms.length === 0) continue;
+
+      // 기존 댓글 재동기화 대상: 유튜브 답글이 새로 생겼거나(내 것/남의 것), 내 답글이 달려 상태가 바뀐 경우
+      const reSync = cms.filter((c) => {
+        const ex = byCommentId.get(c.commentId);
+        if (!ex) return false;
+        const ownerNowReplied = c.replyStatus === 'published' && ex.replyStatus === 'none';
+        const repliesChanged = (c.replyCount ?? 0) !== (ex.replyCount ?? 0)
+          || (c.replies?.length ?? 0) !== (ex.replies?.length ?? 0);
+        return ownerNowReplied || repliesChanged;
+      });
+
+      if (newVids.length === 0 && newCms.length === 0 && reSync.length === 0) continue;
 
       if (usingDummy) {
         setVideos((prev) => [...newVids.map((v) => ({ ...v, id: localId('vid') })), ...prev]);
@@ -174,6 +193,41 @@ export function useYoutube(workspaceId?: string) {
         const cRows = await insertComments(newCms, workspaceId);
         setVideos((prev) => [...vRows.map(toVideo), ...prev]);
         setComments((prev) => [...cRows.map(toComment), ...prev]);
+      }
+
+      // 기존 댓글의 답글/상태 동기화 (로컬 + DB)
+      if (reSync.length > 0) {
+        const reSyncMap = new Map(reSync.map((c) => [c.commentId, c]));
+        setComments((prev) => prev.map((pc) => {
+          const m = reSyncMap.get(pc.commentId);
+          if (!m) return pc;
+          // 내가 답글을 단 게 새로 확인되면 발행됨으로, 아니면 기존 상태 유지(앱 초안/발행 보존)
+          const status: YoutubeReplyStatus = (m.replyStatus === 'published' && pc.replyStatus === 'none') ? 'published' : pc.replyStatus;
+          return {
+            ...pc,
+            replyStatus: status,
+            replyDraft: status === 'published' && pc.replyStatus === 'none' ? (m.replyDraft ?? pc.replyDraft) : pc.replyDraft,
+            repliedAt: status === 'published' && pc.replyStatus === 'none' ? (m.repliedAt ?? pc.repliedAt) : pc.repliedAt,
+            replies: m.replies ?? pc.replies,
+            replyCount: m.replyCount ?? pc.replyCount,
+          };
+        }));
+        if (!usingDummy) {
+          for (const c of reSync) {
+            const ex = byCommentId.get(c.commentId);
+            if (!ex) continue;
+            const becomesPublished = c.replyStatus === 'published' && ex.replyStatus === 'none';
+            try {
+              await updateComment(ex.id, {
+                replies: c.replies ?? undefined,
+                reply_count: c.replyCount ?? undefined,
+                ...(becomesPublished ? { reply_status: 'published', reply_draft: c.replyDraft, replied_at: c.repliedAt } : {}),
+              });
+            } catch (e) {
+              console.error('[useYoutube] 답글 동기화 실패:', e);
+            }
+          }
+        }
       }
     }
   }, [channels, comments, videos, usingDummy, load, workspaceId]);

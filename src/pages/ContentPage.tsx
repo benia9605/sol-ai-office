@@ -14,7 +14,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { WeeklyTrendChart } from '../components/content/WeeklyTrendChart';
 import { CommentReplyCard } from '../components/content/CommentReplyCard';
 import { VideoModal } from '../components/content/VideoModal';
-import { EyeIcon, CommentIcon } from '../components/content/icons';
+import { EyeIcon, CommentIcon, DocIcon } from '../components/content/icons';
 
 // ── 주간 집계 유틸 ──
 
@@ -346,6 +346,11 @@ export function ContentPage({ embedded, workspaceId }: { embedded?: boolean; wor
                         <p className="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
                           <span className="inline-flex items-center gap-1"><EyeIcon size={11} /> {(v.viewCount ?? 0).toLocaleString()}</span>
                           <span className="inline-flex items-center gap-1"><CommentIcon size={11} /> {commentsByVideo[v.videoId] ?? 0}</span>
+                          {v.script?.trim() && (
+                            <span className="inline-flex items-center gap-0.5 text-primary-500 ml-auto" title="스크립트 저장됨">
+                              <DocIcon size={11} />
+                            </span>
+                          )}
                         </p>
                       </div>
                     </button>
@@ -384,7 +389,6 @@ export function ContentPage({ embedded, workspaceId }: { embedded?: boolean; wor
                     channelTitle={channelTitleMap[c.channelId] || ''}
                     onSaveDraft={handleSaveDraft}
                     onPublish={handlePublish}
-                    onSaveScript={saveScript}
                     canPublish={hasOAuth}
                   />
                 ))

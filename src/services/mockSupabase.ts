@@ -143,21 +143,22 @@ const mockData: Record<string, any[]> = {
     created_at: r.createdAt,
   })),
   youtube_channels: dummyYoutubeChannels.map(c => ({
-    id: c.id, user_id: 'dev', channel_id: c.channelId, title: c.title,
+    id: c.id, user_id: 'dev', workspace_id: null, channel_id: c.channelId, title: c.title,
     thumbnail: c.thumbnail ?? null, subscriber_count: c.subscriberCount ?? null,
     video_count: c.videoCount ?? null, connected_at: c.connectedAt ?? null,
   })),
   youtube_videos: dummyYoutubeVideos.map(v => ({
-    id: v.id, user_id: 'dev', channel_id: v.channelId, video_id: v.videoId,
+    id: v.id, user_id: 'dev', workspace_id: null, channel_id: v.channelId, video_id: v.videoId,
     title: v.title, thumbnail: v.thumbnail ?? null, published_at: v.publishedAt,
     view_count: v.viewCount ?? null, like_count: v.likeCount ?? null,
     comment_count: v.commentCount ?? null, script: v.script ?? null,
   })),
   youtube_comments: dummyYoutubeComments.map(c => ({
-    id: c.id, user_id: 'dev', comment_id: c.commentId, video_id: c.videoId,
+    id: c.id, user_id: 'dev', workspace_id: null, comment_id: c.commentId, video_id: c.videoId,
     channel_id: c.channelId, author: c.author, author_thumbnail: c.authorThumbnail ?? null,
     text: c.text, published_at: c.publishedAt, like_count: c.likeCount ?? null,
     reply_status: c.replyStatus, reply_draft: c.replyDraft ?? null, replied_at: c.repliedAt ?? null,
+    replies: c.replies ?? null, reply_count: c.replyCount ?? null,
   })),
   push_subscriptions: [],
   notification_preferences: [{

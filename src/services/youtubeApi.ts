@@ -8,7 +8,7 @@
  * 필요 환경변수: VITE_YOUTUBE_API_KEY
  *   (Google Cloud → YouTube Data API v3 사용 설정 → API 키 발급)
  */
-import type { YoutubeChannel, YoutubeVideo, YoutubeComment } from '../types';
+import type { YoutubeChannel, YoutubeVideo, YoutubeComment, YoutubeCommentReply } from '../types';
 
 const KEY = import.meta.env.VITE_YOUTUBE_API_KEY as string | undefined;
 const BASE = 'https://www.googleapis.com/youtube/v3';
@@ -111,12 +111,50 @@ export async function fetchChannelVideos(channelId: string, uploadsPlaylistId: s
   }));
 }
 
-/** 영상의 최상위 댓글 조회 (최신순) — 채널 주인이 이미 답글 단 건 'published'로 표시 */
+/** API 답글 1건 → YoutubeCommentReply 매핑 */
+function mapReply(r: any, channelId: string): YoutubeCommentReply {
+  const s = r.snippet || {};
+  return {
+    commentId: r.id,
+    author: s.authorDisplayName || '익명',
+    authorThumbnail: s.authorProfileImageUrl,
+    text: s.textDisplay || s.textOriginal || '',
+    publishedAt: s.publishedAt,
+    likeCount: Number(s.likeCount) || 0,
+    isOwner: s.authorChannelId?.value === channelId,   // 채널 주인(나) 여부
+  };
+}
+
+/** 특정 댓글의 답글 전체 조회 (commentThreads는 미리보기 최대 5개만 줘서, 더 있으면 comments.list로 전량 수집) */
+async function fetchAllReplies(parentId: string, channelId: string): Promise<YoutubeCommentReply[]> {
+  const out: YoutubeCommentReply[] = [];
+  let pageToken: string | undefined;
+  try {
+    do {
+      const params: Record<string, string> = {
+        part: 'snippet', parentId, maxResults: '100', textFormat: 'plainText',
+      };
+      if (pageToken) params.pageToken = pageToken;
+      const data = await api('comments', params);
+      for (const r of data.items || []) out.push(mapReply(r, channelId));
+      pageToken = data.nextPageToken;
+    } while (pageToken && out.length < 300);   // 안전 상한
+  } catch {
+    // 실패 시 빈 배열 (미리보기 답글은 호출부에서 폴백)
+  }
+  return out;
+}
+
+/**
+ * 영상의 최상위 댓글 조회 (최신순)
+ * - 각 댓글의 답글(내 답글 + 다른 사람 답글)을 전부 가져와 replies에 저장
+ * - 채널 주인(나)이 단 답글이 있으면 replyStatus='published'로 표시
+ */
 export async function fetchVideoComments(channelId: string, videoId: string, max = 20): Promise<YoutubeComment[]> {
   let data: any;
   try {
     data = await api('commentThreads', {
-      part: 'snippet,replies',   // replies까지 받아 기존 답글 감지
+      part: 'snippet,replies',   // replies 미리보기까지 받음
       videoId,
       order: 'time',
       maxResults: String(max),
@@ -127,15 +165,28 @@ export async function fetchVideoComments(channelId: string, videoId: string, max
     return [];
   }
 
-  return (data.items || []).map((it: any): YoutubeComment => {
+  // 댓글마다 답글 전량 수집 (미리보기보다 많으면 comments.list로 보강)
+  const items: any[] = data.items || [];
+  return Promise.all(items.map(async (it: any): Promise<YoutubeComment> => {
     const top = it.snippet?.topLevelComment?.snippet || {};
-    // 채널 주인(우리)이 단 답글이 이미 있으면 '답변완료'로 인식
-    const replies: any[] = it.replies?.comments || [];
-    const ownerReply = replies.find((r) => r.snippet?.authorChannelId?.value === channelId);
+    const parentId = it.snippet?.topLevelComment?.id || it.id;
+    const totalReplyCount = Number(it.snippet?.totalReplyCount) || 0;
+    const preview: any[] = it.replies?.comments || [];
+
+    // 미리보기(최대 5)보다 답글이 더 많으면 전량 재조회, 아니면 미리보기 사용
+    let replies: YoutubeCommentReply[] =
+      totalReplyCount > preview.length
+        ? await fetchAllReplies(parentId, channelId)
+        : preview.map((r) => mapReply(r, channelId));
+    // 전량 조회가 비면 미리보기로 폴백
+    if (replies.length === 0 && preview.length > 0) replies = preview.map((r) => mapReply(r, channelId));
+    replies.sort((a, b) => a.publishedAt.localeCompare(b.publishedAt));
+
+    const ownerReply = [...replies].reverse().find((r) => r.isOwner);
 
     return {
       id: '',
-      commentId: it.snippet?.topLevelComment?.id || it.id,
+      commentId: parentId,
       videoId,
       channelId,
       author: top.authorDisplayName || '익명',
@@ -144,10 +195,12 @@ export async function fetchVideoComments(channelId: string, videoId: string, max
       publishedAt: top.publishedAt,
       likeCount: Number(top.likeCount) || 0,
       replyStatus: ownerReply ? 'published' : 'none',
-      replyDraft: ownerReply ? (ownerReply.snippet?.textOriginal || ownerReply.snippet?.textDisplay || '') : undefined,
-      repliedAt: ownerReply ? ownerReply.snippet?.publishedAt : undefined,
+      replyDraft: ownerReply ? ownerReply.text : undefined,
+      repliedAt: ownerReply ? ownerReply.publishedAt : undefined,
+      replies,
+      replyCount: Math.max(totalReplyCount, replies.length),
     };
-  });
+  }));
 }
 
 /**

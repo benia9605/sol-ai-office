@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { YoutubeComment, YoutubeVideo } from '../../types';
 import { generateReplyDraft } from '../../services/youtube.service';
-import { VideoIcon, DocIcon, LikeIcon, SparkleIcon, SearchIcon } from './icons';
+import { VideoIcon, DocIcon, LikeIcon, SparkleIcon, SearchIcon, CommentIcon } from './icons';
 
 function relTime(iso: string): string {
   if (!iso) return '';
@@ -35,13 +35,12 @@ export interface CommentReplyCardProps {
   channelTitle: string;
   onSaveDraft: (id: string, draft: string, status?: 'none' | 'draft' | 'published') => void;
   onPublish: (id: string, replyText: string) => void | Promise<void>;
-  onSaveScript: (videoRowId: string, script: string) => void;
   showVideoTitle?: boolean;
   canPublish?: boolean;   // OAuth 연동 시 실제 발행, 아니면 수동(완료 표시)
 }
 
 export function CommentReplyCard({
-  comment, video, channelTitle, onSaveDraft, onPublish, onSaveScript, showVideoTitle = true, canPublish = false,
+  comment, video, channelTitle, onSaveDraft, onPublish, showVideoTitle = true, canPublish = false,
 }: CommentReplyCardProps) {
   const [draft, setDraft] = useState(comment.replyDraft ?? '');
   const [generating, setGenerating] = useState(false);
@@ -49,9 +48,10 @@ export function CommentReplyCard({
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(comment.replyStatus !== 'published');
   const [usedResearch, setUsedResearch] = useState(false);
+  const [repliesOpen, setRepliesOpen] = useState(false);
 
-  const [scriptOpen, setScriptOpen] = useState(false);
-  const [scriptText, setScriptText] = useState(video?.script ?? '');
+  const existingReplies = comment.replies ?? [];
+  const totalReplies = comment.replyCount ?? existingReplies.length;
 
   const videoTitle = video?.title || '(삭제된 영상)';
   const badge = STATUS_BADGE[comment.replyStatus];
@@ -113,37 +113,49 @@ export function CommentReplyCard({
               </span>
             )}
             {video && (
-              <button
-                onClick={() => setScriptOpen((v) => !v)}
-                className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full transition-colors ${
-                  video.script ? 'bg-primary-50 text-primary-500 hover:bg-primary-100' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+              <span
+                className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full ${
+                  video.script ? 'bg-primary-50 text-primary-500' : 'bg-gray-100 text-gray-400'
                 }`}
+                title={video.script ? '이 영상 스크립트가 AI 답글에 반영돼요' : '영상을 열어 스크립트를 추가할 수 있어요'}
               >
                 <DocIcon size={10} className="flex-shrink-0" />
-                스크립트{video.script ? '' : ' 없음'}
-              </button>
+                {video.script ? '스크립트 반영' : '스크립트 없음'}
+              </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* 스크립트 편집 (수동 붙여넣기) */}
-      {scriptOpen && video && (
-        <div className="mt-3 pl-10 space-y-2">
-          <p className="text-[11px] text-gray-400 leading-relaxed">
-            💡 유튜브는 남의 영상 자막을 자동으로 못 가져와요. <b>영상 더보기 → 스크립트 표시 → 전체 복사</b> 후 아래에 붙여넣으면 답글 생성에 활용해요.
-          </p>
-          <textarea
-            value={scriptText}
-            onChange={(e) => setScriptText(e.target.value)}
-            placeholder="유튜브에서 복사한 자막/스크립트를 여기에 붙여넣기"
-            rows={4}
-            className="w-full px-3 py-2 bg-primary-50/40 border border-primary-100 rounded-lg text-xs resize-y focus:outline-none focus:ring-2 focus:ring-primary-200"
-          />
-          <div className="flex justify-end gap-2">
-            <button onClick={() => { setScriptText(video.script ?? ''); setScriptOpen(false); }} className="px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-100 rounded-lg">닫기</button>
-            <button onClick={() => { onSaveScript(video.id, scriptText); setScriptOpen(false); }} className="px-3 py-1.5 text-xs font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg">스크립트 저장</button>
-          </div>
+      {/* 유튜브에 이미 달린 답글 (내 답글 + 다른 사람 답글) */}
+      {existingReplies.length > 0 && (
+        <div className="mt-3 pl-10">
+          <button
+            onClick={() => setRepliesOpen((v) => !v)}
+            className="text-[11px] font-medium text-gray-500 hover:text-gray-700 inline-flex items-center gap-1 transition-colors"
+          >
+            <CommentIcon size={11} />
+            기존 답글 {totalReplies}개
+            <span className="text-gray-400">{repliesOpen ? '▲' : '▼'}</span>
+          </button>
+          {repliesOpen && (
+            <ul className="mt-2 space-y-2.5 border-l-2 border-gray-100 pl-3">
+              {existingReplies.map((r) => (
+                <li key={r.commentId} className="text-xs">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`font-semibold ${r.isOwner ? 'text-primary-600' : 'text-gray-600'}`}>{r.author}</span>
+                    {r.isOwner && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary-100 text-primary-600 font-medium">내 답글</span>}
+                    <span className="text-gray-400">{relTime(r.publishedAt)}</span>
+                    {!!r.likeCount && <span className="inline-flex items-center gap-0.5 text-gray-400"><LikeIcon size={9} /> {r.likeCount}</span>}
+                  </div>
+                  <p className="text-gray-600 mt-0.5 whitespace-pre-wrap break-words leading-relaxed">{r.text}</p>
+                </li>
+              ))}
+              {totalReplies > existingReplies.length && (
+                <li className="text-[10px] text-gray-400">+ {totalReplies - existingReplies.length}개 더 있어요</li>
+              )}
+            </ul>
+          )}
         </div>
       )}
 
