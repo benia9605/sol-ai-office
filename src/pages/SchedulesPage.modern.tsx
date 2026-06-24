@@ -34,6 +34,26 @@ function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+/** 오늘 기준 D-day 일수 (오늘=0, 미래=양수, 과거=음수) */
+function dDayCount(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr);
+  d.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - today.getTime()) / 86400000);
+}
+
+/** D-day 라벨 (D-DAY / D-7 / D+3) */
+function dDayLabel(n: number): string {
+  if (n === 0) return 'D-DAY';
+  return n > 0 ? `D-${n}` : `D+${-n}`;
+}
+
+/** 'MM/DD' 짧은 날짜 */
+function shortMD(dateStr: string): string {
+  return dateStr.slice(5).replace('-', '/');
+}
+
 export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: string; embedded?: boolean } = {}) {
   const { schedules, add: addSchedule, update: updateSchedule, remove: removeSchedule, toggleComplete } = useSchedules(workspaceId);
   const { tasks, updateTask } = useTasks();
@@ -94,6 +114,25 @@ export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: s
     schedules.forEach((s) => set.add(s.date));
     return set;
   }, [schedules]);
+
+  // 완료 진행률 (현재 필터된 일정 기준)
+  const stats = useMemo(() => {
+    const total = filtered.length;
+    const done = filtered.filter((s) => s.completed).length;
+    return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
+  }, [filtered]);
+
+  // 핵심 마감(마일스톤) — 날짜순
+  const milestones = useMemo(
+    () => [...schedules].filter((s) => s.isMilestone).sort((a, b) => a.date.localeCompare(b.date)),
+    [schedules],
+  );
+
+  // 다가오는 다음 핵심 마감 (미완료 + 오늘 이후)
+  const nextMilestone = useMemo(
+    () => milestones.find((s) => !s.completed && dDayCount(s.date) >= 0) ?? null,
+    [milestones],
+  );
 
   // 다음 일정 (Featured용)
   const nextSchedule = useMemo(() => {
@@ -160,6 +199,13 @@ export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: s
           </button>
         </section>
 
+        {/* ── 완료 현황 + 다음 핵심 마감 D-day ── */}
+        <ProgressOverview
+          stats={stats}
+          nextMilestone={nextMilestone}
+          onMilestoneClick={(s) => setSelectedItem(s)}
+        />
+
         {/* ── Next Schedule (Featured) ── */}
         {nextSchedule && <NextScheduleFeatured item={nextSchedule} onClick={() => setSelectedItem(nextSchedule)} />}
 
@@ -222,6 +268,15 @@ export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: s
             />
           </div>
         </section>
+
+        {/* ── 핵심 마감 (마일스톤) ── */}
+        {milestones.length > 0 && (
+          <MilestonesSection
+            items={milestones}
+            onItemClick={setSelectedItem}
+            onToggleComplete={toggleComplete}
+          />
+        )}
 
         {/* ── Schedules by Month ── */}
         <section>
@@ -328,10 +383,142 @@ function FilterChip({
   );
 }
 
+/** 완료 현황 진행률 바 + 다음 핵심 마감 D-day */
+function ProgressOverview({
+  stats,
+  nextMilestone,
+  onMilestoneClick,
+}: {
+  stats: { total: number; done: number; pct: number };
+  nextMilestone: ScheduleItem | null;
+  onMilestoneClick: (s: ScheduleItem) => void;
+}) {
+  if (stats.total === 0) return null;
+  return (
+    <section className="border border-line">
+      <div className="grid sm:grid-cols-[1.5fr_1fr] divide-y divide-line sm:divide-y-0 sm:divide-x">
+        {/* 완료 현황 */}
+        <div className="p-6 sm:p-8">
+          <div className="flex items-baseline justify-between gap-4">
+            <p className="label">완료 현황</p>
+            <p className="text-sm text-foreground-muted tabular-nums">
+              <span className="text-xl font-light text-foreground">{stats.done}</span>
+              <span className="text-foreground-faint"> / {stats.total}</span>
+              <span className="ml-1.5 text-xs">완료</span>
+            </p>
+          </div>
+          <div className="mt-5 h-2 bg-surface-muted overflow-hidden">
+            <div
+              className="h-full bg-primary-500 transition-all duration-500"
+              style={{ width: `${stats.pct}%` }}
+            />
+          </div>
+          <p className="mt-2.5 text-xs text-foreground-faint tabular-nums">{stats.pct}% 진행</p>
+        </div>
+
+        {/* 다음 핵심 마감 D-day */}
+        <div className="p-6 sm:p-8 flex flex-col justify-center">
+          <p className="label">다음 핵심 마감 🚩</p>
+          {nextMilestone ? (
+            <button
+              type="button"
+              onClick={() => onMilestoneClick(nextMilestone)}
+              className="mt-3 text-left group"
+            >
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-light tabular-nums text-primary-500 leading-none">
+                  {dDayLabel(dDayCount(nextMilestone.date))}
+                </span>
+                <span className="text-xs text-foreground-faint tabular-nums">
+                  {shortMD(nextMilestone.date)}
+                </span>
+              </div>
+              <p className="mt-2.5 text-sm truncate text-foreground-muted group-hover:text-foreground transition-colors">
+                {nextMilestone.title}
+              </p>
+            </button>
+          ) : (
+            <p className="mt-3 text-sm text-foreground-faint">예정된 핵심 마감이 없습니다.</p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** 핵심 마감(마일스톤) 전용 체크리스트 섹션 */
+function MilestonesSection({
+  items,
+  onItemClick,
+  onToggleComplete,
+}: {
+  items: ScheduleItem[];
+  onItemClick: (s: ScheduleItem) => void;
+  onToggleComplete: (id: string) => void;
+}) {
+  const remaining = items.filter((s) => !s.completed).length;
+  return (
+    <section>
+      <div className="flex items-baseline justify-between border-b border-line pb-3">
+        <h2 className="text-base font-normal flex items-center gap-2">🚩 핵심 마감</h2>
+        <span className="text-xs text-foreground-faint tabular-nums">{remaining}건 남음</span>
+      </div>
+      <p className="mt-3 text-xs text-foreground-muted">
+        이게 밀리면 전체가 밀립니다. 따로 챙기세요.
+      </p>
+      <ul className="mt-4 divide-y divide-line border-y border-line">
+        {items.map((s) => {
+          const n = dDayCount(s.date);
+          const overdue = n < 0 && !s.completed;
+          return (
+            <li key={s.id}>
+              <button
+                type="button"
+                onClick={() => onItemClick(s)}
+                className={`w-full flex items-center gap-3 sm:gap-4 py-4 pl-4 pr-4 hover:bg-surface-muted transition-colors text-left ${s.completed ? 'opacity-55' : ''}`}
+              >
+                {/* 체크 (마일스톤은 사각 + 레드 강조) */}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); onToggleComplete(s.id); }}
+                  aria-label={s.completed ? '완료 취소' : '완료'}
+                  className={`w-[22px] h-[22px] rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    s.completed ? 'bg-red-500 border-red-500 text-white' : 'border-foreground-faint text-transparent hover:border-red-400'
+                  }`}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                </span>
+                {/* D-day */}
+                <span
+                  className={`text-xs font-bold tabular-nums w-[52px] shrink-0 ${
+                    s.completed ? 'text-foreground-faint' : overdue ? 'text-red-500' : 'text-primary-500'
+                  }`}
+                >
+                  {s.completed ? '완료' : dDayLabel(n)}
+                </span>
+                {/* 날짜 */}
+                <span className="text-xs text-foreground-faint tabular-nums w-11 shrink-0">
+                  {shortMD(s.date)}
+                </span>
+                {/* 제목 */}
+                <span className={`text-sm flex-1 truncate ${s.completed ? 'line-through text-foreground-faint' : ''}`}>
+                  {s.title}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 function NextScheduleFeatured({ item, onClick }: { item: ScheduleItem; onClick: () => void }) {
   const d = new Date(item.date);
   const isToday = isSameDay(d, new Date());
   const isTomorrow = isSameDay(d, new Date(Date.now() + 86400000));
+  const dd = dDayCount(item.date);
 
   return (
     <button
@@ -354,7 +541,7 @@ function NextScheduleFeatured({ item, onClick }: { item: ScheduleItem; onClick: 
         {/* 우측: 일정 정보 */}
         <div className="p-8 sm:p-10 flex flex-col">
           <p className="label text-primary-500">
-            {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : 'Next Schedule'}
+            {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : dd > 0 ? `${dDayLabel(dd)} · Next Schedule` : 'Next Schedule'}
           </p>
           <h3 className="mt-4 text-2xl font-light leading-snug">{item.title}</h3>
 
@@ -467,6 +654,7 @@ function MiniCalendar({
             const isSunday = i % 7 === 0;
             const visibleItems = cellItems.slice(0, 2);
             const overflow = cellItems.length - visibleItems.length;
+            const allDone = cellItems.length > 0 && cellItems.every((s) => s.completed);
 
             return (
               <button
@@ -492,11 +680,18 @@ function MiniCalendar({
                   }`}>
                     {cell.dayNum}
                   </span>
-                  {isToday && !isSelected && (
+                  {allDone ? (
+                    <span
+                      className={`flex items-center justify-center w-3.5 h-3.5 rounded-full ${isSelected ? 'bg-surface text-foreground' : 'bg-green-500 text-white'}`}
+                      title="이 날 일정 전부 완료"
+                    >
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    </span>
+                  ) : isToday && !isSelected ? (
                     <span className="text-[8px] tracking-[0.15em] uppercase text-primary-500 hidden sm:inline">
                       TODAY
                     </span>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* 일정 텍스트 (최대 2개) */}
@@ -508,7 +703,7 @@ function MiniCalendar({
                       if (isSelected) {
                         // 선택된 셀: 흰 텍스트 우선
                         return (
-                          <p key={s.id} className="text-[10px] sm:text-[11px] leading-tight truncate flex items-center gap-1">
+                          <p key={s.id} className={`text-[10px] sm:text-[11px] leading-tight truncate flex items-center gap-1 ${s.completed ? 'line-through opacity-60' : ''}`}>
                             <span
                               className="w-1.5 h-1.5 shrink-0"
                               style={{ backgroundColor: cc?.dot ?? '#ffffff' }}
@@ -521,7 +716,7 @@ function MiniCalendar({
                       return (
                         <p
                           key={s.id}
-                          className="text-[10px] sm:text-[11px] leading-tight truncate px-1 py-px"
+                          className={`text-[10px] sm:text-[11px] leading-tight truncate px-1 py-px ${s.completed ? 'line-through opacity-50' : ''}`}
                           style={cc ? { backgroundColor: cc.bg, color: cc.text } : undefined}
                           title={s.title}
                         >
