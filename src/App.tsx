@@ -23,6 +23,22 @@ import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { SummariesPage } from './pages/SummariesPage';
 import { ContentPage } from './pages/ContentPage';
 
+/** 인증/워크스페이스 로딩 중 공통 스플래시 */
+function LoadingSplash() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center space-y-3">
+        <h1 className="text-2xl font-bold text-gray-800">Teamie</h1>
+        <div className="flex gap-1 justify-center">
+          <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const { user, loading } = useAuth();
   const lastAccessUpdated = useRef(false);
@@ -40,18 +56,7 @@ function App() {
   }, [user]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center space-y-3">
-          <h1 className="text-2xl font-bold text-gray-800">Teamie</h1>
-          <div className="flex gap-1 justify-center">
-            <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingSplash />;
   }
 
   if (!user) {
@@ -71,7 +76,15 @@ function App() {
  * - personal / 전체(null) → 기존 개인 앱(라우터 + Layout)
  */
 function AppShell() {
-  const { activeWorkspace } = useWorkspaceContext();
+  const { activeWorkspace, loading } = useWorkspaceContext();
+
+  // 워크스페이스 목록 로드가 끝나야 어떤 셸(개인/오피스)인지 확정된다.
+  // 로드 전에는 activeWorkspace가 잠깐 null이라, 가드 없이 렌더하면
+  // 개인홈이 먼저 떴다가 로드 후 오피스로 튀는 깜빡임(5~10초)이 생긴다.
+  // 로딩 동안에는 스플래시를 유지해 잘못된 셸 노출을 막는다.
+  if (loading) {
+    return <LoadingSplash />;
+  }
 
   if (activeWorkspace?.type === 'office') {
     // 오피스 셸은 URL 라우팅을 쓰지 않지만, 내부 공용 컴포넌트(예: ItemDetailPopup)가

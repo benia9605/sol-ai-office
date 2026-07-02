@@ -7,6 +7,7 @@
  */
 import { useOutletContext, Link } from 'react-router-dom';
 import { rooms, modiSecretary } from '../data';
+import { useAuth } from '../hooks/useAuth';
 import { useBriefing } from '../hooks/useBriefing';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useTasks } from '../hooks/useTasks';
@@ -55,7 +56,8 @@ function daysLabel(daysLeft: number): string {
 
 export function HomePageModern() {
   const { openRoom } = useOutletContext<LayoutContext>();
-  const { profile } = useUserProfile();
+  const { user } = useAuth();
+  const { profile, loading: profileLoading } = useUserProfile();
   const { briefing } = useBriefing();
   const { tasks } = useTasks();
   const { schedules } = useSchedules();
@@ -68,7 +70,10 @@ export function HomePageModern() {
   const readingBooks = readings.filter((r) => r.status === 'reading').slice(0, 5);
 
   const t = todayParts();
-  const displayName = profile.name || '솔';
+  // 프로필 이름 → 구글 이름 → 이메일 앞부분 순으로 폴백 (하드코딩 '솔' 제거).
+  // 프로필 로딩 중에는 남의 이름/기본값이 잠깐 뜨지 않도록 스켈레톤으로 대체.
+  const displayName =
+    profile.name || user?.user_metadata?.name || user?.email?.split('@')[0] || '';
 
   return (
     <main className="min-h-full bg-surface text-foreground">
@@ -78,7 +83,12 @@ export function HomePageModern() {
         <section>
           <p className="label">{todayLabel()}</p>
           <h1 className="mt-5 text-4xl font-light leading-[1.25] sm:text-5xl">
-            <span className="text-primary-500">{displayName}</span>님,<br />
+            {profileLoading && !displayName ? (
+              <span className="inline-block h-9 w-32 align-middle rounded bg-foreground/10 animate-pulse" />
+            ) : (
+              <span className="text-primary-500">{displayName}</span>
+            )}
+            님,<br />
             오늘도 침착하게.
           </h1>
           <p className="mt-6 max-w-lg text-sm leading-[1.85] text-foreground-muted">
