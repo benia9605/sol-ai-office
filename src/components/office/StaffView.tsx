@@ -102,7 +102,7 @@ function ReportComments({ reportId, initial }: { reportId: string; initial?: Rep
 }
 
 /* ── 리포트 카드 (펼침) ── */
-function ReportCard({ r, onSave, onCredits }: { r: DailyReport; onSave?: (itemType: string, payload: any) => void; onCredits?: () => void }) {
+export function ReportCard({ r, onSave, onCredits }: { r: DailyReport; onSave?: (itemType: string, payload: any) => void; onCredits?: () => void }) {
   const [open, setOpen] = useState(false);
   const [full, setFull] = useState<DailyReport | null>(null); // 본문은 펼칠 때 단건 로드 (egress 절감)
   const [loading, setLoading] = useState(false);

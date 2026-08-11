@@ -21,8 +21,8 @@ const mockData: Record<string, any[]> = {
   ],
   // ── 공유 워크스페이스 (로컬 테스트용: 개인 + 시목 팀) ──
   workspaces: [
-    { id: 'ws-personal', user_id: 'dev', name: '내 오피스', emoji: '👤', color: null, image_url: null, biz_info: null, type: 'personal', invite_code: null, credits: 10000, created_by: 'dev', created_at: new Date().toISOString() },
-    { id: 'ws-simok', user_id: 'dev', name: '시목', emoji: '🪵', color: '#8d6e63', image_url: null, biz_info: '원목 가구/소품 · 스마트스토어·자사몰', type: 'office', invite_code: 'SIMOK1', credits: 10000, created_by: 'dev', created_at: new Date().toISOString() },
+    { id: 'ws-personal', user_id: 'dev', name: '내 오피스', emoji: '👤', color: null, image_url: null, biz_info: null, type: 'personal', invite_code: null, credits: 10000, erp_source: 'manual', created_by: 'dev', created_at: new Date().toISOString() },
+    { id: 'ws-simok', user_id: 'dev', name: '시목', emoji: '🪵', color: '#8d6e63', image_url: null, biz_info: '원목 가구/소품 · 스마트스토어·자사몰', type: 'office', invite_code: 'SIMOK1', credits: 10000, erp_source: 'manual', created_by: 'dev', created_at: new Date().toISOString() },
   ],
   workspace_members: [
     { workspace_id: 'ws-personal', user_id: 'dev', role: 'owner', nickname: null, joined_at: new Date().toISOString() },
@@ -60,6 +60,25 @@ const mockData: Record<string, any[]> = {
     { id: 'dr-seed-1', workspace_id: 'ws-simok', staff_id: 'staff-1', user_id: 'dev', date: '2026-06-13', title: '인스타 게시물 초안 1건 · 원목 무드', summary: '신상 도마 라이프스타일 컷 캡션 작성 완료', body: '## 오늘 한 일\n- 원목 도마 라이프스타일 게시물 초안 1건\n- 첫 줄 훅: "도마 하나 바꿨을 뿐인데"\n- 해시태그 12개 + 이미지 브리프 첨부\n\n## 내일 제안\n- 브런치 플레이팅 컷 릴스 스크립트', trigger: 'auto', output_kind: 'sns_queue', content_json: { posts: [{ date: '2026-06-13', channel: '인스타', format: '피드', objective: '저장', hook: { type: '공감', text: '도마 하나 바꿨을 뿐인데', score: 8 }, body: '매일 쓰는 도마일수록 관리가 중요하죠. 오일 한 번이면 새것처럼.', hashtags: { large: ['#원목도마'], medium: ['#주방살림'], small: ['#티크도마'], brand: ['#시목'] }, imageBrief: '자연광 주방, 도마 위 플레이팅 클로즈업', variants: ['A', 'B'], status: 'draft' }] }, input: null, status: 'done', model: 'sonnet', comments: [], created_at: new Date().toISOString() },
   ],
   // AI 액션 승인 큐 (suggested→approved→dismissed)
+  content_items: [
+    { id: 'ci-1', workspace_id: 'ws-simok', created_by: 'dev', title: '10년 쓸 도마를 고르는 법', platform: 'Instagram', content_type: 'info', status: 'idea', hook: '도마 하나 바꿨을 뿐인데', script: null, shot_list: null, url: null, published_at: null, primary_product_id: 'prod-1', content_purpose: 'save', owner: '쏠닝', scheduled_for: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: 'ci-2', workspace_id: 'ws-simok', created_by: 'dev', title: '나무를 오래 팔며 집에서 없앤 것들', platform: 'YouTube Shorts', content_type: 'worldview', status: 'scripted', hook: '20년 나무를 보면서 깨달은 것', script: '1) 오프닝 훅\n2) 없앤 것 3가지\n3) 시목 철학 연결', shot_list: '주방 와이드 / 손 클로즈업 / 제품 컷', url: null, published_at: null, primary_product_id: null, content_purpose: 'brand', owner: '홍대표', scheduled_for: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  ],
+  content_metrics: [],
+  company_memory: [
+    { id: 'cm-1', workspace_id: 'ws-simok', created_by: 'dev', kind: 'philosophy', title: '좋은 것은 시간을 담는다', body: '시목의 모든 판단 기준. 오래 두고 쓸 가치가 있는 물건을 선별한다.', summary: '브랜드 핵심 문장', tags: ['브랜드', '철학'], salience: 90, pinned: true, status: 'active', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: 'cm-2', workspace_id: 'ws-simok', created_by: 'dev', kind: 'failure', title: '부부 창업 콘텐츠는 전환이 낮았다', body: '사업 관심자만 모이고 실제 고객(30~50대 여성)은 안 모임. 집·살림 콘텐츠로 전환.', summary: null, tags: ['콘텐츠', '실패'], salience: 70, pinned: false, status: 'active', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  ],
+  sales_daily: [
+    { id: 'sd-1', workspace_id: 'ws-simok', created_by: 'dev', date: '2026-08-04', source: 'smartstore', revenue: 320000, orders: 7, visitors: 210, memo: null, extra: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: 'sd-2', workspace_id: 'ws-simok', created_by: 'dev', date: '2026-08-04', source: 'self', revenue: 145000, orders: 2, visitors: 80, memo: null, extra: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: 'sd-3', workspace_id: 'ws-simok', created_by: 'dev', date: '2026-08-03', source: 'smartstore', revenue: 210000, orders: 5, visitors: 190, memo: '주말 유입 증가', extra: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  ],
+  products: [
+    { id: 'prod-1', workspace_id: 'ws-simok', created_by: 'dev', name: '티크 원목 도마 (대)', sku: 'SM-BD-01', category: '도마', status: 'active', price: 48000, cost: 19000, stock: 32, image_url: null, description: '인도네시아 티크 원목, 오일 마감', tags: ['티크', '도마', '주방'], created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: 'prod-2', workspace_id: 'ws-simok', created_by: 'dev', name: '고재 우드 트레이', sku: 'SM-TR-01', category: '소품', status: 'active', price: 62000, cost: 24000, stock: 12, image_url: null, description: '오래된 나무를 다시 쓴 트레이', tags: ['고재', '트레이'], created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: 'prod-3', workspace_id: 'ws-simok', created_by: 'dev', name: '원목 스툴', sku: null, category: '가구', status: 'draft', price: 145000, cost: 78000, stock: 4, image_url: null, description: null, tags: ['가구'], created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  ],
   staff_output_actions: [],
   // 코인제 — 직원 실행 사용 로그
   staff_usage: [],
@@ -104,6 +123,7 @@ const mockData: Record<string, any[]> = {
     estimated_time: t.pomodoroEstimate, actual_time: t.pomodoroCompleted,
     conversation_id: t.conversationId,
     workspace_id: 'ws-personal', is_shared: true, assignee_id: null,
+    source: t.source ?? 'manual', completed_at: t.completedAt ?? null,
     created_at: new Date().toISOString(),
   })),
   insights: dummyInsights.map(i => ({

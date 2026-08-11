@@ -36,6 +36,7 @@ export interface Workspace {
   type: WorkspaceType;
   inviteCode?: string;
   credits?: number;      // 코인 잔액 (직원 실행 시 토큰 비용만큼 차감)
+  erpSource?: 'manual' | 'simok_api';  // ERP 데이터 소스(워크스페이스별). manual=수기, simok_api=시목앱 조회
   createdBy: string;
   createdAt: string;
 }
@@ -445,6 +446,106 @@ export interface TaskItem {
   workspaceId?: string;
   isShared?: boolean;
   assigneeId?: string;     // 담당자(추천받은 사람)
+  // ── 추적(2026-08) ──
+  source?: string;         // 생성 원천: manual|content|decision|memory|campaign|ai
+  completedAt?: string;    // 완료 시각(완료율·리드타임 분석용)
+}
+
+/** 콘텐츠 아이템 — 아이디어→발행 수명주기 (MVP) */
+export type ContentType = 'desire' | 'info' | 'worldview' | 'behind';
+export type ContentStatus = 'idea' | 'approved' | 'scripted' | 'shooting' | 'editing' | 'scheduled' | 'published' | 'archived';
+export interface ContentItem {
+  id: string;
+  workspaceId: string;
+  title: string;
+  platform?: string;
+  contentType?: ContentType;
+  status: ContentStatus;
+  hook?: string;
+  script?: string;
+  shotList?: string;
+  url?: string;
+  publishedAt?: string;
+  // ── 확장(2026-08) ──
+  primaryProductId?: string;   // 대표 제품(단일)
+  contentPurpose?: string;     // view|follow|save|sale|brand
+  owner?: string;              // 담당자(쏠닝|홍대표|AI|외주 …)
+  scheduledFor?: string;       // 발행 예정일시
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** 콘텐츠 성과 스냅샷 — 24h/72h/7d */
+export type ContentCheckpoint = 'h24' | 'h72' | 'd7';
+export interface ContentMetric {
+  id: string;
+  workspaceId: string;
+  contentItemId: string;
+  checkpoint: ContentCheckpoint;
+  views?: number;
+  likes?: number;
+  comments?: number;
+  saves?: number;
+  shares?: number;
+  watchTime?: number;       // 평균 시청 시간(초)
+  completionRate?: number;  // 완주율(%)
+  followerDelta?: number;
+  measuredAt?: string;
+  createdAt?: string;
+}
+
+/** 회사 기억 — 비정형 지식 (MVP) */
+export type MemoryKind = 'idea' | 'insight' | 'philosophy' | 'failure' | 'experiment' | 'reference' | 'competitor' | 'ceo_memo';
+export interface CompanyMemory {
+  id: string;
+  workspaceId: string;
+  kind?: MemoryKind;
+  title: string;
+  body?: string;
+  summary?: string;
+  tags?: string[];
+  salience?: number;       // 중요도 0~100
+  pinned?: boolean;
+  status?: 'active' | 'archived';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** 일 매출 — 채널×날짜 집계 (중심 테이블) */
+export interface SalesDaily {
+  id: string;
+  workspaceId: string;
+  date: string;
+  source: string;          // smartstore|coupang|ohouse|self|instagram|total|other
+  revenue?: number;
+  orders?: number;
+  visitors?: number;
+  memo?: string;
+  extra?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+  // ── 시목 ERP 연동(조회) 필드 ──
+  sourceLabel?: string;                    // 표시용 채널명(한글 원문)
+  ordersBasis?: 'order' | 'voucher';       // voucher=전표건수 → 객단가(AOV) 계산에서 제외
+  commissionRate?: number;                 // 채널 수수료율(참고)
+}
+
+/** 제품(카탈로그) — 워크스페이스별 */
+export interface Product {
+  id: string;
+  workspaceId: string;
+  name: string;
+  sku?: string;
+  category?: string;
+  status: 'active' | 'draft' | 'discontinued';
+  price?: number;
+  cost?: number;
+  stock?: number;
+  imageUrl?: string;
+  description?: string;
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /** 인사이트 출처 */

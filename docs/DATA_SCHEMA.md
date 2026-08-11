@@ -20,7 +20,7 @@
 ## 1. 워크스페이스 (004_workspaces)
 | 테이블 | 컬럼 |
 |---|---|
-| `workspaces` | id, name, emoji, color, **image_url**, **biz_info**, type('personal'\|'office'), invite_code(unique), created_by, created_at, updated_at |
+| `workspaces` | id, name, emoji, color, **image_url**, **biz_info**, type('personal'\|'office'), invite_code(unique), credits, **erp_source**('manual'\|'simok_api', 마이그 032 — ERP 소스 워크스페이스별), created_by, created_at, updated_at |
 | `workspace_members` | workspace_id, user_id, role('owner'\|'member'), nickname, joined_at · PK(workspace_id,user_id) |
 | `workspace_invites` | id, workspace_id, email, invited_by, status('pending'\|'accepted'\|'revoked'), created_at · UNIQUE(workspace_id,email) |
 | `workspace_activities` | id, workspace_id, actor_id, action, resource_type, resource_id, metadata(jsonb), created_at |
@@ -47,7 +47,12 @@
 ## 4. 할일 / 일정 / 인사이트 / 기록 (콘텐츠 — 004에서 공유 컬럼 추가)
 | 테이블 | 컬럼 |
 |---|---|
-| `tasks` | id, user_id, title, type, project, goal_id, status('todo'\|'in_progress'\|'done'), priority, starred, due_date, category, notes, repeat, tags, estimated_time, actual_time, conversation_id, completed_at, **workspace_id**, **is_shared**, **assignee_id**, created_at |
+| `tasks` | id, user_id, title, type, project, goal_id, status('todo'\|'in_progress'\|'done'), priority, starred, due_date, category, notes, repeat, tags, estimated_time, actual_time, conversation_id, completed_at, **workspace_id**, **is_shared**, **assignee_id**, **source**('manual'\|'content'\|'decision'\|'memory'\|'campaign'\|'ai'), created_at |
+| `products` | id, **workspace_id**, created_by, name, sku, category, status('active'\|'draft'\|'discontinued'), price, cost, stock, image_url, description, tags, created_at, updated_at (마이그 026) |
+| `content_items` | id, **workspace_id**, created_by, title, platform, content_type('desire'\|'info'\|'worldview'\|'behind'), status('idea'\|'approved'\|'scripted'\|'shooting'\|'editing'\|'scheduled'\|'published'\|'archived'), hook, script, shot_list, url, published_at, **primary_product_id**, **content_purpose**('view'\|'follow'\|'save'\|'sale'\|'brand'), **owner**, **scheduled_for**, created_at, updated_at (마이그 027·028) |
+| `content_metrics` | id, **workspace_id**, content_item_id, checkpoint('h24'\|'h72'\|'d7'), views, likes, comments, saves, shares, watch_time, completion_rate, follower_delta, measured_at, created_at, updated_at, UNIQUE(content_item_id,checkpoint) (마이그 029) |
+| `sales_daily` | id, **workspace_id**, created_by, date, source('smartstore'\|'coupang'\|'ohouse'\|'self'\|'instagram'\|'total'\|'other'), revenue, orders, visitors, memo, extra(jsonb), created_at, updated_at, UNIQUE(workspace_id,source,date) — aov·전환율은 계산값 (마이그 030) |
+| `company_memory` | id, **workspace_id**, created_by, kind('idea'\|'insight'\|'philosophy'\|'failure'\|'experiment'\|'reference'\|'competitor'\|'ceo_memo'), title, body, summary, tags, salience(0~100), pinned, status('active'\|'archived'), created_at, updated_at (마이그 031) |
 | `schedules` | id, user_id, title, date, end_date, time, project, color, category, repeat, reminder, notes, tags, **workspace_id**, **is_shared**, **completed**, **completed_at**, **is_milestone**, **plan_id**, **phase**, **sort_order**, **generated_by**, created_at · 플랜 컬럼은 021에서 추가 |
 | `schedule_plans` (플랜 — D-day 프로젝트) | id, user_id, **workspace_id**, name, emoji, goal, description, target_date, start_date, phases(jsonb 주차정의), categories(jsonb 카테고리정의), status('active'\|'done'\|'archived'), generated_by('manual'\|'ai'), created_at · 021에서 신설. 소속 일정은 `schedules.plan_id`로 연결 |
 | `insights` | id, user_id, title, content, source, link, tags, project, priority, starred, time, **workspace_id**, **is_shared**, created_at |

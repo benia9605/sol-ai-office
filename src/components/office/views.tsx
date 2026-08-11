@@ -5,7 +5,7 @@
  * - 샘플/빈 상태: 대시보드 KPI·브리핑·일정·인사이트·기록 (실연동은 Phase 4~5)
  */
 import { useEffect, useRef, useState } from 'react';
-import { Workspace, WorkspaceMember, TaskItem, DailyReport } from '../../types';
+import { Workspace, WorkspaceMember, TaskItem, DailyReport, RecordItem, Product, ContentItem, ContentType, ContentStatus, ContentMetric, ContentCheckpoint, SalesDaily, CompanyMemory, MemoryKind } from '../../types';
 import { useTasks } from '../../hooks/useTasks';
 import { fetchMembers, removeMember, changeMemberRole } from '../../services/workspaces.service';
 import { getCurrentUserId } from '../../services/auth';
@@ -13,7 +13,15 @@ import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
 import { SchedulesPageModern } from '../../pages/SchedulesPage.modern';
 import { fetchInsights, addInsight, deleteInsight, InsightRow } from '../../services/insights.service';
-import { fetchRecords, addRecord, deleteRecord, RecordRow } from '../../services/records.service';
+import { fetchRecords, addRecord, deleteRecord, updateRecord, RecordRow } from '../../services/records.service';
+import { fetchProducts, addProduct, updateProduct, deleteProduct } from '../../services/products.service';
+import { fetchContentItems, addContentItem, updateContentItem, deleteContentItem } from '../../services/contentItems.service';
+import { fetchMetricsByItem, saveMetric } from '../../services/contentMetrics.service';
+import { fetchSalesDaily, saveSalesDaily, deleteSalesDaily } from '../../services/salesDaily.service';
+import { fetchMemories, addMemory, updateMemory, deleteMemory } from '../../services/companyMemory.service';
+import { workspaceErpSource, isWsCompat } from '../../config/dataSource';
+import { RecordDetailView } from '../records/RecordDetailView';
+import { ReportCard } from './StaffView';
 import { fetchExternalKpis, ExternalKpiRow } from '../../services/externalKpis.service';
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { Spark, ViewHead, Card, EmptyState } from './ui';
@@ -99,47 +107,47 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
   const Empty = ({ t }: { t: string }) => <p className="text-xs text-gray-300 py-3 text-center">{t}</p>;
 
   return (
-    <>
-      {/* 인사말 히어로 */}
-      <div className="mb-5">
-        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}</p>
-        <h1 className="text-2xl font-extrabold text-gray-800 mt-1">{greeting} 👋</h1>
-        <p className="text-sm text-gray-400 mt-0.5">{workspace.name} · 진행 중 할일 {open.length}건 · 멤버 {members.length}명</p>
+    <div className="space-y-5">
+      {/* 인사말 히어로 — 무지 모던톤 (라이트 대형 헤드라인) */}
+      <div className="mb-10">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-500 mb-3">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}</div>
+        <h1 className="text-3xl sm:text-4xl font-light leading-[1.2] text-gray-800">{greeting} 👋</h1>
+        <p className="text-sm text-gray-400 mt-3">{workspace.name} · 진행 중 할일 {open.length}건 · 멤버 {members.length}명</p>
       </div>
 
       {/* KPI 스트립 — 실데이터 있을 때만 표시 (연동 전엔 빈 그래프 숨김) */}
       {kpis.some(k => k.value > 0 || k.delta !== null) && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {kpis.map((kpi, i) => (
-            <Card key={i} className="p-4 transition-all hover:shadow-md">
+            <Card key={i} className="p-5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-500">{kpi.k}</span>
                 {kpi.delta === null
                   ? <span className="text-xs font-semibold text-gray-300">—</span>
                   : <span className={`text-xs font-semibold ${kpi.delta >= 0 ? 'text-emerald-500' : 'text-rose-400'}`}>{kpi.delta >= 0 ? '▲' : '▼'} {Math.abs(kpi.delta)}%</span>}
               </div>
-              <div className="text-2xl font-extrabold mt-1 text-gray-800">
-                {kpi.value.toLocaleString()}<span className="text-sm font-semibold text-gray-400 ml-0.5">{kpi.unit}</span>
+              <div className="text-2xl font-light mt-1.5 text-gray-800 tabular-nums">
+                {kpi.value.toLocaleString()}<span className="text-sm text-gray-400 ml-0.5">{kpi.unit}</span>
               </div>
-              <div className="mt-1"><Spark data={kpi.spark} /></div>
+              <div className="mt-1.5"><Spark data={kpi.spark} /></div>
             </Card>
           ))}
         </div>
       )}
 
-      {/* 브리핑 배너 */}
+      {/* 브리핑 배너 — 네모·라인 (무지톤) */}
       <button onClick={() => onNavigate('briefing')}
-        className="w-full flex items-center gap-3 p-4 rounded-[24px] bg-primary-500 text-white mb-4 transition-all active:scale-[0.99] hover:bg-primary-600 text-left">
-        <span className="text-2xl">☀️</span>
+        className="w-full flex items-center gap-3 p-5 rounded-lg bg-primary-500 text-white transition-colors hover:bg-primary-600 text-left">
+        <span className="text-xl">☀️</span>
         <span className="flex-1">
-          <span className="block text-sm font-bold">오늘의 브리핑 읽기</span>
+          <span className="block text-sm font-semibold">오늘의 브리핑 읽기</span>
           <span className="block text-xs text-white/70 mt-0.5">어제 AI 직원들이 한 일을 한 장으로</span>
         </span>
         <span className="text-white/50">›</span>
       </button>
 
       {/* 다가오는 일정 + 내 할일 */}
-      <div className="grid sm:grid-cols-2 gap-3 mb-3">
+      <div className="grid sm:grid-cols-2 gap-4">
         <Card className="p-4">
           <SecHead title="다가오는 일정" to="schedule" />
           {upcoming.length ? upcoming.map(s => (
@@ -163,8 +171,8 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
       </div>
 
       {/* 최근 인사이트 + 최근 메모 */}
-      <div className="grid sm:grid-cols-2 gap-3 mb-3">
-        <Card className="p-4">
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Card className="p-5">
           <SecHead title="최근 인사이트" to="insights" />
           {insights.length ? insights.slice(0, 4).map(i => (
             <div key={i.id} className="flex items-center gap-2 py-1.5">
@@ -172,7 +180,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
             </div>
           )) : <Empty t="인사이트가 없어요" />}
         </Card>
-        <Card className="p-4">
+        <Card className="p-5">
           <SecHead title="최근 메모" to="log" />
           {memos.length ? memos.slice(0, 4).map(m => (
             <div key={m.id} className="flex items-center gap-2 py-1.5">
@@ -184,7 +192,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
       </div>
 
       {/* 활동 로그 (AI 직원) */}
-      <Card className="p-4 mb-3">
+      <Card className="p-5">
         <SecHead title="AI 직원 활동" to="activity" />
         {reports.length ? reports.slice(0, 5).map(r => (
           <div key={r.id} className="flex items-center gap-2 py-1.5">
@@ -196,20 +204,20 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
       </Card>
 
       {/* 멤버 */}
-      <Card className="p-4">
+      <Card className="p-5">
         <SecHead title="멤버" to="members" />
         {members.length ? (
           <div className="flex flex-wrap gap-2">
             {members.map(m => (
-              <span key={m.userId} className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-gray-50 text-xs text-gray-600">
-                <span className="w-5 h-5 rounded-full bg-primary-500 text-white flex items-center justify-center text-[10px] font-bold">{(m.nickname || m.userId).slice(0, 1).toUpperCase()}</span>
+              <span key={m.userId} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 border border-gray-200 text-xs text-gray-600">
+                <span className="w-5 h-5 rounded-md bg-primary-500 text-white flex items-center justify-center text-[10px] font-bold">{(m.nickname || m.userId).slice(0, 1).toUpperCase()}</span>
                 {m.nickname || '멤버'}{m.role === 'owner' && ' 👑'}
               </span>
             ))}
           </div>
         ) : <Empty t="멤버가 없어요" />}
       </Card>
-    </>
+    </div>
   );
 }
 
@@ -227,15 +235,7 @@ export function BriefingView({ workspace }: { workspace: Workspace }) {
         <EmptyState emoji="☀️" title="아직 브리핑이 없어요" sub="AI 직원 상세에서 ‘지금 실행’을 누르면 리포트가 여기 모여요" />
       ) : (
         <div className="space-y-2">
-          {reports.map(r => (
-            <Card key={r.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-800">{r.title}</span>
-                <span className="text-[11px] text-gray-400">{r.date}</span>
-              </div>
-              {r.summary && <p className="text-xs text-gray-500 mt-1">{r.summary}</p>}
-            </Card>
-          ))}
+          {reports.map(r => <ReportCard key={r.id} r={r} />)}
         </div>
       )}
     </>
@@ -248,7 +248,15 @@ function PriorityDot({ p }: { p: TaskItem['priority'] }) {
   return <span className={`w-2 h-2 rounded-full ${c} flex-shrink-0`} />;
 }
 
-function TaskCol({ title, items, onToggle }: { title: string; items: TaskItem[]; onToggle: (id: string) => void }) {
+const STATUS_RING: Record<TaskItem['status'], string> = {
+  pending: 'border-gray-300', in_progress: 'border-amber-400', completed: 'bg-primary-500 border-primary-500',
+};
+const TASK_CATEGORIES = ['콘텐츠', '제품', '쇼룸', '촬영', '회의', '운영', '마케팅', 'CS', 'AI'];
+const isAiTask = (t: TaskItem) => t.category === '🤖 AI' || t.source === 'ai';
+
+function TaskCol({ title, items, onOpen, onCycle, memberName }: {
+  title: string; items: TaskItem[]; onOpen: (t: TaskItem) => void; onCycle: (id: string) => void; memberName: (uid?: string) => string;
+}) {
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
@@ -257,16 +265,20 @@ function TaskCol({ title, items, onToggle }: { title: string; items: TaskItem[];
       </div>
       <div className="space-y-2">
         {items.map(t => (
-          <button
-            key={t.id}
-            onClick={() => onToggle(t.id)}
-            className="w-full flex items-center gap-2 p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-all active:scale-[0.98] text-left"
-          >
-            <PriorityDot p={t.priority} />
-            <span className={`text-sm flex-1 ${t.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-700'}`}>{t.title}</span>
-            {t.category === '🤖 AI' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-600">🤖 AI</span>}
-            {t.assigneeId && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-500">담당</span>}
-          </button>
+          <div key={t.id} className="w-full flex items-center gap-2 p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-all">
+            <button onClick={() => onCycle(t.id)} title="상태 변경"
+              className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${STATUS_RING[t.status]}`}>
+              {t.status === 'completed' && <span className="text-white text-[9px] leading-none">✓</span>}
+            </button>
+            <button onClick={() => onOpen(t)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
+              <PriorityDot p={t.priority} />
+              <span className={`text-sm flex-1 truncate ${t.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-700'}`}>{t.title}</span>
+              {t.category && t.category !== '🤖 AI' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{t.category}</span>}
+              {t.date && <span className="text-[10px] text-gray-400 flex-shrink-0">{t.date.slice(5)}</span>}
+              {isAiTask(t) && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-600 flex-shrink-0">🤖 AI</span>}
+              {t.assigneeId && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-500 flex-shrink-0">{memberName(t.assigneeId)}</span>}
+            </button>
+          </div>
         ))}
         {items.length === 0 && <p className="text-xs text-gray-300 py-3 text-center">없음</p>}
       </div>
@@ -274,17 +286,162 @@ function TaskCol({ title, items, onToggle }: { title: string; items: TaskItem[];
   );
 }
 
-export function TodosView() {
-  const { tasks, cycleStatus } = useTasks();
-  const open = tasks.filter(t => t.status !== 'completed');
-  const done = tasks.filter(t => t.status === 'completed');
+/** 할일 상세/수정 팝업 (몽글 모노톤) */
+function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
+  task: TaskItem; members: WorkspaceMember[];
+  onSave: (patch: Partial<TaskItem>) => void; onDelete: () => void; onClose: () => void;
+}) {
+  const [title, setTitle] = useState(task.title);
+  const [priority, setPriority] = useState<TaskItem['priority']>(task.priority);
+  const [status, setStatus] = useState<TaskItem['status']>(task.status);
+  const [date, setDate] = useState(task.date ?? '');
+  const [assigneeId, setAssigneeId] = useState(task.assigneeId ?? '');
+  const [category, setCategory] = useState(task.category && task.category !== '🤖 AI' ? task.category : '');
+  const memberName = (m: WorkspaceMember) => m.nickname || m.name || m.email || '멤버';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]" onMouseDown={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-[440px] max-w-[92vw] p-6 space-y-3" onMouseDown={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-extrabold text-gray-800">할일 수정</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center">✕</button>
+        </div>
+        <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="제목" className={fieldCls} />
+        <div className="grid grid-cols-2 gap-2">
+          <select value={priority} onChange={e => setPriority(e.target.value as TaskItem['priority'])} className={fieldCls}>
+            <option value="high">우선순위 · 높음</option>
+            <option value="medium">우선순위 · 보통</option>
+            <option value="low">우선순위 · 낮음</option>
+          </select>
+          <select value={status} onChange={e => setStatus(e.target.value as TaskItem['status'])} className={fieldCls}>
+            <option value="pending">할 일</option>
+            <option value="in_progress">진행 중</option>
+            <option value="completed">완료</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className={fieldCls} />
+          <select value={category} onChange={e => setCategory(e.target.value)} className={fieldCls}>
+            <option value="">카테고리 없음</option>
+            {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        {members.length > 1 && (
+          <select value={assigneeId} onChange={e => setAssigneeId(e.target.value)} className={fieldCls}>
+            <option value="">담당자 없음</option>
+            {members.map(m => <option key={m.userId} value={m.userId}>{memberName(m)}</option>)}
+          </select>
+        )}
+        <div className="flex items-center justify-between pt-1">
+          <button onClick={onDelete} className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={() => onSave({ title: title.trim() || task.title, priority, status, date: date || undefined, assigneeId: assigneeId || undefined, category: category || undefined })}
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function TodosView({ workspace }: { workspace: Workspace }) {
+  const { tasks, cycleStatus, add, updateTask, remove } = useTasks();
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<{ title: string; priority: TaskItem['priority']; date: string; assigneeId: string; category: string }>({ title: '', priority: 'medium', date: '', assigneeId: '', category: '' });
+  const [selected, setSelected] = useState<TaskItem | null>(null);
+  const [filter, setFilter] = useState<string>('all');
+
+  useEffect(() => { fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([])); }, [workspace.id]);
+
+  const memberName = (uid?: string) => {
+    if (!uid) return '';
+    const m = members.find(x => x.userId === uid);
+    return m ? (m.nickname || m.name || m.email || '멤버') : '담당';
+  };
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+
+  const save = async () => {
+    if (!form.title.trim()) return;
+    // source='manual' — 대표가 직접 만든 할일. (content/decision/ai 등은 해당 기능이 생성 시 지정)
+    await add({ title: form.title.trim(), priority: form.priority, date: form.date || undefined, assigneeId: form.assigneeId || undefined, category: form.category || undefined, source: 'manual' });
+    setForm({ title: '', priority: 'medium', date: '', assigneeId: '', category: '' }); setShowForm(false);
+  };
+
+  const applyFilter = (list: TaskItem[]) => {
+    if (filter === 'all') return list;
+    if (filter === 'unassigned') return list.filter(t => !t.assigneeId && !isAiTask(t));
+    if (filter === 'ai') return list.filter(isAiTask);
+    return list.filter(t => t.assigneeId === filter);
+  };
+  const open = applyFilter(tasks.filter(t => t.status !== 'completed'));
+  const done = applyFilter(tasks.filter(t => t.status === 'completed'));
+
+  const chip = (id: string, label: string) => (
+    <button key={id} onClick={() => setFilter(id)}
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+  );
+
   return (
     <>
       <ViewHead eyebrow="TASKS" title="할일" sub={`${open.length}건 진행 · ${done.length}건 완료`} />
-      <div className="grid sm:grid-cols-2 gap-3">
-        <TaskCol title="할 일" items={open} onToggle={cycleStatus} />
-        <TaskCol title="완료" items={done} onToggle={cycleStatus} />
+
+      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+        {chip('all', '전체')}
+        {members.length > 1 && members.map(m => chip(m.userId, memberName(m.userId)))}
+        {members.length > 1 && chip('unassigned', '미배정')}
+        {chip('ai', '🤖 AI')}
+        <button onClick={() => setShowForm(v => !v)}
+          className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 할일 추가</button>
       </div>
+
+      {showForm && (
+        <Card className="p-4 mb-3 space-y-2.5">
+          <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
+            onKeyDown={e => { if (e.key === 'Enter') save(); }} placeholder="무엇을 할까요?" className={fieldCls} />
+          <div className="grid grid-cols-2 gap-2">
+            <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value as TaskItem['priority'] })} className={fieldCls}>
+              <option value="high">우선순위 · 높음</option>
+              <option value="medium">우선순위 · 보통</option>
+              <option value="low">우선순위 · 낮음</option>
+            </select>
+            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className={fieldCls}>
+              <option value="">카테고리 없음</option>
+              {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className={fieldCls} />
+            {members.length > 1 && (
+              <select value={form.assigneeId} onChange={e => setForm({ ...form, assigneeId: e.target.value })} className={fieldCls}>
+                <option value="">담당자 없음</option>
+                {members.map(m => <option key={m.userId} value={m.userId}>{memberName(m.userId)}</option>)}
+              </select>
+            )}
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => { setShowForm(false); setForm({ title: '', priority: 'medium', date: '', assigneeId: '', category: '' }); }}
+              className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={save} disabled={!form.title.trim()}
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">추가</button>
+          </div>
+        </Card>
+      )}
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <TaskCol title="할 일" items={open} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
+        <TaskCol title="완료" items={done} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
+      </div>
+
+      {selected && (
+        <TaskDetailPopup
+          task={selected} members={members}
+          onSave={async (patch) => { await updateTask(selected.id, patch); setSelected(null); }}
+          onDelete={async () => { await remove(selected.id); setSelected(null); }}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </>
   );
 }
@@ -315,15 +472,20 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
   const insertClaude = () => insertTpl(`${form.content && !form.content.endsWith('\n') ? '\n' : ''}[나]\n\n[Claude]\n\n`);
   const insertQA = () => insertTpl(`${form.content && !form.content.endsWith('\n') ? '\n' : ''}[질문]\n\n[답변]\n\n`);
 
-  const fieldCls = 'w-full px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
   const save = async () => {
     if (!form.title.trim()) return;
-    await addInsight({
-      title: form.title.trim(), content: form.content, source: form.source || '직접 입력', link: form.link || undefined,
-      tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-      workspace_id: workspace.id,
-    } as Omit<InsightRow, 'id' | 'created_at' | 'conversation_id'>).catch(() => {});
-    setForm({ title: '', content: '', source: '', link: '', tags: '' }); setShowForm(false); load();
+    try {
+      await addInsight({
+        title: form.title.trim(), content: form.content, source: form.source || '직접 입력', link: form.link || undefined,
+        tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+        workspace_id: workspace.id,
+      } as Omit<InsightRow, 'id' | 'created_at' | 'conversation_id'>);
+      setForm({ title: '', content: '', source: '', link: '', tags: '' }); setShowForm(false); load();
+    } catch (e) {
+      console.error('[InsightsView] 저장 실패:', e);
+      alert('인사이트 저장에 실패했어요. 잠시 후 다시 시도해 주세요.');
+    }
   };
   const del = async (id: string) => { await deleteInsight(id).catch(() => {}); load(); };
 
@@ -332,7 +494,7 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
       <ViewHead eyebrow="INSIGHTS" title="인사이트" sub={`인사이트 ${list.length}건`} />
       <div className="flex justify-end mb-3">
         <button onClick={() => setShowForm(v => !v)}
-          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 인사이트 추가</button>
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 인사이트 추가</button>
       </div>
       {showForm && (
         <Card className="p-4 mb-3 space-y-2.5">
@@ -348,9 +510,9 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
           </div>
           <input value={form.link} onChange={e => setForm({ ...form, link: e.target.value })} placeholder="링크 (선택)" className={fieldCls} />
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-xl text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
             <button onClick={save} disabled={!form.title.trim()}
-              className="px-4 py-1.5 rounded-xl text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">저장</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">저장</button>
           </div>
         </Card>
       )}
@@ -376,22 +538,40 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
 }
 
 /* ───────── 기록 (메모 — Tiptap) ───────── */
+/** 오피스 메모 RecordRow → RecordDetailView가 받는 RecordItem 변환 (읽기/수정 공용) */
+function memoRowToItem(r: RecordRow): RecordItem {
+  return {
+    id: r.id,
+    recordType: 'memo',
+    date: r.date,
+    title: r.title,
+    memoBody: r.memo_body,
+    createdAt: r.created_at,
+  } as RecordItem;
+}
+
 export function LogView({ workspace }: { workspace: Workspace }) {
   const [memos, setMemos] = useState<RecordRow[]>([]);
   const [writing, setWriting] = useState(false);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState<any>(undefined);
+  const [selected, setSelected] = useState<RecordRow | null>(null);
   const editorRef = useRef<TiptapEditorHandle>(null);
   const load = () => fetchRecords(workspace.id, 'memo').then(setMemos).catch(() => setMemos([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
 
   const save = async () => {
     if (!title.trim() && !body) return;
-    await addRecord({
-      title: title.trim() || '메모', date: new Date().toISOString().split('T')[0],
-      record_type: 'memo', memo_body: body || {}, workspace_id: workspace.id,
-    } as Omit<RecordRow, 'id' | 'created_at'>).catch(() => {});
-    setTitle(''); setBody(undefined); setWriting(false); load();
+    try {
+      await addRecord({
+        title: title.trim() || '메모', date: new Date().toISOString().split('T')[0],
+        record_type: 'memo', memo_body: body || {}, workspace_id: workspace.id,
+      } as Omit<RecordRow, 'id' | 'created_at'>);
+      setTitle(''); setBody(undefined); setWriting(false); load();
+    } catch (e) {
+      console.error('[LogView] 메모 저장 실패:', e);
+      alert('메모 저장에 실패했어요. 잠시 후 다시 시도해 주세요.');
+    }
   };
   const del = async (id: string) => { await deleteRecord(id).catch(() => {}); load(); };
 
@@ -400,12 +580,12 @@ export function LogView({ workspace }: { workspace: Workspace }) {
       <ViewHead eyebrow="MEMO" title="기록" sub={`메모 ${memos.length}개`} />
       <div className="flex justify-end mb-3">
         <button onClick={() => setWriting(v => !v)}
-          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 메모</button>
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 메모</button>
       </div>
       {writing && (
         <Card className="p-4 mb-3 space-y-2.5">
           <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="제목"
-            className="w-full px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 transition-colors" />
+            className="w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors" />
           <div className="flex justify-end">
             <ClaudeQuickButtons
               onClaude={() => editorRef.current?.insertClaudeBlock()}
@@ -416,8 +596,8 @@ export function LogView({ workspace }: { workspace: Workspace }) {
             <TiptapEditor ref={editorRef} content={body} onChange={setBody} placeholder="메모를 작성하세요..." />
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setWriting(false); setTitle(''); setBody(undefined); }} className="px-3 py-1.5 rounded-xl text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
-            <button onClick={save} className="px-4 py-1.5 rounded-xl text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
+            <button onClick={() => { setWriting(false); setTitle(''); setBody(undefined); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={save} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
           </div>
         </Card>
       )}
@@ -427,12 +607,26 @@ export function LogView({ workspace }: { workspace: Workspace }) {
         <div className="space-y-2">
           {memos.map(m => (
             <Card key={m.id} className="group p-4 flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700 flex-1 truncate">📝 {m.title}</span>
-              <span className="text-[11px] text-gray-400 flex-shrink-0">{m.date}</span>
+              <button onClick={() => setSelected(m)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
+                <span className="text-sm font-medium text-gray-700 flex-1 truncate">📝 {m.title}</span>
+                <span className="text-[11px] text-gray-400 flex-shrink-0">{m.date}</span>
+              </button>
               <button onClick={() => del(m.id)} className="text-[11px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">삭제</button>
             </Card>
           ))}
         </div>
+      )}
+
+      {selected && (
+        <RecordDetailView
+          record={memoRowToItem(selected)}
+          onUpdate={async (updated) => {
+            await updateRecord(updated.id, { title: updated.title, memo_body: updated.memoBody }).catch(() => {});
+            setSelected(null); load();
+          }}
+          onDelete={async (id) => { await deleteRecord(id).catch(() => {}); setSelected(null); load(); }}
+          onClose={() => setSelected(null)}
+        />
       )}
     </>
   );
@@ -451,15 +645,741 @@ export function ActivityView({ workspace }: { workspace: Workspace }) {
       {reports.length === 0 ? (
         <EmptyState emoji="🧾" title="아직 활동이 없어요" sub="AI 직원이 일하면 리포트가 여기 타임라인으로 쌓여요" />
       ) : (
-        <Card className="p-2">
-          {reports.map(r => (
-            <div key={r.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
-              <span className="w-2 h-2 rounded-full bg-primary-400 flex-shrink-0" />
-              <span className="text-sm text-gray-700 flex-1 truncate">🤖 {r.title}</span>
-              <span className="text-[11px] text-gray-400 flex-shrink-0">{r.date}</span>
+        <div className="space-y-2">
+          {reports.map(r => <ReportCard key={r.id} r={r} />)}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ───────── 콘텐츠 아이템 (실데이터 · 아이디어→발행) ───────── */
+const CONTENT_TYPE_LABEL: Record<ContentType, string> = { desire: '💛 욕망', info: '📚 정보', worldview: '🌲 세계관', behind: '🎬 비하인드' };
+const CONTENT_PLATFORMS = ['Instagram', 'YouTube Shorts', 'YouTube', 'Blog', 'Pinterest', '오늘의집', 'Other'];
+const CONTENT_PURPOSES: { v: string; label: string }[] = [
+  { v: 'view', label: '조회(view)' }, { v: 'follow', label: '팔로우(follow)' }, { v: 'save', label: '저장(save)' },
+  { v: 'sale', label: '판매(sale)' }, { v: 'brand', label: '브랜드(brand)' },
+];
+const CONTENT_OWNERS = ['쏠닝', '홍대표', 'AI', '외주'];
+const CONTENT_STATUS_ORDER: ContentStatus[] = ['idea', 'approved', 'scripted', 'shooting', 'editing', 'scheduled', 'published', 'archived'];
+const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
+  idea: '아이디어', approved: '승인', scripted: '대본', shooting: '촬영', editing: '편집', scheduled: '예약', published: '발행', archived: '보관',
+};
+const CONTENT_STATUS_CLS: Record<ContentStatus, string> = {
+  idea: 'bg-gray-100 text-gray-500', approved: 'bg-blue-50 text-blue-600', scripted: 'bg-indigo-50 text-indigo-600',
+  shooting: 'bg-amber-50 text-amber-600', editing: 'bg-orange-50 text-orange-600', scheduled: 'bg-violet-50 text-violet-600',
+  published: 'bg-emerald-50 text-emerald-600', archived: 'bg-gray-100 text-gray-400',
+};
+const nextContentStatus = (s: ContentStatus): ContentStatus | null => {
+  const i = CONTENT_STATUS_ORDER.indexOf(s);
+  return i >= 0 && i < CONTENT_STATUS_ORDER.length - 1 ? CONTENT_STATUS_ORDER[i + 1] : null;
+};
+
+const CHECKPOINT_LABEL: Record<ContentCheckpoint, string> = { h24: '24시간', h72: '72시간', d7: '7일' };
+
+/** 콘텐츠 성과 입력 — 24h/72h/7d 시점별. 저장률·공유율을 최상단에 강조. */
+function ContentMetricsEditor({ item, workspaceId }: { item: ContentItem; workspaceId: string }) {
+  const [metrics, setMetrics] = useState<Record<string, ContentMetric>>({});
+  const [cp, setCp] = useState<ContentCheckpoint>('h24');
+  const [f, setF] = useState<Partial<ContentMetric>>({});
+  const [saving, setSaving] = useState(false);
+  const load = () => fetchMetricsByItem(item.id).then(rows => {
+    const map: Record<string, ContentMetric> = {};
+    rows.forEach(m => { map[m.checkpoint] = m; });
+    setMetrics(map); setF(map[cp] ?? {});
+  }).catch(() => {});
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [item.id]);
+  useEffect(() => { setF(metrics[cp] ?? {}); /* eslint-disable-next-line */ }, [cp]);
+
+  const setN = (k: keyof ContentMetric, v: string) => setF(prev => ({ ...prev, [k]: v === '' ? undefined : Number(v) }));
+  const rate = (n?: number) => (f.views && f.views > 0 && n != null ? `${((n / f.views) * 100).toFixed(1)}%` : '—');
+  const inputCls = 'w-full px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-300';
+  const save = async () => {
+    setSaving(true);
+    try { await saveMetric(workspaceId, item.id, cp, f); await load(); }
+    catch (e) { console.error('[metrics] 저장 실패', e); alert('성과 저장에 실패했어요.'); }
+    finally { setSaving(false); }
+  };
+  // 컴포넌트(<NumIn/>)로 만들면 매 렌더 리마운트되어 포커스가 튐 → 함수 호출형으로 인라인 렌더.
+  const numIn = (k: keyof ContentMetric, label: string) => (
+    <label key={k} className="block">
+      <span className="text-[10px] text-gray-400">{label}</span>
+      <input type="number" value={f[k] == null ? '' : String(f[k])} onChange={e => setN(k, e.target.value)} className={inputCls} />
+    </label>
+  );
+
+  return (
+    <div className="border-t border-gray-100 pt-3 mt-1 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-bold text-gray-500">📊 성과 <span className="text-gray-300">(저장률·공유율 중심)</span></span>
+        <div className="flex gap-1">
+          {(['h24', 'h72', 'd7'] as ContentCheckpoint[]).map(c => (
+            <button key={c} onClick={() => setCp(c)}
+              className={`px-2 py-1 rounded-lg text-[11px] ${cp === c ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+              {CHECKPOINT_LABEL[c]}{metrics[c] ? ' ●' : ''}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl bg-primary-50 p-2 text-center">
+          <div className="text-[10px] text-gray-400">저장률 (saves/views)</div>
+          <div className="text-lg font-extrabold text-primary-600">{rate(f.saves)}</div>
+        </div>
+        <div className="rounded-xl bg-emerald-50 p-2 text-center">
+          <div className="text-[10px] text-gray-400">공유율 (shares/views)</div>
+          <div className="text-lg font-extrabold text-emerald-600">{rate(f.shares)}</div>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {numIn('saves', '저장 ★')}
+        {numIn('shares', '공유 ★')}
+        {numIn('views', '조회수')}
+        {numIn('likes', '좋아요')}
+        {numIn('comments', '댓글')}
+        {numIn('followerDelta', '팔로워 증감')}
+        {numIn('watchTime', '시청시간(초)')}
+        {numIn('completionRate', '완주율(%)')}
+      </div>
+      <button onClick={save} disabled={saving}
+        className="w-full py-1.5 rounded-xl text-xs font-bold bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-40 transition-all">
+        {saving ? '저장 중…' : `${CHECKPOINT_LABEL[cp]} 성과 저장`}
+      </button>
+    </div>
+  );
+}
+
+function ContentEditPopup({ item, products, workspaceId, onSave, onDelete, onClose }: {
+  item: ContentItem; products: Product[]; workspaceId: string;
+  onSave: (fields: Partial<ContentItem>) => void; onDelete: () => void; onClose: () => void;
+}) {
+  const [f, setF] = useState<Partial<ContentItem>>({ ...item });
+  const set = (patch: Partial<ContentItem>) => setF(prev => ({ ...prev, ...patch }));
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const next = f.status ? nextContentStatus(f.status) : null;
+
+  // 발행 연동: published로 전환 시 published_at 자동, URL 없으면 경고(저장은 허용)
+  const doSave = () => {
+    const fields: Partial<ContentItem> = { ...f, title: (f.title || '').trim() || item.title };
+    if (fields.status === 'published' && !item.publishedAt) fields.publishedAt = new Date().toISOString();
+    if (fields.status !== 'published') fields.publishedAt = f.publishedAt; // 유지
+    if (fields.status === 'published' && !fields.url) {
+      if (!confirm('발행 URL이 비어 있어요. 그래도 발행 상태로 저장할까요?')) return;
+    }
+    onSave(fields);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]" onMouseDown={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-[520px] max-w-[94vw] max-h-[88vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-extrabold text-gray-800">콘텐츠</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center">✕</button>
+        </div>
+        <input autoFocus value={f.title ?? ''} onChange={e => set({ title: e.target.value })} placeholder="제목" className={fieldCls} />
+        <div className="grid grid-cols-2 gap-2">
+          <select value={f.platform ?? ''} onChange={e => set({ platform: e.target.value || undefined })} className={fieldCls}>
+            <option value="">플랫폼</option>
+            {CONTENT_PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <select value={f.contentType ?? ''} onChange={e => set({ contentType: (e.target.value || undefined) as ContentType | undefined })} className={fieldCls}>
+            <option value="">유형</option>
+            {(Object.keys(CONTENT_TYPE_LABEL) as ContentType[]).map(t => <option key={t} value={t}>{CONTENT_TYPE_LABEL[t]}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <select value={f.status} onChange={e => set({ status: e.target.value as ContentStatus })} className={fieldCls}>
+            {CONTENT_STATUS_ORDER.map(s => <option key={s} value={s}>{CONTENT_STATUS_LABEL[s]}</option>)}
+          </select>
+          {next && (
+            <button onClick={() => set({ status: next })}
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-primary-50 text-primary-600 hover:bg-primary-100 whitespace-nowrap flex-shrink-0">
+              다음 → {CONTENT_STATUS_LABEL[next]}
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <select value={f.contentPurpose ?? ''} onChange={e => set({ contentPurpose: e.target.value || undefined })} className={fieldCls}>
+            <option value="">목적</option>
+            {CONTENT_PURPOSES.map(p => <option key={p.v} value={p.v}>{p.label}</option>)}
+          </select>
+          <select value={f.owner ?? ''} onChange={e => set({ owner: e.target.value || undefined })} className={fieldCls}>
+            <option value="">담당자</option>
+            {CONTENT_OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+        <select value={f.primaryProductId ?? ''} onChange={e => set({ primaryProductId: e.target.value || undefined })} className={fieldCls}>
+          <option value="">대표 제품 없음</option>
+          {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+        <label className="block">
+          <span className="text-[10px] text-gray-400">발행 예정일</span>
+          <input type="datetime-local" value={f.scheduledFor ? f.scheduledFor.slice(0, 16) : ''}
+            onChange={e => set({ scheduledFor: e.target.value || undefined })} className={fieldCls} />
+        </label>
+        <input value={f.hook ?? ''} onChange={e => set({ hook: e.target.value })} placeholder="훅 (첫 문장)" className={fieldCls} />
+        <textarea value={f.script ?? ''} onChange={e => set({ script: e.target.value })} placeholder="대본" rows={3} className={fieldCls} />
+        <textarea value={f.shotList ?? ''} onChange={e => set({ shotList: e.target.value })} placeholder="촬영 컷 (줄 단위)" rows={2} className={fieldCls} />
+        <input value={f.url ?? ''} onChange={e => set({ url: e.target.value })} placeholder="발행 URL" className={fieldCls} />
+        {item.publishedAt && <p className="text-[11px] text-gray-400">발행: {item.publishedAt.slice(0, 10)}</p>}
+
+        <ContentMetricsEditor item={item} workspaceId={workspaceId} />
+        <div className="flex items-center justify-between pt-1">
+          <button onClick={() => { if (confirm(`'${item.title}' 콘텐츠를 삭제할까요?`)) onDelete(); }}
+            className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={doSave} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ContentItemsView({ workspace }: { workspace: Workspace }) {
+  const [list, setList] = useState<ContentItem[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<{ title: string; platform: string; contentType: string }>({ title: '', platform: '', contentType: '' });
+  const [selected, setSelected] = useState<ContentItem | null>(null);
+  const [filter, setFilter] = useState<ContentStatus | 'all'>('all');
+  const load = () => fetchContentItems(workspace.id).then(setList).catch(() => setList([]));
+  useEffect(() => {
+    load();
+    fetchProducts(workspace.id, workspaceErpSource(workspace)).then(setProducts).catch(() => setProducts([]));
+    /* eslint-disable-next-line */
+  }, [workspace.id]);
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+
+  const save = async () => {
+    if (!form.title.trim()) return;
+    try {
+      await addContentItem(workspace.id, { title: form.title.trim(), platform: form.platform || undefined, contentType: (form.contentType || undefined) as ContentType | undefined });
+      setForm({ title: '', platform: '', contentType: '' }); setShowForm(false); load();
+    } catch (e) { console.error('[ContentItemsView] 저장 실패:', e); alert('콘텐츠 저장에 실패했어요. 잠시 후 다시 시도해 주세요.'); }
+  };
+
+  const shown = filter === 'all' ? list : list.filter(c => c.status === filter);
+  const chip = (id: ContentStatus | 'all', label: string) => (
+    <button key={id} onClick={() => setFilter(id)}
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+  );
+
+  return (
+    <>
+      <ViewHead eyebrow="CONTENT" title="콘텐츠" sub={`${list.length}건 · 아이디어→발행`} />
+
+      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+        {chip('all', '전체')}
+        {CONTENT_STATUS_ORDER.map(s => chip(s, CONTENT_STATUS_LABEL[s]))}
+        <button onClick={() => setShowForm(v => !v)}
+          className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 콘텐츠</button>
+      </div>
+
+      {showForm && (
+        <Card className="p-4 mb-3 space-y-2.5">
+          <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
+            onKeyDown={e => { if (e.key === 'Enter') save(); }} placeholder="콘텐츠 아이디어 제목" className={fieldCls} />
+          <div className="grid grid-cols-2 gap-2">
+            <select value={form.platform} onChange={e => setForm({ ...form, platform: e.target.value })} className={fieldCls}>
+              <option value="">플랫폼</option>
+              {CONTENT_PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <select value={form.contentType} onChange={e => setForm({ ...form, contentType: e.target.value })} className={fieldCls}>
+              <option value="">유형</option>
+              {(Object.keys(CONTENT_TYPE_LABEL) as ContentType[]).map(t => <option key={t} value={t}>{CONTENT_TYPE_LABEL[t]}</option>)}
+            </select>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => { setShowForm(false); setForm({ title: '', platform: '', contentType: '' }); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={save} disabled={!form.title.trim()}
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">추가</button>
+          </div>
+        </Card>
+      )}
+
+      {shown.length === 0 ? (
+        <EmptyState emoji="🎬" title="콘텐츠가 없어요" sub="＋ 콘텐츠로 아이디어를 등록하고 발행까지 관리하세요" />
+      ) : (
+        <div className="space-y-2">
+          {shown.map(c => (
+            <Card key={c.id} className="group p-4 flex items-center gap-2">
+              <button onClick={() => setSelected(c)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
+                <span className="text-sm font-semibold text-gray-800 truncate">{c.title}</span>
+                {c.contentType && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{CONTENT_TYPE_LABEL[c.contentType]}</span>}
+                {c.platform && <span className="text-[10px] text-gray-400 flex-shrink-0">{c.platform}</span>}
+                <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${CONTENT_STATUS_CLS[c.status]}`}>{CONTENT_STATUS_LABEL[c.status]}</span>
+              </button>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {selected && (
+        <ContentEditPopup
+          item={selected} products={products} workspaceId={workspace.id}
+          onSave={async (fields) => { await updateContentItem(selected.id, fields).catch(() => {}); setSelected(null); load(); }}
+          onDelete={async () => { await deleteContentItem(selected.id).catch(() => {}); setSelected(null); load(); }}
+          onClose={() => setSelected(null)}
+        />
+      )}
+    </>
+  );
+}
+
+/** ERP 데이터(제품·매출) 소스 안내 배너 — 시목앱=System of Record, AI Office=조회·분석 */
+function ErpSourceBanner({ what, compat }: { what: string; compat: boolean }) {
+  if (compat) {
+    return (
+      <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700 flex items-start gap-2">
+        <span className="text-sm leading-none">🔌</span>
+        <span><b>임시 수기 입력 모드</b> — {what}은(는) 시목 앱이 원본(System of Record)이에요. 지금은 시목 API 연동 전이라 AI Office에 직접 입력합니다. <b>연동되면 자동으로 외부 데이터를 읽어</b> 조회·분석만 하게 돼요.</span>
+      </div>
+    );
+  }
+  return (
+    <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-500 flex items-start gap-2">
+      <span className="text-sm leading-none">🔗</span>
+      <span>시목 앱 연동 — {what} 데이터는 시목 앱(System of Record)에서 조회합니다. AI Office는 분석·판단만 하고 여기서 직접 수정하지 않아요.</span>
+    </div>
+  );
+}
+
+/* ───────── 제품 (조회·분석 · 임시 수기) ───────── */
+const PRODUCT_STATUS: Record<Product['status'], { label: string; cls: string }> = {
+  active: { label: '판매중', cls: 'bg-emerald-50 text-emerald-600' },
+  draft: { label: '준비중', cls: 'bg-amber-50 text-amber-600' },
+  discontinued: { label: '단종', cls: 'bg-gray-100 text-gray-400' },
+};
+const won = (n?: number) => (n == null ? '—' : `${n.toLocaleString()}원`);
+const marginPct = (price?: number, cost?: number) =>
+  price && cost != null && price > 0 ? `${Math.round((1 - cost / price) * 100)}%` : '—';
+
+type ProductForm = { name: string; category: string; price: string; cost: string; stock: string; sku: string; status: Product['status']; description: string };
+const emptyProductForm: ProductForm = { name: '', category: '', price: '', cost: '', stock: '', sku: '', status: 'active', description: '' };
+const formToFields = (f: ProductForm): Partial<Product> => ({
+  name: f.name.trim(), category: f.category.trim() || undefined, sku: f.sku.trim() || undefined,
+  status: f.status, description: f.description.trim() || undefined,
+  price: f.price ? Number(f.price) : undefined, cost: f.cost ? Number(f.cost) : undefined,
+  stock: f.stock ? Number(f.stock) : undefined,
+});
+
+function ProductEditPopup({ product, onSave, onDelete, onClose }: {
+  product: Product; onSave: (fields: Partial<Product>) => void; onDelete: () => void; onClose: () => void;
+}) {
+  const [f, setF] = useState<ProductForm>({
+    name: product.name, category: product.category ?? '', price: product.price?.toString() ?? '',
+    cost: product.cost?.toString() ?? '', stock: product.stock?.toString() ?? '', sku: product.sku ?? '',
+    status: product.status, description: product.description ?? '',
+  });
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]" onMouseDown={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-[460px] max-w-[92vw] max-h-[86vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-extrabold text-gray-800">제품 수정</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center">✕</button>
+        </div>
+        <input autoFocus value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="제품명" className={fieldCls} />
+        <div className="grid grid-cols-2 gap-2">
+          <input value={f.category} onChange={e => setF({ ...f, category: e.target.value })} placeholder="카테고리 (도마·가구…)" className={fieldCls} />
+          <input value={f.sku} onChange={e => setF({ ...f, sku: e.target.value })} placeholder="상품코드(선택)" className={fieldCls} />
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <input type="number" value={f.price} onChange={e => setF({ ...f, price: e.target.value })} placeholder="판매가" className={fieldCls} />
+          <input type="number" value={f.cost} onChange={e => setF({ ...f, cost: e.target.value })} placeholder="원가" className={fieldCls} />
+          <input type="number" value={f.stock} onChange={e => setF({ ...f, stock: e.target.value })} placeholder="재고" className={fieldCls} />
+        </div>
+        <select value={f.status} onChange={e => setF({ ...f, status: e.target.value as Product['status'] })} className={fieldCls}>
+          <option value="active">판매중</option>
+          <option value="draft">준비중</option>
+          <option value="discontinued">단종</option>
+        </select>
+        <textarea value={f.description} onChange={e => setF({ ...f, description: e.target.value })} placeholder="설명(선택)" rows={2} className={fieldCls} />
+        <div className="flex items-center justify-between pt-1">
+          <button onClick={() => { if (confirm(`'${product.name}' 제품을 삭제할까요? 되돌릴 수 없어요.`)) onDelete(); }}
+            className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={() => onSave(formToFields(f))} disabled={!f.name.trim()}
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">저장</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ProductsView({ workspace }: { workspace: Workspace }) {
+  const erp = workspaceErpSource(workspace);
+  const compat = isWsCompat(workspace);
+  const [list, setList] = useState<Product[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<ProductForm>(emptyProductForm);
+  const [selected, setSelected] = useState<Product | null>(null);
+  const load = () => fetchProducts(workspace.id, erp).then(setList).catch(() => setList([]));
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+
+  const save = async () => {
+    if (!form.name.trim()) return;
+    try {
+      await addProduct(workspace.id, formToFields(form), erp);
+      setForm(emptyProductForm); setShowForm(false); load();
+    } catch (e) { console.error('[ProductsView] 저장 실패:', e); alert('제품 저장에 실패했어요. 잠시 후 다시 시도해 주세요.'); }
+  };
+
+  return (
+    <>
+      <ViewHead eyebrow="PRODUCTS" title="제품" sub={`${list.length}개 · 조회·분석${compat ? ' · 임시 수기' : ''}`} />
+      <ErpSourceBanner what="제품·재고" compat={compat} />
+      {compat && (
+        <div className="flex justify-end mb-3">
+          <button onClick={() => setShowForm(v => !v)}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 제품 추가</button>
+        </div>
+      )}
+
+      {showForm && compat && (
+        <Card className="p-4 mb-3 space-y-2.5">
+          <input autoFocus value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="제품명" className={fieldCls} />
+          <div className="grid grid-cols-2 gap-2">
+            <input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="카테고리 (도마·가구…)" className={fieldCls} />
+            <input value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} placeholder="상품코드(선택)" className={fieldCls} />
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <input type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="판매가" className={fieldCls} />
+            <input type="number" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} placeholder="원가" className={fieldCls} />
+            <input type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} placeholder="재고" className={fieldCls} />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => { setShowForm(false); setForm(emptyProductForm); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={save} disabled={!form.name.trim()}
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">추가</button>
+          </div>
+        </Card>
+      )}
+
+      {list.length === 0 ? (
+        <EmptyState emoji="📦" title="아직 제품이 없어요" sub="＋ 제품 추가로 판매가·원가·재고를 등록하세요" />
+      ) : (
+        <div className="space-y-2">
+          {list.map(p => (
+            <Card key={p.id} className="group p-4 flex items-center gap-3">
+              <button onClick={() => setSelected(p)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                <span className="text-sm font-semibold text-gray-800 truncate">{p.name}</span>
+                {p.category && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{p.category}</span>}
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${PRODUCT_STATUS[p.status].cls}`}>{PRODUCT_STATUS[p.status].label}</span>
+                <span className="ml-auto text-xs text-gray-600 flex-shrink-0">{won(p.price)}</span>
+                <span className="text-[11px] text-gray-400 flex-shrink-0 w-14 text-right">마진 {marginPct(p.price, p.cost)}</span>
+                <span className="text-[11px] text-gray-400 flex-shrink-0 w-14 text-right">재고 {p.stock ?? '—'}</span>
+              </button>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {selected && (
+        <ProductEditPopup
+          product={selected}
+          onSave={async (fields) => { await updateProduct(selected.id, fields, erp).catch(() => {}); setSelected(null); load(); }}
+          onDelete={async () => { await deleteProduct(selected.id, erp).catch(() => {}); setSelected(null); load(); }}
+          onClose={() => setSelected(null)}
+        />
+      )}
+    </>
+  );
+}
+
+/* ───────── 매출 (실데이터 · 채널×날짜 중심 테이블) ───────── */
+// ⚠️ 이중 집계 방지: 채널 행만 입력받고 날짜 합계는 채널 행의 계산값으로만 만든다.
+// 'total'(합계)은 UI 입력 옵션에서 제외 — 합계 행을 따로 저장하면 채널 합과 이중 집계됨.
+const SALES_SOURCES: { v: string; label: string }[] = [
+  { v: 'smartstore', label: '스마트스토어' }, { v: 'coupang', label: '쿠팡' }, { v: 'ohouse', label: '오늘의집' },
+  { v: 'self', label: '자사몰' }, { v: 'instagram', label: '인스타' }, { v: 'other', label: '기타' },
+];
+const salesSourceLabel = (v: string) => SALES_SOURCES.find(s => s.v === v)?.label ?? v;
+const wonShort = (n?: number) => (n == null ? '—' : `${n.toLocaleString()}원`);
+const aov = (rev?: number, ord?: number) => (rev != null && ord && ord > 0 ? Math.round(rev / ord) : null);
+const convRate = (ord?: number, vis?: number) => (ord != null && vis && vis > 0 ? `${((ord / vis) * 100).toFixed(1)}%` : '—');
+
+type SalesForm = { date: string; source: string; revenue: string; orders: string; visitors: string; memo: string };
+const salesFormToFields = (f: SalesForm) => ({
+  date: f.date, source: f.source,
+  revenue: f.revenue ? Number(f.revenue) : undefined,
+  orders: f.orders ? Number(f.orders) : undefined,
+  visitors: f.visitors ? Number(f.visitors) : undefined,
+  memo: f.memo.trim() || undefined,
+});
+
+export function SalesDailyView({ workspace }: { workspace: Workspace }) {
+  const erp = workspaceErpSource(workspace);
+  const compat = isWsCompat(workspace);
+  const [list, setList] = useState<SalesDaily[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const today = () => new Date().toISOString().slice(0, 10);
+  const emptyForm = (): SalesForm => ({ date: today(), source: 'smartstore', revenue: '', orders: '', visitors: '', memo: '' });
+  const [form, setForm] = useState<SalesForm>(emptyForm());
+  const [editing, setEditing] = useState<SalesDaily | null>(null);
+  const load = () => fetchSalesDaily(workspace.id, 90, erp).then(setList).catch(() => setList([]));
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+
+  const save = async (f: SalesForm) => {
+    if (!f.date) return;
+    try {
+      await saveSalesDaily(workspace.id, salesFormToFields(f), erp);
+      setShowForm(false); setEditing(null); setForm(emptyForm()); load();
+    } catch (e) { console.error('[SalesDailyView] 저장 실패:', e); alert('매출 저장에 실패했어요. 잠시 후 다시 시도해 주세요.'); }
+  };
+  const del = async (id: string) => { if (!confirm('이 매출 기록을 삭제할까요?')) return; await deleteSalesDaily(id, erp).catch(() => {}); setEditing(null); load(); };
+
+  // 날짜별 그룹 (최신순)
+  const byDate: { date: string; rows: SalesDaily[]; total: number }[] = [];
+  list.forEach(r => {
+    let g = byDate.find(x => x.date === r.date);
+    if (!g) { g = { date: r.date, rows: [], total: 0 }; byDate.push(g); }
+    g.rows.push(r);
+    if (r.source !== 'total') g.total += r.revenue ?? 0;  // 'total' 행은 합계에서 제외(이중 집계 방지)
+  });
+
+  const formCard = (f: SalesForm, setF: (v: SalesForm) => void, onSubmit: () => void, onCancel: () => void, editMode: boolean) => (
+    <Card className="p-4 mb-3 space-y-2.5">
+      <div className="grid grid-cols-2 gap-2">
+        <input type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} disabled={editMode} className={fieldCls} />
+        <select value={f.source} onChange={e => setF({ ...f, source: e.target.value })} disabled={editMode} className={fieldCls}>
+          {SALES_SOURCES.map(s => <option key={s.v} value={s.v}>{s.label}</option>)}
+        </select>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <input type="number" value={f.revenue} onChange={e => setF({ ...f, revenue: e.target.value })} placeholder="매출액" className={fieldCls} />
+        <input type="number" value={f.orders} onChange={e => setF({ ...f, orders: e.target.value })} placeholder="주문수" className={fieldCls} />
+        <input type="number" value={f.visitors} onChange={e => setF({ ...f, visitors: e.target.value })} placeholder="방문자" className={fieldCls} />
+      </div>
+      <input value={f.memo} onChange={e => setF({ ...f, memo: e.target.value })} placeholder="메모(선택)" className={fieldCls} />
+      <div className="flex items-center justify-between">
+        {editMode && editing ? <button onClick={() => del(editing.id)} className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button> : <span />}
+        <div className="flex gap-2">
+          <button onClick={onCancel} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+          <button onClick={onSubmit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">{editMode ? '저장' : '추가'}</button>
+        </div>
+      </div>
+      {editMode && <p className="text-[10px] text-gray-300">※ 날짜·채널은 키라서 수정 불가 — 바꾸려면 삭제 후 새로 추가.</p>}
+    </Card>
+  );
+
+  return (
+    <>
+      <ViewHead eyebrow="SALES" title="매출" sub={`${list.length}건 · 채널×날짜 · 조회·분석${compat ? ' · 임시 수기' : ''}`} />
+      <ErpSourceBanner what="매출·주문" compat={compat} />
+      {compat && (
+        <div className="flex justify-end mb-3">
+          <button onClick={() => { setEditing(null); setForm(emptyForm()); setShowForm(v => !v); }}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 매출 입력</button>
+        </div>
+      )}
+
+      {showForm && !editing && compat && formCard(form, setForm, () => save(form), () => { setShowForm(false); setForm(emptyForm()); }, false)}
+
+      {byDate.length === 0 ? (
+        <EmptyState emoji="💰" title="매출 기록이 없어요" sub="＋ 매출 입력으로 채널별 일 매출을 기록하세요" />
+      ) : (
+        <div className="space-y-4">
+          {byDate.map(g => (
+            <div key={g.date}>
+              <div className="flex items-center justify-between px-1 mb-1.5">
+                <span className="text-xs font-bold text-gray-500">{g.date}</span>
+                <span className="text-xs font-semibold text-gray-700">합계 {wonShort(g.total)}</span>
+              </div>
+              <div className="space-y-2">
+                {g.rows.map(r => (
+                  <div key={r.id}>
+                    <Card className="p-3.5">
+                      <button onClick={() => { if (!compat) return; setEditing(r); setForm({ date: r.date, source: r.source, revenue: r.revenue?.toString() ?? '', orders: r.orders?.toString() ?? '', visitors: r.visitors?.toString() ?? '', memo: r.memo ?? '' }); }}
+                        className="w-full flex items-center gap-3 text-left">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{r.sourceLabel ?? salesSourceLabel(r.source)}</span>
+                        <span className="text-sm font-semibold text-gray-800 flex-shrink-0">{wonShort(r.revenue)}</span>
+                        <span className="text-[11px] text-gray-400 flex-shrink-0">주문 {r.orders ?? '—'}</span>
+                        <span className="text-[11px] text-gray-400 flex-shrink-0">객단가 {r.ordersBasis === 'voucher' ? '—' : (aov(r.revenue, r.orders) != null ? `${aov(r.revenue, r.orders)!.toLocaleString()}원` : '—')}</span>
+                        <span className="ml-auto text-[11px] text-gray-400 flex-shrink-0">전환 {convRate(r.orders, r.visitors)}</span>
+                      </button>
+                    </Card>
+                    {editing?.id === r.id && compat && formCard(form, setForm, () => save(form), () => { setEditing(null); setForm(emptyForm()); }, true)}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ───────── 회사 기억 (실데이터 · 30초 입력·검색) ───────── */
+const MEMORY_KINDS: { v: MemoryKind; label: string }[] = [
+  { v: 'ceo_memo', label: '📝 대표메모' }, { v: 'idea', label: '💡 아이디어' }, { v: 'insight', label: '✨ 깨달음' },
+  { v: 'philosophy', label: '🌿 철학' }, { v: 'failure', label: '⚠️ 실패' }, { v: 'experiment', label: '🧪 실험' },
+  { v: 'reference', label: '🔖 레퍼런스' }, { v: 'competitor', label: '🎯 경쟁사' },
+];
+const memoryKindLabel = (k?: MemoryKind) => MEMORY_KINDS.find(x => x.v === k)?.label ?? '메모';
+const SALIENCE_LEVELS = [{ v: 25, label: '낮음' }, { v: 50, label: '보통' }, { v: 80, label: '높음' }];
+const salienceLabel = (n?: number) => (n == null ? '보통' : n >= 70 ? '높음' : n >= 40 ? '보통' : '낮음');
+
+function MemoryDetailPopup({ item, onSave, onArchive, onDelete, onClose }: {
+  item: CompanyMemory; onSave: (f: Partial<CompanyMemory>) => void; onArchive: () => void; onDelete: () => void; onClose: () => void;
+}) {
+  const [f, setF] = useState({
+    title: item.title, body: item.body ?? '', kind: (item.kind ?? 'ceo_memo') as MemoryKind,
+    tags: (item.tags ?? []).join(', '), salience: item.salience ?? 50, pinned: item.pinned ?? false,
+  });
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const submit = () => onSave({
+    title: f.title.trim() || item.title, body: f.body.trim() || undefined, kind: f.kind,
+    tags: f.tags ? f.tags.split(',').map(t => t.trim()).filter(Boolean) : [], salience: f.salience, pinned: f.pinned,
+  });
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]" onMouseDown={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-[480px] max-w-[94vw] max-h-[88vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-extrabold text-gray-800">회사 기억</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center">✕</button>
+        </div>
+        <input autoFocus value={f.title} onChange={e => setF({ ...f, title: e.target.value })} placeholder="제목" className={fieldCls} />
+        <textarea value={f.body} onChange={e => setF({ ...f, body: e.target.value })} placeholder="내용" rows={5} className={fieldCls} />
+        <div className="grid grid-cols-2 gap-2">
+          <select value={f.kind} onChange={e => setF({ ...f, kind: e.target.value as MemoryKind })} className={fieldCls}>
+            {MEMORY_KINDS.map(k => <option key={k.v} value={k.v}>{k.label}</option>)}
+          </select>
+          <select value={f.salience} onChange={e => setF({ ...f, salience: Number(e.target.value) })} className={fieldCls}>
+            {SALIENCE_LEVELS.map(s => <option key={s.v} value={s.v}>중요도 · {s.label}</option>)}
+          </select>
+        </div>
+        <input value={f.tags} onChange={e => setF({ ...f, tags: e.target.value })} placeholder="태그 (쉼표로)" className={fieldCls} />
+        <label className="flex items-center gap-2 text-sm text-gray-600 px-1">
+          <input type="checkbox" checked={f.pinned} onChange={e => setF({ ...f, pinned: e.target.checked })} /> 📌 고정(항상 상단)
+        </label>
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex gap-2">
+            <button onClick={() => { if (confirm('이 기억을 삭제할까요?')) onDelete(); }} className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
+            <button onClick={onArchive} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5">{item.status === 'archived' ? '복원' : '보관'}</button>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={submit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
+  const [list, setList] = useState<CompanyMemory[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: '', body: '', kind: 'ceo_memo' as MemoryKind, tags: '', salience: 50, pinned: false });
+  const [selected, setSelected] = useState<CompanyMemory | null>(null);
+  const [kindFilter, setKindFilter] = useState<MemoryKind | 'all'>('all');
+  const [q, setQ] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
+  const load = () => fetchMemories(workspace.id).then(setList).catch(() => setList([]));
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+
+  const save = async () => {
+    if (!form.title.trim()) return;
+    try {
+      await addMemory(workspace.id, {
+        title: form.title.trim(), body: form.body.trim() || undefined, kind: form.kind,
+        tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [], salience: form.salience, pinned: form.pinned,
+      });
+      setForm({ title: '', body: '', kind: 'ceo_memo', tags: '', salience: 50, pinned: false }); setShowForm(false); load();
+    } catch (e) { console.error('[CompanyMemoryView] 저장 실패:', e); alert('기억 저장에 실패했어요. 잠시 후 다시 시도해 주세요.'); }
+  };
+
+  const kw = q.trim().toLowerCase();
+  const shown = list.filter(m => (showArchived ? m.status === 'archived' : m.status !== 'archived'))
+    .filter(m => kindFilter === 'all' || m.kind === kindFilter)
+    .filter(m => !kw || m.title.toLowerCase().includes(kw) || (m.body ?? '').toLowerCase().includes(kw) || (m.tags ?? []).some(t => t.toLowerCase().includes(kw)));
+
+  const chip = (id: MemoryKind | 'all', label: string) => (
+    <button key={id} onClick={() => setKindFilter(id)}
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${kindFilter === id ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+  );
+
+  return (
+    <>
+      <ViewHead eyebrow="MEMORY" title="회사 기억" sub={`${list.filter(m => m.status !== 'archived').length}개`} />
+
+      <div className="flex items-center gap-2 mb-2">
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 제목·내용·태그 검색" className={`${fieldCls} flex-1`} />
+        <button onClick={() => setShowForm(v => !v)}
+          className="px-3 py-2 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all whitespace-nowrap">＋ 기억</button>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+        {chip('all', '전체')}
+        {MEMORY_KINDS.map(k => chip(k.v, k.label))}
+        <button onClick={() => setShowArchived(v => !v)}
+          className={`ml-auto px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${showArchived ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>보관함</button>
+      </div>
+
+      {showForm && (
+        <Card className="p-4 mb-3 space-y-2.5">
+          <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="무엇을 기억할까요? (제목)" className={fieldCls} />
+          <textarea value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} placeholder="내용 (선택)" rows={3} className={fieldCls} />
+          <div className="grid grid-cols-2 gap-2">
+            <select value={form.kind} onChange={e => setForm({ ...form, kind: e.target.value as MemoryKind })} className={fieldCls}>
+              {MEMORY_KINDS.map(k => <option key={k.v} value={k.v}>{k.label}</option>)}
+            </select>
+            <select value={form.salience} onChange={e => setForm({ ...form, salience: Number(e.target.value) })} className={fieldCls}>
+              {SALIENCE_LEVELS.map(s => <option key={s.v} value={s.v}>중요도 · {s.label}</option>)}
+            </select>
+          </div>
+          <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="태그 (쉼표로, 선택)" className={fieldCls} />
+          <label className="flex items-center gap-2 text-sm text-gray-600 px-1">
+            <input type="checkbox" checked={form.pinned} onChange={e => setForm({ ...form, pinned: e.target.checked })} /> 📌 고정
+          </label>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => { setShowForm(false); setForm({ title: '', body: '', kind: 'ceo_memo', tags: '', salience: 50, pinned: false }); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={save} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">추가</button>
+          </div>
         </Card>
+      )}
+
+      {shown.length === 0 ? (
+        <EmptyState emoji="🧠" title={showArchived ? '보관된 기억이 없어요' : '기억이 없어요'} sub="＋ 기억으로 아이디어·깨달음·실패·철학을 남기세요" />
+      ) : (
+        <div className="space-y-2">
+          {shown.map(m => (
+            <Card key={m.id} className="p-4">
+              <button onClick={() => setSelected(m)} className="w-full text-left">
+                <div className="flex items-center gap-2 mb-1">
+                  {m.pinned && <span className="text-[11px]">📌</span>}
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{memoryKindLabel(m.kind)}</span>
+                  <span className="text-sm font-semibold text-gray-800 truncate">{m.title}</span>
+                  <span className="ml-auto text-[10px] text-gray-400 flex-shrink-0">중요도 {salienceLabel(m.salience)}</span>
+                </div>
+                {(m.summary || m.body) && <p className="text-xs text-gray-500 line-clamp-2">{m.summary || m.body}</p>}
+                {m.tags && m.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {m.tags.map(t => <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-500">#{t}</span>)}
+                  </div>
+                )}
+              </button>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {selected && (
+        <MemoryDetailPopup
+          item={selected}
+          onSave={async (f) => { await updateMemory(selected.id, f).catch(() => {}); setSelected(null); load(); }}
+          onArchive={async () => { await updateMemory(selected.id, { status: selected.status === 'archived' ? 'active' : 'archived' }).catch(() => {}); setSelected(null); load(); }}
+          onDelete={async () => { await deleteMemory(selected.id).catch(() => {}); setSelected(null); load(); }}
+          onClose={() => setSelected(null)}
+        />
       )}
     </>
   );

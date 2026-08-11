@@ -189,6 +189,7 @@ VITE_PERPLEXITY_API_KEY=
 VITE_VAPID_PUBLIC_KEY=
 VITE_YOUTUBE_API_KEY=    # 콘텐츠 메뉴: 채널/영상/댓글 공개 데이터 조회 (Google Cloud YouTube Data API v3 키)
 VITE_GOOGLE_CLIENT_ID=   # 콘텐츠 메뉴: 답글 발행용 OAuth (youtube.force-ssl). 웹 OAuth 클라이언트 ID
+# 시목 ERP 연동은 env가 아니라 워크스페이스 DB 컬럼(workspaces.erp_source='simok_api')으로 켠다. 키는 Supabase Secret SIMOK_API_KEY.
 ```
 
 ### 키/시크릿 위치 (★ 두 환경 이름이 다름)
@@ -196,6 +197,7 @@ VITE_GOOGLE_CLIENT_ID=   # 콘텐츠 메뉴: 답글 발행용 OAuth (youtube.for
 |------|---------|---------|------|
 | **Replit Secrets** | 프론트(브라우저) — 지금 한 번·채팅·직접 시키기 | `VITE_ANTHROPIC_API_KEY` / `VITE_OPENAI_API_KEY` / `VITE_PERPLEXITY_API_KEY` (**`VITE_` 붙음**) | ✅ 등록됨 |
 | **Supabase Secrets** | edge function `office-staff-run`(매일 자동 cron) | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `PERPLEXITY_API_KEY` (**`VITE_` 없음**) | ✅ 등록 완료(2026-06-16) |
+| **Supabase Secrets** | edge function `erp-proxy`(시목 ERP 조회 프록시) | `SIMOK_API_KEY` (시목앱 발급 `x-api-key`. 평문은 코드·git 어디에도 없음) | 대표 등록 대기 |
 
 > ⚠️ 같은 키라도 **Replit은 `VITE_` 붙이고, Supabase는 `VITE_` 뺀다.** edge 코드는 `Deno.env.get('ANTHROPIC_API_KEY')`로 읽음.
 

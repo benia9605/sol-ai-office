@@ -182,10 +182,10 @@ export function ContentPage({ embedded, workspaceId }: { embedded?: boolean; wor
       <div className={T.container}>
         {/* ── 헤더 ── */}
         {embedded ? (
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-widest text-primary-500 mb-1.5">CONTENT</div>
-            <h1 className="text-2xl font-extrabold text-gray-800">콘텐츠</h1>
-            <p className="text-sm text-gray-400 mt-1">채널 {channels.length} · 영상 {videos.length} · 댓글 {comments.length}{usingDummy && ' · 목업'}</p>
+          <div className="mb-10">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-500 mb-3">YOUTUBE</div>
+            <h1 className="text-3xl sm:text-4xl font-light leading-[1.2] text-gray-800">유튜브</h1>
+            <p className="text-sm text-gray-400 mt-3">채널 {channels.length} · 영상 {videos.length} · 댓글 {comments.length}{usingDummy && ' · 목업'}</p>
           </div>
         ) : modern ? (
           <section>

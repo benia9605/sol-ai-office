@@ -40,6 +40,8 @@ function toTaskItem(row: TaskRow): TaskItem {
     workspaceId: row.workspace_id,
     isShared: row.is_shared,
     assigneeId: row.assignee_id,
+    source: row.source ?? 'manual',   // 레거시(NULL) 행은 manual로 해석 — 필터·분석 누락 방지
+    completedAt: row.completed_at,
   };
 }
 
@@ -201,6 +203,8 @@ export function useTasks() {
         notes: data.notes,
         repeat: data.repeat,
         tags: data.tags,
+        assigneeId: data.assigneeId,
+        source: data.source ?? 'manual',
         pomodoroEstimate: data.pomodoroEstimate,
         pomodoroCompleted: 0,
       };
@@ -221,12 +225,15 @@ export function useTasks() {
         category: data.category,
         tags: data.tags,
         conversation_id: data.conversation_id,
+        workspace_id: activeWorkspaceId ?? undefined,
+        assignee_id: data.assigneeId,
+        source: data.source ?? 'manual',
       });
       setTasks((prev) => [toTaskItem(row), ...prev]);
     } catch (e) {
       console.error('[useTasks] 추가 실패:', e);
     }
-  }, [usingDummy]);
+  }, [usingDummy, activeWorkspaceId]);
 
   const remove = useCallback(async (id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
@@ -242,7 +249,11 @@ export function useTasks() {
 
   /** 태스크 필드 업데이트 (로컬 + DB 동기화) */
   const updateTask = useCallback(async (id: string, patch: Partial<TaskItem>) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+    // 상태 변경 시 completed_at 동기화(완료율·리드타임 분석용) — 로컬 상태도 반영
+    const localPatch = patch.status !== undefined
+      ? { ...patch, completedAt: patch.status === 'completed' ? new Date().toISOString() : undefined }
+      : patch;
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...localPatch } : t)));
 
     if (!usingDummy) {
       try {
@@ -252,12 +263,16 @@ export function useTasks() {
         if (patch.project !== undefined) dbPatch.project = patch.project;
         if (patch.goalId !== undefined) dbPatch.goal_id = patch.goalId || null;
         if (patch.priority !== undefined) dbPatch.priority = patch.priority;
-        if (patch.status !== undefined) dbPatch.status = toDbStatus(patch.status);
+        if (patch.category !== undefined) dbPatch.category = patch.category || null;
+        if (patch.status !== undefined) {
+          dbPatch.status = toDbStatus(patch.status);
+          dbPatch.completed_at = patch.status === 'completed' ? new Date().toISOString() : null;
+        }
+        if (patch.assigneeId !== undefined) dbPatch.assignee_id = patch.assigneeId || null;
         if (patch.date !== undefined) dbPatch.due_date = patch.date || null;
         if (patch.notes !== undefined) dbPatch.notes = patch.notes || null;
         if (patch.repeat !== undefined) dbPatch.repeat = patch.repeat || null;
         if (patch.starred !== undefined) dbPatch.starred = patch.starred;
-        if (patch.category !== undefined) dbPatch.category = patch.category || null;
         if (patch.tags !== undefined) dbPatch.tags = patch.tags || null;
         if (patch.pomodoroEstimate !== undefined) dbPatch.estimated_time = patch.pomodoroEstimate;
         if (patch.pomodoroCompleted !== undefined) dbPatch.actual_time = patch.pomodoroCompleted;

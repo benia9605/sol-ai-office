@@ -1,13 +1,13 @@
 /**
  * @file src/components/office/ui.tsx
- * @description 오피스 셸 공용 UI 프리미티브 (모노톤 + 몽글)
+ * @description 오피스 셸 공용 UI 프리미티브 (무지 모던톤 — 네모·라이트·넓은 여백)
  * - Spark: 스파크라인 그래프 (KPI 카드용)
- * - ViewHead: 뷰 상단 제목 영역
- * - Card / EmptyState
+ * - ViewHead: 뷰 상단 제목 영역 (라이트 대형 헤드라인)
+ * - Card / EmptyState (네모·얇은 라인·무그림자)
  */
 import { ReactNode } from 'react';
 
-/** 스파크라인 — currentColor(=text-primary, 모던 테마에선 진초록)로 그림 */
+/** 스파크라인 — currentColor(=text-primary)로 그림 */
 export function Spark({ data, h = 36 }: { data: number[]; h?: number }) {
   const w = 120;
   const max = Math.max(...data), min = Math.min(...data);
@@ -34,29 +34,30 @@ export function Spark({ data, h = 36 }: { data: number[]; h?: number }) {
 
 export function ViewHead({ eyebrow, title, sub, action }: { eyebrow: string; title: string; sub?: string; action?: ReactNode }) {
   return (
-    <div className="mb-6 flex items-start justify-between gap-3">
+    <div className="mb-10 flex items-end justify-between gap-4 flex-wrap">
       <div>
-        <div className="text-[11px] font-bold uppercase tracking-widest text-primary-500 mb-1.5">{eyebrow}</div>
-        <h1 className="text-2xl font-extrabold text-gray-800">{title}</h1>
-        {sub && <p className="text-sm text-gray-400 mt-1">{sub}</p>}
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-500 mb-3">{eyebrow}</div>
+        <h1 className="text-3xl sm:text-4xl font-light leading-[1.2] text-gray-800">{title}</h1>
+        {sub && <p className="text-sm text-gray-400 mt-3">{sub}</p>}
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}
     </div>
   );
 }
 
+/** 카드 — 무지 모던: 네모(rounded-xl)·얇은 라인·무그림자 */
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-[24px] bg-white border border-gray-100 shadow-sm ${className}`}>{children}</div>
+    <div className={`rounded-xl bg-white border border-gray-200 ${className}`}>{children}</div>
   );
 }
 
 export function EmptyState({ emoji, title, sub }: { emoji: string; title: string; sub?: string }) {
   return (
-    <Card className="p-10 text-center">
-      <div className="text-5xl mb-4 grayscale opacity-90">{emoji}</div>
-      <p className="text-base font-bold text-gray-700">{title}</p>
-      {sub && <p className="text-sm text-gray-400 mt-1.5">{sub}</p>}
+    <Card className="p-16 text-center">
+      <div className="text-4xl mb-5 grayscale opacity-80">{emoji}</div>
+      <p className="text-base font-semibold text-gray-700">{title}</p>
+      {sub && <p className="text-sm text-gray-400 mt-2">{sub}</p>}
     </Card>
   );
 }

@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 숫자 입력칸 위/아래 화살표(스피너) 전역 제거 — 앱 전체 number input 공통 */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* ────────────────────────────────────────────────────────
    테마 토큰 — 모디 (기본)
    - Tailwind v3에서 var(--...) 참조로 컬러 사용

@@ -109,6 +109,10 @@ export async function buildSystemPrompt(
   roomId: string,
   opts?: { workspaceId?: string | null },
 ): Promise<string> {
+  // TODO: Context Engine (Phase 7, 대표 실사용 후 착수)
+  //  - 지금은 프로젝트·목표·KPI·일정·할일·요약을 '전량' 주입.
+  //  - 향후 intent 분류 → contextRecipes로 '필요한 데이터만' 조립(제품·콘텐츠성과·매출·company_memory recall 포함).
+  //  - config/{intentMap,contextRecipes,contextTypes}.ts 참조.
   const today = new Date().toISOString().split('T')[0];
   const userId = await getCurrentUserId();
 

@@ -12,7 +12,7 @@ import { WorkspaceCreateModal } from '../WorkspaceCreateModal';
 import { WorkspaceSettingsModal } from '../WorkspaceSettingsModal';
 import {
   DashboardView, BriefingView, TodosView, ScheduleView,
-  InsightsView, LogView, ActivityView, MembersView,
+  InsightsView, LogView, ActivityView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView,
 } from './views';
 import { StaffView } from './StaffView';
 import { BrandView } from './BrandView';
@@ -22,7 +22,7 @@ import { fetchStaff } from '../../services/staff.service';
 import { StaffUsage } from '../../types';
 import { createPortal } from 'react-dom';
 
-type ViewId = 'dashboard' | 'briefing' | 'staff' | 'todos' | 'schedule' | 'insights' | 'content' | 'log' | 'activity' | 'members' | 'brand';
+type ViewId = 'dashboard' | 'briefing' | 'staff' | 'todos' | 'schedule' | 'insights' | 'contents' | 'content' | 'products' | 'sales' | 'memory' | 'log' | 'activity' | 'members' | 'brand';
 
 const NAV: { id: ViewId; label: string; emoji: string }[] = [
   { id: 'dashboard', label: '대시보드', emoji: '📊' },
@@ -31,11 +31,25 @@ const NAV: { id: ViewId; label: string; emoji: string }[] = [
   { id: 'todos', label: '할일', emoji: '✅' },
   { id: 'schedule', label: '일정', emoji: '📅' },
   { id: 'insights', label: '인사이트', emoji: '📈' },
-  { id: 'content', label: '콘텐츠', emoji: '🎬' },
+  { id: 'contents', label: '콘텐츠', emoji: '🎬' },
+  { id: 'products', label: '제품', emoji: '📦' },
+  { id: 'sales', label: '매출', emoji: '💰' },
+  { id: 'content', label: '유튜브', emoji: '▶️' },
+  { id: 'memory', label: '기억', emoji: '🧠' },
   { id: 'log', label: '기록', emoji: '📝' },
   { id: 'activity', label: '활동 로그', emoji: '🧾' },
   { id: 'members', label: '멤버', emoji: '👥' },
 ];
+
+/** 유튜브 브랜드 로고 (실제 SVG) */
+function YouTubeGlyph({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 28 20" className={className} aria-label="YouTube" role="img">
+      <path d="M27.4 3.12a3.5 3.5 0 0 0-2.46-2.48C22.76 0.03 14 0.03 14 0.03S5.24 0.03 3.06 0.64A3.5 3.5 0 0 0 .6 3.12 36.5 36.5 0 0 0 0 10a36.5 36.5 0 0 0 .6 6.88 3.5 3.5 0 0 0 2.46 2.48C5.24 19.97 14 19.97 14 19.97s8.76 0 10.94-.61a3.5 3.5 0 0 0 2.46-2.48A36.5 36.5 0 0 0 28 10a36.5 36.5 0 0 0-.6-6.88Z" fill="#FF0000" />
+      <path d="M11.2 14.28 18.5 10 11.2 5.72v8.56Z" fill="#fff" />
+    </svg>
+  );
+}
 
 /** 코인 사용 내역(요금) 모달 */
 function UsageModal({ workspace, credits, onClose }: { workspace: Workspace; credits: number | null; onClose: () => void }) {
@@ -167,16 +181,18 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
           const on = view === n.id;
           return (
             <button key={n.id} onClick={() => goNav(n.id)} title={n.label}
-              className={`relative w-11 h-11 rounded-2xl flex items-center justify-center text-lg transition-all active:scale-90
-                ${on ? 'bg-primary-100 text-primary-800 shadow-sm' : 'text-gray-400 hover:bg-gray-100'}`}>
-              <span className={on ? '' : 'grayscale opacity-80'}>{n.emoji}</span>
+              className={`relative w-11 h-11 rounded-xl flex items-center justify-center text-lg transition-all active:scale-90
+                ${on ? 'bg-primary-100 text-primary-800' : 'text-gray-400 hover:bg-gray-100'}`}>
+              {n.id === 'content'
+                ? <YouTubeGlyph className="w-[22px] h-[22px]" />
+                : <span className={on ? '' : 'grayscale opacity-80'}>{n.emoji}</span>}
             </button>
           );
         })}
         <div className="flex-1" />
         <button title="회사 브레인 · 설정" onClick={() => setView('brand')}
-          className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all active:scale-90
-            ${view === 'brand' ? 'bg-primary-100 text-primary-800 shadow-sm' : 'text-gray-400 hover:bg-gray-100'}`}>⚙️</button>
+          className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-90
+            ${view === 'brand' ? 'bg-primary-100 text-primary-800' : 'text-gray-400 hover:bg-gray-100'}`}>⚙️</button>
       </aside>
 
       {/* 메인 */}
@@ -199,15 +215,19 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-6">
-          <div className="max-w-4xl mx-auto">
+        <main className="flex-1 overflow-y-auto px-5 sm:px-10 py-8 sm:py-12 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12">
+          <div className="max-w-5xl mx-auto">
             {view === 'dashboard' && <DashboardView onNavigate={onNavigate} workspace={workspace} />}
             {view === 'briefing' && <BriefingView workspace={workspace} />}
             {view === 'staff' && <StaffView key={staffKey} workspace={workspace} onRan={refreshCredits} />}
-            {view === 'todos' && <TodosView />}
+            {view === 'todos' && <TodosView workspace={workspace} />}
             {view === 'schedule' && <ScheduleView workspace={workspace} />}
             {view === 'insights' && <InsightsView workspace={workspace} />}
+            {view === 'contents' && <ContentItemsView workspace={workspace} />}
             {view === 'content' && <ContentPage embedded workspaceId={workspace.id} />}
+            {view === 'products' && <ProductsView workspace={workspace} />}
+            {view === 'sales' && <SalesDailyView workspace={workspace} />}
+            {view === 'memory' && <CompanyMemoryView workspace={workspace} />}
             {view === 'log' && <LogView workspace={workspace} />}
             {view === 'activity' && <ActivityView workspace={workspace} />}
             {view === 'members' && <MembersView workspace={workspace} />}
