@@ -10,8 +10,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useSchedules } from '../hooks/useSchedules';
 import { useTasks } from '../hooks/useTasks';
-import { useProjects } from '../hooks/useProjects';
-import { defaultScheduleCategories, defaultTaskCategories } from '../data';
+import { defaultScheduleCategories, officeScheduleCategories, defaultTaskCategories } from '../data';
 import { ScheduleItem, ScheduleCategory, RepeatType, TaskItem } from '../types';
 import { ItemDetailPopup } from '../components/ItemDetailPopup';
 import { DateRangePicker } from '../components/calendar/DateRangePicker';
@@ -57,9 +56,8 @@ function shortMD(dateStr: string): string {
 export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: string; embedded?: boolean } = {}) {
   const { schedules, add: addSchedule, update: updateSchedule, remove: removeSchedule, toggleComplete } = useSchedules(workspaceId);
   const { tasks, updateTask } = useTasks();
-  const { projects } = useProjects();
   const [taskCategories] = useState(defaultTaskCategories);
-  const [categories] = useState<ScheduleCategory[]>(defaultScheduleCategories);
+  const [categories] = useState<ScheduleCategory[]>(embedded ? officeScheduleCategories : defaultScheduleCategories);
 
   const [selectedItem, setSelectedItem] = useState<ScheduleItem | null>(null);
   const [selectedTaskItem, setSelectedTaskItem] = useState<TaskItem | null>(null);
@@ -183,10 +181,10 @@ export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: s
         <section className="flex items-end justify-between gap-6 flex-wrap">
           <div>
             <p className="label">Schedule</p>
-            <h1 className="mt-5 text-4xl font-light leading-[1.25] sm:text-5xl">
+            <h1 className={`font-light leading-[1.2] ${embedded ? 'mt-3 text-3xl sm:text-4xl' : 'mt-5 text-4xl sm:text-5xl'}`}>
               일정
             </h1>
-            <p className="mt-4 text-sm text-foreground-muted">
+            <p className={`text-sm text-foreground-muted ${embedded ? 'mt-3' : 'mt-4'}`}>
               {filtered.length}건의 일정이 등록되어 있습니다.
             </p>
           </div>
@@ -215,6 +213,7 @@ export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: s
             form={form}
             setForm={setForm}
             categories={categories}
+            embedded={embedded}
             showAdvanced={showAdvanced}
             setShowAdvanced={setShowAdvanced}
             onAddTag={handleAddTag}
@@ -263,7 +262,7 @@ export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: s
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="제목, 메모, 태그, 프로젝트 검색"
+              placeholder={embedded ? '제목·메모·태그 검색' : '제목, 메모, 태그, 프로젝트 검색'}
               className="w-full pl-10 pr-4 py-3 bg-surface border border-line text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
             />
           </div>
@@ -936,6 +935,7 @@ interface AddFormProps {
   };
   setForm: React.Dispatch<React.SetStateAction<AddFormProps['form']>>;
   categories: ScheduleCategory[];
+  embedded?: boolean;
   showAdvanced: boolean;
   setShowAdvanced: (v: boolean) => void;
   onAddTag: () => void;
@@ -943,7 +943,7 @@ interface AddFormProps {
   onSubmit: () => void;
 }
 
-function AddForm({ form, setForm, categories, showAdvanced, setShowAdvanced, onAddTag, onCancel, onSubmit }: AddFormProps) {
+function AddForm({ form, setForm, categories, embedded, showAdvanced, setShowAdvanced, onAddTag, onCancel, onSubmit }: AddFormProps) {
   return (
     <section className="border border-line p-6 sm:p-8 space-y-6 bg-surface">
       <p className="label">New Schedule</p>
@@ -973,11 +973,13 @@ function AddForm({ form, setForm, categories, showAdvanced, setShowAdvanced, onA
         />
       </label>
 
-      {/* 프로젝트 */}
-      <label className="block space-y-2">
-        <span className="label">프로젝트</span>
-        <ProjectSelect value={form.project} onChange={(v) => setForm({ ...form, project: v })} />
-      </label>
+      {/* 프로젝트 (개인 공간에서만 — 오피스는 개인 프로젝트를 쓰지 않음) */}
+      {!embedded && (
+        <label className="block space-y-2">
+          <span className="label">프로젝트</span>
+          <ProjectSelect value={form.project} onChange={(v) => setForm({ ...form, project: v })} />
+        </label>
+      )}
 
       {/* 카테고리 */}
       <div className="space-y-2">

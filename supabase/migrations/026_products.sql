@@ -1,8 +1,11 @@
 -- ────────────────────────────────────────────────────────
--- 제품 카탈로그 — 브랜드(워크스페이스)별 제품 원장
--- 콘텐츠/매출/소싱의 기반 데이터. brand_contexts.main_products 자유텍스트를 대체.
--- 적용일: 2026-08-04. idempotent. (수동 SQL 에디터 적용)
+-- 026: 제품 카탈로그(products) — 워크스페이스별 제품 원장
 -- ────────────────────────────────────────────────────────
+-- 배경: 제품 정보가 brand_contexts.main_products 자유텍스트뿐이라 제품별 마진·재고·성과를
+--   구조화해 관리할 수 없었다. 콘텐츠/매출/소싱 분석의 기반 데이터로 정식 테이블화.
+-- 워크스페이스 스코프 + RLS(my_workspace_ids). status: active|draft|discontinued.
+-- ※ 이후 방향 전환(시목앱=System of Record)으로 조회·분석 레이어로 사용(마이그 032 참조).
+-- 적용일: 2026-08-04. idempotent. (수동 SQL 에디터 적용)
 
 CREATE TABLE IF NOT EXISTS products (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),

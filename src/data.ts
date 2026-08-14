@@ -161,6 +161,18 @@ export const defaultScheduleCategories: ScheduleCategory[] = [
   { id: 'cat-etc', label: '기타',      color: '#9ca3af' },
 ];
 
+/** 오피스(회사) 일정 카테고리 — 콘텐츠 운영 중심 */
+export const officeScheduleCategories: ScheduleCategory[] = [
+  { id: 'cat-shoot', label: '촬영',    color: '#f59e0b' },
+  { id: 'cat-meeting', label: '회의',  color: '#60a5fa' },
+  { id: 'cat-publish', label: '발행',  color: '#34d399' },
+  { id: 'cat-content', label: '콘텐츠', color: '#c084fc' },
+  { id: 'cat-ops', label: '운영',      color: '#94a3b8' },
+  { id: 'cat-cs', label: 'CS',         color: '#f472b6' },
+  { id: 'cat-deadline', label: '마감', color: '#f87171' },
+  { id: 'cat-etc', label: '기타',      color: '#9ca3af' },
+];
+
 export const categoryColorPresets = [
   '#60a5fa', '#4ade80', '#c084fc', '#f87171',
   '#fbbf24', '#f472b6', '#2dd4bf', '#9ca3af',

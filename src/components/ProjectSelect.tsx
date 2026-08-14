@@ -34,7 +34,7 @@ export function ProjectSelect({ value, onChange, placeholder = '프로젝트 선
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-left focus:outline-none focus:ring-2 focus:ring-purple-200"
+        className="w-full flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200 text-sm text-left focus:outline-none focus:ring-1 focus:ring-purple-200"
       >
         {selected ? (
           <>

@@ -147,7 +147,7 @@ export function DateRangePicker({
           }
           setOpen(!open);
         }}
-        className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm cursor-pointer hover:border-gray-300 transition-colors"
+        className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200 text-sm cursor-pointer hover:border-gray-300 transition-colors"
       >
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 flex-shrink-0">
           <rect x="2" y="3" width="12" height="11" rx="1.5" /><line x1="2" y1="7" x2="14" y2="7" /><line x1="5.5" y1="1.5" x2="5.5" y2="4.5" /><line x1="10.5" y1="1.5" x2="10.5" y2="4.5" />

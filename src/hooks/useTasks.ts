@@ -232,6 +232,7 @@ export function useTasks() {
       setTasks((prev) => [toTaskItem(row), ...prev]);
     } catch (e) {
       console.error('[useTasks] 추가 실패:', e);
+      throw e;   // 호출부(폼)가 실패를 알 수 있게 — 성공한 척 폼 비우고 유실되는 것 방지
     }
   }, [usingDummy, activeWorkspaceId]);
 
@@ -288,7 +289,7 @@ export function useTasks() {
 
   // 활성 워크스페이스 필터 (null=통합이면 전체). 빈 workspaceId(레거시 행)는 통합/개인에서 보이게 유지.
   const visibleTasks = activeWorkspaceId
-    ? tasks.filter((t) => t.workspaceId === activeWorkspaceId || !t.workspaceId)
+    ? tasks.filter((t) => t.workspaceId === activeWorkspaceId)  // 오피스: 그 워크스페이스 것만 (null-workspace 개인 할일 누수 방지)
     : tasks;
 
   return { tasks: visibleTasks, loading, error, cycleStatus, updateStatus, toggleStar, add, remove, updateTask, reload: load };

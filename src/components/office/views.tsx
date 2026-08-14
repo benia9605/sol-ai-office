@@ -76,6 +76,46 @@ function useDashboardKpis(workspaceId: string): Kpi[] {
   });
 }
 
+/** 하루 운영 흐름 가이드 — 워크스페이스 메인 홈 상단. 접기/펼치기(localStorage). */
+function OfficeDailyGuide() {
+  const [open, setOpen] = useState<boolean>(() => {
+    try { return localStorage.getItem('office_guide_open') !== '0'; } catch { return true; }
+  });
+  const toggle = () => { const n = !open; setOpen(n); try { localStorage.setItem('office_guide_open', n ? '1' : '0'); } catch { /* noop */ } };
+  const steps = [
+    { n: '1', emoji: '☀️', title: '아침 — 브리핑 & 대시보드', desc: '오늘의 브리핑에서 AI 직원이 만든 것 확인 → 대시보드에서 오늘 할일·일정·승인 대기 파악.' },
+    { n: '2', emoji: '🎬', title: '콘텐츠 운영', desc: '콘텐츠에서 오늘 촬영·편집·발행을 관리(아이디어→발행). 올린 뒤 24h/72h/7일 성과 입력.' },
+    { n: '3', emoji: '💰', title: '판매·제품 확인', desc: '매출·제품에서 채널별 매출·재고 확인. (시목 앱 연동 시 자동 조회)' },
+    { n: '4', emoji: '✅', title: '실행 관리', desc: '할일·일정으로 오늘 업무를 배치하고 담당자를 지정.' },
+    { n: '5', emoji: '🧠', title: '기억 남기기', desc: '회사 기억·인사이트에 배운 것·실패·아이디어를 기록 → AI가 나중에 활용.' },
+  ];
+  return (
+    <Card className="p-5">
+      <button onClick={toggle} className="w-full flex items-center justify-between">
+        <span className="text-sm font-bold text-gray-700">🗺️ 하루 운영 흐름</span>
+        <span className="text-[11px] text-gray-400">{open ? '접기 ▲' : '펼치기 ▼'}</span>
+      </button>
+      {open && (
+        <div className="mt-4 space-y-3">
+          {steps.map(s => (
+            <div key={s.n} className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-md bg-primary-50 text-primary-600 text-xs font-bold flex items-center justify-center flex-shrink-0">{s.n}</span>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-gray-800">{s.emoji} {s.title}</div>
+                <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">{s.desc}</div>
+              </div>
+            </div>
+          ))}
+          <div className="pt-3 mt-1 border-t border-gray-100 text-[11px] text-gray-400 leading-relaxed space-y-1">
+            <p>💡 <b className="text-gray-500">원칙:</b> AI 직원은 <b>제안</b>하고, 대표가 <b>승인</b>하면 실제 업무로 반영돼요. 제품·매출은 시목 앱이 원본, AI Office는 <b>분석·판단</b>만 합니다.</p>
+            <p>🤖 <b className="text-gray-500">AI 직원 현황:</b> 채용·수동 실행('지금 실행')은 되지만 <b>24시간 자동 운영은 준비 중</b>이에요.</p>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; workspace: Workspace }) {
   const { tasks } = useTasks();
   const kpis = useDashboardKpis(workspace.id);
@@ -114,6 +154,9 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
         <h1 className="text-3xl sm:text-4xl font-light leading-[1.2] text-gray-800">{greeting} 👋</h1>
         <p className="text-sm text-gray-400 mt-3">{workspace.name} · 진행 중 할일 {open.length}건 · 멤버 {members.length}명</p>
       </div>
+
+      {/* 하루 운영 흐름 가이드 */}
+      <OfficeDailyGuide />
 
       {/* KPI 스트립 — 실데이터 있을 때만 표시 (연동 전엔 빈 그래프 숨김) */}
       {kpis.some(k => k.value > 0 || k.delta !== null) && (
@@ -365,8 +408,10 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
   const save = async () => {
     if (!form.title.trim()) return;
     // source='manual' — 대표가 직접 만든 할일. (content/decision/ai 등은 해당 기능이 생성 시 지정)
-    await add({ title: form.title.trim(), priority: form.priority, date: form.date || undefined, assigneeId: form.assigneeId || undefined, category: form.category || undefined, source: 'manual' });
-    setForm({ title: '', priority: 'medium', date: '', assigneeId: '', category: '' }); setShowForm(false);
+    try {
+      await add({ title: form.title.trim(), priority: form.priority, date: form.date || undefined, assigneeId: form.assigneeId || undefined, category: form.category || undefined, source: 'manual' });
+      setForm({ title: '', priority: 'medium', date: '', assigneeId: '', category: '' }); setShowForm(false);
+    } catch (e) { console.error('[TodosView] 할일 추가 실패:', e); alert('할일 추가에 실패했어요. 잠시 후 다시 시도해 주세요.'); }
   };
 
   const applyFilter = (list: TaskItem[]) => {
@@ -919,8 +964,8 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
       {selected && (
         <ContentEditPopup
           item={selected} products={products} workspaceId={workspace.id}
-          onSave={async (fields) => { await updateContentItem(selected.id, fields).catch(() => {}); setSelected(null); load(); }}
-          onDelete={async () => { await deleteContentItem(selected.id).catch(() => {}); setSelected(null); load(); }}
+          onSave={async (fields) => { try { await updateContentItem(selected.id, fields); setSelected(null); load(); } catch (e) { console.error('[Content] 수정 실패:', e); alert('콘텐츠 수정에 실패했어요. 잠시 후 다시 시도해 주세요.'); } }}
+          onDelete={async () => { try { await deleteContentItem(selected.id); setSelected(null); load(); } catch (e) { console.error('[Content] 삭제 실패:', e); alert('콘텐츠 삭제에 실패했어요.'); } }}
           onClose={() => setSelected(null)}
         />
       )}
@@ -1067,7 +1112,7 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
         <div className="space-y-2">
           {list.map(p => (
             <Card key={p.id} className="group p-4 flex items-center gap-3">
-              <button onClick={() => setSelected(p)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+              <button onClick={() => { if (compat) setSelected(p); }} className={`flex items-center gap-3 flex-1 min-w-0 text-left ${compat ? '' : 'cursor-default'}`}>
                 <span className="text-sm font-semibold text-gray-800 truncate">{p.name}</span>
                 {p.category && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{p.category}</span>}
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${PRODUCT_STATUS[p.status].cls}`}>{PRODUCT_STATUS[p.status].label}</span>
@@ -1083,8 +1128,8 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
       {selected && (
         <ProductEditPopup
           product={selected}
-          onSave={async (fields) => { await updateProduct(selected.id, fields, erp).catch(() => {}); setSelected(null); load(); }}
-          onDelete={async () => { await deleteProduct(selected.id, erp).catch(() => {}); setSelected(null); load(); }}
+          onSave={async (fields) => { try { await updateProduct(selected.id, fields, erp); setSelected(null); load(); } catch (e) { console.error('[Product] 수정 실패:', e); alert('제품 수정에 실패했어요. 잠시 후 다시 시도해 주세요.'); } }}
+          onDelete={async () => { try { await deleteProduct(selected.id, erp); setSelected(null); load(); } catch (e) { console.error('[Product] 삭제 실패:', e); alert('제품 삭제에 실패했어요.'); } }}
           onClose={() => setSelected(null)}
         />
       )}
@@ -1375,9 +1420,9 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
       {selected && (
         <MemoryDetailPopup
           item={selected}
-          onSave={async (f) => { await updateMemory(selected.id, f).catch(() => {}); setSelected(null); load(); }}
-          onArchive={async () => { await updateMemory(selected.id, { status: selected.status === 'archived' ? 'active' : 'archived' }).catch(() => {}); setSelected(null); load(); }}
-          onDelete={async () => { await deleteMemory(selected.id).catch(() => {}); setSelected(null); load(); }}
+          onSave={async (f) => { try { await updateMemory(selected.id, f); setSelected(null); load(); } catch (e) { console.error('[Memory] 수정 실패:', e); alert('기억 수정에 실패했어요. 잠시 후 다시 시도해 주세요.'); } }}
+          onArchive={async () => { try { await updateMemory(selected.id, { status: selected.status === 'archived' ? 'active' : 'archived' }); setSelected(null); load(); } catch (e) { console.error('[Memory] 보관 실패:', e); alert('처리에 실패했어요.'); } }}
+          onDelete={async () => { try { await deleteMemory(selected.id); setSelected(null); load(); } catch (e) { console.error('[Memory] 삭제 실패:', e); alert('기억 삭제에 실패했어요.'); } }}
           onClose={() => setSelected(null)}
         />
       )}
@@ -1390,7 +1435,8 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [myId, setMyId] = useState('');
   const [copied, setCopied] = useState(false);
-  const load = () => fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([]));
+  const [loaded, setLoaded] = useState(false);
+  const load = () => fetchMembers(workspace.id).then(m => { setMembers(m); setLoaded(true); }).catch(() => { setMembers([]); setLoaded(true); });
   useEffect(() => { load(); getCurrentUserId().then(setMyId).catch(() => {}); /* eslint-disable-next-line */ }, [workspace.id]);
 
   const iAmOwner = members.find(m => m.userId === myId)?.role === 'owner';
@@ -1438,7 +1484,7 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
             )}
           </div>
         ))}
-        {members.length === 0 && <p className="text-xs text-gray-300 py-4 text-center">멤버를 불러오는 중…</p>}
+        {members.length === 0 && <p className="text-xs text-gray-300 py-4 text-center">{loaded ? '멤버를 불러오지 못했어요 · 새로고침해 주세요' : '불러오는 중…'}</p>}
       </Card>
     </>
   );

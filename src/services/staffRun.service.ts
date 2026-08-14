@@ -547,7 +547,9 @@ async function persistResult(staff: Staff, workspace: Workspace, result: StaffRu
     title: result.title, summary: result.summary, body: result.body, model: staff.model,
     trigger, outputKind: result.outputKind, contentJson: result.contentJson, input: inputObj,
   });
-  const queued = await queueActions(staff, workspace, report.id, result.actions);
+  // 데모 리포트(API 키 없음)의 액션은 승인큐에 넣지 않는다 — "(데모)" 일정·할일이 실제 캘린더로 승격되는 것 방지
+  const isDemo = (result.contentJson as { _demo?: boolean } | null)?._demo === true;
+  const queued = isDemo ? 0 : await queueActions(staff, workspace, report.id, result.actions);
   if (queued > 0) report.body += `\n\n— 📌 제안 액션 ${queued}건이 승인 대기 중이에요`;
   // 코인 차감 (이번 실행 토큰 비용)
   if (result.coins) {
