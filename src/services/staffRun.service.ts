@@ -15,6 +15,8 @@ import { createSuggestedActions } from './staffOutputActions.service';
 import { getStaffType } from '../data/staffCatalog';
 import { MODE_DIRECTIVES } from '../data/staffInputForms';
 import { fetchBrandContext, brandContextToPrompt } from './brandContexts.service';
+import { fetchWorkspaceAnalytics, buildAnalystContextText } from './analytics.service';
+import { workspaceErpSource } from '../config/dataSource';
 import { Staff, Workspace, DailyReport, BrandContext, ReportTrigger, OutputKind } from '../types';
 
 /**
@@ -286,6 +288,14 @@ async function collectSchedulerContext(workspace: Workspace): Promise<string> {
   } catch { return ''; }
 }
 
+/** 분석가 전용 실시간 맥락 — 매출(sales_daily)·콘텐츠 성과(content_metrics) 실데이터 주입 */
+async function collectAnalystContext(workspace: Workspace): Promise<string> {
+  try {
+    const a = await fetchWorkspaceAnalytics(workspace.id, workspaceErpSource(workspace));
+    return buildAnalystContextText(a);
+  } catch { return ''; }
+}
+
 function parseReport(out: string): { title: string; summary: string; body: string } {
   const text = out.trim();
   const rawLines = text.split('\n');
@@ -477,7 +487,9 @@ async function runAndParse(staff: Staff, workspace: Workspace, opts: { tasks: st
   const [peerNotes, brand, extraContext] = await Promise.all([
     collectPeerNotes(staff, workspace),
     fetchBrandContext(workspace.id).catch(() => null),
-    staff.typeKey === 'scheduler' ? collectSchedulerContext(workspace) : Promise.resolve(''),
+    staff.typeKey === 'scheduler' ? collectSchedulerContext(workspace)
+      : staff.typeKey === 'analyst' ? collectAnalystContext(workspace)
+      : Promise.resolve(''),
   ]);
   const system = buildSystemPrompt(staff, workspace, brand, peerNotes, opts.tasks, opts.manualInput, extraContext);
   const today = new Date().toISOString().split('T')[0];

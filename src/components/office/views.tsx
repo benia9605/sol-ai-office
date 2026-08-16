@@ -22,7 +22,7 @@ import { fetchMemories, addMemory, updateMemory, deleteMemory } from '../../serv
 import { workspaceErpSource, isWsCompat } from '../../config/dataSource';
 import { RecordDetailView } from '../records/RecordDetailView';
 import { ReportCard } from './StaffView';
-import { fetchExternalKpis, ExternalKpiRow } from '../../services/externalKpis.service';
+import { fetchWorkspaceAnalytics, WorkspaceAnalytics } from '../../services/analytics.service';
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { Spark, ViewHead, Card, EmptyState } from './ui';
 
@@ -49,31 +49,31 @@ type Nav = (v: string) => void;
 /* ───────── 대시보드 ───────── */
 const FLAT_SPARK = [0, 0, 0, 0, 0, 0, 0];
 
-// 외부 KPI(원/raw) → 대시보드 카드 단위 변환
-const KPI_DEFS: { k: string; unit: string; pick: (r: ExternalKpiRow) => number | null }[] = [
-  { k: '주간 매출', unit: '만원', pick: (r) => (r.revenue != null ? Math.round(r.revenue / 10000) : null) },
-  { k: '전환율',   unit: '%',   pick: (r) => r.conversion_rate },
-  { k: '방문자',   unit: 'K',   pick: (r) => (r.visitors != null ? Math.round((r.visitors / 1000) * 10) / 10 : null) },
-  { k: '신규 문의', unit: '건',  pick: (r) => (r.inquiries ?? r.orders) },
-];
-
 type Kpi = { k: string; unit: string; value: number; spark: number[]; delta: number | null };
 
-/** 워크스페이스 KPI — external_kpis(외부 앱 PUSH) 기반. 미연동/데이터 없으면 0·플랫 */
-function useDashboardKpis(workspaceId: string): Kpi[] {
-  const [rows, setRows] = useState<ExternalKpiRow[]>([]);
+/** 워크스페이스 KPI — 실데이터(매출 sales_daily + 콘텐츠 성과 content_metrics). 없으면 0·플랫 */
+function useDashboardKpis(workspace: Workspace): Kpi[] {
+  const [a, setA] = useState<WorkspaceAnalytics | null>(null);
   useEffect(() => {
-    fetchExternalKpis(workspaceId, 7).then(setRows).catch(() => setRows([]));
-  }, [workspaceId]);
+    fetchWorkspaceAnalytics(workspace.id, workspaceErpSource(workspace)).then(setA).catch(() => setA(null));
+  }, [workspace.id, workspace.erpSource]);
 
-  return KPI_DEFS.map((def) => {
-    const series = rows.map((r) => def.pick(r)).filter((v): v is number => v != null);
-    if (series.length === 0) return { k: def.k, unit: def.unit, value: 0, spark: FLAT_SPARK, delta: null };
-    const value = series[series.length - 1];
-    const prev = series.length > 1 ? series[series.length - 2] : null;
-    const delta = prev && prev !== 0 ? Math.round(((value - prev) / prev) * 100) : null;
-    return { k: def.k, unit: def.unit, value, spark: series.length > 1 ? series : [series[0], series[0]], delta };
-  });
+  if (!a) return [
+    { k: '주간 매출', unit: '만원', value: 0, spark: FLAT_SPARK, delta: null },
+    { k: '객단가', unit: '원', value: 0, spark: FLAT_SPARK, delta: null },
+    { k: '저장률', unit: '%', value: 0, spark: FLAT_SPARK, delta: null },
+    { k: '공유율', unit: '%', value: 0, spark: FLAT_SPARK, delta: null },
+  ];
+  const rev = a.sales.dailySeries.map(v => Math.round(v / 10000));  // 만원
+  const revLast = rev[rev.length - 1] ?? 0;
+  const revPrev = rev.length > 1 ? rev[rev.length - 2] : null;
+  const revDelta = revPrev && revPrev !== 0 ? Math.round(((revLast - revPrev) / revPrev) * 100) : null;
+  return [
+    { k: '주간 매출', unit: '만원', value: Math.round(a.sales.last7Revenue / 10000), spark: rev.some(v => v > 0) ? rev : FLAT_SPARK, delta: revDelta },
+    { k: '객단가', unit: '원', value: a.sales.aov ?? 0, spark: FLAT_SPARK, delta: null },
+    { k: '저장률', unit: '%', value: a.content.avgSaveRate ?? 0, spark: FLAT_SPARK, delta: null },
+    { k: '공유율', unit: '%', value: a.content.avgShareRate ?? 0, spark: FLAT_SPARK, delta: null },
+  ];
 }
 
 /** 하루 운영 흐름 가이드 — 워크스페이스 메인 홈 상단. 접기/펼치기(localStorage). */
@@ -118,7 +118,7 @@ function OfficeDailyGuide() {
 
 export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; workspace: Workspace }) {
   const { tasks } = useTasks();
-  const kpis = useDashboardKpis(workspace.id);
+  const kpis = useDashboardKpis(workspace);
   const open = tasks.filter(t => t.status !== 'completed');
   const [schedules, setSchedules] = useState<ScheduleRow[]>([]);
   const [insights, setInsights] = useState<InsightRow[]>([]);

@@ -48,6 +48,16 @@ function toRow(f: Partial<ContentMetric>): Record<string, unknown> {
   return p;
 }
 
+/** 워크스페이스의 모든 성과 스냅샷 (분석 집계용) */
+export async function fetchMetricsByWorkspace(workspaceId: string): Promise<ContentMetric[]> {
+  const { data, error } = await supabase
+    .from('content_metrics')
+    .select('*')
+    .eq('workspace_id', workspaceId);
+  if (error) throw error;
+  return (data ?? []).map(toMetric);
+}
+
 /** 콘텐츠 1건의 시점별 성과 */
 export async function fetchMetricsByItem(contentItemId: string): Promise<ContentMetric[]> {
   const { data, error } = await supabase
