@@ -13,6 +13,8 @@ import { fetchReportsByStaff, fetchReportById, addReportComment } from '../../se
 import { runStaffNow, runRoutineNow, previewStaffManual, saveStaffResult, StaffRunResult } from '../../services/staffRun.service';
 import { fetchActions, approveAction, dismissAction } from '../../services/staffOutputActions.service';
 import { getInputForm } from '../../data/staffInputForms';
+import { fetchWorkspaceAnalytics, WorkspaceAnalytics } from '../../services/analytics.service';
+import { workspaceErpSource } from '../../config/dataSource';
 import { ViewHead, Card, EmptyState } from './ui';
 import { MarkdownView } from './MarkdownView';
 import { StaffOutputView } from './StaffOutputView';
@@ -60,6 +62,111 @@ function OutputKindArea({ outputKind }: { outputKind: string }) {
         <div className="text-3xl mb-2">{info.emoji}</div>
         <p className="text-sm font-semibold text-gray-600">{info.desc}</p>
         <p className="text-[11px] text-gray-300 mt-1.5">타입(outputKind)마다 다른 구성 · 인터랙티브 동작은 Phase 5</p>
+      </Card>
+    </div>
+  );
+}
+
+/* ── 분석가 전용: 실데이터 스냅샷 (매출·콘텐츠 성과) ──
+   AI 키 없이도 sales_daily·content_metrics 실수치를 그대로 보여준다.
+   analytics.service의 같은 집계를 분석가 프롬프트에도 주입하므로, 이 패널 = "AI가 근거로 삼는 숫자". */
+function StatCell({ label, value, unit }: { label: string; value: string; unit?: string }) {
+  return (
+    <div className="rounded-2xl bg-gray-50 px-3.5 py-3">
+      <div className="text-[11px] text-gray-400 mb-0.5">{label}</div>
+      <div className="text-lg font-bold text-gray-800 tabular-nums">{value}{unit && <span className="text-xs font-normal text-gray-400 ml-0.5">{unit}</span>}</div>
+    </div>
+  );
+}
+function AnalystDataPanel({ workspace }: { workspace: Workspace }) {
+  const [a, setA] = useState<WorkspaceAnalytics | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    fetchWorkspaceAnalytics(workspace.id, workspaceErpSource(workspace))
+      .then(r => { if (alive) setA(r); })
+      .catch(() => { if (alive) setA(null); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [workspace.id]);
+
+  const man = (n: number) => `${Math.round(n / 10000).toLocaleString()}`;
+  const won = (n: number) => `${n.toLocaleString()}`;
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center h-9 mb-2">
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">📊 실데이터 스냅샷</span>
+        <span className="ml-2 text-[11px] text-gray-300">이 숫자를 근거로 분석가가 리포트를 씁니다</span>
+      </div>
+      <Card className="p-4 space-y-4">
+        {loading ? (
+          <p className="text-xs text-gray-300 py-4 text-center">불러오는 중…</p>
+        ) : (
+          <>
+            {/* 매출 */}
+            <div>
+              <div className="text-[11px] font-semibold text-gray-400 mb-2">💰 매출</div>
+              {a?.sales.hasData ? (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <StatCell label="최근 7일" value={man(a.sales.last7Revenue)} unit="만원" />
+                    <StatCell label="최근 30일" value={man(a.sales.last30Revenue)} unit="만원" />
+                    <StatCell label="주문(7일)" value={won(a.sales.orders7)} unit="건" />
+                    <StatCell label="객단가" value={a.sales.aov != null ? won(a.sales.aov) : '—'} unit={a.sales.aov != null ? '원' : ''} />
+                  </div>
+                  {a.sales.byChannel.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {a.sales.byChannel.map(c => (
+                        <span key={c.source} className="text-[11px] px-2 py-1 rounded-full bg-primary-50 text-primary-600">
+                          {c.label} {man(c.revenue)}만원
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-gray-300 py-2">매출 데이터가 없어요 · 매출 메뉴에서 입력하면 자동 반영</p>
+              )}
+            </div>
+            {/* 콘텐츠 성과 */}
+            <div className="border-t border-gray-100 pt-3">
+              <div className="text-[11px] font-semibold text-gray-400 mb-2">🎬 콘텐츠 성과</div>
+              {a?.content.hasData ? (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <StatCell label="저장률 평균" value={a.content.avgSaveRate != null ? String(a.content.avgSaveRate) : '—'} unit="%" />
+                    <StatCell label="공유율 평균" value={a.content.avgShareRate != null ? String(a.content.avgShareRate) : '—'} unit="%" />
+                    <StatCell label="팔로워 증감" value={(a.content.followerDelta >= 0 ? '+' : '') + won(a.content.followerDelta)} />
+                  </div>
+                  {a.content.byType.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {a.content.byType.map(t => (
+                        <span key={t.type} className="text-[11px] px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+                          {t.label} {t.saveRate ?? '—'}% <span className="text-gray-300">n={t.n}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {a.content.top.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {a.content.top.map((t, i) => (
+                        <div key={i} className="flex items-center gap-2 text-[12px]">
+                          <span className="text-gray-300">{i + 1}</span>
+                          <span className="text-gray-600 truncate flex-1">{t.title}</span>
+                          <span className="text-primary-600 font-semibold flex-shrink-0">저장 {t.saveRate}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-gray-300 py-2">콘텐츠 성과 데이터가 없어요 · 콘텐츠 발행 후 24h/72h/7d 성과를 입력하면 반영</p>
+              )}
+            </div>
+          </>
+        )}
       </Card>
     </div>
   );
@@ -690,6 +797,9 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
           )}
         </div>
       )}
+
+      {/* 분석가 전용: 실데이터 스냅샷 (매출·콘텐츠 성과) */}
+      {staff.typeKey === 'analyst' && <AnalystDataPanel workspace={workspace} />}
 
       {/* 1. 매일 하는 일 (자동) — 최상단 */}
       <div className="mb-4">
