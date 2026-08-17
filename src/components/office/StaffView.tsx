@@ -17,6 +17,7 @@ import { fetchAnalystInsights, AnalystInsights } from '../../services/analytics.
 import { fetchSchedulerInsights, SchedulerInsights } from '../../services/schedulerInsights.service';
 import { fetchTickets, addTicket, updateTicket, deleteTicket, fetchFaq, deleteFaq, seedSimokFaq } from '../../services/cs.service';
 import { fetchWatchItems, addWatchItem, deleteWatchItem, seedSimokWatchlist, watchToContentIdea } from '../../services/monitor.service';
+import { generateBriefing, fetchLatestBriefing, BriefingJson } from '../../services/officeBriefing.service';
 import { Ticket, TicketChannel, CsFaq, WatchItem } from '../../types';
 import { workspaceErpSource } from '../../config/dataSource';
 import { ViewHead, Card, EmptyState } from './ui';
@@ -482,6 +483,66 @@ function MonitorDataPanel({ workspace }: { workspace: Workspace }) {
                 {list.length === 0 && <p className="text-xs text-gray-300 py-3 text-center w-full">키워드를 추가하거나 ‘시목 시드’를 눌러보세요 · 🎬로 콘텐츠 아이디어 전환</p>}
               </div>
             )}
+          </>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+/* ── 운영매니저 전용: CEO 브리핑 편집장 (여기서 생성 → 대시보드 렌더) ── */
+const OPS_SEV: Record<string, string> = { critical: 'border-l-rose-400', warning: 'border-l-amber-400', info: 'border-l-primary-400', positive: 'border-l-emerald-400' };
+function OpsDataPanel({ workspace }: { workspace: Workspace }) {
+  const [brief, setBrief] = useState<BriefingJson | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [gen, setGen] = useState(false);
+  useEffect(() => {
+    let alive = true; setLoading(true);
+    fetchLatestBriefing(workspace.id).then(b => { if (alive) setBrief(b); }).catch(() => {}).finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [workspace.id]);
+  const generate = async () => {
+    setGen(true);
+    try { setBrief(await generateBriefing(workspace)); } catch (e) { console.error(e); } finally { setGen(false); }
+  };
+  return (
+    <div className="mb-4">
+      <div className="flex items-center h-9 mb-2">
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">🧭 CEO 브리핑 편집장</span>
+        <span className="ml-2 text-[11px] text-gray-300 hidden sm:inline">여기서 생성하면 대시보드에 반영돼요</span>
+        <button onClick={generate} disabled={gen} className="ml-auto text-[11px] px-3 py-1.5 rounded-lg bg-primary-500 text-white font-medium hover:bg-primary-600 disabled:opacity-50">{gen ? '생성 중…' : brief ? '↻ 새로고침' : '브리핑 생성'}</button>
+      </div>
+      <Card className="p-4 space-y-3">
+        {loading ? <p className="text-xs text-gray-300 py-4 text-center">불러오는 중…</p> : !brief ? (
+          <p className="text-xs text-gray-300 py-4 text-center">‘브리핑 생성’을 누르면 전 직원 신호를 취합해요</p>
+        ) : (
+          <>
+            <p className="text-sm font-medium text-gray-800">{brief.headline.text}</p>
+            {brief.top3.length > 0 && (
+              <div className="space-y-1.5">
+                {brief.top3.map(t => (
+                  <div key={t.rank} className={`border-l-[3px] ${OPS_SEV[t.severity]} bg-gray-50 rounded-r-lg px-3 py-1.5`}>
+                    <span className="text-[10px] font-bold text-gray-400 mr-1.5">{t.rank}</span>
+                    <span className="text-[13px] font-semibold text-gray-700">{t.title}</span>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{t.summary}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="grid grid-cols-4 gap-2 text-center">
+              {[
+                { k: '지연', v: brief.operations.tasks_overdue },
+                { k: '승인대기', v: brief.operations.approvals_pending },
+                { k: '문의대기', v: brief.cs?.waiting ?? 0 },
+                { k: '오늘일정', v: brief.operations.schedule_count_today },
+              ].map(o => (
+                <div key={o.k} className="rounded-lg bg-gray-50 px-2 py-2">
+                  <div className="text-base font-bold text-gray-800 tabular-nums">{o.v}</div>
+                  <div className="text-[10px] text-gray-400">{o.k}</div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[12px] text-gray-500 border-t border-gray-100 pt-2.5">💡 {brief.one_line_advice}</p>
           </>
         )}
       </Card>
@@ -1123,6 +1184,8 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
       {staff.typeKey === 'cs' && <CSDataPanel workspace={workspace} />}
       {/* 모니터링 전용: 트렌드 레이더 */}
       {staff.typeKey === 'monitor' && <MonitorDataPanel workspace={workspace} />}
+      {/* 운영매니저 전용: CEO 브리핑 편집장 */}
+      {staff.typeKey === 'ops' && <OpsDataPanel workspace={workspace} />}
 
       {/* 1. 매일 하는 일 (자동) — 최상단 */}
       <div className="mb-4">

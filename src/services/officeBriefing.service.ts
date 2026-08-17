@@ -17,6 +17,7 @@ import { fetchTasks } from './tasks.service';
 import { fetchSchedules } from './schedules.service';
 import { fetchActions } from './staffOutputActions.service';
 import { fetchContentItems } from './contentItems.service';
+import { fetchTickets } from './cs.service';
 
 export type BriefStatus = 'good' | 'attention' | 'critical';
 export type Severity = 'critical' | 'warning' | 'info' | 'positive';
@@ -68,6 +69,13 @@ export interface BriefingJson {
     approvals_pending: number;
     schedule_count_today: number;
   };
+  cs: {
+    hasData: boolean;
+    waiting: number;
+    urgent: number;
+    top_category: string | null;
+    one_line: string;
+  };
   due_today: BriefDueItem[];
   approvals_pending: BriefApproval[];
   one_line_advice: string;
@@ -79,13 +87,26 @@ const man = (n: number) => `${Math.round(n / 10000).toLocaleString()}만원`;
 /** 워크스페이스 실데이터 → CEO 브리핑 JSON (코드 계산 + 규칙 기반 문장) */
 export async function buildBriefingJson(workspace: Workspace, kind: 'daily' | 'weekly' = 'daily'): Promise<BriefingJson> {
   const today = todayStr();
-  const [analytics, allTasks, schedules, approvals, content] = await Promise.all([
+  const [analytics, allTasks, schedules, approvals, content, tickets] = await Promise.all([
     fetchWorkspaceAnalytics(workspace.id, workspaceErpSource(workspace)).catch(() => null),
     fetchTasks().catch(() => []),
     fetchSchedules(workspace.id).catch(() => []),
     fetchActions(workspace.id, 'suggested').catch(() => []),
     fetchContentItems(workspace.id).catch(() => []),
+    fetchTickets(workspace.id).catch(() => []),
   ]);
+
+  // ── CS 문의 신호 ──
+  const CS_CAT: Record<string, string> = { shipping: '배송', product: '제품', stock: '재고', care: '관리', as: 'A/S', exchange: '교환', refund: '환불', order: '주문', other: '기타' };
+  const openTickets = tickets.filter(t => t.status !== 'answered' && t.status !== 'closed');
+  const csWaiting = openTickets.length;
+  const csUrgent = openTickets.filter(t => t.urgency === 'critical' || t.urgency === 'high').length;
+  const catCount: Record<string, number> = {};
+  openTickets.forEach(t => { catCount[t.category] = (catCount[t.category] ?? 0) + 1; });
+  const topCat = Object.entries(catCount).sort((a, b) => b[1] - a[1])[0];
+  const csHasData = tickets.length > 0;
+  const csOneLine = !csHasData ? '문의 데이터가 없어요. CS 직원에 문의를 붙여넣으면 반영됩니다.'
+    : `답변 대기 ${csWaiting}건${csUrgent > 0 ? ` · 긴급 ${csUrgent}건` : ''}${topCat ? ` · 최다 "${CS_CAT[topCat[0]] ?? topCat[0]}"` : ''}`;
 
   // ── 할일(워크스페이스 스코프, 미완료) ──
   const wsTasks = allTasks.filter(t => t.workspace_id === workspace.id && t.status !== 'done');
@@ -122,8 +143,14 @@ export async function buildBriefingJson(workspace: Workspace, kind: 'daily' | 'w
   const contentOneLine = !contentHasData ? '콘텐츠 성과 데이터가 아직 없어요. 발행 후 24h/72h/7d 성과를 입력하면 반영됩니다.'
     : `최근 저장률 평균 ${c!.avgSaveRate ?? '—'}% · 공유율 ${c!.avgShareRate ?? '—'}%${c!.top[0] ? ` · 잘된 콘텐츠 "${c!.top[0].title}"` : ''}`;
 
-  // ── TOP3 (우선순위: 지연 → 오늘 발행 미완 → 승인대기 → 오늘 마감) ──
+  // ── TOP3 (우선순위: 긴급 CS → 지연 → 오늘 발행 미완 → 승인대기 → 오늘 마감) ──
   const cand: BriefTop3[] = [];
+  if (csUrgent > 0) cand.push({
+    rank: 0, type: 'cs', severity: 'critical',
+    title: `긴급 CS 문의 ${csUrgent}건`,
+    summary: `긴급·높음 문의가 ${csUrgent}건 대기 중입니다. 파손·환불·화난 고객은 먼저 대응하세요.`,
+    recommended_action: { label: '문의 보기', action_type: 'open_item' },
+  });
   if (overdue.length > 0) cand.push({
     rank: 0, type: 'task', severity: 'critical',
     title: `지연된 할일 ${overdue.length}건`,
@@ -160,7 +187,9 @@ export async function buildBriefingJson(workspace: Workspace, kind: 'daily' | 'w
       : hasWarning ? `오늘은 ${top3[0].title} 처리가 우선입니다.`
       : `큰 이슈는 없습니다. 오늘 할 일: ${top3[0].title}.`)
     : (salesHasData ? '특별한 이슈 없이 안정적으로 운영 중입니다.' : '데이터를 채우면 매일 아침 브리핑이 풍부해집니다.');
-  const advice = scheduledToday.length > 0
+  const advice = csUrgent > 0
+    ? `긴급 문의 ${csUrgent}건을 먼저 처리한 뒤 나머지 업무를 진행하세요.`
+    : scheduledToday.length > 0
     ? '오늘은 새 일을 벌이기보다 예정된 콘텐츠를 완성해 발행하는 것이 우선입니다.'
     : overdue.length > 0 ? '지연된 할일부터 정리한 뒤 오늘 업무를 진행하세요.'
     : approvals.length > 0 ? '승인 대기 중인 AI 제안을 먼저 검토해 오늘 실행에 반영하세요.'
@@ -202,6 +231,7 @@ export async function buildBriefingJson(workspace: Workspace, kind: 'daily' | 'w
       approvals_pending: approvals.length,
       schedule_count_today: schedToday.length,
     },
+    cs: { hasData: csHasData, waiting: csWaiting, urgent: csUrgent, top_category: topCat ? (CS_CAT[topCat[0]] ?? topCat[0]) : null, one_line: csOneLine },
     due_today: [
       ...dueToday.map(t => ({ type: 'task' as const, id: t.id, title: t.title, status: t.status })),
       ...schedToday.map(sc => ({ type: 'schedule' as const, id: sc.id, title: sc.title, time: sc.time })),

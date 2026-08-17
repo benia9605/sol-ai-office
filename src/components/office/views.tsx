@@ -204,7 +204,7 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
                       <span className="text-[10px] font-bold text-gray-400">{t.rank}</span>
                       <span className="text-sm font-semibold text-gray-800 flex-1">{t.title}</span>
                       {t.recommended_action && (
-                        <button onClick={() => onNavigate(t.type === 'content' ? 'contents' : t.type === 'schedule' ? 'schedule' : t.type === 'decision' ? 'staff' : 'todos')}
+                        <button onClick={() => onNavigate(t.type === 'content' ? 'contents' : t.type === 'schedule' ? 'schedule' : (t.type === 'decision' || t.type === 'cs') ? 'staff' : 'todos')}
                           className="text-[11px] px-2 py-0.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:border-primary-300 flex-shrink-0">{t.recommended_action.label}</button>
                       )}
                     </div>
@@ -245,6 +245,15 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
               <p className="text-[12px] text-gray-600 leading-relaxed">{brief.content.one_line}</p>
             </div>
           </div>
+
+          {/* CS 문의 한 줄 (있을 때만) */}
+          {brief.cs?.hasData && (
+            <button onClick={() => onNavigate('staff')} className="w-full flex items-center gap-2 rounded-lg bg-gray-50 hover:bg-gray-100 px-3.5 py-2.5 text-left transition-colors">
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${brief.cs.urgent > 0 ? 'bg-rose-400' : 'bg-gray-300'}`} />
+              <span className="text-[11px] font-semibold text-gray-500 flex-shrink-0">💬 문의</span>
+              <span className="text-[12px] text-gray-600 truncate">{brief.cs.one_line}</span>
+            </button>
+          )}
 
           {/* ④ 운영 현황 4칸 */}
           <div className="grid grid-cols-4 gap-2">
