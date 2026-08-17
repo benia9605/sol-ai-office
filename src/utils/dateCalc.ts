@@ -21,6 +21,13 @@ export function getTomorrowStr(): string {
   return formatDateStr(d);
 }
 
+/** 로컬 기준 날짜 더하기 (YYYY-MM-DD → YYYY-MM-DD). toISOString 왕복 없이 안전(타임존 밀림 방지). */
+export function addDaysStr(iso: string, n: number): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return getTodayStr();
+  return formatDateStr(new Date(y, m - 1, d + n));
+}
+
 export function calcNextDate(currentDate: string | undefined, repeat: RepeatType): string | undefined {
   if (!currentDate || repeat === 'none' || repeat === 'daily') return undefined;
 

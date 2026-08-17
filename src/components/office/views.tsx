@@ -11,6 +11,7 @@ import { fetchMembers, removeMember, changeMemberRole, updateMemberNickname, upd
 import { generateBriefing, fetchLatestBriefing, BriefingJson, BriefStatus, Severity } from '../../services/officeBriefing.service';
 import { notify, getActorName } from '../../services/notify.service';
 import { LikeCommentBlock } from './LikeCommentBlock';
+import { getTodayStr, addDaysStr } from '../../utils/dateCalc';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
@@ -323,7 +324,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
     fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([]));
   }, [workspace.id]);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getTodayStr();
   const hour = new Date().getHours();
   const greeting = hour < 12 ? '좋은 아침이에요' : hour < 18 ? '좋은 오후예요' : '좋은 저녁이에요';
   const upcoming = schedules.filter(s => s.date >= todayStr).slice(0, 4);
@@ -589,12 +590,12 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
   const [showForm, setShowForm] = useState(false);
   // 할일 추가 폼 — 날짜는 기본으로 '오늘'(수동 수정 가능)
   const blankForm = (): { title: string; priority: TaskItem['priority']; date: string; assigneeId: string; category: string } =>
-    ({ title: '', priority: 'medium', date: new Date().toISOString().slice(0, 10), assigneeId: '', category: '' });
+    ({ title: '', priority: 'medium', date: getTodayStr(), assigneeId: '', category: '' });
   const [form, setForm] = useState(blankForm);
   const [selected, setSelected] = useState<TaskItem | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [mode, setMode] = useState<'day' | 'list' | 'calendar'>('day');
-  const [cursor, setCursor] = useState<string>(() => new Date().toISOString().slice(0, 10)); // 일별 뷰: 선택한 날짜
+  const [cursor, setCursor] = useState<string>(() => getTodayStr()); // 일별 뷰: 선택한 날짜
 
   useEffect(() => { fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([])); }, [workspace.id]);
 
@@ -625,9 +626,9 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
   const done = fTasks.filter(t => t.status === 'completed');
 
   // ── 일별 뷰 파생 ──
-  const today = new Date().toISOString().slice(0, 10);
-  const addDays = (iso: string, d: number) => { const dt = new Date(iso + 'T00:00:00'); dt.setDate(dt.getDate() + d); return dt.toISOString().slice(0, 10); };
-  const fmtDay = (iso: string) => { const dt = new Date(iso + 'T00:00:00'); const w = ['일', '월', '화', '수', '목', '금', '토'][dt.getDay()]; return `${dt.getMonth() + 1}월 ${dt.getDate()}일 (${w})`; };
+  const today = getTodayStr();
+  const addDays = (iso: string, d: number) => addDaysStr(iso, d);  // 타임존 안전(로컬)
+  const fmtDay = (iso: string) => { const [y, m, dd] = iso.split('-').map(Number); const dt = new Date(y, m - 1, dd); const w = ['일', '월', '화', '수', '목', '금', '토'][dt.getDay()]; return `${m}월 ${dd}일 (${w})`; };
   const overdue = fTasks.filter(t => t.status !== 'completed' && t.date && t.date < today);
   const noDate = cursor === today ? fTasks.filter(t => t.status !== 'completed' && !t.date) : [];
   const dayOpen = [...fTasks.filter(t => t.status !== 'completed' && t.date === cursor), ...noDate];
