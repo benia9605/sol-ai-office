@@ -837,4 +837,6 @@ export interface NotificationPreferences {
   notifyContent: boolean;       // 콘텐츠 발행 → 멤버
   notifyComment: boolean;       // 댓글/답글 (Phase 2)
   notifyLike: boolean;          // 좋아요 (Phase 2)
+  notifyMention: boolean;       // @멘션 (마이그 038)
+  notifyTaskDue: boolean;       // 내 담당 할일 마감 임박 (마이그 038)
 }

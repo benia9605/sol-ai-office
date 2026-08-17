@@ -211,6 +211,8 @@ const mockData: Record<string, any[]> = {
     notify_content: true,
     notify_comment: true,
     notify_like: false,
+    notify_mention: true,
+    notify_task_due: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }],

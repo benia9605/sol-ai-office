@@ -87,7 +87,7 @@
 |---|---|
 | `user_profiles` | id, user_id, name, bio, tone, response_length, emoji_usage, active_theme('modi'\|'modern'), email, created_at |
 | `push_subscriptions` | id, user_id, endpoint, p256dh, auth, device_label, created_at |
-| `notification_preferences` | id, user_id, task_deadline, task_overdue, morning_routine, schedule_reminder, morning_briefing, pomodoro_done, morning_journal, evening_journal, **notify_task_assigned, notify_task_completed, notify_schedule, notify_content, notify_comment, notify_like**(마이그 036 — 팀 이벤트 알림 토글), created_at, updated_at |
+| `notification_preferences` | id, user_id, task_deadline, task_overdue, morning_routine, schedule_reminder, morning_briefing, pomodoro_done, morning_journal, evening_journal, **notify_task_assigned, notify_task_completed, notify_schedule, notify_content, notify_comment, notify_like**(마이그 036 — 팀 이벤트 알림 토글), **notify_mention, notify_task_due**(마이그 038 — @멘션·담당 마감임박), created_at, updated_at |
 | `notification_log` | id, user_id, type, ref_key, created_at |
 | `daily_completions` | id, user_id, date, count |
 | `custom_options` | id, user_id, option_type, value |

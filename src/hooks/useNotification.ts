@@ -33,6 +33,8 @@ const DEFAULT_PREFS: NotificationPreferences = {
   notifyContent: true,
   notifyComment: true,
   notifyLike: false,
+  notifyMention: true,
+  notifyTaskDue: true,
 };
 
 /** DB Row → 프론트 타입 변환 */
@@ -52,6 +54,8 @@ function toPrefs(row: NotificationPreferencesRow): NotificationPreferences {
     notifyContent: row.notify_content ?? true,
     notifyComment: row.notify_comment ?? true,
     notifyLike: row.notify_like ?? false,
+    notifyMention: row.notify_mention ?? true,
+    notifyTaskDue: row.notify_task_due ?? true,
   };
 }
 
@@ -72,6 +76,8 @@ function toRow(prefs: NotificationPreferences) {
     notify_content: prefs.notifyContent,
     notify_comment: prefs.notifyComment,
     notify_like: prefs.notifyLike,
+    notify_mention: prefs.notifyMention,
+    notify_task_due: prefs.notifyTaskDue,
   };
 }
 

@@ -247,6 +247,23 @@ export function NotificationSettings({ userId }: Props) {
     togglePref,
   } = useNotification(userId);
 
+  const [testing, setTesting] = useState(false);
+  const [testMsg, setTestMsg] = useState<string | null>(null);
+  const sendTest = async () => {
+    setTesting(true); setTestMsg('보내는 중…');
+    try {
+      await supabase.functions.invoke('test-push', {
+        body: { user_id: userId, title: '🔔 테스트 알림', body: '알림이 잘 도착하면 성공이에요!', tag: `test-${Date.now()}`, url: '/' },
+      });
+      setTestMsg('전송 완료 — 몇 초 안에 알림이 도착해요.');
+    } catch (e) {
+      console.error('[test] 실패:', e); setTestMsg('전송 실패 — 알림을 먼저 허용했는지 확인해 주세요.');
+    } finally {
+      setTesting(false);
+      setTimeout(() => setTestMsg(null), 6000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6">
@@ -330,6 +347,21 @@ export function NotificationSettings({ userId }: Props) {
               className="text-xs text-gray-400 hover:text-red-500 transition-colors"
             >
               해제
+            </button>
+          </div>
+
+          {/* 알림 테스트 — 본인에게 한 번 보내 도착 확인 */}
+          <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-3.5 py-2.5">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-700">알림 테스트</p>
+              <p className="text-[11px] text-gray-400">{testMsg ?? '본인에게 한 번 보내서 잘 오는지 확인해요'}</p>
+            </div>
+            <button
+              onClick={sendTest}
+              disabled={testing}
+              className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 transition-colors"
+            >
+              {testing ? '전송 중…' : '보내기'}
             </button>
           </div>
 
@@ -419,6 +451,18 @@ export function NotificationSettings({ userId }: Props) {
               desc="멤버가 콘텐츠를 발행하면 알림"
               checked={prefs.notifyContent}
               onChange={(v) => togglePref('notifyContent', v)}
+            />
+            <NotifToggle
+              label="@멘션"
+              desc="댓글에서 @닉네임으로 나를 언급하면 알림"
+              checked={prefs.notifyMention}
+              onChange={(v) => togglePref('notifyMention', v)}
+            />
+            <NotifToggle
+              label="내 할일 마감 임박"
+              desc="내가 담당인 할일이 오늘/내일 마감이면 아침에 알림"
+              checked={prefs.notifyTaskDue}
+              onChange={(v) => togglePref('notifyTaskDue', v)}
             />
             <NotifToggle
               label="댓글"

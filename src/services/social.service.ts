@@ -92,6 +92,17 @@ export async function addComment(resource: SocialResource, resId: string, conten
   if (meta.workspaceId) {
     const name = await getActorName(meta.workspaceId, userId);
     const type: NotifyType = 'notify_comment';
+
+    // ── @멘션: 본문에서 @닉네임 파싱 → 멤버 매칭 → 멘션 알림 ──
+    const mentioned = await resolveMentions(meta.workspaceId, content, userId);
+    if (mentioned.length) {
+      notify({
+        type: 'notify_mention', workspaceId: meta.workspaceId, actorId: userId,
+        title: '📣 멘션', body: `${name} 님이 회원님을 언급했어요: ${content.slice(0, 60)}`,
+        tag: `${resource}-mention-${created.id}`, targetUserIds: mentioned,
+      });
+    }
+
     if (parentId) {
       // 답글 → 부모 댓글 작성자
       const { data: parent } = await supabase.from(c.commentTable).select('user_id').eq('id', parentId).maybeSingle();
@@ -112,4 +123,21 @@ export async function addComment(resource: SocialResource, resId: string, conten
 
 export async function deleteComment(resource: SocialResource, commentId: string): Promise<void> {
   await supabase.from(CFG[resource].commentTable).delete().eq('id', commentId);
+}
+
+/** 본문의 @닉네임을 워크스페이스 멤버와 매칭 → user_id 목록(액터 제외). 닉네임에 공백 있어도 정확히 매칭. */
+async function resolveMentions(workspaceId: string, content: string, actorId: string): Promise<string[]> {
+  if (!content.includes('@')) return [];
+  try {
+    const { data } = await supabase.from('workspace_members').select('user_id, nickname').eq('workspace_id', workspaceId);
+    const members = (data ?? []) as { user_id: string; nickname?: string }[];
+    const hit = new Set<string>();
+    for (const m of members) {
+      const nick = m.nickname?.trim();
+      if (nick && m.user_id !== actorId && content.includes(`@${nick}`)) hit.add(m.user_id);
+    }
+    return [...hit];
+  } catch {
+    return [];
+  }
 }
