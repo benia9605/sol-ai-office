@@ -14,6 +14,7 @@ import { runStaffNow, runRoutineNow, previewStaffManual, saveStaffResult, StaffR
 import { fetchActions, approveAction, dismissAction } from '../../services/staffOutputActions.service';
 import { getInputForm } from '../../data/staffInputForms';
 import { fetchAnalystInsights, AnalystInsights } from '../../services/analytics.service';
+import { fetchSchedulerInsights, SchedulerInsights } from '../../services/schedulerInsights.service';
 import { workspaceErpSource } from '../../config/dataSource';
 import { ViewHead, Card, EmptyState } from './ui';
 import { MarkdownView } from './MarkdownView';
@@ -167,6 +168,114 @@ function AnalystDataPanel({ workspace }: { workspace: Workspace }) {
             {!a.sales.hasData && !a.content.hasData && (
               <p className="text-[11px] text-gray-300">매출·콘텐츠 성과를 입력하면 이 기간 분석이 채워져요.</p>
             )}
+          </>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+/* ── 일정비서 전용: 오늘 실행 계획 (타임라인·충돌·빈시간·이번주) ── */
+const KIND_BADGE: Record<string, { label: string; cls: string }> = {
+  schedule: { label: '일정', cls: 'bg-gray-100 text-gray-500' },
+  content: { label: '콘텐츠', cls: 'bg-primary-50 text-primary-600' },
+  task: { label: '마감', cls: 'bg-amber-50 text-amber-600' },
+};
+function SchedulerDataPanel({ workspace }: { workspace: Workspace }) {
+  const [a, setA] = useState<SchedulerInsights | null>(null);
+  const [loading, setLoading] = useState(true);
+  const today = new Date().toISOString().slice(0, 10);
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    fetchSchedulerInsights(workspace.id, today)
+      .then(r => { if (alive) setA(r); })
+      .catch(() => { if (alive) setA(null); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+    // eslint-disable-next-line
+  }, [workspace.id]);
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center h-9 mb-2">
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">🗓 오늘 실행 계획</span>
+        <span className="ml-2 text-[11px] text-gray-300 hidden sm:inline">촬영·편집·발행·마감을 한눈에</span>
+      </div>
+      <Card className="p-4 space-y-4">
+        {loading ? (
+          <p className="text-xs text-gray-300 py-4 text-center">불러오는 중…</p>
+        ) : !a ? (
+          <p className="text-xs text-gray-300 py-4 text-center">데이터를 불러오지 못했어요</p>
+        ) : (
+          <>
+            {/* 단계 카운트 */}
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { k: '오늘 일정', v: a.counts.scheduledToday },
+                { k: '촬영', v: a.counts.shooting },
+                { k: '편집', v: a.counts.editing },
+                { k: '발행', v: a.counts.publishing },
+              ].map(o => (
+                <div key={o.k} className="rounded-2xl bg-gray-50 px-3 py-2.5 text-center">
+                  <div className="text-lg font-bold text-gray-800 tabular-nums">{o.v}</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">{o.k}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* 오늘 타임라인 */}
+            <div>
+              <div className="text-[11px] font-semibold text-gray-400 mb-1.5">오늘 타임라인</div>
+              {a.timeline.length > 0 ? (
+                <div className="space-y-1">
+                  {a.timeline.map(t => (
+                    <div key={t.id} className="flex items-center gap-2 text-[12px]">
+                      <span className="text-gray-400 w-10 flex-shrink-0 tabular-nums">{t.time || '—'}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${KIND_BADGE[t.type].cls}`}>{KIND_BADGE[t.type].label}</span>
+                      <span className="text-gray-700 truncate">{t.title}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-xs text-gray-300 py-1">오늘 예정된 일정·발행·마감이 없어요</p>}
+            </div>
+
+            {/* 충돌 / 무리한 날 */}
+            {a.conflicts.length > 0 && (
+              <div className="border-t border-gray-100 pt-3 space-y-1.5">
+                <div className="text-[11px] font-semibold text-gray-400 mb-1">충돌 · 확인 필요</div>
+                {a.conflicts.map((c, i) => (
+                  <div key={i} className={`text-[12px] px-2.5 py-2 rounded-lg ${c.severity === 'high' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
+                    <div>{c.severity === 'high' ? '🔴' : '🟡'} {c.message}</div>
+                    <div className="text-gray-500 mt-0.5">→ {c.suggestion}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 빈 시간 제안 */}
+            {a.freeSlots.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] text-gray-400">빈 시간</span>
+                {a.freeSlots.map((s, i) => (
+                  <span key={i} className="text-[11px] px-2 py-1 rounded-full bg-emerald-50 text-emerald-600">{s.start}~{s.end}</span>
+                ))}
+              </div>
+            )}
+
+            {/* 이번 주 (월~일) */}
+            <div className="border-t border-gray-100 pt-3">
+              <div className="text-[11px] font-semibold text-gray-400 mb-1.5">이번 주</div>
+              <div className="grid grid-cols-7 gap-1">
+                {a.week.map(d => (
+                  <div key={d.date} className={`rounded-lg px-1 py-1.5 text-center ${d.isToday ? 'bg-primary-50 border border-primary-200' : 'bg-gray-50'}`}>
+                    <div className="text-[10px] text-gray-400">{d.weekday}</div>
+                    <div className="text-[11px] font-bold text-gray-700 tabular-nums">{d.date.slice(8)}</div>
+                    {d.items.length > 0 && <div className="text-[9px] text-primary-500 mt-0.5">{d.items.length}건</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         )}
       </Card>
@@ -802,6 +911,8 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
 
       {/* 분석가 전용: 실데이터 스냅샷 (매출·콘텐츠 성과) */}
       {staff.typeKey === 'analyst' && <AnalystDataPanel workspace={workspace} />}
+      {/* 일정비서 전용: 오늘 실행 계획 */}
+      {staff.typeKey === 'scheduler' && <SchedulerDataPanel workspace={workspace} />}
 
       {/* 1. 매일 하는 일 (자동) — 최상단 */}
       <div className="mb-4">
