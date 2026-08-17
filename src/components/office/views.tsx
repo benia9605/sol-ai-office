@@ -9,6 +9,7 @@ import { Workspace, WorkspaceMember, TaskItem, DailyReport, RecordItem, Product,
 import { useTasks } from '../../hooks/useTasks';
 import { fetchMembers, removeMember, changeMemberRole, updateMemberNickname, updateWorkspace } from '../../services/workspaces.service';
 import { generateBriefing, fetchLatestBriefing, BriefingJson, BriefStatus, Severity } from '../../services/officeBriefing.service';
+import { notify, getActorName } from '../../services/notify.service';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
@@ -1225,7 +1226,7 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
       {selected && (
         <ContentEditPopup
           item={selected} products={products} workspaceId={workspace.id}
-          onSave={async (fields) => { try { await updateContentItem(selected.id, fields); setSelected(null); load(); } catch (e) { console.error('[Content] 수정 실패:', e); alert('콘텐츠 수정에 실패했어요. 잠시 후 다시 시도해 주세요.'); } }}
+          onSave={async (fields) => { try { const wasPublished = selected.status === 'published'; const title = fields.title || selected.title; await updateContentItem(selected.id, fields); setSelected(null); load(); if (fields.status === 'published' && !wasPublished) { const actor = await getCurrentUserId().catch(() => null); const name = await getActorName(workspace.id, actor); notify({ type: 'notify_content', workspaceId: workspace.id, actorId: actor, title: '🎬 콘텐츠 발행', body: `${name} 님이 「${title}」을 발행했어요.`, tag: `content-${selected.id}` }); } } catch (e) { console.error('[Content] 수정 실패:', e); alert('콘텐츠 수정에 실패했어요. 잠시 후 다시 시도해 주세요.'); } }}
           onDelete={async () => { try { await deleteContentItem(selected.id); setSelected(null); load(); } catch (e) { console.error('[Content] 삭제 실패:', e); alert('콘텐츠 삭제에 실패했어요.'); } }}
           onClose={() => setSelected(null)}
         />

@@ -31,6 +31,12 @@ export interface NotificationPreferencesRow {
   pomodoro_done: boolean;
   morning_journal: boolean;
   evening_journal: boolean;
+  notify_task_assigned?: boolean;
+  notify_task_completed?: boolean;
+  notify_schedule?: boolean;
+  notify_content?: boolean;
+  notify_comment?: boolean;
+  notify_like?: boolean;
   created_at: string;
   updated_at: string;
 }

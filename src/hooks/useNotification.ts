@@ -27,6 +27,12 @@ const DEFAULT_PREFS: NotificationPreferences = {
   pomodoroDone: true,
   morningJournal: true,
   eveningJournal: true,
+  notifyTaskAssigned: true,
+  notifyTaskCompleted: true,
+  notifySchedule: true,
+  notifyContent: true,
+  notifyComment: true,
+  notifyLike: false,
 };
 
 /** DB Row → 프론트 타입 변환 */
@@ -40,6 +46,12 @@ function toPrefs(row: NotificationPreferencesRow): NotificationPreferences {
     pomodoroDone: row.pomodoro_done,
     morningJournal: row.morning_journal,
     eveningJournal: row.evening_journal,
+    notifyTaskAssigned: row.notify_task_assigned ?? true,
+    notifyTaskCompleted: row.notify_task_completed ?? true,
+    notifySchedule: row.notify_schedule ?? true,
+    notifyContent: row.notify_content ?? true,
+    notifyComment: row.notify_comment ?? true,
+    notifyLike: row.notify_like ?? false,
   };
 }
 
@@ -54,6 +66,12 @@ function toRow(prefs: NotificationPreferences) {
     pomodoro_done: prefs.pomodoroDone,
     morning_journal: prefs.morningJournal,
     evening_journal: prefs.eveningJournal,
+    notify_task_assigned: prefs.notifyTaskAssigned,
+    notify_task_completed: prefs.notifyTaskCompleted,
+    notify_schedule: prefs.notifySchedule,
+    notify_content: prefs.notifyContent,
+    notify_comment: prefs.notifyComment,
+    notify_like: prefs.notifyLike,
   };
 }
 

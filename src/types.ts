@@ -821,4 +821,11 @@ export interface NotificationPreferences {
   pomodoroDone: boolean;       // 뽀모도로 종료
   morningJournal: boolean;     // 아침 일기 리마인더 (9시)
   eveningJournal: boolean;     // 저녁 일기 리마인더 (9시)
+  // ── 팀 이벤트 알림 (마이그 036) ──
+  notifyTaskAssigned: boolean;  // 할일 배정/재배정 → 담당자
+  notifyTaskCompleted: boolean; // 할일 완료 → 멤버
+  notifySchedule: boolean;      // 일정(회의) 등록 → 멤버
+  notifyContent: boolean;       // 콘텐츠 발행 → 멤버
+  notifyComment: boolean;       // 댓글/답글 (Phase 2)
+  notifyLike: boolean;          // 좋아요 (Phase 2)
 }

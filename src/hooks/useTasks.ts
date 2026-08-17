@@ -16,6 +16,8 @@ import {
 } from '../services/tasks.service';
 import { calcNextDate } from '../utils/dateCalc';
 import { useWorkspaceContext } from '../contexts/WorkspaceContext';
+import { notify, getActorName } from '../services/notify.service';
+import { getCurrentUserId } from '../services/auth';
 
 const STATUS_CYCLE: TaskStatus[] = ['pending', 'in_progress', 'completed'];
 
@@ -230,6 +232,19 @@ export function useTasks() {
         source: data.source ?? 'manual',
       });
       setTasks((prev) => [toTaskItem(row), ...prev]);
+      // 이벤트 알림 — 담당자 배정 시(오피스만, best-effort). 나에게 배정은 서버가 액터 제외로 거름.
+      if (activeWorkspaceId && row.assignee_id) {
+        (async () => {
+          const actor = await getCurrentUserId().catch(() => null);
+          if (row.assignee_id === actor) return;
+          const name = await getActorName(activeWorkspaceId, actor);
+          notify({
+            type: 'notify_task_assigned', workspaceId: activeWorkspaceId, actorId: actor,
+            title: '📝 새 할일', body: `${name} 님이 「${row.title}」을 배정했어요.`,
+            tag: `task-${row.id}`, targetUserIds: [row.assignee_id],
+          });
+        })();
+      }
     } catch (e) {
       console.error('[useTasks] 추가 실패:', e);
       throw e;   // 호출부(폼)가 실패를 알 수 있게 — 성공한 척 폼 비우고 유실되는 것 방지
@@ -250,6 +265,7 @@ export function useTasks() {
 
   /** 태스크 필드 업데이트 (로컬 + DB 동기화) */
   const updateTask = useCallback(async (id: string, patch: Partial<TaskItem>) => {
+    const prevTask = tasks.find((t) => t.id === id);  // 재배정·완료 감지용(알림)
     // 상태 변경 시 completed_at 동기화(완료율·리드타임 분석용) — 로컬 상태도 반영
     const localPatch = patch.status !== undefined
       ? { ...patch, completedAt: patch.status === 'completed' ? new Date().toISOString() : undefined }
@@ -281,11 +297,36 @@ export function useTasks() {
         if (Object.keys(dbPatch).length > 0) {
           await updateTaskFields(id, dbPatch);
         }
+
+        // ── 이벤트 알림 (오피스만, best-effort) ──
+        const wsId = prevTask?.workspaceId ?? activeWorkspaceId ?? undefined;
+        const title = patch.title ?? prevTask?.title ?? '할일';
+        if (wsId) {
+          const actor = await getCurrentUserId().catch(() => null);
+          // ① 재배정 → 새 담당자
+          if (patch.assigneeId && patch.assigneeId !== prevTask?.assigneeId && patch.assigneeId !== actor) {
+            const name = await getActorName(wsId, actor);
+            notify({
+              type: 'notify_task_assigned', workspaceId: wsId, actorId: actor,
+              title: '🔄 할일 담당자 변경', body: `${name} 님이 「${title}」을 회원님께 넘겼어요.`,
+              tag: `task-assign-${id}-${patch.assigneeId}`, targetUserIds: [patch.assigneeId],
+            });
+          }
+          // ② 완료 전환 → 멤버 전체(본인 제외)
+          if (patch.status === 'completed' && prevTask?.status !== 'completed') {
+            const name = await getActorName(wsId, actor);
+            notify({
+              type: 'notify_task_completed', workspaceId: wsId, actorId: actor,
+              title: '✅ 할일 완료', body: `${name} 님이 「${title}」을 완료했어요.`,
+              tag: `task-${id}-done`,
+            });
+          }
+        }
       } catch (e) {
         console.error('[useTasks] 업데이트 실패:', e);
       }
     }
-  }, [usingDummy]);
+  }, [usingDummy, tasks, activeWorkspaceId]);
 
   // 활성 워크스페이스 필터 (null=통합이면 전체). 빈 workspaceId(레거시 행)는 통합/개인에서 보이게 유지.
   const visibleTasks = activeWorkspaceId

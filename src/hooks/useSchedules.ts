@@ -11,6 +11,8 @@ import { dummySchedules } from '../data';
 import {
   fetchSchedules, addSchedule, updateSchedule, deleteSchedule, ScheduleRow,
 } from '../services/schedules.service';
+import { notify, getActorName } from '../services/notify.service';
+import { getCurrentUserId } from '../services/auth';
 
 /** DB 행 → 프론트 타입 변환 */
 function toScheduleItem(row: ScheduleRow): ScheduleItem {
@@ -116,6 +118,18 @@ export function useSchedules(workspaceId?: string) {
         is_shared: workspaceId ? true : undefined,
       });
       setSchedules((prev) => sortSchedules([...prev, toScheduleItem(row)]));
+      // 이벤트 알림 — 오피스 일정(회의) 등록 시 멤버 전체(본인 제외). best-effort.
+      if (workspaceId) {
+        (async () => {
+          const actor = await getCurrentUserId().catch(() => null);
+          const name = await getActorName(workspaceId, actor);
+          notify({
+            type: 'notify_schedule', workspaceId, actorId: actor,
+            title: '📅 새 일정', body: `${name} 님이 「${row.title}」 일정을 등록했어요.`,
+            tag: `schedule-${row.id}`,
+          });
+        })();
+      }
     } catch (e) {
       console.error('[useSchedules] 추가 실패:', e);
     }
