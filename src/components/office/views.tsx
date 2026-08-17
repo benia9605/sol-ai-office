@@ -537,8 +537,8 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
   const memberName = (m: WorkspaceMember) => m.nickname || m.name || m.email || '멤버';
   const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]" onMouseDown={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-[440px] max-w-[92vw] p-6 space-y-3" onMouseDown={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-[440px] max-w-[92vw] max-h-[88dvh] overflow-y-auto p-6 space-y-3 my-auto" onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="text-base font-extrabold text-gray-800">할일 수정</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center">✕</button>
@@ -1081,7 +1081,7 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-[520px] max-w-[94vw] max-h-[88vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="text-base font-extrabold text-gray-800">콘텐츠</h2>
@@ -1289,7 +1289,7 @@ function ProductEditPopup({ product, onSave, onDelete, onClose }: {
   });
   const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-[460px] max-w-[92vw] max-h-[86vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="text-base font-extrabold text-gray-800">제품 수정</h2>
@@ -1554,7 +1554,7 @@ function MemoryDetailPopup({ item, onSave, onArchive, onDelete, onClose }: {
     tags: f.tags ? f.tags.split(',').map(t => t.trim()).filter(Boolean) : [], salience: f.salience, pinned: f.pinned,
   });
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-[480px] max-w-[94vw] max-h-[88vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="text-base font-extrabold text-gray-800">회사 기억</h2>

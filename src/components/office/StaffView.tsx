@@ -709,8 +709,8 @@ function ManualRunModal({ staff, workspace, fields, presetMode, emoji, onClose, 
   };
   const cj = preview?.contentJson as { _demo?: boolean } | null;
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-[28px] shadow-2xl p-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className="w-full max-w-md max-h-[88dvh] overflow-y-auto my-auto bg-white rounded-[28px] shadow-2xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-2xl">{emoji || '🎯'}</span>
           <div className="min-w-0">
@@ -810,10 +810,10 @@ function PromptModal({ staff, onClose, onSaved }: { staff: Staff; onClose: () =>
     finally { setBusy(false); }
   };
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]"
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto"
       style={{ animation: 'pmFade .15s ease-out' }} onMouseDown={onClose}>
       <style>{PMT_ANIM}</style>
-      <div className="bg-white rounded-[32px] shadow-2xl w-[480px] max-w-[92vw] p-7"
+      <div className="bg-white rounded-[32px] shadow-2xl w-[480px] max-w-[92vw] max-h-[88dvh] overflow-y-auto my-auto p-7"
         style={{ animation: 'pmPop .22s cubic-bezier(.2,.9,.25,1)' }} onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-[17px] font-extrabold text-gray-800">📝 프롬프트 · {staff.name}</h2>
@@ -893,10 +893,10 @@ function RoutineScheduleModal({
   );
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]"
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto"
       style={{ animation: 'pmFade .15s ease-out' }} onMouseDown={onClose}>
       <style>{PMT_ANIM}</style>
-      <div className="bg-white rounded-[32px] shadow-2xl w-[440px] max-w-[92vw] p-7 space-y-4"
+      <div className="bg-white rounded-[32px] shadow-2xl w-[440px] max-w-[92vw] max-h-[88dvh] overflow-y-auto my-auto p-7 space-y-4"
         style={{ animation: 'pmPop .22s cubic-bezier(.2,.9,.25,1)' }} onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="text-[17px] font-extrabold text-gray-800">{isEdit ? '일정 수정' : '＋ 일과 추가'}</h2>
