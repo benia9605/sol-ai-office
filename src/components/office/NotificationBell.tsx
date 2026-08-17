@@ -25,6 +25,16 @@ function ago(iso: string): string {
   } catch { return ''; }
 }
 
+/** 종 SVG 아이콘 */
+function BellIcon({ className = 'w-5 h-5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 01-3.46 0" />
+    </svg>
+  );
+}
+
 export function NotificationBell({ workspace, onNavigate }: { workspace: Workspace; onNavigate: (v: string) => void }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
@@ -54,8 +64,8 @@ export function NotificationBell({ workspace, onNavigate }: { workspace: Workspa
 
   return (
     <div className="relative flex-shrink-0" ref={ref}>
-      <button onClick={() => { setOpen((o) => !o); if (!open) load(); }} title="알림" className="relative w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors active:scale-95">
-        <span className="text-lg">🔔</span>
+      <button onClick={() => { setOpen((o) => !o); if (!open) load(); }} title="알림" className="relative w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-500 transition-colors active:scale-95">
+        <BellIcon />
         {unread > 0 && <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">{unread > 9 ? '9+' : unread}</span>}
       </button>
 
@@ -68,7 +78,7 @@ export function NotificationBell({ workspace, onNavigate }: { workspace: Workspa
           <div className="max-h-[60vh] overflow-y-auto">
             {items.length === 0 ? (
               <div className="py-10 text-center">
-                <div className="text-2xl mb-1">🔔</div>
+                <BellIcon className="w-6 h-6 mx-auto text-gray-300 mb-1.5" />
                 <p className="text-xs text-gray-400">새 알림이 없어요</p>
               </div>
             ) : items.map((n) => (

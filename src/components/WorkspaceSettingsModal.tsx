@@ -3,11 +3,13 @@
  * @description 워크스페이스(오피스/개인) 설정 모달 — 이름·이모지·이미지·(오피스)사업정보 수정
  * - 화면 중앙 Portal, 저장 시 updateWorkspace + 컨텍스트 reload
  */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Workspace } from '../types';
 import { updateWorkspace } from '../services/workspaces.service';
 import { uploadImage } from '../services/storage.service';
+import { getCurrentUserId } from '../services/auth';
+import { NotificationSettings } from './NotificationSettings';
 
 const EMOJIS = ['🏢', '🧸', '👤', '🚀', '💼', '🌱', '⭐', '🔥', '🎯', '🛒', '🎨', '💡', '📚', '🏠', '☕', '🐰'];
 
@@ -24,8 +26,10 @@ export function WorkspaceSettingsModal({ workspace, onClose, onSaved }: Props) {
   const [imageFile, setImageFile] = useState<File | null>(null); // 새로 고른 파일만
   const [bizInfo, setBizInfo] = useState(workspace.bizInfo ?? '');
   const [busy, setBusy] = useState(false);
+  const [uid, setUid] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const isOffice = workspace.type === 'office';
+  useEffect(() => { getCurrentUserId().then(setUid).catch(() => {}); }, []);
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,8 +63,8 @@ export function WorkspaceSettingsModal({ workspace, onClose, onSaved }: Props) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]" onMouseDown={onClose}>
-      <div className="bg-white rounded-[28px] shadow-2xl w-[440px] max-w-[92vw] p-6" onMouseDown={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
+      <div className="bg-white rounded-[28px] shadow-2xl w-[440px] max-w-[92vw] p-6 max-h-[88dvh] overflow-y-auto my-auto" onMouseDown={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[16px] font-extrabold text-gray-800">{isOffice ? '오피스 설정' : '개인 공간 설정'}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center transition-colors active:scale-90">✕</button>
@@ -97,7 +101,7 @@ export function WorkspaceSettingsModal({ workspace, onClose, onSaved }: Props) {
         {/* 이름 */}
         <div className="mb-4">
           <label className="block text-xs font-semibold text-gray-500 mb-1.5">이름</label>
-          <input autoFocus value={name} onChange={(e) => setName(e.target.value)}
+          <input value={name} onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') save(); }}
             placeholder={isOffice ? '예: 운명랩' : '예: 내 공간'}
             className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 transition-colors" />
@@ -121,6 +125,13 @@ export function WorkspaceSettingsModal({ workspace, onClose, onSaved }: Props) {
             {busy ? '저장 중…' : '저장'}
           </button>
         </div>
+
+        {/* 알림 설정 (푸시·종류별 토글·테스트) */}
+        {uid && (
+          <div className="mt-5 pt-5 border-t border-gray-100">
+            <NotificationSettings userId={uid} />
+          </div>
+        )}
       </div>
     </div>,
     document.body,
