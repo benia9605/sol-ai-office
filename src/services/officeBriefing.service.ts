@@ -18,6 +18,7 @@ import { fetchSchedules } from './schedules.service';
 import { fetchActions } from './staffOutputActions.service';
 import { fetchContentItems } from './contentItems.service';
 import { fetchTickets } from './cs.service';
+import { fetchWatchItems } from './monitor.service';
 
 export type BriefStatus = 'good' | 'attention' | 'critical';
 export type Severity = 'critical' | 'warning' | 'info' | 'positive';
@@ -76,6 +77,12 @@ export interface BriefingJson {
     top_category: string | null;
     one_line: string;
   };
+  monitoring: {
+    hasData: boolean;
+    competitors: number;
+    keywords: number;
+    one_line: string;
+  };
   due_today: BriefDueItem[];
   approvals_pending: BriefApproval[];
   one_line_advice: string;
@@ -87,14 +94,22 @@ const man = (n: number) => `${Math.round(n / 10000).toLocaleString()}만원`;
 /** 워크스페이스 실데이터 → CEO 브리핑 JSON (코드 계산 + 규칙 기반 문장) */
 export async function buildBriefingJson(workspace: Workspace, kind: 'daily' | 'weekly' = 'daily'): Promise<BriefingJson> {
   const today = todayStr();
-  const [analytics, allTasks, schedules, approvals, content, tickets] = await Promise.all([
+  const [analytics, allTasks, schedules, approvals, content, tickets, watch] = await Promise.all([
     fetchWorkspaceAnalytics(workspace.id, workspaceErpSource(workspace)).catch(() => null),
     fetchTasks().catch(() => []),
     fetchSchedules(workspace.id).catch(() => []),
     fetchActions(workspace.id, 'suggested').catch(() => []),
     fetchContentItems(workspace.id).catch(() => []),
     fetchTickets(workspace.id).catch(() => []),
+    fetchWatchItems(workspace.id).catch(() => []),
   ]);
+
+  // ── 모니터링(트렌드 레이더) 신호 ──
+  const watchComp = watch.filter(w => w.kind === 'competitor').length;
+  const watchKw = watch.filter(w => w.kind === 'keyword').length;
+  const monHasData = watch.length > 0;
+  const monOneLine = !monHasData ? '워치리스트가 비어있어요. 모니터링 직원에서 경쟁사·키워드를 추가하세요.'
+    : `경쟁사 ${watchComp}곳 · 키워드 ${watchKw}개 추적 중. 키워드를 🎬로 콘텐츠 아이디어로 전환할 수 있어요.`;
 
   // ── CS 문의 신호 ──
   const CS_CAT: Record<string, string> = { shipping: '배송', product: '제품', stock: '재고', care: '관리', as: 'A/S', exchange: '교환', refund: '환불', order: '주문', other: '기타' };
@@ -232,6 +247,7 @@ export async function buildBriefingJson(workspace: Workspace, kind: 'daily' | 'w
       schedule_count_today: schedToday.length,
     },
     cs: { hasData: csHasData, waiting: csWaiting, urgent: csUrgent, top_category: topCat ? (CS_CAT[topCat[0]] ?? topCat[0]) : null, one_line: csOneLine },
+    monitoring: { hasData: monHasData, competitors: watchComp, keywords: watchKw, one_line: monOneLine },
     due_today: [
       ...dueToday.map(t => ({ type: 'task' as const, id: t.id, title: t.title, status: t.status })),
       ...schedToday.map(sc => ({ type: 'schedule' as const, id: sc.id, title: sc.title, time: sc.time })),

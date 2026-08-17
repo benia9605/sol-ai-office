@@ -254,6 +254,14 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
               <span className="text-[12px] text-gray-600 truncate">{brief.cs.one_line}</span>
             </button>
           )}
+          {/* 모니터링 한 줄 (있을 때만) */}
+          {brief.monitoring?.hasData && (
+            <button onClick={() => onNavigate('staff')} className="w-full flex items-center gap-2 rounded-lg bg-gray-50 hover:bg-gray-100 px-3.5 py-2.5 text-left transition-colors">
+              <span className="w-2 h-2 rounded-full flex-shrink-0 bg-gray-300" />
+              <span className="text-[11px] font-semibold text-gray-500 flex-shrink-0">📡 트렌드</span>
+              <span className="text-[12px] text-gray-600 truncate">{brief.monitoring.one_line}</span>
+            </button>
+          )}
 
           {/* ④ 운영 현황 4칸 */}
           <div className="grid grid-cols-4 gap-2">
