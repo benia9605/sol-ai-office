@@ -20,6 +20,7 @@ export interface WorkspaceRow {
   invite_code?: string;
   credits?: number;
   erp_source?: string;
+  monthly_sales_target?: number;
   created_by: string;
   created_at: string;
 }
@@ -30,6 +31,7 @@ function fromRow(r: WorkspaceRow): Workspace {
     imageUrl: r.image_url, bizInfo: r.biz_info,
     type: r.type, inviteCode: r.invite_code, credits: r.credits ?? undefined,
     erpSource: r.erp_source === 'simok_api' ? 'simok_api' : 'manual',
+    monthlySalesTarget: r.monthly_sales_target ?? undefined,
     createdBy: r.created_by, createdAt: r.created_at,
   };
 }
@@ -122,13 +124,14 @@ export async function createWorkspace(
 /** 워크스페이스 정보 수정 (이름/이모지/이미지/사업정보) */
 export async function updateWorkspace(
   id: string,
-  fields: { name?: string; emoji?: string; imageUrl?: string; bizInfo?: string },
+  fields: { name?: string; emoji?: string; imageUrl?: string; bizInfo?: string; monthlySalesTarget?: number | null },
 ): Promise<void> {
   const payload: Record<string, unknown> = {};
   if (fields.name !== undefined) payload.name = fields.name.trim();
   if (fields.emoji !== undefined) payload.emoji = fields.emoji;
   if (fields.imageUrl !== undefined) payload.image_url = fields.imageUrl;
   if (fields.bizInfo !== undefined) payload.biz_info = fields.bizInfo;
+  if (fields.monthlySalesTarget !== undefined) payload.monthly_sales_target = fields.monthlySalesTarget;
   if (Object.keys(payload).length === 0) return;
   const { error } = await supabase.from('workspaces').update(payload).eq('id', id);
   if (error) throw error;

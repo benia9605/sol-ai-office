@@ -80,6 +80,8 @@ const mockData: Record<string, any[]> = {
     { id: 'prod-3', workspace_id: 'ws-simok', created_by: 'dev', name: '원목 스툴', sku: null, category: '가구', status: 'draft', price: 145000, cost: 78000, stock: 4, image_url: null, description: null, tags: ['가구'], created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
   ],
   staff_output_actions: [],
+  // 오피스 CEO 브리핑 (운영매니저 산출물 · 대시보드가 렌더)
+  office_briefings: [],
   // 코인제 — 직원 실행 사용 로그
   staff_usage: [],
   // 직원 보관함 — ⭐로 저장한 산출물
