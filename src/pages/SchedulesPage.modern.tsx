@@ -71,7 +71,7 @@ export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: s
   });
 
   const [form, setForm] = useState({
-    title: '', date: '', endDate: '' as string | undefined, time: '', project: '',
+    title: '', date: new Date().toISOString().slice(0, 10), endDate: '' as string | undefined, time: '', project: '',
     category: '', repeat: 'none' as RepeatType, reminder: 'none', notes: '', tagInput: '', tags: [] as string[],
   });
 
@@ -146,11 +146,12 @@ export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: s
   }, [schedules]);
 
   const handleAdd = () => {
-    if (!form.title.trim() || !form.date) return;
+    if (!form.title.trim()) return;
+    const date = form.date || new Date().toISOString().slice(0, 10); // 날짜 안 고르면 오늘로
     const cat = categories.find((c) => c.id === form.category);
     addSchedule({
       title: form.title,
-      date: form.date,
+      date,
       endDate: form.endDate || undefined,
       time: form.time,
       project: form.project,
@@ -161,7 +162,7 @@ export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: s
       notes: form.notes,
       tags: form.tags.length > 0 ? form.tags : undefined,
     });
-    setForm({ title: '', date: '', endDate: undefined, time: '', project: '', category: '', repeat: 'none', reminder: 'none', notes: '', tagInput: '', tags: [] });
+    setForm({ title: '', date: new Date().toISOString().slice(0, 10), endDate: undefined, time: '', project: '', category: '', repeat: 'none', reminder: 'none', notes: '', tagInput: '', tags: [] });
     setShowForm(false);
     setShowAdvanced(false);
   };
