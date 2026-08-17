@@ -112,6 +112,27 @@ function OfficeDailyGuide() {
               </div>
             </div>
           ))}
+          {/* AI 직원 활용법 */}
+          <div className="pt-3 mt-1 border-t border-gray-100">
+            <div className="text-sm font-semibold text-gray-800 mb-2">🤖 AI 직원 이렇게 쓰세요</div>
+            <div className="space-y-1.5">
+              {[
+                { e: '🧭', n: '운영매니저', d: '아침에 \'브리핑 생성\' → 대시보드에 "오늘 볼 것 3개"' },
+                { e: '📊', n: '분석가', d: '매출·콘텐츠 성과를 해석 (기간 7/30/90 · 시목 공식 · 이상치)' },
+                { e: '🗓', n: '일정비서', d: '촬영·편집·발행·마감을 하루/주간으로 정리' },
+                { e: '💬', n: 'CS', d: '문의 붙여넣기 → 자동 분류·답변초안 · FAQ' },
+                { e: '📡', n: '모니터링', d: '경쟁사·키워드 추적, 🎬로 콘텐츠 아이디어 전환' },
+              ].map(s => (
+                <div key={s.n} className="flex items-start gap-2 text-[12px]">
+                  <span className="flex-shrink-0">{s.e}</span>
+                  <span className="text-gray-700 font-medium flex-shrink-0 w-16">{s.n}</span>
+                  <span className="text-gray-500 leading-relaxed">{s.d}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-2">각 직원 카드를 누르면 <b className="text-gray-500">상단에 상세 가이드 + 실데이터 화면</b>이 있어요. 상세페이지·SNS·광고·비주얼은 GPT 프로젝트에서(앱은 유지만).</p>
+          </div>
+
           <div className="pt-3 mt-1 border-t border-gray-100 text-[11px] text-gray-400 leading-relaxed space-y-1">
             <p>💡 <b className="text-gray-500">원칙:</b> AI 직원은 <b>제안</b>하고, 대표가 <b>승인</b>하면 실제 업무로 반영돼요. 제품·매출은 시목 앱이 원본, AI Office는 <b>분석·판단</b>만 합니다.</p>
             <p>🤖 <b className="text-gray-500">AI 직원 현황:</b> 채용·수동 실행('지금 실행')은 되지만 <b>24시간 자동 운영은 준비 중</b>이에요.</p>

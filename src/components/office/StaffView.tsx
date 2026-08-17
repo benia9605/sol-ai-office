@@ -550,6 +550,77 @@ function OpsDataPanel({ workspace }: { workspace: Workspace }) {
   );
 }
 
+/* ── 직원별 상세 활용 가이드 (역할·이 화면·쓰는 법·개발 단계) ── */
+type GuideStage = 'done' | 'wip' | 'gpt';
+const STAGE_UI: Record<GuideStage, { label: string; cls: string }> = {
+  done: { label: '✅ 실사용 가능', cls: 'bg-emerald-50 text-emerald-600' },
+  wip: { label: '🛠 개발 중', cls: 'bg-amber-50 text-amber-600' },
+  gpt: { label: '💬 GPT 프로젝트 권장', cls: 'bg-gray-100 text-gray-500' },
+};
+const STAFF_GUIDE: Record<string, { role: string; screen: string; how: string; stage: GuideStage; stageNote: string }> = {
+  ops: {
+    role: '전 직원의 신호를 모아 "오늘 대표가 볼 것 3개"로 압축하는 편집장이에요 (CEO 브리핑).',
+    screen: '상단 🧭 CEO 브리핑 편집장 — 매출·콘텐츠·할일·일정·CS를 취합해 헤드라인·TOP3·조언으로.',
+    how: "아침에 '브리핑 생성'을 누르면 대시보드 상단에 그대로 반영돼요. 매일 여기부터 시작하세요.",
+    stage: 'done', stageNote: '브리핑 생성·대시보드 연결 완료. 24h 자동은 준비 중.',
+  },
+  analyst: {
+    role: '매출·콘텐츠 성과를 집계·해석하고, 급변한 지표와 "시목 공식(잘 되는 유형)"을 짚어줘요.',
+    screen: '상단 📊 실데이터 스냅샷 — 기간(7/30/90)·핵심 KPI 5·시목 공식(표본 n)·이상치가 실데이터로 자동.',
+    how: "매출(💰)과 콘텐츠 성과(발행 후 24h/72h/7d)를 입력해두면 숫자가 채워져요. '전체 실행'하면 AI 해석 리포트 생성.",
+    stage: 'done', stageNote: '실데이터 연결 완료. AI 해석 문장은 실행 시(키 있음).',
+  },
+  scheduler: {
+    role: '촬영·편집·발행·마감을 하루/주간 타임라인으로 정리하는 실행 스케줄러예요.',
+    screen: '상단 🗓 오늘 실행 계획 — 오늘 타임라인·단계 카운트·충돌 감지·빈 시간·이번 주.',
+    how: '할일에 마감일, 콘텐츠에 발행 예정일을 넣으면 자동으로 여기 모여요.',
+    stage: 'done', stageNote: '실데이터 통합·충돌 감지 완료. 자동 일정 배치 제안은 개발 중.',
+  },
+  cs: {
+    role: '고객 문의를 유형·긴급도·감정으로 분류하고 답변 초안을 만들어요. 반복 문의는 FAQ로.',
+    screen: '상단 💬 문의 관리 — 문의 붙여넣기→자동 분류, FAQ 라이브러리.',
+    how: "문의를 붙여넣고 '분류·추가'. FAQ 탭에서 '시목 FAQ 채우기'로 원목·도마·배송 FAQ를 시드.",
+    stage: 'done', stageNote: '분류·티켓·FAQ 완료. 실제 채널 자동수집·발송은 2차.',
+  },
+  monitor: {
+    role: '경쟁사와 고객 키워드 트렌드를 감시하는 트렌드 레이더예요.',
+    screen: '상단 📡 트렌드 레이더 — 경쟁사(직접/인접/지향)·키워드 워치리스트.',
+    how: "'시목 시드'로 경쟁사·키워드를 채우고, 좋은 키워드는 🎬로 콘텐츠 아이디어로 전환.",
+    stage: 'done', stageNote: '워치리스트·콘텐츠 전환 완료. 자동 변화 감지는 2차.',
+  },
+};
+const GPT_STAFF = new Set(['sns', 'detail_page', 'ad', 'visual', 'sourcing']);
+
+function StaffUsageGuide({ typeKey }: { typeKey: string }) {
+  const g = STAFF_GUIDE[typeKey];
+  if (!g) {
+    if (!GPT_STAFF.has(typeKey)) return null;
+    return (
+      <div className="rounded-[20px] border border-gray-200 bg-gray-50/60 p-4 mb-4">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-sm font-bold text-gray-700">📖 활용 가이드</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STAGE_UI.gpt.cls}`}>{STAGE_UI.gpt.label}</span>
+        </div>
+        <p className="text-[12px] text-gray-500 leading-relaxed">이 직원은 앱에서 <b>유지만</b> 해요. 긴 대화가 필요한 생산 작업(상세페이지·SNS·광고·비주얼·신제품 기획)은 <b>GPT 프로젝트</b>에서 하고, 결과물만 앱(콘텐츠·기억)으로 가져오는 걸 권장해요.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-[20px] border border-primary-200 bg-primary-50/40 p-4 mb-4 space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-bold text-gray-800">📖 활용 가이드</span>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STAGE_UI[g.stage].cls}`}>{STAGE_UI[g.stage].label}</span>
+      </div>
+      <div className="space-y-1.5 text-[12px] leading-relaxed">
+        <p><b className="text-gray-700">무엇을:</b> <span className="text-gray-600">{g.role}</span></p>
+        <p><b className="text-gray-700">이 화면:</b> <span className="text-gray-600">{g.screen}</span></p>
+        <p><b className="text-gray-700">쓰는 법:</b> <span className="text-gray-600">{g.how}</span></p>
+      </div>
+      <p className="text-[11px] text-gray-400 pt-1.5 border-t border-primary-100">📌 개발 단계: {g.stageNote}</p>
+    </div>
+  );
+}
+
 /* ── 리포트 코멘트 (사장 의견) ── */
 function ReportComments({ reportId, initial }: { reportId: string; initial?: ReportComment[] }) {
   const [comments, setComments] = useState<ReportComment[]>(initial || []);
@@ -1175,6 +1246,9 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
           )}
         </div>
       )}
+
+      {/* 상세 활용 가이드 (역할·이 화면·쓰는 법·개발 단계) */}
+      <StaffUsageGuide typeKey={staff.typeKey} />
 
       {/* 분석가 전용: 실데이터 스냅샷 (매출·콘텐츠 성과) */}
       {staff.typeKey === 'analyst' && <AnalystDataPanel workspace={workspace} />}
