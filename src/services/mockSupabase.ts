@@ -85,6 +85,9 @@ const mockData: Record<string, any[]> = {
   // CS 문의 티켓 + FAQ
   tickets: [],
   cs_faq: [],
+  // 트렌드 레이더 워치리스트
+  watch_items: [],
+  watch_snapshots: [],
   // 코인제 — 직원 실행 사용 로그
   staff_usage: [],
   // 직원 보관함 — ⭐로 저장한 산출물

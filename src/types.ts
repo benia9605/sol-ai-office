@@ -549,6 +549,22 @@ export interface CsFaq {
   createdAt?: string;
 }
 
+/** 트렌드 레이더 워치리스트 (마이그 035) */
+export type WatchKind = 'competitor' | 'keyword';
+export interface WatchItem {
+  id: string;
+  workspaceId: string;
+  kind: WatchKind;
+  name: string;
+  url?: string;
+  watchType?: string;      // 경쟁사: direct|adjacent|aspirational · 키워드: product|desire|mood|format
+  topics?: string[];
+  memo?: string;
+  status?: 'active' | 'archived';
+  lastCheckedAt?: string;
+  createdAt?: string;
+}
+
 /** 일 매출 — 채널×날짜 집계 (중심 테이블) */
 export interface SalesDaily {
   id: string;

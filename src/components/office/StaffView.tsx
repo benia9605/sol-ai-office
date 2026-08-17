@@ -16,7 +16,8 @@ import { getInputForm } from '../../data/staffInputForms';
 import { fetchAnalystInsights, AnalystInsights } from '../../services/analytics.service';
 import { fetchSchedulerInsights, SchedulerInsights } from '../../services/schedulerInsights.service';
 import { fetchTickets, addTicket, updateTicket, deleteTicket, fetchFaq, deleteFaq, seedSimokFaq } from '../../services/cs.service';
-import { Ticket, TicketChannel, CsFaq } from '../../types';
+import { fetchWatchItems, addWatchItem, deleteWatchItem, seedSimokWatchlist, watchToContentIdea } from '../../services/monitor.service';
+import { Ticket, TicketChannel, CsFaq, WatchItem } from '../../types';
 import { workspaceErpSource } from '../../config/dataSource';
 import { ViewHead, Card, EmptyState } from './ui';
 import { MarkdownView } from './MarkdownView';
@@ -398,6 +399,89 @@ function CSDataPanel({ workspace }: { workspace: Workspace }) {
               ))}
               {faq.length === 0 && <p className="text-xs text-gray-300 py-3 text-center">‘시목 FAQ 채우기’로 자주 묻는 질문을 등록하세요</p>}
             </div>
+          </>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+/* ── 모니터링 전용: 트렌드 레이더 (경쟁사 워치리스트 + 고객 키워드) ── */
+const WTYPE_LABEL: Record<string, string> = { direct: '직접 경쟁', adjacent: '인접', aspirational: '지향', product: '제품', desire: '생활욕망', mood: '감성', format: '포맷' };
+const WTYPE_CLS: Record<string, string> = { direct: 'bg-rose-50 text-rose-600', adjacent: 'bg-amber-50 text-amber-600', aspirational: 'bg-primary-50 text-primary-600', product: 'bg-primary-50 text-primary-600', desire: 'bg-emerald-50 text-emerald-600', mood: 'bg-violet-50 text-violet-600', format: 'bg-gray-100 text-gray-500' };
+function MonitorDataPanel({ workspace }: { workspace: Workspace }) {
+  const [tab, setTab] = useState<'competitor' | 'keyword'>('competitor');
+  const [items, setItems] = useState<WatchItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState('');
+  const [seeding, setSeeding] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const load = () => fetchWatchItems(workspace.id).then(setItems).catch(() => setItems([]));
+  useEffect(() => { setLoading(true); load().finally(() => setLoading(false)); /* eslint-disable-next-line */ }, [workspace.id]);
+
+  const add = async () => {
+    if (!name.trim()) return;
+    try { await addWatchItem(workspace.id, { kind: tab, name: name.trim(), watchType: tab === 'competitor' ? 'direct' : 'desire' }); setName(''); await load(); }
+    catch (e) { console.error(e); setMsg('추가 실패'); setTimeout(() => setMsg(''), 2000); }
+  };
+  const remove = async (id: string) => { await deleteWatchItem(id).catch(() => {}); await load(); };
+  const seed = async () => {
+    setSeeding(true); setMsg('');
+    try { const n = await seedSimokWatchlist(workspace.id); await load(); setMsg(n > 0 ? `${n}개 추가됨` : '이미 다 있어요'); }
+    catch (e) { console.error(e); setMsg('시드 실패'); } finally { setSeeding(false); setTimeout(() => setMsg(''), 2500); }
+  };
+  const toContent = async (item: WatchItem) => {
+    try { await watchToContentIdea(workspace.id, item); setMsg(`"${item.name}" 콘텐츠 아이디어로 보냄`); setTimeout(() => setMsg(''), 2500); }
+    catch (e) { console.error(e); setMsg('콘텐츠 전환 실패'); setTimeout(() => setMsg(''), 2000); }
+  };
+
+  const list = items.filter(i => i.kind === tab);
+  const competitors = items.filter(i => i.kind === 'competitor');
+  const keywords = items.filter(i => i.kind === 'keyword');
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center h-9 mb-2 gap-2">
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">📡 트렌드 레이더</span>
+        {msg && <span className="text-[11px] text-emerald-600">{msg}</span>}
+        <div className="ml-auto flex gap-1">
+          <button onClick={() => setTab('competitor')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'competitor' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'}`}>경쟁사 {competitors.length}</button>
+          <button onClick={() => setTab('keyword')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'keyword' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'}`}>키워드 {keywords.length}</button>
+        </div>
+      </div>
+      <Card className="p-4 space-y-3">
+        {loading ? <p className="text-xs text-gray-300 py-4 text-center">불러오는 중…</p> : (
+          <>
+            <div className="flex gap-2">
+              <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') add(); }}
+                placeholder={tab === 'competitor' ? '경쟁사 이름·URL' : '추적할 키워드'} className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:border-primary-400" />
+              <button onClick={add} disabled={!name.trim()} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40">＋ 추가</button>
+              <button onClick={seed} disabled={seeding} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-50">{seeding ? '…' : '🌱 시목 시드'}</button>
+            </div>
+            {tab === 'competitor' ? (
+              <div className="space-y-1.5">
+                {list.map(w => (
+                  <div key={w.id} className="group flex items-center gap-2 rounded-xl border border-gray-100 px-3 py-2">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${WTYPE_CLS[w.watchType || ''] || 'bg-gray-100 text-gray-500'}`}>{WTYPE_LABEL[w.watchType || ''] || '경쟁사'}</span>
+                    <span className="text-sm text-gray-700 flex-1 truncate">{w.name}</span>
+                    <button onClick={() => remove(w.id)} className="text-[11px] text-rose-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 flex-shrink-0">×</button>
+                  </div>
+                ))}
+                {list.length === 0 && <p className="text-xs text-gray-300 py-3 text-center">경쟁사를 추가하거나 ‘시목 시드’를 눌러보세요</p>}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {list.map(w => (
+                  <span key={w.id} className={`group inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full ${WTYPE_CLS[w.watchType || ''] || 'bg-gray-100 text-gray-500'}`}>
+                    {w.name}
+                    <button onClick={() => toContent(w)} title="콘텐츠 아이디어로" className="opacity-60 hover:opacity-100">🎬</button>
+                    <button onClick={() => remove(w.id)} className="opacity-0 group-hover:opacity-100 hover:text-rose-500">×</button>
+                  </span>
+                ))}
+                {list.length === 0 && <p className="text-xs text-gray-300 py-3 text-center w-full">키워드를 추가하거나 ‘시목 시드’를 눌러보세요 · 🎬로 콘텐츠 아이디어 전환</p>}
+              </div>
+            )}
           </>
         )}
       </Card>
@@ -1037,6 +1121,8 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
       {staff.typeKey === 'scheduler' && <SchedulerDataPanel workspace={workspace} />}
       {/* CS 전용: 문의 티켓 + FAQ */}
       {staff.typeKey === 'cs' && <CSDataPanel workspace={workspace} />}
+      {/* 모니터링 전용: 트렌드 레이더 */}
+      {staff.typeKey === 'monitor' && <MonitorDataPanel workspace={workspace} />}
 
       {/* 1. 매일 하는 일 (자동) — 최상단 */}
       <div className="mb-4">
