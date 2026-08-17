@@ -10,6 +10,7 @@ import { useTasks } from '../../hooks/useTasks';
 import { fetchMembers, removeMember, changeMemberRole, updateMemberNickname, updateWorkspace } from '../../services/workspaces.service';
 import { generateBriefing, fetchLatestBriefing, BriefingJson, BriefStatus, Severity } from '../../services/officeBriefing.service';
 import { notify, getActorName } from '../../services/notify.service';
+import { LikeCommentBlock } from './LikeCommentBlock';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
@@ -575,6 +576,8 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
               className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
           </div>
         </div>
+        {/* 좋아요·댓글 (오피스 할일만) */}
+        {task.workspaceId && <LikeCommentBlock resource="task" resId={task.id} members={members} />}
       </div>
     </div>
   );
@@ -1056,8 +1059,8 @@ function ContentMetricsEditor({ item, workspaceId }: { item: ContentItem; worksp
   );
 }
 
-function ContentEditPopup({ item, products, workspaceId, onSave, onDelete, onClose }: {
-  item: ContentItem; products: Product[]; workspaceId: string;
+function ContentEditPopup({ item, products, workspaceId, members, onSave, onDelete, onClose }: {
+  item: ContentItem; products: Product[]; workspaceId: string; members: WorkspaceMember[];
   onSave: (fields: Partial<ContentItem>) => void; onDelete: () => void; onClose: () => void;
 }) {
   const [f, setF] = useState<Partial<ContentItem>>({ ...item });
@@ -1131,6 +1134,7 @@ function ContentEditPopup({ item, products, workspaceId, onSave, onDelete, onClo
         {item.publishedAt && <p className="text-[11px] text-gray-400">발행: {item.publishedAt.slice(0, 10)}</p>}
 
         <ContentMetricsEditor item={item} workspaceId={workspaceId} />
+        <LikeCommentBlock resource="content" resId={item.id} members={members} />
         <div className="flex items-center justify-between pt-1">
           <button onClick={() => { if (confirm(`'${item.title}' 콘텐츠를 삭제할까요?`)) onDelete(); }}
             className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
@@ -1147,6 +1151,7 @@ function ContentEditPopup({ item, products, workspaceId, onSave, onDelete, onClo
 export function ContentItemsView({ workspace }: { workspace: Workspace }) {
   const [list, setList] = useState<ContentItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<{ title: string; platform: string; contentType: string }>({ title: '', platform: '', contentType: '' });
   const [selected, setSelected] = useState<ContentItem | null>(null);
@@ -1154,6 +1159,7 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
   const load = () => fetchContentItems(workspace.id).then(setList).catch(() => setList([]));
   useEffect(() => {
     load();
+    fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([]));
     fetchProducts(workspace.id, workspaceErpSource(workspace)).then(setProducts).catch(() => setProducts([]));
     /* eslint-disable-next-line */
   }, [workspace.id]);
@@ -1225,7 +1231,7 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
 
       {selected && (
         <ContentEditPopup
-          item={selected} products={products} workspaceId={workspace.id}
+          item={selected} products={products} workspaceId={workspace.id} members={members}
           onSave={async (fields) => { try { const wasPublished = selected.status === 'published'; const title = fields.title || selected.title; await updateContentItem(selected.id, fields); setSelected(null); load(); if (fields.status === 'published' && !wasPublished) { const actor = await getCurrentUserId().catch(() => null); const name = await getActorName(workspace.id, actor); notify({ type: 'notify_content', workspaceId: workspace.id, actorId: actor, title: '🎬 콘텐츠 발행', body: `${name} 님이 「${title}」을 발행했어요.`, tag: `content-${selected.id}` }); } } catch (e) { console.error('[Content] 수정 실패:', e); alert('콘텐츠 수정에 실패했어요. 잠시 후 다시 시도해 주세요.'); } }}
           onDelete={async () => { try { await deleteContentItem(selected.id); setSelected(null); load(); } catch (e) { console.error('[Content] 삭제 실패:', e); alert('콘텐츠 삭제에 실패했어요.'); } }}
           onClose={() => setSelected(null)}

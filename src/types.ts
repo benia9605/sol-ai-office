@@ -197,6 +197,15 @@ export type ReportStatus = 'done' | 'failed';
 /** 리포트 코멘트 (사장 의견) */
 export interface ReportComment { text: string; at: string; }
 
+/** 소셜 댓글(할일·콘텐츠 공용, +parentId 답글) — 마이그 037 */
+export interface SocialComment {
+  id: string;
+  userId: string;
+  content: string;
+  parentId?: string | null;
+  createdAt: string;
+}
+
 /** 직원 일일 리포트 (DB) — 실행 원장 + 산출물 통합 */
 export interface DailyReport {
   id: string;

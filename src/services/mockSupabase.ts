@@ -88,6 +88,11 @@ const mockData: Record<string, any[]> = {
   // 트렌드 레이더 워치리스트
   watch_items: [],
   watch_snapshots: [],
+  // 소셜 — 좋아요/댓글 (Phase 2)
+  task_likes: [],
+  task_comments: [],
+  content_likes: [],
+  content_comments: [],
   // 코인제 — 직원 실행 사용 로그
   staff_usage: [],
   // 직원 보관함 — ⭐로 저장한 산출물
