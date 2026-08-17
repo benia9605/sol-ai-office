@@ -237,7 +237,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
       </div>
 
       {/* 모바일 하단 네비 */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-100 flex items-stretch h-16 pb-[max(env(safe-area-inset-bottom),0px)]">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-100 flex items-stretch min-h-16 pt-1 pb-[max(env(safe-area-inset-bottom),0.25rem)]">
         {BOTTOM_NAV.map(n => {
           const on = view === n.id;
           return (

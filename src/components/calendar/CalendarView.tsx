@@ -166,7 +166,7 @@ function WeeklyTaskView({
   dragItem, setDragItem,
 }: CalendarViewProps & { dragItem: DragItem | null; setDragItem: (d: DragItem | null) => void }) {
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>(() => toYMD(new Date()));
 
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
   const today = todayStr();
@@ -522,7 +522,7 @@ function MonthlyScheduleView({
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>(() => toYMD(new Date()));
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();

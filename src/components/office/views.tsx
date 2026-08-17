@@ -25,6 +25,8 @@ import { RecordDetailView } from '../records/RecordDetailView';
 import { ReportCard } from './StaffView';
 import { fetchWorkspaceAnalytics, WorkspaceAnalytics } from '../../services/analytics.service';
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
+import { CalendarView } from '../calendar/CalendarView';
+import { defaultTaskCategories, officeScheduleCategories } from '../../data';
 import { Spark, ViewHead, Card, EmptyState } from './ui';
 
 /** 클로드/질문 빠른삽입 버튼 (스터디노트와 동일 UX) */
@@ -570,6 +572,8 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
   const [form, setForm] = useState(blankForm);
   const [selected, setSelected] = useState<TaskItem | null>(null);
   const [filter, setFilter] = useState<string>('all');
+  const [mode, setMode] = useState<'day' | 'list' | 'calendar'>('day');
+  const [cursor, setCursor] = useState<string>(() => new Date().toISOString().slice(0, 10)); // 일별 뷰: 선택한 날짜
 
   useEffect(() => { fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([])); }, [workspace.id]);
 
@@ -595,25 +599,45 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
     if (filter === 'ai') return list.filter(isAiTask);
     return list.filter(t => t.assigneeId === filter);
   };
-  const open = applyFilter(tasks.filter(t => t.status !== 'completed'));
-  const done = applyFilter(tasks.filter(t => t.status === 'completed'));
+  const fTasks = applyFilter(tasks);
+  const open = fTasks.filter(t => t.status !== 'completed');
+  const done = fTasks.filter(t => t.status === 'completed');
+
+  // ── 일별 뷰 파생 ──
+  const today = new Date().toISOString().slice(0, 10);
+  const addDays = (iso: string, d: number) => { const dt = new Date(iso + 'T00:00:00'); dt.setDate(dt.getDate() + d); return dt.toISOString().slice(0, 10); };
+  const fmtDay = (iso: string) => { const dt = new Date(iso + 'T00:00:00'); const w = ['일', '월', '화', '수', '목', '금', '토'][dt.getDay()]; return `${dt.getMonth() + 1}월 ${dt.getDate()}일 (${w})`; };
+  const overdue = fTasks.filter(t => t.status !== 'completed' && t.date && t.date < today);
+  const noDate = cursor === today ? fTasks.filter(t => t.status !== 'completed' && !t.date) : [];
+  const dayOpen = [...fTasks.filter(t => t.status !== 'completed' && t.date === cursor), ...noDate];
+  const dayDone = fTasks.filter(t => t.status === 'completed' && t.date === cursor);
 
   const chip = (id: string, label: string) => (
     <button key={id} onClick={() => setFilter(id)}
       className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
   );
+  const modeBtn = (m: typeof mode, label: string) => (
+    <button key={m} onClick={() => setMode(m)}
+      className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${mode === m ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+  );
 
   return (
     <>
-      <ViewHead eyebrow="TASKS" title="할일" sub={`${open.length}건 진행 · ${done.length}건 완료`} />
+      <ViewHead eyebrow="TASKS" title="할일" sub={`${open.length}건 진행 · ${done.length}건 완료${overdue.length ? ` · 지연 ${overdue.length}` : ''}`} />
 
+      {/* 뷰 토글 (일별/전체/캘린더) + 추가 */}
+      <div className="flex items-center gap-1.5 mb-2.5">
+        <div className="flex gap-1">{modeBtn('day', '일별')}{modeBtn('list', '전체')}{modeBtn('calendar', '캘린더')}</div>
+        <button onClick={() => setShowForm(v => !v)}
+          className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 할일 추가</button>
+      </div>
+
+      {/* 담당자/AI 필터 */}
       <div className="flex flex-wrap items-center gap-1.5 mb-3">
         {chip('all', '전체')}
         {members.length > 1 && members.map(m => chip(m.userId, memberName(m.userId)))}
         {members.length > 1 && chip('unassigned', '미배정')}
         {chip('ai', '🤖 AI')}
-        <button onClick={() => setShowForm(v => !v)}
-          className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 할일 추가</button>
       </div>
 
       {showForm && (
@@ -649,10 +673,55 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
         </Card>
       )}
 
-      <div className="grid sm:grid-cols-2 gap-3">
-        <TaskCol title="할 일" items={open} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
-        <TaskCol title="완료" items={done} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
-      </div>
+      {/* 일별 뷰 — 날짜 네비 + 지연 → 할일 → 완료 */}
+      {mode === 'day' && (
+        <>
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <button onClick={() => setCursor(c => addDays(c, -1))} className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all">‹</button>
+            <div className="text-center min-w-[9rem]">
+              <div className="text-base font-bold text-gray-800">{fmtDay(cursor)}</div>
+              {cursor !== today && <button onClick={() => setCursor(today)} className="text-[11px] text-primary-500 hover:underline">오늘로</button>}
+              {cursor === today && <div className="text-[11px] text-gray-400">오늘</div>}
+            </div>
+            <button onClick={() => setCursor(c => addDays(c, 1))} className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all">›</button>
+          </div>
+          <div className="space-y-3">
+            {overdue.length > 0 && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-1">
+                <TaskCol title="🔴 지연" items={overdue} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
+              </div>
+            )}
+            <TaskCol title="할 일" items={dayOpen} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
+            <TaskCol title="완료" items={dayDone} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
+          </div>
+        </>
+      )}
+
+      {/* 전체 리스트 — 진행/완료 2열 */}
+      {mode === 'list' && (
+        <div className="grid sm:grid-cols-2 gap-3">
+          <TaskCol title="할 일" items={open} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
+          <TaskCol title="완료" items={done} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
+        </div>
+      )}
+
+      {/* 캘린더 뷰 (개인 공간과 동일 컴포넌트 재사용) */}
+      {mode === 'calendar' && (
+        <div className="rounded-xl border border-gray-200 p-2 sm:p-3">
+          <CalendarView
+            mode="tasks"
+            tasks={fTasks}
+            schedules={[]}
+            taskCategories={defaultTaskCategories}
+            scheduleCategories={officeScheduleCategories}
+            onTaskClick={setSelected}
+            onScheduleClick={() => {}}
+            onTaskDateChange={(id, date) => updateTask(id, { date })}
+            onScheduleDateChange={() => {}}
+            onTaskStatusCycle={cycleStatus}
+          />
+        </div>
+      )}
 
       {selected && (
         <TaskDetailPopup
