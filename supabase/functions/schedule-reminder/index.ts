@@ -22,12 +22,13 @@ Deno.serve(async () => {
   for (const userId of userIds) {
     if (!(await checkPreference(supabase, userId, 'schedule_reminder'))) continue;
 
-    // 오늘 일정 중 reminder가 설정된 것 조회
+    // 오늘 일정 중 reminder가 설정된 것 조회 (개인 일정만 — 오피스는 아래 별도 처리)
     const { data: schedules } = await supabase
       .from('schedules')
       .select('id, title, date, time, reminder')
       .eq('user_id', userId)
       .eq('date', today)
+      .is('workspace_id', null)
       .neq('reminder', 'none');
 
     if (!schedules?.length) continue;
@@ -66,6 +67,39 @@ Deno.serve(async () => {
         tag: `schedule-${sch.id}`,
         url: '/schedules',
       });
+      sentCount++;
+    }
+  }
+
+  // ── 오피스 일정(회의) 리마인더 — 워크스페이스 멤버 전체에게. 인앱센터에도 기록 ──
+  const { data: officeSch } = await supabase
+    .from('schedules')
+    .select('id, title, time, reminder, workspace_id')
+    .eq('date', today)
+    .neq('reminder', 'none')
+    .not('workspace_id', 'is', null);
+
+  for (const sch of (officeSch ?? []) as { id: string; title: string; time: string; reminder: string; workspace_id: string }[]) {
+    if (!sch.time || !sch.reminder) continue;
+    const reminderMin = reminderToMinutes(sch.reminder);
+    if (reminderMin === 0) continue;
+    const [h, m] = sch.time.split(':').map(Number);
+    const alertMinutes = (h * 60 + m) - reminderMin;
+    if (Math.abs(nowMinutes - alertMinutes) > 3) continue;
+
+    const label = sch.reminder === '10min' ? '10분 후' : sch.reminder === '30min' ? '30분 후' : sch.reminder === '1hour' ? '1시간 후' : sch.reminder === '1day' ? '내일' : '곧';
+    const { data: members } = await supabase.from('workspace_members').select('user_id').eq('workspace_id', sch.workspace_id);
+    for (const mem of (members ?? []) as { user_id: string }[]) {
+      const uid = mem.user_id;
+      if (!(await checkPreference(supabase, uid, 'schedule_reminder').catch(() => true))) continue;
+      const refKey = `office-${today}-${sch.id}`;
+      if (await isAlreadySent(supabase, uid, 'schedule_reminder', refKey)) continue;
+
+      await logNotification(supabase, uid, 'schedule_reminder', refKey);
+      try {
+        await supabase.from('notifications').insert({ workspace_id: sch.workspace_id, user_id: uid, type: 'notify_schedule', title: `📅 ${sch.title}`, body: `${label} 시작`, url: '/office/schedule' });
+      } catch (_) { /* 인박스 실패 무시 */ }
+      await sendPushToUser(supabase, uid, { title: `📅 ${sch.title}`, body: `${label} 시작`, tag: `office-schedule-${sch.id}`, url: '/office/schedule' });
       sentCount++;
     }
   }

@@ -73,5 +73,31 @@ Deno.serve(async () => {
     }
   }
 
+  // ── 오피스 할일 마감(담당자 기준) — notify_task_due. 인앱센터에도 기록 ──
+  const { data: officeTasks } = await supabase
+    .from('tasks')
+    .select('id, title, due_date, assignee_id, workspace_id')
+    .in('due_date', [today, tomorrow])
+    .neq('status', 'done')
+    .not('assignee_id', 'is', null)
+    .not('workspace_id', 'is', null);
+
+  for (const t of (officeTasks ?? []) as { id: string; title: string; due_date: string; assignee_id: string; workspace_id: string }[]) {
+    const uid = t.assignee_id;
+    if (!(await checkPreference(supabase, uid, 'notify_task_due').catch(() => true))) continue;
+    const isDDay = t.due_date === today;
+    const refKey = `office-${isDDay ? 'd0' : 'd1'}-${today}-${t.id}`;
+    if (await isAlreadySent(supabase, uid, 'task_due', refKey)) continue;
+
+    await logNotification(supabase, uid, 'task_due', refKey);
+    const title = isDDay ? '오늘 마감 🔴' : '마감 D-1 🟡';
+    const body = isDDay ? `담당 「${t.title}」 오늘까지예요` : `담당 「${t.title}」 내일 마감이에요`;
+    try {
+      await supabase.from('notifications').insert({ workspace_id: t.workspace_id, user_id: uid, type: 'notify_task_due', title, body, url: '/office/todos' });
+    } catch (_) { /* 인박스 실패 무시 */ }
+    await sendPushToUser(supabase, uid, { title, body, tag: `task-due-${t.id}`, url: '/office/todos' });
+    sentCount++;
+  }
+
   return new Response(JSON.stringify({ ok: true, sent: sentCount }));
 });
