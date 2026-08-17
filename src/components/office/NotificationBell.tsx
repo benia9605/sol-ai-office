@@ -1,0 +1,89 @@
+/**
+ * @file src/components/office/NotificationBell.tsx
+ * @description 인앱 알림센터 — 헤더 벨 아이콘 + 안읽음 뱃지 + 드롭다운 목록 (마이그 039)
+ * - notify 함수가 쌓은 내 알림을 조회. 클릭 → 읽음 처리 + 관련 화면으로 이동.
+ * - 푸시를 못 받아도 여기서 놓친 알림 확인.
+ */
+import { useEffect, useRef, useState } from 'react';
+import { Workspace, AppNotification } from '../../types';
+import { fetchNotifications, markRead, markAllRead } from '../../services/notifications.service';
+
+/** 알림 type → 이동할 뷰 */
+function viewOf(type: string): string {
+  if (type.startsWith('notify_task') || type === 'notify_mention' || type === 'notify_like' || type === 'notify_comment') return 'todos';
+  if (type === 'notify_schedule') return 'schedule';
+  if (type === 'notify_content') return 'contents';
+  return 'dashboard';
+}
+function ago(iso: string): string {
+  try {
+    const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return '방금';
+    if (s < 3600) return `${Math.floor(s / 60)}분 전`;
+    if (s < 86400) return `${Math.floor(s / 3600)}시간 전`;
+    return `${Math.floor(s / 86400)}일 전`;
+  } catch { return ''; }
+}
+
+export function NotificationBell({ workspace, onNavigate }: { workspace: Workspace; onNavigate: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<AppNotification[]>([]);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const load = () => fetchNotifications(workspace.id).then(setItems).catch(() => setItems([]));
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 60000); // 1분마다 갱신
+    return () => clearInterval(t);
+    // eslint-disable-next-line
+  }, [workspace.id]);
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [open]);
+
+  const unread = items.filter((n) => !n.readAt).length;
+  const onItem = async (n: AppNotification) => {
+    if (!n.readAt) { await markRead(n.id); setItems((prev) => prev.map((x) => x.id === n.id ? { ...x, readAt: new Date().toISOString() } : x)); }
+    setOpen(false);
+    onNavigate(viewOf(n.type));
+  };
+  const readAll = async () => { await markAllRead(workspace.id); setItems((prev) => prev.map((x) => ({ ...x, readAt: x.readAt ?? new Date().toISOString() }))); };
+
+  return (
+    <div className="relative flex-shrink-0" ref={ref}>
+      <button onClick={() => { setOpen((o) => !o); if (!open) load(); }} title="알림" className="relative w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors active:scale-95">
+        <span className="text-lg">🔔</span>
+        {unread > 0 && <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">{unread > 9 ? '9+' : unread}</span>}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-11 w-80 max-w-[86vw] bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-gray-100">
+            <span className="text-sm font-bold text-gray-800">알림 {unread > 0 && <span className="text-rose-500">{unread}</span>}</span>
+            {unread > 0 && <button onClick={readAll} className="text-[11px] text-gray-400 hover:text-primary-500">모두 읽음</button>}
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto">
+            {items.length === 0 ? (
+              <div className="py-10 text-center">
+                <div className="text-2xl mb-1">🔔</div>
+                <p className="text-xs text-gray-400">새 알림이 없어요</p>
+              </div>
+            ) : items.map((n) => (
+              <button key={n.id} onClick={() => onItem(n)} className={`w-full text-left px-3.5 py-2.5 border-b border-gray-50 hover:bg-gray-50 transition-colors ${n.readAt ? '' : 'bg-primary-50/40'}`}>
+                <div className="flex items-center gap-1.5">
+                  {!n.readAt && <span className="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0" />}
+                  <span className="text-[13px] font-semibold text-gray-800 truncate flex-1">{n.title}</span>
+                  <span className="text-[10px] text-gray-300 flex-shrink-0">{ago(n.createdAt)}</span>
+                </div>
+                {n.body && <p className="text-[12px] text-gray-500 mt-0.5 line-clamp-2 pl-3">{n.body}</p>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

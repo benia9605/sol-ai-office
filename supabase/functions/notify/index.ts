@@ -76,7 +76,17 @@ Deno.serve(async (req: Request) => {
   }
   if (!allowed.length) return json({ ok: true, sent: 0 });
 
-  // 4) 발송
+  // 4) 인앱 알림센터 기록 (수신자마다 1행) — 푸시 꺼둔 사람도 앱에서 확인
+  try {
+    await supabase.from('notifications').insert(
+      allowed.map((uid) => ({
+        workspace_id: body.workspace_id, user_id: uid, actor_id: body.actor_id ?? null,
+        type: body.type, title: body.title, body: body.body, url: body.url ?? null,
+      })),
+    );
+  } catch (_) { /* 인박스 실패해도 푸시는 보냄 */ }
+
+  // 5) 푸시 발송
   await sendPushToUsers(supabase, allowed, {
     title: body.title,
     body: body.body,

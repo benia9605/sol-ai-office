@@ -15,6 +15,7 @@ import {
   InsightsView, LogView, ActivityView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView,
 } from './views';
 import { StaffView } from './StaffView';
+import { NotificationBell } from './NotificationBell';
 import { BrandView } from './BrandView';
 import { ContentPage } from '../../pages/ContentPage';
 import { fetchCredits, fetchUsage } from '../../services/credits.service';
@@ -207,11 +208,14 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             <span className="text-sm font-bold text-gray-800 truncate">{workspace.name}</span>
             <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
           </button>
-          <span className="hidden lg:block text-sm text-gray-400 truncate max-w-[55%]">{workspace.bizInfo || ''}</span>
-          <button onClick={() => setShowUsage(true)} title="코인 잔액 — 클릭하면 사용 내역(요금)"
-            className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 flex-shrink-0 hover:opacity-70 active:scale-95 ${coinPulse ? 'scale-125 text-amber-500' : 'text-gray-500'}`}>
-            <span>🪙</span><span>{credits != null ? credits.toLocaleString() : '—'}</span>
-          </button>
+          <span className="hidden lg:block text-sm text-gray-400 truncate max-w-[45%]">{workspace.bizInfo || ''}</span>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <NotificationBell workspace={workspace} onNavigate={onNavigate} />
+            <button onClick={() => setShowUsage(true)} title="코인 잔액 — 클릭하면 사용 내역(요금)"
+              className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 hover:opacity-70 active:scale-95 ${coinPulse ? 'scale-125 text-amber-500' : 'text-gray-500'}`}>
+              <span>🪙</span><span>{credits != null ? credits.toLocaleString() : '—'}</span>
+            </button>
+          </div>
          </div>
         </header>
 

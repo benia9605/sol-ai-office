@@ -28,6 +28,7 @@
 | `watch_snapshots` | id, watch_item_id, workspace_id, created_by, checked_at, price, title, summary, source_url, created_at · 마이그 035. 워치 항목 시점별 관찰(변화 감지) |
 | `task_likes` / `content_likes` | (task_id\|content_item_id), user_id, workspace_id, created_at, PK(자원,user) · 마이그 037. 좋아요 1인1개 |
 | `task_comments` / `content_comments` | id, (task_id\|content_item_id), workspace_id, user_id, content, parent_id(답글), created_at · 마이그 037. 댓글+답글 |
+| `notifications` | id, workspace_id, user_id(수신자), actor_id, type, title, body, url, read_at, created_at · 마이그 039. 인앱 알림센터 인박스(notify 함수가 발송 대상마다 기록, 본인만 조회/읽음) |
 | `workspace_members` | workspace_id, user_id, role('owner'\|'member'), nickname, joined_at · PK(workspace_id,user_id) |
 | `workspace_invites` | id, workspace_id, email, invited_by, status('pending'\|'accepted'\|'revoked'), created_at · UNIQUE(workspace_id,email) |
 | `workspace_activities` | id, workspace_id, actor_id, action, resource_type, resource_id, metadata(jsonb), created_at |

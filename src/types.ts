@@ -197,6 +197,19 @@ export type ReportStatus = 'done' | 'failed';
 /** 리포트 코멘트 (사장 의견) */
 export interface ReportComment { text: string; at: string; }
 
+/** 인앱 알림센터 항목 — 마이그 039 */
+export interface AppNotification {
+  id: string;
+  workspaceId: string;
+  type: string;
+  title: string;
+  body?: string;
+  url?: string;
+  actorId?: string;
+  readAt?: string | null;
+  createdAt: string;
+}
+
 /** 소셜 댓글(할일·콘텐츠 공용, +parentId 답글) — 마이그 037 */
 export interface SocialComment {
   id: string;
