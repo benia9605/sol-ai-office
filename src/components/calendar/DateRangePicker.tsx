@@ -86,6 +86,13 @@ export function DateRangePicker({
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  // 팝업 열 때 선택된 날짜(없으면 오늘)의 월로 맞춘다 — 엉뚱한 달(7월 등)로 뜨는 것 방지
+  useEffect(() => {
+    if (!open) return;
+    const base = date ? new Date(date + 'T00:00:00') : new Date();
+    setCurrentMonth(new Date(base.getFullYear(), base.getMonth(), 1));
+  }, [open, date]);
+
   const handleDateClick = useCallback((dateStr: string) => {
     if (!hasEndDate) {
       // 종료일 없으면 시작일만 변경
