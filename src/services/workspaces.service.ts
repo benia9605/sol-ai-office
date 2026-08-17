@@ -209,3 +209,10 @@ export async function changeMemberRole(workspaceId: string, userId: string, role
     .update({ role }).eq('workspace_id', workspaceId).eq('user_id', userId);
   if (error) throw error;
 }
+
+/** 멤버 닉네임(표시 이름) 변경 — 본인 것(또는 오너가 타인 것) */
+export async function updateMemberNickname(workspaceId: string, userId: string, nickname: string): Promise<void> {
+  const { error } = await supabase.from('workspace_members')
+    .update({ nickname: nickname.trim() || null }).eq('workspace_id', workspaceId).eq('user_id', userId);
+  if (error) throw error;
+}

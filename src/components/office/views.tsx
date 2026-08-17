@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Workspace, WorkspaceMember, TaskItem, DailyReport, RecordItem, Product, ContentItem, ContentType, ContentStatus, ContentMetric, ContentCheckpoint, SalesDaily, CompanyMemory, MemoryKind } from '../../types';
 import { useTasks } from '../../hooks/useTasks';
-import { fetchMembers, removeMember, changeMemberRole } from '../../services/workspaces.service';
+import { fetchMembers, removeMember, changeMemberRole, updateMemberNickname } from '../../services/workspaces.service';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
@@ -392,7 +392,10 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
   const { tasks, cycleStatus, add, updateTask, remove } = useTasks();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<{ title: string; priority: TaskItem['priority']; date: string; assigneeId: string; category: string }>({ title: '', priority: 'medium', date: '', assigneeId: '', category: '' });
+  // 할일 추가 폼 — 날짜는 기본으로 '오늘'(수동 수정 가능)
+  const blankForm = (): { title: string; priority: TaskItem['priority']; date: string; assigneeId: string; category: string } =>
+    ({ title: '', priority: 'medium', date: new Date().toISOString().slice(0, 10), assigneeId: '', category: '' });
+  const [form, setForm] = useState(blankForm);
   const [selected, setSelected] = useState<TaskItem | null>(null);
   const [filter, setFilter] = useState<string>('all');
 
@@ -410,7 +413,7 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
     // source='manual' — 대표가 직접 만든 할일. (content/decision/ai 등은 해당 기능이 생성 시 지정)
     try {
       await add({ title: form.title.trim(), priority: form.priority, date: form.date || undefined, assigneeId: form.assigneeId || undefined, category: form.category || undefined, source: 'manual' });
-      setForm({ title: '', priority: 'medium', date: '', assigneeId: '', category: '' }); setShowForm(false);
+      setForm(blankForm()); setShowForm(false);
     } catch (e) { console.error('[TodosView] 할일 추가 실패:', e); alert('할일 추가에 실패했어요. 잠시 후 다시 시도해 주세요.'); }
   };
 
@@ -466,7 +469,7 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
             )}
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setShowForm(false); setForm({ title: '', priority: 'medium', date: '', assigneeId: '', category: '' }); }}
+            <button onClick={() => { setShowForm(false); setForm(blankForm()); }}
               className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
             <button onClick={save} disabled={!form.title.trim()}
               className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">추가</button>
@@ -1436,6 +1439,9 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
   const [myId, setMyId] = useState('');
   const [copied, setCopied] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [nickVal, setNickVal] = useState('');
+  const [savingNick, setSavingNick] = useState(false);
   const load = () => fetchMembers(workspace.id).then(m => { setMembers(m); setLoaded(true); }).catch(() => { setMembers([]); setLoaded(true); });
   useEffect(() => { load(); getCurrentUserId().then(setMyId).catch(() => {}); /* eslint-disable-next-line */ }, [workspace.id]);
 
@@ -1451,6 +1457,14 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
   };
   const toggleRole = async (m: WorkspaceMember) => {
     await changeMemberRole(workspace.id, m.userId, m.role === 'owner' ? 'member' : 'owner').catch(() => {}); load();
+  };
+  const startEdit = (m: WorkspaceMember) => { setEditingId(m.userId); setNickVal(m.nickname || ''); };
+  const saveNick = async (uid: string) => {
+    if (savingNick) return;
+    setSavingNick(true);
+    try { await updateMemberNickname(workspace.id, uid, nickVal); setEditingId(null); await load(); }
+    catch (e) { console.error('[MembersView] 닉네임 저장 실패:', e); alert('닉네임 저장에 실패했어요.'); }
+    finally { setSavingNick(false); }
   };
 
   return (
@@ -1469,21 +1483,43 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
         </Card>
       )}
       <Card className="p-3">
-        {members.map(m => (
+        {members.map(m => {
+          const canEditNick = m.userId === myId || iAmOwner;
+          const editing = editingId === m.userId;
+          return (
           <div key={m.userId} className="flex items-center gap-2.5 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
             <span className="w-9 h-9 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
               {(m.nickname || m.userId).slice(0, 1).toUpperCase()}
             </span>
-            <span className="text-sm font-medium text-gray-700 flex-1 min-w-0 truncate">{m.nickname || '멤버'}{m.userId === myId && ' (나)'}</span>
+            {editing ? (
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <input autoFocus value={nickVal} onChange={e => setNickVal(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') saveNick(m.userId); if (e.key === 'Escape') setEditingId(null); }}
+                  placeholder="표시할 닉네임" maxLength={20}
+                  className="flex-1 min-w-0 px-2.5 py-1 rounded-lg border border-primary-300 text-sm focus:outline-none focus:border-primary-500" />
+                <button onClick={() => saveNick(m.userId)} disabled={savingNick} className="text-[11px] px-2 py-1 rounded-lg bg-primary-500 text-white font-medium disabled:opacity-50 flex-shrink-0">저장</button>
+                <button onClick={() => setEditingId(null)} className="text-[11px] px-1.5 py-1 rounded-lg text-gray-400 hover:bg-gray-100 flex-shrink-0">취소</button>
+              </div>
+            ) : (
+              <>
+                <span className="text-sm font-medium text-gray-700 flex-1 min-w-0 truncate">
+                  {m.nickname || <span className="text-gray-400 italic">닉네임 없음</span>}{m.userId === myId && ' (나)'}
+                </span>
+                {canEditNick && (
+                  <button onClick={() => startEdit(m)} title="닉네임 수정" className="text-gray-300 hover:text-primary-500 text-sm flex-shrink-0">✏️</button>
+                )}
+              </>
+            )}
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{m.role === 'owner' ? '오너' : '멤버'}</span>
-            {iAmOwner && m.userId !== myId && (
+            {iAmOwner && m.userId !== myId && !editing && (
               <>
                 <button onClick={() => toggleRole(m)} className="text-[11px] text-gray-400 hover:text-primary-500 flex-shrink-0">{m.role === 'owner' ? '멤버로' : '오너로'}</button>
                 <button onClick={() => kick(m.userId)} className="text-[11px] text-rose-400 hover:text-rose-600 flex-shrink-0">내보내기</button>
               </>
             )}
           </div>
-        ))}
+          );
+        })}
         {members.length === 0 && <p className="text-xs text-gray-300 py-4 text-center">{loaded ? '멤버를 불러오지 못했어요 · 새로고침해 주세요' : '불러오는 중…'}</p>}
       </Card>
     </>
