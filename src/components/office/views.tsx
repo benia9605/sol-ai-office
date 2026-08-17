@@ -7,7 +7,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Workspace, WorkspaceMember, TaskItem, DailyReport, RecordItem, Product, ContentItem, ContentType, ContentStatus, ContentMetric, ContentCheckpoint, SalesDaily, CompanyMemory, MemoryKind } from '../../types';
 import { useTasks } from '../../hooks/useTasks';
-import { fetchMembers, removeMember, changeMemberRole, updateMemberNickname } from '../../services/workspaces.service';
+import { fetchMembers, removeMember, changeMemberRole, updateMemberNickname, updateWorkspace } from '../../services/workspaces.service';
+import { generateBriefing, fetchLatestBriefing, BriefingJson, BriefStatus, Severity } from '../../services/officeBriefing.service';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
@@ -116,6 +117,174 @@ function OfficeDailyGuide() {
   );
 }
 
+/* ───────── CEO 브리핑 패널 (운영매니저 산출물 = 대시보드가 렌더) ─────────
+   GPT 설계 v2: ① 오늘 한 줄 → ② TOP3 → ③ 매출/콘텐츠 → ④ 오늘 할 일 → ⑤ 승인대기 → ⑥ 조언 */
+const STATUS_UI: Record<BriefStatus, { dot: string; bar: string; label: string }> = {
+  good: { dot: 'bg-emerald-400', bar: 'border-emerald-200 bg-emerald-50/60', label: '🟢 정상' },
+  attention: { dot: 'bg-amber-400', bar: 'border-amber-200 bg-amber-50/60', label: '🟡 주의' },
+  critical: { dot: 'bg-rose-400', bar: 'border-rose-200 bg-rose-50/60', label: '🔴 확인 필요' },
+};
+const SEV_UI: Record<Severity, string> = {
+  critical: 'border-l-rose-400', warning: 'border-l-amber-400', info: 'border-l-primary-400', positive: 'border-l-emerald-400',
+};
+
+function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavigate: Nav }) {
+  const [brief, setBrief] = useState<BriefingJson | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [gen, setGen] = useState(false);
+  // 월 목표: 로컬 상태로 즉시 반영(컨텍스트 리프레시 없이) + updateWorkspace로 영속
+  const [target, setTarget] = useState<number | null>(workspace.monthlySalesTarget ?? null);
+  const [editTarget, setEditTarget] = useState(false);
+  const [targetInput, setTargetInput] = useState('');
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    fetchLatestBriefing(workspace.id).then(b => { if (alive) setBrief(b); }).catch(() => {}).finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [workspace.id]);
+
+  const generate = async () => {
+    setGen(true);
+    try { const b = await generateBriefing({ ...workspace, monthlySalesTarget: target ?? undefined }); setBrief(b); }
+    catch (e) { console.error('[BriefingPanel] 생성 실패:', e); alert('브리핑 생성에 실패했어요.'); }
+    finally { setGen(false); }
+  };
+  const saveTarget = async () => {
+    const v = Math.round(Number(targetInput.replace(/[^0-9]/g, '')) * 10000); // 만원 단위 입력 → 원
+    const next = v > 0 ? v : null;
+    setTarget(next); setEditTarget(false);
+    try { await updateWorkspace(workspace.id, { monthlySalesTarget: next }); } catch (e) { console.error(e); }
+  };
+
+  const won = (n: number) => `${n.toLocaleString()}원`;
+  const man = (n: number) => `${Math.round(n / 10000).toLocaleString()}만원`;
+
+  return (
+    <div className="rounded-xl border border-gray-200 overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-gray-700">🧭 CEO 브리핑</span>
+          {brief && <span className="text-[11px] text-gray-400">{brief.briefing_date} · 운영매니저</span>}
+        </div>
+        <button onClick={generate} disabled={gen}
+          className="text-[11px] px-3 py-1.5 rounded-lg bg-primary-500 text-white font-medium hover:bg-primary-600 disabled:opacity-50 transition-all active:scale-95">
+          {gen ? '생성 중…' : brief ? '↻ 새로고침' : '브리핑 생성'}
+        </button>
+      </div>
+
+      {loading ? (
+        <p className="text-xs text-gray-300 py-8 text-center">불러오는 중…</p>
+      ) : !brief ? (
+        <div className="py-10 text-center px-5">
+          <div className="text-3xl mb-2">🧭</div>
+          <p className="text-sm text-gray-500 font-medium">아직 브리핑이 없어요</p>
+          <p className="text-[11px] text-gray-400 mt-1">‘브리핑 생성’을 누르면 운영매니저가 오늘 볼 것을 정리해요.</p>
+        </div>
+      ) : (
+        <div className="p-5 space-y-4">
+          {/* ① 오늘 한 줄 */}
+          <div className={`rounded-lg border px-4 py-3 ${STATUS_UI[brief.headline.status].bar}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-semibold text-gray-500">{STATUS_UI[brief.headline.status].label}</span>
+            </div>
+            <p className="text-sm text-gray-800 font-medium leading-relaxed">{brief.headline.text}</p>
+          </div>
+
+          {/* ② 대표가 볼 것 TOP3 */}
+          {brief.top3.length > 0 && (
+            <div>
+              <div className="text-[11px] font-semibold text-gray-400 mb-2">대표가 볼 것 {brief.top3.length}</div>
+              <div className="space-y-2">
+                {brief.top3.map(t => (
+                  <div key={t.rank} className={`border-l-[3px] ${SEV_UI[t.severity]} bg-gray-50 rounded-r-lg px-3 py-2`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-gray-400">{t.rank}</span>
+                      <span className="text-sm font-semibold text-gray-800 flex-1">{t.title}</span>
+                      {t.recommended_action && (
+                        <button onClick={() => onNavigate(t.type === 'content' ? 'contents' : t.type === 'schedule' ? 'schedule' : t.type === 'decision' ? 'staff' : 'todos')}
+                          className="text-[11px] px-2 py-0.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:border-primary-300 flex-shrink-0">{t.recommended_action.label}</button>
+                      )}
+                    </div>
+                    <p className="text-[12px] text-gray-500 mt-0.5">{t.summary}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ③ 매출 / 콘텐츠 한 줄 */}
+          <div className="grid sm:grid-cols-2 gap-2">
+            <div className="rounded-lg bg-gray-50 px-3.5 py-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className={`w-2 h-2 rounded-full ${STATUS_UI[brief.sales.status].dot}`} />
+                <span className="text-[11px] font-semibold text-gray-500">💰 매출</span>
+                {brief.sales.month_target != null
+                  ? <span className="ml-auto text-[10px] text-gray-400">목표 {man(brief.sales.month_target)}</span>
+                  : (!editTarget && <button onClick={() => { setEditTarget(true); setTargetInput(target ? String(Math.round(target / 10000)) : ''); }} className="ml-auto text-[10px] text-primary-500 hover:underline">월 목표 설정</button>)}
+              </div>
+              {editTarget ? (
+                <div className="flex items-center gap-1.5">
+                  <input autoFocus type="number" value={targetInput} onChange={e => setTargetInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveTarget(); if (e.key === 'Escape') setEditTarget(false); }}
+                    placeholder="예: 3000" className="w-24 px-2 py-1 rounded-lg border border-primary-300 text-sm focus:outline-none" />
+                  <span className="text-[11px] text-gray-400">만원</span>
+                  <button onClick={saveTarget} className="text-[11px] px-2 py-1 rounded-lg bg-primary-500 text-white">저장</button>
+                </div>
+              ) : (
+                <p className="text-[12px] text-gray-600 leading-relaxed">{brief.sales.one_line}</p>
+              )}
+            </div>
+            <div className="rounded-lg bg-gray-50 px-3.5 py-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className={`w-2 h-2 rounded-full ${STATUS_UI[brief.content.status].dot}`} />
+                <span className="text-[11px] font-semibold text-gray-500">🎬 콘텐츠</span>
+              </div>
+              <p className="text-[12px] text-gray-600 leading-relaxed">{brief.content.one_line}</p>
+            </div>
+          </div>
+
+          {/* ④ 운영 현황 4칸 */}
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { k: '지연', v: brief.operations.tasks_overdue, to: 'todos' as const, warn: brief.operations.tasks_overdue > 0 },
+              { k: '오늘마감', v: brief.operations.tasks_due_today, to: 'todos' as const },
+              { k: '미배정', v: brief.operations.tasks_unassigned, to: 'todos' as const },
+              { k: '승인대기', v: brief.operations.approvals_pending, to: 'staff' as const, warn: brief.operations.approvals_pending > 0 },
+            ].map(o => (
+              <button key={o.k} onClick={() => onNavigate(o.to)} className="rounded-lg bg-gray-50 hover:bg-gray-100 px-2 py-2.5 text-center transition-colors">
+                <div className={`text-lg font-bold tabular-nums ${o.warn ? 'text-rose-500' : 'text-gray-800'}`}>{o.v}</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">{o.k}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* ⑤ 오늘 할 일 / 승인대기 */}
+          {brief.due_today.length > 0 && (
+            <div>
+              <div className="text-[11px] font-semibold text-gray-400 mb-1.5">오늘 할 일</div>
+              <div className="space-y-1">
+                {brief.due_today.slice(0, 6).map(d => (
+                  <div key={d.id} className="flex items-center gap-2 text-[12px]">
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 flex-shrink-0">{d.type === 'task' ? '할일' : d.type === 'schedule' ? '일정' : '콘텐츠'}</span>
+                    {d.time && <span className="text-gray-400 flex-shrink-0">{d.time}</span>}
+                    <span className="text-gray-700 truncate">{d.title}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ⑥ 조언 */}
+          <div className="border-t border-gray-100 pt-3">
+            <p className="text-[12px] text-gray-500 leading-relaxed">💡 {brief.one_line_advice}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; workspace: Workspace }) {
   const { tasks } = useTasks();
   const kpis = useDashboardKpis(workspace);
@@ -157,6 +326,9 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
 
       {/* 하루 운영 흐름 가이드 */}
       <OfficeDailyGuide />
+
+      {/* CEO 브리핑 — 운영매니저 산출물 (오늘 볼 것 중심) */}
+      <BriefingPanel workspace={workspace} onNavigate={onNavigate} />
 
       {/* KPI 스트립 — 실데이터 있을 때만 표시 (연동 전엔 빈 그래프 숨김) */}
       {kpis.some(k => k.value > 0 || k.delta !== null) && (
