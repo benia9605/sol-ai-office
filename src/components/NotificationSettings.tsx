@@ -285,6 +285,7 @@ export function NotificationSettings({ userId }: Props) {
         <BellIcon className="w-5 h-5 text-gray-400" />
         <h2 className="text-base font-bold text-gray-800">알림 설정</h2>
       </div>
+      <p className="text-[11px] text-gray-400 -mt-2">이 알림 설정은 <b className="text-gray-500">계정 전체</b>에 적용돼요 (개인·모든 오피스 공통).</p>
 
       {/* 브라우저 미지원 */}
       {!supported && (
