@@ -22,6 +22,8 @@
 |---|---|
 | `workspaces` | id, name, emoji, color, **image_url**, **biz_info**, type('personal'\|'office'), invite_code(unique), credits, **erp_source**('manual'\|'simok_api', 마이그 032 — ERP 소스 워크스페이스별), **monthly_sales_target**(NUMERIC, 마이그 033 — 월 매출 목표, 수동설정, 브리핑 달성률용), created_by, created_at, updated_at |
 | `office_briefings` | id, workspace_id, created_by, briefing_date, kind('daily'\|'weekly'), **brief_json**(jsonb — CEO 브리핑 계약), generated_at, created_at, UNIQUE(workspace_id,briefing_date,kind) · 마이그 033. 운영매니저 산출물 = 대시보드 렌더 소스 |
+| `tickets` | id, workspace_id, created_by, channel, customer_name, order_ref, product_id, original_text, category, urgency, sentiment, status, ai_draft, final_answer, needs_approval, faq_candidate, created_at, updated_at, answered_at · 마이그 034. CS 문의 티켓(규칙기반 자동분류) |
+| `cs_faq` | id, workspace_id, created_by, category, question, answer, occurrences, status, created_at, updated_at · 마이그 034. CS FAQ 라이브러리(시목 원목/도마/가구/배송/A/S Seed) |
 | `workspace_members` | workspace_id, user_id, role('owner'\|'member'), nickname, joined_at · PK(workspace_id,user_id) |
 | `workspace_invites` | id, workspace_id, email, invited_by, status('pending'\|'accepted'\|'revoked'), created_at · UNIQUE(workspace_id,email) |
 | `workspace_activities` | id, workspace_id, actor_id, action, resource_type, resource_id, metadata(jsonb), created_at |

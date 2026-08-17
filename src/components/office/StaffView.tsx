@@ -15,6 +15,8 @@ import { fetchActions, approveAction, dismissAction } from '../../services/staff
 import { getInputForm } from '../../data/staffInputForms';
 import { fetchAnalystInsights, AnalystInsights } from '../../services/analytics.service';
 import { fetchSchedulerInsights, SchedulerInsights } from '../../services/schedulerInsights.service';
+import { fetchTickets, addTicket, updateTicket, deleteTicket, fetchFaq, deleteFaq, seedSimokFaq } from '../../services/cs.service';
+import { Ticket, TicketChannel, CsFaq } from '../../types';
 import { workspaceErpSource } from '../../config/dataSource';
 import { ViewHead, Card, EmptyState } from './ui';
 import { MarkdownView } from './MarkdownView';
@@ -275,6 +277,126 @@ function SchedulerDataPanel({ workspace }: { workspace: Workspace }) {
                   </div>
                 ))}
               </div>
+            </div>
+          </>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+/* ── CS 전용: 문의 티켓 + FAQ 라이브러리 ── */
+const CAT_LABEL: Record<string, string> = { shipping: '배송', product: '제품', stock: '재고', care: '관리', as: 'A/S', exchange: '교환', refund: '환불', order: '주문', other: '기타' };
+const URG_UI: Record<string, { label: string; cls: string }> = {
+  low: { label: '낮음', cls: 'bg-gray-100 text-gray-400' }, normal: { label: '보통', cls: 'bg-gray-100 text-gray-500' },
+  high: { label: '높음', cls: 'bg-amber-50 text-amber-600' }, critical: { label: '긴급', cls: 'bg-rose-50 text-rose-600' },
+};
+const CH_LABEL: Record<string, string> = { smartstore: '스마트스토어', selfmall: '자사몰', instagram: '인스타', phone: '전화', showroom: '쇼룸', other: '기타' };
+function CSDataPanel({ workspace }: { workspace: Workspace }) {
+  const [tab, setTab] = useState<'tickets' | 'faq'>('tickets');
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [faq, setFaq] = useState<CsFaq[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [text, setText] = useState('');
+  const [channel, setChannel] = useState<TicketChannel>('smartstore');
+  const [adding, setAdding] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMsg, setSeedMsg] = useState('');
+
+  const load = () => Promise.all([
+    fetchTickets(workspace.id).then(setTickets).catch(() => setTickets([])),
+    fetchFaq(workspace.id).then(setFaq).catch(() => setFaq([])),
+  ]);
+  useEffect(() => { setLoading(true); load().finally(() => setLoading(false)); /* eslint-disable-next-line */ }, [workspace.id]);
+
+  const add = async () => {
+    if (!text.trim() || adding) return;
+    setAdding(true);
+    try { await addTicket(workspace.id, { originalText: text.trim(), channel }); setText(''); await load(); }
+    catch (e) { console.error(e); alert('티켓 추가 실패'); } finally { setAdding(false); }
+  };
+  const cycle = async (t: Ticket) => {
+    const next = t.status === 'answered' ? 'new' : 'answered';
+    await updateTicket(t.id, { status: next }).catch(() => {}); await load();
+  };
+  const removeT = async (id: string) => { await deleteTicket(id).catch(() => {}); await load(); };
+  const seed = async () => {
+    setSeeding(true); setSeedMsg('');
+    try { const n = await seedSimokFaq(workspace.id); await load(); setSeedMsg(n > 0 ? `FAQ ${n}개 추가됨` : '이미 다 있어요'); }
+    catch (e) { console.error(e); setSeedMsg('추가 실패'); } finally { setSeeding(false); setTimeout(() => setSeedMsg(''), 2500); }
+  };
+  const removeF = async (id: string) => { await deleteFaq(id).catch(() => {}); await load(); };
+
+  const waiting = tickets.filter(t => t.status !== 'answered' && t.status !== 'closed').length;
+  const urgent = tickets.filter(t => t.urgency === 'critical' || t.urgency === 'high').filter(t => t.status !== 'answered').length;
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center h-9 mb-2 gap-2">
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">💬 문의 관리</span>
+        <div className="ml-auto flex gap-1">
+          <button onClick={() => setTab('tickets')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'tickets' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'}`}>티켓 {tickets.length}</button>
+          <button onClick={() => setTab('faq')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'faq' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'}`}>FAQ {faq.length}</button>
+        </div>
+      </div>
+      <Card className="p-4 space-y-3">
+        {loading ? <p className="text-xs text-gray-300 py-4 text-center">불러오는 중…</p> : tab === 'tickets' ? (
+          <>
+            {/* 통계 */}
+            <div className="flex gap-2 text-[11px]">
+              <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-500">전체 {tickets.length}</span>
+              <span className="px-2 py-1 rounded-full bg-amber-50 text-amber-600">대기 {waiting}</span>
+              <span className="px-2 py-1 rounded-full bg-rose-50 text-rose-600">긴급 {urgent}</span>
+            </div>
+            {/* 입력 (붙여넣기 → 자동 분류) */}
+            <div className="space-y-2">
+              <textarea value={text} onChange={e => setText(e.target.value)} rows={2} placeholder="고객 문의를 붙여넣으면 유형·긴급도·감정을 자동 분류해요…"
+                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-primary-400 resize-none" />
+              <div className="flex gap-2">
+                <select value={channel} onChange={e => setChannel(e.target.value as TicketChannel)} className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs bg-white">
+                  {Object.entries(CH_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+                <button onClick={add} disabled={adding || !text.trim()} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">＋ 분류·추가</button>
+              </div>
+            </div>
+            {/* 티켓 리스트 */}
+            <div className="space-y-2">
+              {tickets.map(t => (
+                <div key={t.id} className="group rounded-xl border border-gray-100 p-3">
+                  <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{CH_LABEL[t.channel]}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary-50 text-primary-600">{CAT_LABEL[t.category]}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${URG_UI[t.urgency].cls}`}>{URG_UI[t.urgency].label}</span>
+                    {t.sentiment === 'negative' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-50 text-rose-500">부정</span>}
+                    {t.needsApproval && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600">승인 필요</span>}
+                    <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded ${t.status === 'answered' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>{t.status === 'answered' ? '답변완료' : '대기'}</span>
+                  </div>
+                  <p className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap line-clamp-3">{t.originalText}</p>
+                  <div className="flex gap-2 mt-1.5">
+                    <button onClick={() => cycle(t)} className="text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100">{t.status === 'answered' ? '↺ 대기로' : '✓ 답변완료'}</button>
+                    <button onClick={() => removeT(t.id)} className="text-[11px] px-2 py-0.5 rounded-lg text-rose-400 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-opacity">삭제</button>
+                  </div>
+                </div>
+              ))}
+              {tickets.length === 0 && <p className="text-xs text-gray-300 py-3 text-center">문의를 붙여넣으면 티켓으로 쌓여요</p>}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-gray-400">원목·도마·가구·배송·A/S FAQ</span>
+              {seedMsg && <span className="text-[11px] text-emerald-600">{seedMsg}</span>}
+              <button onClick={seed} disabled={seeding} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-50">{seeding ? '추가 중…' : '🌱 시목 FAQ 채우기'}</button>
+            </div>
+            <div className="space-y-1.5">
+              {faq.map(f => (
+                <div key={f.id} className="group flex items-start gap-2 text-[12px] py-1">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0 mt-0.5">{CAT_LABEL[f.category]}</span>
+                  <span className="text-gray-700 flex-1">{f.question}</span>
+                  <button onClick={() => removeF(f.id)} className="text-[11px] text-rose-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 flex-shrink-0">×</button>
+                </div>
+              ))}
+              {faq.length === 0 && <p className="text-xs text-gray-300 py-3 text-center">‘시목 FAQ 채우기’로 자주 묻는 질문을 등록하세요</p>}
             </div>
           </>
         )}
@@ -913,6 +1035,8 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
       {staff.typeKey === 'analyst' && <AnalystDataPanel workspace={workspace} />}
       {/* 일정비서 전용: 오늘 실행 계획 */}
       {staff.typeKey === 'scheduler' && <SchedulerDataPanel workspace={workspace} />}
+      {/* CS 전용: 문의 티켓 + FAQ */}
+      {staff.typeKey === 'cs' && <CSDataPanel workspace={workspace} />}
 
       {/* 1. 매일 하는 일 (자동) — 최상단 */}
       <div className="mb-4">

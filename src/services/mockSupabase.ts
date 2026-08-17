@@ -82,6 +82,9 @@ const mockData: Record<string, any[]> = {
   staff_output_actions: [],
   // 오피스 CEO 브리핑 (운영매니저 산출물 · 대시보드가 렌더)
   office_briefings: [],
+  // CS 문의 티켓 + FAQ
+  tickets: [],
+  cs_faq: [],
   // 코인제 — 직원 실행 사용 로그
   staff_usage: [],
   // 직원 보관함 — ⭐로 저장한 산출물

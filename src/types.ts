@@ -512,6 +512,43 @@ export interface CompanyMemory {
   updatedAt?: string;
 }
 
+/** CS 문의 티켓 (마이그 034) */
+export type TicketChannel = 'smartstore' | 'selfmall' | 'instagram' | 'phone' | 'showroom' | 'other';
+export type TicketCategory = 'shipping' | 'product' | 'stock' | 'care' | 'as' | 'exchange' | 'refund' | 'order' | 'other';
+export type TicketUrgency = 'low' | 'normal' | 'high' | 'critical';
+export type TicketSentiment = 'positive' | 'neutral' | 'negative';
+export type TicketStatus = 'new' | 'drafted' | 'waiting_approval' | 'answered' | 'hold' | 'closed';
+export interface Ticket {
+  id: string;
+  workspaceId: string;
+  channel: TicketChannel;
+  customerName?: string;
+  orderRef?: string;
+  productId?: string;
+  originalText: string;
+  category: TicketCategory;
+  urgency: TicketUrgency;
+  sentiment: TicketSentiment;
+  status: TicketStatus;
+  aiDraft?: string;
+  finalAnswer?: string;
+  needsApproval: boolean;
+  faqCandidate: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  answeredAt?: string;
+}
+export interface CsFaq {
+  id: string;
+  workspaceId: string;
+  category: TicketCategory;
+  question: string;
+  answer?: string;
+  occurrences: number;
+  status?: 'active' | 'archived';
+  createdAt?: string;
+}
+
 /** 일 매출 — 채널×날짜 집계 (중심 테이블) */
 export interface SalesDaily {
   id: string;
