@@ -12,7 +12,7 @@ import { WorkspaceCreateModal } from '../WorkspaceCreateModal';
 import { WorkspaceSettingsModal } from '../WorkspaceSettingsModal';
 import {
   DashboardView, BriefingView, TodosView, ScheduleView,
-  InsightsView, LogView, ActivityView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView,
+  InsightsView, LogView, ActivityView, ActivityFeedView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView,
 } from './views';
 import { StaffView } from './StaffView';
 import { NotificationBell } from './NotificationBell';
@@ -24,7 +24,7 @@ import { fetchStaff } from '../../services/staff.service';
 import { StaffUsage } from '../../types';
 import { createPortal } from 'react-dom';
 
-type ViewId = 'dashboard' | 'briefing' | 'staff' | 'todos' | 'schedule' | 'meetings' | 'insights' | 'contents' | 'content' | 'products' | 'sales' | 'memory' | 'log' | 'activity' | 'members' | 'brand';
+type ViewId = 'dashboard' | 'briefing' | 'staff' | 'todos' | 'schedule' | 'meetings' | 'insights' | 'contents' | 'content' | 'products' | 'sales' | 'memory' | 'log' | 'activity' | 'teamlog' | 'members' | 'brand';
 
 const NAV: { id: ViewId; label: string; emoji: string }[] = [
   { id: 'dashboard', label: '대시보드', emoji: '📊' },
@@ -42,6 +42,7 @@ const NAV: { id: ViewId; label: string; emoji: string }[] = [
   { id: 'log', label: '기록', emoji: '📝' },
   { id: 'activity', label: '활동 로그', emoji: '🧾' },
   { id: 'members', label: '멤버', emoji: '👥' },
+  { id: 'teamlog', label: '팀 활동', emoji: '📣' },
 ];
 
 /** 유튜브 브랜드 로고 (실제 SVG) */
@@ -248,6 +249,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             {view === 'memory' && <CompanyMemoryView workspace={workspace} />}
             {view === 'log' && <LogView workspace={workspace} />}
             {view === 'activity' && <ActivityView workspace={workspace} />}
+            {view === 'teamlog' && <ActivityFeedView workspace={workspace} />}
             {view === 'members' && <MembersView workspace={workspace} />}
             {view === 'brand' && <BrandView workspace={workspace} />}
           </div>

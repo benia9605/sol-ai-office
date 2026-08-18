@@ -10,6 +10,7 @@ import { getCurrentUserId } from './auth';
 import { Meeting } from '../types';
 import { notify, getActorName } from './notify.service';
 import { fetchTasks, addTask, updateTaskFields, deleteTask } from './tasks.service';
+import { recordActivity } from './activities.service';
 
 const toMeeting = (r: any): Meeting => ({
   id: r.id, workspaceId: r.workspace_id, createdBy: r.created_by, title: r.title,
@@ -41,9 +42,10 @@ export async function addMeeting(workspaceId: string, fields: { title: string; m
       });
     } catch (_) { /* 일정 연동 실패는 무시 */ }
   }
-  // 회의 등록 알림 → 멤버 전체
+  // 회의 등록 알림 → 멤버 전체 + 활동 기록
   const name = await getActorName(workspaceId, userId);
   notify({ type: 'notify_schedule', workspaceId, actorId: userId, title: '📋 새 회의', body: `${name} 님이 「${m.title}」 회의를 만들었어요.`, tag: `meeting-${m.id}`, url: '/office/meetings' });
+  recordActivity({ workspaceId, action: 'created_meeting', resourceType: 'meeting', resourceId: m.id, metadata: { title: m.title } });
   return m;
 }
 

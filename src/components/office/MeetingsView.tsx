@@ -7,10 +7,11 @@
  * - 회의 등록·회의록 저장 시 멤버 알림, 할일 배정 시 담당자 알림.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Workspace, WorkspaceMember, Meeting, TaskItem, TaskStatus } from '../../types';
+import { Workspace, WorkspaceMember, Meeting, TaskStatus } from '../../types';
 import { fetchMeetings, addMeeting, updateMeeting, notifyMeetingNote, syncMeetingTasks, MeetingTaskDraft } from '../../services/meetings.service';
 import { fetchMembers } from '../../services/workspaces.service';
 import { fetchTasks, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
+import { recordActivity } from '../../services/activities.service';
 import { ViewHead, Card, EmptyState, TaskProgress } from './ui';
 import { getTodayStr } from '../../utils/dateCalc';
 
@@ -155,6 +156,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
     const next: TaskStatus = a.status === 'completed' ? 'pending' : 'completed';
     updateAction(i, { status: next });
     await updateTaskStatus(a.id, next).catch(() => {});
+    if (next === 'completed') recordActivity({ workspaceId: workspace.id, action: 'completed_task', resourceType: 'task', resourceId: a.id, metadata: { title: a.title } });
     onChanged();
   };
 

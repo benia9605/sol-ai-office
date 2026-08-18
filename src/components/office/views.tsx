@@ -346,16 +346,83 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
   );
 }
 
+/** 대시보드 — 확인이 필요한 일(top5) + 내 할일 버킷 (가이드 §10.7/§10.8). tasks=내 미완료. */
+const BUCKET_META: { key: DateBucket; label: string; tone: string }[] = [
+  { key: 'overdue', label: '지연', tone: 'text-rose-500' },
+  { key: 'today', label: '오늘', tone: 'text-primary-500' },
+  { key: 'this_week', label: '이번 주', tone: 'text-gray-700' },
+  { key: 'later', label: '나중', tone: 'text-gray-400' },
+  { key: 'no_date', label: '기한 없음', tone: 'text-gray-300' },
+];
+function MyTaskFocus({ tasks, onNavigate }: { tasks: TaskItem[]; onNavigate: Nav }) {
+  if (tasks.length === 0) return null;
+  // 확인이 필요한 일 — 기한 빠른 순(없는 건 뒤로) top5
+  const pending = [...tasks].sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999')).slice(0, 5);
+  // 버킷 그룹핑
+  const grouped = new Map<DateBucket, TaskItem[]>();
+  for (const t of tasks) {
+    const b = bucketFor(t.date);
+    if (!grouped.has(b)) grouped.set(b, []);
+    grouped.get(b)!.push(t);
+  }
+  return (
+    <div className="grid sm:grid-cols-2 gap-4">
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">확인이 필요한 일 <span className="text-gray-300 tabular-nums">{tasks.length}</span></span>
+          <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-primary-500 transition-colors">전체 ›</button>
+        </div>
+        {pending.map(t => {
+          const overdue = t.date ? (daysUntil(t.date) ?? 0) < 0 : false;
+          return (
+            <button key={t.id} onClick={() => onNavigate('todos')} className="w-full flex items-center gap-2 py-1.5 text-left">
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${overdue ? 'bg-rose-400' : 'bg-emerald-400'}`} />
+              <span className="text-sm text-gray-600 truncate flex-1">{t.title}</span>
+              <span className={`text-[10px] flex-shrink-0 ${overdue ? 'text-rose-500' : 'text-gray-400'}`}>{dueLabel(t.date)}</span>
+            </button>
+          );
+        })}
+      </Card>
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">내 할일</span>
+          <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-primary-500 transition-colors">전체 ›</button>
+        </div>
+        {BUCKET_META.filter(b => (grouped.get(b.key)?.length ?? 0) > 0).map(b => {
+          const items = grouped.get(b.key)!;
+          return (
+            <div key={b.key} className="py-1.5">
+              <p className={`text-[11px] font-medium ${b.tone} mb-1`}>{b.label} <span className="text-gray-300 tabular-nums">{items.length}</span></p>
+              <div className="space-y-0.5">
+                {items.slice(0, 4).map(t => (
+                  <button key={t.id} onClick={() => onNavigate('todos')} className="w-full flex items-center gap-2 text-left">
+                    <span className="text-sm text-gray-600 truncate flex-1">{t.title}</span>
+                    {t.date && <span className="text-[10px] text-gray-300 flex-shrink-0">{t.date.slice(5)}</span>}
+                  </button>
+                ))}
+                {items.length > 4 && <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-primary-500">그 외 {items.length - 4}건 →</button>}
+              </div>
+            </div>
+          );
+        })}
+      </Card>
+    </div>
+  );
+}
+
 export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; workspace: Workspace }) {
-  const { tasks } = useTasks();
   const kpis = useDashboardKpis(workspace);
-  const open = tasks.filter(t => t.status !== 'completed');
+  const [wsTasks, setWsTasks] = useState<TaskItem[]>([]);
+  const [myId, setMyId] = useState<string | null>(null);
+  const open = wsTasks.filter(t => t.status !== 'completed');
   const [schedules, setSchedules] = useState<ScheduleRow[]>([]);
   const [insights, setInsights] = useState<InsightRow[]>([]);
   const [memos, setMemos] = useState<RecordRow[]>([]);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   useEffect(() => {
+    fetchWorkspaceTasks(workspace.id).then(rows => setWsTasks(rows.map(rowToTaskItem))).catch(() => setWsTasks([]));
+    getCurrentUserId().then(setMyId).catch(() => setMyId(null));
     fetchSchedules(workspace.id).then(setSchedules).catch(() => setSchedules([]));
     fetchInsights(workspace.id).then(setInsights).catch(() => setInsights([]));
     fetchRecords(workspace.id, 'memo').then(setMemos).catch(() => setMemos([]));
@@ -364,6 +431,8 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
   }, [workspace.id]);
 
   const todayStr = getTodayStr();
+  // 내 할일 = 나에게 배정된 것 + (미배정이면서 내가 만든 것). 솔로 오너·팀원 모두 커버.
+  const myTasks = wsTasks.filter(t => t.status !== 'completed' && (t.assigneeId === myId || (!t.assigneeId && t.createdBy === myId)));
   const hour = new Date().getHours();
   const greeting = hour < 12 ? '좋은 아침이에요' : hour < 18 ? '좋은 오후예요' : '좋은 저녁이에요';
   const upcoming = schedules.filter(s => s.date >= todayStr).slice(0, 4);
@@ -421,6 +490,9 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
         </span>
         <span className="text-white/50">›</span>
       </button>
+
+      {/* 확인이 필요한 일 + 내 할일 버킷 */}
+      <MyTaskFocus tasks={myTasks} onNavigate={onNavigate} />
 
       {/* 다가오는 일정 + 내 할일 */}
       <div className="grid sm:grid-cols-2 gap-4">
@@ -623,6 +695,13 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
             <option value="">📋 회의 연결 없음</option>
             {meetings.map(m => <option key={m.id} value={m.id}>📋 {m.title}{m.meetingDate ? ` · ${m.meetingDate.slice(5)}` : ''}</option>)}
           </select>
+        )}
+        {/* 작성자(배정한 사람) — 읽기 전용 */}
+        {task.workspaceId && task.createdBy && (
+          <div className="flex items-center gap-1.5 text-[11px] text-gray-400 px-1">
+            <span>✍️ 작성자</span>
+            <span className="text-gray-600">{(() => { const c = members.find(x => x.userId === task.createdBy); return c ? (c.nickname || c.name || '멤버') : '나'; })()}</span>
+          </div>
         )}
         <div className="flex items-center justify-between pt-1">
           <button onClick={onDelete} className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
@@ -1828,8 +1907,131 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
 }
 
 /* ───────── 멤버 (실데이터) ───────── */
+/** 팀 진행률 보드 — 담당자별 진행률 + 미지정 행 (가이드 §11.7). tasks=워크스페이스 전체. */
+function TeamProgressBoard({ tasks, members, memberLabel, onOpen }: {
+  tasks: TaskItem[]; members: WorkspaceMember[]; memberLabel: (m: WorkspaceMember) => string; onOpen: (m: WorkspaceMember) => void;
+}) {
+  const today = getTodayStr();
+  const overall = progressOf(tasks, today);
+  if (overall.total === 0) return null;
+  const byAssignee = progressBy(tasks, t => t.assigneeId, today);
+  const unassigned = progressOf(tasks.filter(t => !t.assigneeId), today);
+  const rows = members
+    .map(m => ({ m, p: byAssignee.get(m.userId) }))
+    .filter((r): r is { m: WorkspaceMember; p: ReturnType<typeof progressOf> } => !!r.p && r.p.total > 0)
+    .sort((a, b) => (a.p.done / a.p.total) - (b.p.done / b.p.total) || (b.p.overdue - a.p.overdue));
+  return (
+    <Card className="p-4 mb-3 space-y-3">
+      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">팀 진행률</span>
+      <TaskProgress label="전체" done={overall.done} total={overall.total} overdue={overall.overdue} />
+      <div className="divide-y divide-gray-100">
+        {rows.map(({ m, p }) => (
+          <button key={m.userId} onClick={() => onOpen(m)} className="w-full text-left py-2 hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">
+            <TaskProgress compact label={memberLabel(m)} done={p.done} total={p.total} overdue={p.overdue} />
+          </button>
+        ))}
+        {unassigned.total > 0 && (
+          <div className="py-2"><TaskProgress compact label="담당자 미지정" done={unassigned.done} total={unassigned.total} overdue={unassigned.overdue} /></div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+/** 멤버 상세 — 그 멤버의 담당 할일 + 진행률 (가이드 §10.9) */
+function MemberDetailView({ member, label, tasks, onBack }: {
+  member: WorkspaceMember; label: string; tasks: TaskItem[]; onBack: () => void;
+}) {
+  const today = getTodayStr();
+  const mine = tasks.filter(t => t.assigneeId === member.userId);
+  const open = mine.filter(t => t.status !== 'completed');
+  const p = progressOf(mine, today);
+  return (
+    <>
+      <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-3">← 멤버</button>
+      <div className="rounded-[20px] bg-primary-50/50 border border-primary-100 p-5 mb-4">
+        <div className="text-lg font-extrabold text-gray-800">{label}</div>
+        <div className="text-sm text-gray-500 mt-0.5">담당 할일 {open.length}건 진행 중</div>
+        {p.total > 0 && <div className="mt-3"><TaskProgress done={p.done} total={p.total} overdue={p.overdue} /></div>}
+      </div>
+      <Card className="p-3">
+        {open.length === 0 ? <p className="text-xs text-gray-300 py-4 text-center">진행 중인 담당 할일이 없어요</p> : (
+          <div className="space-y-1.5">
+            {open.map(t => {
+              const overdue = t.date ? (daysUntil(t.date) ?? 0) < 0 : false;
+              return (
+                <div key={t.id} className="flex items-center gap-2 p-2.5 rounded-xl bg-gray-50">
+                  <PriorityDot p={t.priority} />
+                  <span className="text-sm text-gray-700 flex-1 truncate">{t.title}</span>
+                  <span className={`text-[10px] flex-shrink-0 ${overdue ? 'text-rose-500' : 'text-gray-400'}`}>{dueLabel(t.date)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+    </>
+  );
+}
+
+/* ───────── 팀 활동 피드 (workspace_activities · 마이그 041) ───────── */
+const ACTIVITY_META: Record<string, { emoji: string; verb: (title: string) => string }> = {
+  completed_task: { emoji: '✅', verb: t => `「${t}」을 완료했어요` },
+  created_meeting: { emoji: '📋', verb: t => `「${t}」 회의를 만들었어요` },
+  created_task: { emoji: '📝', verb: t => `「${t}」 할일을 추가했어요` },
+};
+function relTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return '방금';
+  if (min < 60) return `${min}분 전`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}시간 전`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day}일 전`;
+  return iso.slice(0, 10);
+}
+export function ActivityFeedView({ workspace }: { workspace: Workspace }) {
+  const [items, setItems] = useState<ActivityItem[]>([]);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    fetchActivities(workspace.id, 80).then(setItems).catch(() => setItems([])).finally(() => setLoaded(true));
+    fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([]));
+  }, [workspace.id]);
+  const actorName = (uid?: string) => { if (!uid) return '누군가'; const m = members.find(x => x.userId === uid); return m?.nickname || m?.name || '멤버'; };
+  return (
+    <>
+      <ViewHead eyebrow="ACTIVITY" title="팀 활동" sub={`최근 ${items.length}건`} />
+      {items.length === 0 ? (
+        <EmptyState emoji="📣" title={loaded ? '아직 팀 활동이 없어요' : '불러오는 중…'} sub="할일 완료·회의 생성 같은 팀 활동이 여기 쌓여요" />
+      ) : (
+        <Card className="p-3">
+          <div className="divide-y divide-gray-100">
+            {items.map(a => {
+              const meta = ACTIVITY_META[a.action];
+              const title = (a.metadata?.title as string) || '';
+              return (
+                <div key={a.id} className="flex items-center gap-2.5 py-2.5">
+                  <span className="text-base flex-shrink-0">{meta?.emoji ?? '•'}</span>
+                  <span className="text-sm text-gray-600 flex-1 min-w-0 truncate">
+                    <b className="text-gray-800">{actorName(a.actorId)}</b> 님이 {meta ? meta.verb(title) : a.action}
+                  </span>
+                  <span className="text-[11px] text-gray-300 flex-shrink-0">{relTime(a.createdAt)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+    </>
+  );
+}
+
 export function MembersView({ workspace }: { workspace: Workspace }) {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [wsTasks, setWsTasks] = useState<TaskItem[]>([]);
+  const [detailMember, setDetailMember] = useState<WorkspaceMember | null>(null);
   const [myId, setMyId] = useState('');
   const [copied, setCopied] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -1837,9 +2039,19 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
   const [nickVal, setNickVal] = useState('');
   const [savingNick, setSavingNick] = useState(false);
   const load = () => fetchMembers(workspace.id).then(m => { setMembers(m); setLoaded(true); }).catch(() => { setMembers([]); setLoaded(true); });
-  useEffect(() => { load(); getCurrentUserId().then(setMyId).catch(() => {}); /* eslint-disable-next-line */ }, [workspace.id]);
+  useEffect(() => {
+    load();
+    getCurrentUserId().then(setMyId).catch(() => {});
+    fetchWorkspaceTasks(workspace.id).then(rows => setWsTasks(rows.map(rowToTaskItem))).catch(() => setWsTasks([]));
+    /* eslint-disable-next-line */
+  }, [workspace.id]);
 
+  const memberLabel = (m: WorkspaceMember) => (m.nickname || m.name || `멤버 ${m.userId.slice(0, 4)}`) + (m.userId === myId ? ' (나)' : '');
   const iAmOwner = members.find(m => m.userId === myId)?.role === 'owner';
+
+  if (detailMember) {
+    return <MemberDetailView member={detailMember} label={memberLabel(detailMember)} tasks={wsTasks} onBack={() => setDetailMember(null)} />;
+  }
   const copyCode = () => {
     if (!workspace.inviteCode) return;
     navigator.clipboard?.writeText(workspace.inviteCode);
@@ -1876,6 +2088,8 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
           <p className="text-[11px] text-gray-400">이 코드를 멤버에게 공유하세요. 멤버는 왼쪽 위 <b>워크스페이스 메뉴 → 🔑 코드로 합류</b>에서 이 코드를 입력하면 합류돼요.</p>
         </Card>
       )}
+      {/* 팀 진행률 보드 — 담당자별 + 미지정 */}
+      <TeamProgressBoard tasks={wsTasks} members={members} memberLabel={memberLabel} onOpen={setDetailMember} />
       <Card className="p-3">
         {members.map(m => {
           const canEditNick = m.userId === myId || iAmOwner;
@@ -1905,6 +2119,9 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
               </>
             )}
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{m.role === 'owner' ? '오너' : '멤버'}</span>
+            {!editing && (
+              <button onClick={() => setDetailMember(m)} className="text-[11px] text-gray-400 hover:text-primary-500 flex-shrink-0">담당 할일 ›</button>
+            )}
             {iAmOwner && m.userId !== myId && !editing && (
               <>
                 <button onClick={() => toggleRole(m)} className="text-[11px] text-gray-400 hover:text-primary-500 flex-shrink-0">{m.role === 'owner' ? '멤버로' : '오너로'}</button>
