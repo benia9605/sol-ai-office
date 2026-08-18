@@ -8,13 +8,14 @@ import { useEffect, useState } from 'react';
 import { Workspace, WorkspaceMember, Meeting, TaskItem } from '../../types';
 import { fetchMeetings, addMeeting, updateMeeting, deleteMeeting, notifyMeetingNote } from '../../services/meetings.service';
 import { fetchMembers } from '../../services/workspaces.service';
-import { fetchTasks, addTask, updateTaskStatus, deleteTask, fromDbStatus } from '../../services/tasks.service';
+import { fetchTasks, addTask, updateTaskStatus, updateTaskFields, deleteTask, fromDbStatus } from '../../services/tasks.service';
 import { notify, getActorName } from '../../services/notify.service';
 import { getCurrentUserId } from '../../services/auth';
 import { ViewHead, Card, EmptyState } from './ui';
 import { getTodayStr } from '../../utils/dateCalc';
 
 const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+const miniCls = 'min-w-0 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-xs text-gray-600 focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
 
 export function MeetingsView({ workspace }: { workspace: Workspace }) {
   const [list, setList] = useState<Meeting[]>([]);
@@ -128,6 +129,19 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
     await updateTaskStatus(t.id, next).catch(() => {}); await loadItems();
   };
   const removeItem = async (id: string) => { await deleteTask(id).catch(() => {}); await loadItems(); };
+  // 이미 추가된 액션아이템의 담당자·기한을 인라인으로 바로 수정(자동 저장)
+  const setItemAssignee = async (t: TaskItem, uid: string) => {
+    await updateTaskFields(t.id, { assignee_id: uid || null }).catch(() => {});
+    if (uid && uid !== t.assigneeId) {
+      const actor = await getCurrentUserId().catch(() => null);
+      if (uid !== actor) {
+        const name = await getActorName(workspace.id, actor);
+        notify({ type: 'notify_task_assigned', workspaceId: workspace.id, actorId: actor, title: '📝 할일 배정(회의)', body: `${name} 님이 「${t.title}」을 배정했어요.`, tag: `task-${t.id}`, targetUserIds: [uid] });
+      }
+    }
+    await loadItems();
+  };
+  const setItemDue = async (t: TaskItem, due: string) => { await updateTaskFields(t.id, { due_date: due || null }).catch(() => {}); await loadItems(); };
 
   return (
     <>
@@ -154,28 +168,34 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
         </div>
         <Card className="p-3 space-y-2">
           {items.map(t => (
-            <div key={t.id} className="group flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50">
-              <button onClick={() => toggleItem(t)} className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${t.status === 'completed' ? 'bg-primary-500 border-primary-500' : 'border-gray-300'}`}>
-                {t.status === 'completed' && <span className="text-white text-[9px]">✓</span>}
-              </button>
-              <span className={`text-sm flex-1 truncate ${t.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-700'}`}>{t.title}</span>
-              {t.date && <span className="text-[10px] text-gray-400 flex-shrink-0">{t.date.slice(5)}</span>}
-              {t.assigneeId && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-500 flex-shrink-0">{memberName(t.assigneeId)}</span>}
-              <button onClick={() => removeItem(t.id)} className="text-[11px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 flex-shrink-0">×</button>
+            <div key={t.id} className="group rounded-xl border border-gray-100 p-2.5 space-y-2 hover:border-gray-200">
+              <div className="flex items-center gap-2">
+                <button onClick={() => toggleItem(t)} className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${t.status === 'completed' ? 'bg-primary-500 border-primary-500' : 'border-gray-300'}`}>
+                  {t.status === 'completed' && <span className="text-white text-[9px]">✓</span>}
+                </button>
+                <span className={`text-sm flex-1 truncate ${t.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-700'}`}>{t.title}</span>
+                <button onClick={() => removeItem(t.id)} className="text-[13px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 flex-shrink-0">×</button>
+              </div>
+              {/* 담당자·기한 — 인라인 수정(자동 저장) */}
+              <div className="flex gap-2 pl-6">
+                <select value={t.assigneeId ?? ''} onChange={e => setItemAssignee(t, e.target.value)} className={`${miniCls} flex-1`}>
+                  <option value="">👤 담당자</option>
+                  {members.map(m => <option key={m.userId} value={m.userId}>{memberName(m.userId)}</option>)}
+                </select>
+                <input type="date" value={t.date ?? ''} onChange={e => setItemDue(t, e.target.value)} className={`${miniCls} flex-1`} />
+              </div>
             </div>
           ))}
           {items.length === 0 && <p className="text-xs text-gray-300 py-2 text-center">회의에서 나온 할일을 추가하세요</p>}
-          {/* 추가 폼 */}
+          {/* 추가 폼 — 할일·담당자·기한 */}
           <div className="border-t border-gray-100 pt-2 space-y-2">
             <input value={ai.title} onChange={e => setAi({ ...ai, title: e.target.value })} onKeyDown={e => { if (e.key === 'Enter') addItem(); }} placeholder="＋ 액션 아이템 (할일)" className={fieldCls} />
             <div className="flex gap-2">
-              {members.length > 1 && (
-                <select value={ai.assigneeId} onChange={e => setAi({ ...ai, assigneeId: e.target.value })} className={`${fieldCls} flex-1`}>
-                  <option value="">담당자</option>
-                  {members.map(m => <option key={m.userId} value={m.userId}>{memberName(m.userId)}</option>)}
-                </select>
-              )}
-              <input type="date" value={ai.due} onChange={e => setAi({ ...ai, due: e.target.value })} className={`${fieldCls} flex-1`} />
+              <select value={ai.assigneeId} onChange={e => setAi({ ...ai, assigneeId: e.target.value })} className={`${miniCls} flex-1`}>
+                <option value="">👤 담당자</option>
+                {members.map(m => <option key={m.userId} value={m.userId}>{memberName(m.userId)}</option>)}
+              </select>
+              <input type="date" value={ai.due} onChange={e => setAi({ ...ai, due: e.target.value })} className={`${miniCls} flex-1`} />
               <button onClick={addItem} disabled={!ai.title.trim()} className="px-3 py-2 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 flex-shrink-0">추가</button>
             </div>
           </div>
