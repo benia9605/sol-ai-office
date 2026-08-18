@@ -11,36 +11,11 @@ import { Workspace, WorkspaceMember, Meeting, TaskItem, TaskStatus } from '../..
 import { fetchMeetings, addMeeting, updateMeeting, notifyMeetingNote, syncMeetingTasks, MeetingTaskDraft } from '../../services/meetings.service';
 import { fetchMembers } from '../../services/workspaces.service';
 import { fetchTasks, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
-import { ViewHead, Card, EmptyState } from './ui';
+import { ViewHead, Card, EmptyState, TaskProgress } from './ui';
 import { getTodayStr } from '../../utils/dateCalc';
 
 const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
 const miniCls = 'min-w-0 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-xs text-gray-600 focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
-
-/** 진행률 % — 0건이면 0, done<total이면 최대 99(가이드 §11.2 반올림 함정 방지) */
-function pct(done: number, total: number): number {
-  if (total === 0) return 0;
-  if (done >= total) return 100;
-  return Math.min(99, Math.round((done / total) * 100));
-}
-
-/** 할일 진행률 바 (done/total · %). 0건이면 렌더 안 함. */
-function TaskProgress({ done, total, compact = false }: { done: number; total: number; compact?: boolean }) {
-  if (total === 0) return null;
-  const p = pct(done, total);
-  const complete = done >= total;
-  return (
-    <div>
-      <div className={`flex items-baseline justify-between gap-2 tabular-nums ${compact ? 'text-[11px]' : 'text-xs'} mb-1`}>
-        <span className="text-gray-400">할일 {done}/{total}</span>
-        <span className={complete ? 'text-primary-500 font-semibold' : 'text-gray-600'}>{p}%</span>
-      </div>
-      <div className="h-1 rounded-full bg-gray-100 overflow-hidden">
-        <div className="h-full bg-primary-500 transition-all" style={{ width: `${p}%` }} />
-      </div>
-    </div>
-  );
-}
 
 export function MeetingsView({ workspace }: { workspace: Workspace }) {
   const [list, setList] = useState<Meeting[]>([]);

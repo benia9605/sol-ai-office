@@ -229,6 +229,8 @@ export function useTasks() {
         tags: data.tags,
         conversation_id: data.conversation_id,
         workspace_id: activeWorkspaceId ?? undefined,
+        // 오피스 할일은 팀 공유(멤버가 서로 조회 — RLS 041). 개인 공간은 미지정.
+        is_shared: activeWorkspaceId ? true : undefined,
         assignee_id: data.assigneeId,
         source: data.source ?? 'manual',
         meeting_id: data.meetingId,

@@ -13,6 +13,7 @@ import { RepeatType } from '../types';
 
 export interface TaskRow {
   id: string;
+  user_id?: string;          // 작성자(=배정한 사람). 팀 화면에서 '내가 배정한 일'·작성자 표시용
   title: string;
   type?: string;
   project?: string;
@@ -79,6 +80,21 @@ export async function updateTaskStatus(id: string, frontendStatus: string): Prom
     .eq('id', id);
 
   if (error) throw error;
+}
+
+/**
+ * 워크스페이스(오피스) 단위 조회 — 멤버 전원의 '공유' 할일을 가져온다.
+ * fetchTasks()는 user_id=본인만 조회하므로, 남이 나에게 배정한 할일·팀 진행률·멤버 담당은 이걸 쓴다.
+ * (RLS 041: is_shared + 워크스페이스 멤버 SELECT 허용)
+ */
+export async function fetchWorkspaceTasks(workspaceId: string): Promise<TaskRow[]> {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function addTask(task: {

@@ -482,10 +482,23 @@ export interface TaskItem {
   workspaceId?: string;
   isShared?: boolean;
   assigneeId?: string;     // 담당자(추천받은 사람)
+  createdBy?: string;      // 작성자(=배정한 사람, DB user_id). '내가 배정한 일'·작성자 표시용
   meetingId?: string;      // 연결된 회의(회의록에서 나온 액션아이템) — 마이그 040
   // ── 추적(2026-08) ──
   source?: string;         // 생성 원천: manual|content|decision|memory|campaign|ai
   completedAt?: string;    // 완료 시각(완료율·리드타임 분석용)
+}
+
+/** 팀 활동 로그 항목 (DB workspace_activities · 마이그 041) */
+export interface ActivityItem {
+  id: string;
+  workspaceId: string;
+  actorId?: string;
+  action: string;              // completed_task | created_meeting | created_task ...
+  resourceType?: string;
+  resourceId?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
 }
 
 /** 콘텐츠 아이템 — 아이디어→발행 수명주기 (MVP) */

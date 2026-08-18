@@ -237,7 +237,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             {view === 'dashboard' && <DashboardView onNavigate={onNavigate} workspace={workspace} />}
             {view === 'briefing' && <BriefingView workspace={workspace} />}
             {view === 'staff' && <StaffView key={staffKey} workspace={workspace} onRan={refreshCredits} />}
-            {view === 'todos' && <TodosView workspace={workspace} />}
+            {view === 'todos' && <TodosView workspace={workspace} onNavigate={onNavigate} />}
             {view === 'schedule' && <ScheduleView workspace={workspace} />}
             {view === 'meetings' && <MeetingsView workspace={workspace} />}
             {view === 'insights' && <InsightsView workspace={workspace} />}

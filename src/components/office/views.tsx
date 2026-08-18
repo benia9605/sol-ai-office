@@ -10,8 +10,12 @@ import { useTasks } from '../../hooks/useTasks';
 import { fetchMembers, removeMember, changeMemberRole, updateMemberNickname, updateWorkspace } from '../../services/workspaces.service';
 import { generateBriefing, fetchLatestBriefing, BriefingJson, BriefStatus, Severity } from '../../services/officeBriefing.service';
 import { notify, getActorName } from '../../services/notify.service';
+import { fetchWorkspaceTasks, updateTaskStatus, updateTaskFields, deleteTask, toDbStatus, fromDbStatus, TaskRow } from '../../services/tasks.service';
+import { recordActivity, fetchActivities } from '../../services/activities.service';
+import { ActivityItem } from '../../types';
+import { progressOf, progressBy } from '../../utils/taskProgress';
 import { LikeCommentBlock } from './LikeCommentBlock';
-import { getTodayStr, addDaysStr } from '../../utils/dateCalc';
+import { getTodayStr, addDaysStr, bucketFor, dueLabel, daysUntil, DateBucket } from '../../utils/dateCalc';
 import { fetchMeetings } from '../../services/meetings.service';
 import { Meeting } from '../../types';
 import { getCurrentUserId } from '../../services/auth';
@@ -32,7 +36,19 @@ import { fetchWorkspaceAnalytics, WorkspaceAnalytics } from '../../services/anal
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
-import { Spark, ViewHead, Card, EmptyState } from './ui';
+import { Spark, ViewHead, Card, EmptyState, TaskProgress } from './ui';
+
+/** TaskRow(DB) → TaskItem(프론트). 워크스페이스 팀 화면에서 남이 만든 할일도 다루기 위해 로컬 매핑. */
+function rowToTaskItem(r: TaskRow): TaskItem {
+  return {
+    id: r.id, title: r.title, project: r.project ?? '', goalId: (r as any).goal_id ?? undefined,
+    status: fromDbStatus(r.status), priority: (r.priority as TaskItem['priority']) ?? 'medium',
+    starred: !!r.starred, date: r.due_date, category: r.category, notes: r.notes, tags: r.tags,
+    conversationId: r.conversation_id, workspaceId: r.workspace_id, isShared: r.is_shared,
+    assigneeId: r.assignee_id, createdBy: r.user_id, meetingId: r.meeting_id, source: r.source,
+    completedAt: r.completed_at,
+  };
+}
 
 /** 클로드/질문 빠른삽입 버튼 (스터디노트와 동일 UX) */
 function ClaudeQuickButtons({ onClaude, onQA }: { onClaude: () => void; onQA: () => void }) {
@@ -514,8 +530,9 @@ const STATUS_RING: Record<TaskItem['status'], string> = {
 const TASK_CATEGORIES = ['콘텐츠', '제품', '쇼룸', '촬영', '회의', '운영', '마케팅', 'CS', 'AI'];
 const isAiTask = (t: TaskItem) => t.category === '🤖 AI' || t.source === 'ai';
 
-function TaskCol({ title, items, onOpen, onCycle, memberName }: {
+function TaskCol({ title, items, onOpen, onCycle, memberName, onMeeting }: {
   title: string; items: TaskItem[]; onOpen: (t: TaskItem) => void; onCycle: (id: string) => void; memberName: (uid?: string) => string;
+  onMeeting?: () => void;   // 회의에서 나온 할일이면 ↗회의 링크
 }) {
   return (
     <Card className="p-4">
@@ -538,6 +555,9 @@ function TaskCol({ title, items, onOpen, onCycle, memberName }: {
               {isAiTask(t) && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-600 flex-shrink-0">🤖 AI</span>}
               {t.assigneeId && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-500 flex-shrink-0">{memberName(t.assigneeId)}</span>}
             </button>
+            {t.meetingId && onMeeting && (
+              <button onClick={onMeeting} title="회의로 이동" className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 flex-shrink-0">↗회의</button>
+            )}
           </div>
         ))}
         {items.length === 0 && <p className="text-xs text-gray-300 py-3 text-center">없음</p>}
@@ -619,20 +639,29 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
   );
 }
 
-export function TodosView({ workspace }: { workspace: Workspace }) {
-  const { tasks, cycleStatus, add, updateTask, remove } = useTasks();
+export function TodosView({ workspace, onNavigate }: { workspace: Workspace; onNavigate?: Nav }) {
+  const { add } = useTasks();
+  const [wsTasks, setWsTasks] = useState<TaskItem[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [myId, setMyId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   // 할일 추가 폼 — 날짜는 기본으로 '오늘'(수동 수정 가능)
   const blankForm = (): { title: string; priority: TaskItem['priority']; date: string; assigneeId: string; category: string } =>
     ({ title: '', priority: 'medium', date: getTodayStr(), assigneeId: '', category: '' });
   const [form, setForm] = useState(blankForm);
   const [selected, setSelected] = useState<TaskItem | null>(null);
-  const [filter, setFilter] = useState<string>('all');
+  const [scope, setScope] = useState<'all' | 'mine' | 'assigned'>('all');  // 전체 / 받은 할일 / 내가 배정
+  const [filter, setFilter] = useState<string>('all');                     // all 스코프의 하위 필터(멤버·미배정·AI)
   const [mode, setMode] = useState<'day' | 'list' | 'calendar'>('day');
   const [cursor, setCursor] = useState<string>(() => getTodayStr()); // 일별 뷰: 선택한 날짜
 
-  useEffect(() => { fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([])); }, [workspace.id]);
+  const loadWs = () => fetchWorkspaceTasks(workspace.id).then(rows => setWsTasks(rows.map(rowToTaskItem))).catch(() => setWsTasks([]));
+  useEffect(() => {
+    loadWs();
+    fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([]));
+    getCurrentUserId().then(setMyId).catch(() => setMyId(null));
+    /* eslint-disable-next-line */
+  }, [workspace.id]);
 
   const memberName = (uid?: string) => {
     if (!uid) return '';
@@ -646,17 +675,68 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
     // source='manual' — 대표가 직접 만든 할일. (content/decision/ai 등은 해당 기능이 생성 시 지정)
     try {
       await add({ title: form.title.trim(), priority: form.priority, date: form.date || undefined, assigneeId: form.assigneeId || undefined, category: form.category || undefined, source: 'manual' });
-      setForm(blankForm()); setShowForm(false);
+      setForm(blankForm()); setShowForm(false); await loadWs();
     } catch (e) { console.error('[TodosView] 할일 추가 실패:', e); alert('할일 추가에 실패했어요. 잠시 후 다시 시도해 주세요.'); }
   };
 
+  // ── 뮤테이션(팀 전체 할일 대상 — 남이 만든 받은 할일도 처리) ──
+  const cycleStatus = async (id: string) => {
+    const t = wsTasks.find(x => x.id === id); if (!t) return;
+    const order: TaskItem['status'][] = ['pending', 'in_progress', 'completed'];
+    const next = order[(order.indexOf(t.status) + 1) % 3];
+    if (next === 'completed') {
+      await updateTaskStatus(id, 'completed').catch(() => {});
+      recordActivity({ workspaceId: workspace.id, action: 'completed_task', resourceType: 'task', resourceId: id, metadata: { title: t.title } });
+      const name = await getActorName(workspace.id, myId);
+      notify({ type: 'notify_task_completed', workspaceId: workspace.id, actorId: myId, title: '✅ 할일 완료', body: `${name} 님이 「${t.title}」을 완료했어요.`, tag: `task-${id}-done` });
+    } else {
+      await updateTaskFields(id, { status: toDbStatus(next), completed_at: null }).catch(() => {});
+    }
+    await loadWs();
+  };
+  const saveTask = async (id: string, patch: Partial<TaskItem>) => {
+    const prev = wsTasks.find(x => x.id === id);
+    const db: Record<string, unknown> = {};
+    if (patch.title !== undefined) db.title = patch.title;
+    if (patch.priority !== undefined) db.priority = patch.priority;
+    if (patch.status !== undefined) { db.status = toDbStatus(patch.status); db.completed_at = patch.status === 'completed' ? new Date().toISOString() : null; }
+    if (patch.date !== undefined) db.due_date = patch.date || null;
+    if (patch.assigneeId !== undefined) db.assignee_id = patch.assigneeId || null;
+    if (patch.category !== undefined) db.category = patch.category || null;
+    if (patch.meetingId !== undefined) db.meeting_id = patch.meetingId || null;
+    await updateTaskFields(id, db).catch(() => {});
+    // 재배정 알림 — 담당자가 실제로 바뀌었고 본인이 아닐 때만
+    if (patch.assigneeId && patch.assigneeId !== prev?.assigneeId && patch.assigneeId !== myId) {
+      const name = await getActorName(workspace.id, myId);
+      notify({ type: 'notify_task_assigned', workspaceId: workspace.id, actorId: myId, title: '🔄 할일 담당자 변경', body: `${name} 님이 「${patch.title ?? prev?.title ?? '할일'}」을 회원님께 넘겼어요.`, tag: `task-assign-${id}-${patch.assigneeId}`, targetUserIds: [patch.assigneeId] });
+    }
+    // 완료 전환 알림·기록
+    if (patch.status === 'completed' && prev?.status !== 'completed') {
+      recordActivity({ workspaceId: workspace.id, action: 'completed_task', resourceType: 'task', resourceId: id, metadata: { title: prev?.title } });
+      const name = await getActorName(workspace.id, myId);
+      notify({ type: 'notify_task_completed', workspaceId: workspace.id, actorId: myId, title: '✅ 할일 완료', body: `${name} 님이 「${prev?.title}」을 완료했어요.`, tag: `task-${id}-done` });
+    }
+    await loadWs();
+  };
+  const removeTask = async (id: string) => { await deleteTask(id).catch(() => {}); await loadWs(); };
+  const openMeeting = onNavigate ? () => onNavigate('meetings') : undefined;
+
+  // ── 스코프(탭) + 하위 필터 적용 ──
+  const counts = {
+    all: wsTasks.length,
+    mine: wsTasks.filter(t => t.assigneeId === myId).length,
+    assigned: wsTasks.filter(t => t.createdBy === myId && t.assigneeId && t.assigneeId !== myId).length,
+  };
+  const scoped = scope === 'mine' ? wsTasks.filter(t => t.assigneeId === myId)
+    : scope === 'assigned' ? wsTasks.filter(t => t.createdBy === myId && !!t.assigneeId && t.assigneeId !== myId)
+      : wsTasks;
   const applyFilter = (list: TaskItem[]) => {
-    if (filter === 'all') return list;
+    if (scope !== 'all' || filter === 'all') return list;
     if (filter === 'unassigned') return list.filter(t => !t.assigneeId && !isAiTask(t));
     if (filter === 'ai') return list.filter(isAiTask);
     return list.filter(t => t.assigneeId === filter);
   };
-  const fTasks = applyFilter(tasks);
+  const fTasks = applyFilter(scoped);
   const open = fTasks.filter(t => t.status !== 'completed');
   const done = fTasks.filter(t => t.status === 'completed');
 
@@ -673,6 +753,10 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
     <button key={id} onClick={() => setFilter(id)}
       className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
   );
+  const scopeTab = (id: typeof scope, label: string, count: number) => (
+    <button key={id} onClick={() => setScope(id)}
+      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${scope === id ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label} <span className="tabular-nums opacity-70">{count}</span></button>
+  );
   const modeBtn = (m: typeof mode, label: string) => (
     <button key={m} onClick={() => setMode(m)}
       className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${mode === m ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
@@ -682,6 +766,13 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
     <>
       <ViewHead eyebrow="TASKS" title="할일" sub={`${open.length}건 진행 · ${done.length}건 완료${overdue.length ? ` · 지연 ${overdue.length}` : ''}`} />
 
+      {/* 스코프 탭 — 전체 / 받은 할일(나에게 배정) / 내가 배정(남에게) */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+        {scopeTab('all', '전체', counts.all)}
+        {scopeTab('mine', '받은 할일', counts.mine)}
+        {scopeTab('assigned', '내가 배정', counts.assigned)}
+      </div>
+
       {/* 뷰 토글 (일별/전체/캘린더) + 추가 */}
       <div className="flex items-center gap-1.5 mb-2.5">
         <div className="flex gap-1">{modeBtn('day', '일별')}{modeBtn('list', '전체')}{modeBtn('calendar', '캘린더')}</div>
@@ -689,13 +780,15 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
           className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 할일 추가</button>
       </div>
 
-      {/* 담당자/AI 필터 */}
-      <div className="flex flex-wrap items-center gap-1.5 mb-3">
-        {chip('all', '전체')}
-        {members.length > 1 && members.map(m => chip(m.userId, memberName(m.userId)))}
-        {members.length > 1 && chip('unassigned', '미배정')}
-        {chip('ai', '🤖 AI')}
-      </div>
+      {/* 담당자/AI 하위 필터 (전체 스코프에서만) */}
+      {scope === 'all' && (
+        <div className="flex flex-wrap items-center gap-1.5 mb-3">
+          {chip('all', '전체')}
+          {members.length > 1 && members.map(m => chip(m.userId, memberName(m.userId)))}
+          {members.length > 1 && chip('unassigned', '미배정')}
+          {chip('ai', '🤖 AI')}
+        </div>
+      )}
 
       {showForm && (
         <Card className="p-4 mb-3 space-y-2.5">
@@ -745,11 +838,11 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
           <div className="space-y-3">
             {overdue.length > 0 && (
               <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-1">
-                <TaskCol title="🔴 지연" items={overdue} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
+                <TaskCol title="🔴 지연" items={overdue} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
               </div>
             )}
-            <TaskCol title="할 일" items={dayOpen} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
-            <TaskCol title="완료" items={dayDone} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
+            <TaskCol title="할 일" items={dayOpen} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+            <TaskCol title="완료" items={dayDone} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
           </div>
         </>
       )}
@@ -757,8 +850,8 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
       {/* 전체 리스트 — 진행/완료 2열 */}
       {mode === 'list' && (
         <div className="grid sm:grid-cols-2 gap-3">
-          <TaskCol title="할 일" items={open} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
-          <TaskCol title="완료" items={done} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} />
+          <TaskCol title="할 일" items={open} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+          <TaskCol title="완료" items={done} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
         </div>
       )}
 
@@ -773,7 +866,7 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
             scheduleCategories={officeScheduleCategories}
             onTaskClick={setSelected}
             onScheduleClick={() => {}}
-            onTaskDateChange={(id, date) => updateTask(id, { date })}
+            onTaskDateChange={(id, date) => saveTask(id, { date })}
             onScheduleDateChange={() => {}}
             onTaskStatusCycle={cycleStatus}
           />
@@ -783,8 +876,8 @@ export function TodosView({ workspace }: { workspace: Workspace }) {
       {selected && (
         <TaskDetailPopup
           task={selected} members={members}
-          onSave={async (patch) => { await updateTask(selected.id, patch); setSelected(null); }}
-          onDelete={async () => { await remove(selected.id); setSelected(null); }}
+          onSave={async (patch) => { await saveTask(selected.id, patch); setSelected(null); }}
+          onDelete={async () => { await removeTask(selected.id); setSelected(null); }}
           onClose={() => setSelected(null)}
         />
       )}

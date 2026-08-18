@@ -111,7 +111,7 @@ export async function syncMeetingTasks(
   // ③ 생성 — 새 줄
   for (const r of rows) {
     if (r.id) continue;
-    const created = await addTask({ workspace_id: workspaceId, title: r.title, assignee_id: r.assigneeId || undefined, due_date: r.due || undefined, meeting_id: meetingId, source: 'manual' }).catch(() => null);
+    const created = await addTask({ workspace_id: workspaceId, is_shared: true, title: r.title, assignee_id: r.assigneeId || undefined, due_date: r.due || undefined, meeting_id: meetingId, source: 'manual' }).catch(() => null);
     if (created && r.assigneeId && r.assigneeId !== actorId) {
       notify({ type: 'notify_task_assigned', workspaceId, actorId, title: '📝 새 할일(회의)', body: `${actorName} 님이 회원님께 「${r.title}」을 배정했어요.`, tag: `task-${created.id}`, targetUserIds: [r.assigneeId] });
     }

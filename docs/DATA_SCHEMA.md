@@ -119,5 +119,6 @@
 | `016_staff_saved_items.sql` | 직원 보관함 — ⭐로 저장한 산출물(output_kind별, payload JSONB) |
 | `017_brand_cs_policy.sql` | 회사 브레인에 cs_policies·cs_tone (CS 직원 정책·톤) |
 | `040_meetings.sql` | 회의 전용 메뉴 — meetings(회의+회의록) + tasks.meeting_id(액션아이템) + schedules.meeting_id(캘린더 연동, CASCADE) + RLS |
+| `041_tasks_team_and_activities.sql` | 팀 할일 가시성 — tasks에 SELECT(공유+멤버)·UPDATE(담당자) 정책 '추가' + workspace_activities(활동 로그) 테이블·RLS |
 
 > ⚠️ **base 테이블(tasks·schedules·insights·journals·readings·projects·conversations·messages·goals·kpis·user_profiles 등)은 레포에 DDL이 없음** — 과거 Supabase에 직접 생성. 새로 환경을 만들 땐 이 문서를 기준으로 재생성 필요. (TODO: base 스키마 덤프를 `000_base_schema.sql`로 박제하면 완전 재현 가능)

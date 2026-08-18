@@ -61,3 +61,39 @@ export function EmptyState({ emoji, title, sub }: { emoji: string; title: string
     </Card>
   );
 }
+
+/** 진행률 % — 0건이면 0, done<total이면 최대 99(반올림 함정 방지 · 가이드 §11.2) */
+export function progressPct(done: number, total: number): number {
+  if (total === 0) return 0;
+  if (done >= total) return 100;
+  return Math.min(99, Math.round((done / total) * 100));
+}
+
+/**
+ * 할일 진행률 바 (done/total · %). total===0이면 렌더 안 함(가이드 §11.2).
+ * @param label 왼쪽 라벨(예: 멤버 이름·"전체")
+ * @param overdue 지연 건수 — 있으면 빨간 뱃지
+ * @param compact 리스트 행용 축소판(11px)
+ */
+export function TaskProgress({ done, total, label, overdue = 0, compact = false }: {
+  done: number; total: number; label?: string; overdue?: number; compact?: boolean;
+}) {
+  if (total === 0) return null;
+  const p = progressPct(done, total);
+  const complete = done >= total;
+  return (
+    <div>
+      <div className={`flex items-baseline justify-between gap-2 tabular-nums ${compact ? 'text-[11px]' : 'text-xs'} mb-1`}>
+        <span className="min-w-0 truncate">
+          {label && <span className="text-gray-700 mr-2">{label}</span>}
+          <span className="text-gray-400">할일 {done}/{total}</span>
+          {overdue > 0 && <span className="ml-2 text-rose-500">지연 {overdue}</span>}
+        </span>
+        <span className={complete ? 'text-primary-500 font-semibold' : 'text-gray-600'}>{p}%</span>
+      </div>
+      <div className="h-1 rounded-full bg-gray-100 overflow-hidden">
+        <div className="h-full bg-primary-500 transition-all" style={{ width: `${p}%` }} />
+      </div>
+    </div>
+  );
+}
