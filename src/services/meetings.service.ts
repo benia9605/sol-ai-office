@@ -9,6 +9,7 @@ import { supabase } from './supabase';
 import { getCurrentUserId } from './auth';
 import { Meeting } from '../types';
 import { notify, getActorName } from './notify.service';
+import { fetchTasks, addTask, updateTaskFields, deleteTask } from './tasks.service';
 
 const toMeeting = (r: any): Meeting => ({
   id: r.id, workspaceId: r.workspace_id, createdBy: r.created_by, title: r.title,
@@ -67,6 +68,54 @@ export async function updateMeeting(id: string, fields: Partial<Meeting>): Promi
 export async function deleteMeeting(id: string): Promise<void> {
   const { error } = await supabase.from('meetings').delete().eq('id', id);
   if (error) throw error;
+}
+
+/**
+ * 회의의 액션아이템(할일)을 폼 상태와 일치시킨다. (가이드 §7 syncTasksForNote 이식)
+ * - id 있음 → keep : updateTaskFields 로 수정(id 유지 → 댓글/좋아요/완료상태 보존)
+ * - id 없음 → create: addTask + 담당자 알림
+ * - DB엔 있는데 폼엔 없음 → delete
+ * 순서 고정: 삭제 → 수정 → 생성. due는 이 앱 관례대로 'YYYY-MM-DD'로 저장(date 컬럼).
+ */
+export type MeetingTaskDraft = { id: string | null; title: string; assigneeId: string; due: string };
+
+export async function syncMeetingTasks(
+  meetingId: string, workspaceId: string, drafts: MeetingTaskDraft[],
+): Promise<void> {
+  const actorId = await getCurrentUserId().catch(() => null);
+  const rows = drafts.map(d => ({ ...d, title: d.title.trim() })).filter(d => d.title.length > 0);
+  const all = await fetchTasks().catch(() => []);
+  const existing = all.filter(r => r.meeting_id === meetingId);
+  const existingById = new Map(existing.map(e => [e.id, e]));
+  const keepIds = new Set(rows.filter(r => r.id).map(r => r.id as string));
+  const actorName = await getActorName(workspaceId, actorId);
+
+  // ① 삭제 — 폼에서 × 로 뺀 기존 할일
+  for (const e of existing) {
+    if (!keepIds.has(e.id)) await deleteTask(e.id).catch(() => {});
+  }
+  // ② 수정 — 유지되는 할일. note(=회의) 연결 강제, 담당자 바뀌면 알림
+  for (const r of rows) {
+    if (!r.id) continue;
+    const prev = existingById.get(r.id);
+    await updateTaskFields(r.id, {
+      title: r.title,
+      assignee_id: r.assigneeId || null,
+      due_date: r.due || null,
+      meeting_id: meetingId,
+    }).catch(() => {});
+    if (r.assigneeId && r.assigneeId !== prev?.assignee_id && r.assigneeId !== actorId) {
+      notify({ type: 'notify_task_assigned', workspaceId, actorId, title: '🔄 할일 담당자 변경', body: `${actorName} 님이 「${r.title}」을 회원님께 넘겼어요.`, tag: `task-assign-${r.id}-${r.assigneeId}`, targetUserIds: [r.assigneeId] });
+    }
+  }
+  // ③ 생성 — 새 줄
+  for (const r of rows) {
+    if (r.id) continue;
+    const created = await addTask({ workspace_id: workspaceId, title: r.title, assignee_id: r.assigneeId || undefined, due_date: r.due || undefined, meeting_id: meetingId, source: 'manual' }).catch(() => null);
+    if (created && r.assigneeId && r.assigneeId !== actorId) {
+      notify({ type: 'notify_task_assigned', workspaceId, actorId, title: '📝 새 할일(회의)', body: `${actorName} 님이 회원님께 「${r.title}」을 배정했어요.`, tag: `task-${created.id}`, targetUserIds: [r.assigneeId] });
+    }
+  }
 }
 
 /** 회의록 저장 알림 → 멤버 (본인 제외). 회의록을 처음/다시 저장할 때 호출. */
