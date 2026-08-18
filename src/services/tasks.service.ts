@@ -34,6 +34,7 @@ export interface TaskRow {
   is_shared?: boolean;
   assignee_id?: string;
   source?: string;           // manual|content|decision|memory|campaign|ai
+  meeting_id?: string;       // 연결된 회의 (마이그 040)
 }
 
 /** 프론트 status → DB status */
@@ -97,6 +98,7 @@ export async function addTask(task: {
   is_shared?: boolean;
   assignee_id?: string;
   source?: string;
+  meeting_id?: string;
 }): Promise<TaskRow> {
   const userId = await getCurrentUserId();
   const { data, error } = await supabase
@@ -122,6 +124,7 @@ export async function addTask(task: {
       ...(task.is_shared !== undefined ? { is_shared: task.is_shared } : {}),
       ...(task.assignee_id ? { assignee_id: task.assignee_id } : {}),
       ...(task.source ? { source: task.source } : {}),
+      ...(task.meeting_id ? { meeting_id: task.meeting_id } : {}),
     })
     .select()
     .single();

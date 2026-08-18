@@ -12,6 +12,8 @@ import { generateBriefing, fetchLatestBriefing, BriefingJson, BriefStatus, Sever
 import { notify, getActorName } from '../../services/notify.service';
 import { LikeCommentBlock } from './LikeCommentBlock';
 import { getTodayStr, addDaysStr } from '../../utils/dateCalc';
+import { fetchMeetings } from '../../services/meetings.service';
+import { Meeting } from '../../types';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
@@ -555,6 +557,12 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
   const [date, setDate] = useState(task.date ?? '');
   const [assigneeId, setAssigneeId] = useState(task.assigneeId ?? '');
   const [category, setCategory] = useState(task.category && task.category !== '🤖 AI' ? task.category : '');
+  const [meetingId, setMeetingId] = useState(task.meetingId ?? '');
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  useEffect(() => {
+    if (!task.workspaceId) return;
+    fetchMeetings(task.workspaceId).then(setMeetings).catch(() => {});
+  }, [task.workspaceId]);
   const memberName = (m: WorkspaceMember) => m.nickname || m.name || m.email || '멤버';
   const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
   return (
@@ -590,11 +598,17 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
             {members.map(m => <option key={m.userId} value={m.userId}>{memberName(m)}</option>)}
           </select>
         )}
+        {task.workspaceId && meetings.length > 0 && (
+          <select value={meetingId} onChange={e => setMeetingId(e.target.value)} className={fieldCls}>
+            <option value="">📋 회의 연결 없음</option>
+            {meetings.map(m => <option key={m.id} value={m.id}>📋 {m.title}{m.meetingDate ? ` · ${m.meetingDate.slice(5)}` : ''}</option>)}
+          </select>
+        )}
         <div className="flex items-center justify-between pt-1">
           <button onClick={onDelete} className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
-            <button onClick={() => onSave({ title: title.trim() || task.title, priority, status, date: date || undefined, assigneeId: assigneeId || undefined, category: category || undefined })}
+            <button onClick={() => onSave({ title: title.trim() || task.title, priority, status, date: date || undefined, assigneeId: assigneeId || undefined, category: category || undefined, meetingId: meetingId || undefined })}
               className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
           </div>
         </div>

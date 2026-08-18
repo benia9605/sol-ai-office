@@ -197,6 +197,19 @@ export type ReportStatus = 'done' | 'failed';
 /** 리포트 코멘트 (사장 의견) */
 export interface ReportComment { text: string; at: string; }
 
+/** 회의 (+회의록 content) — 마이그 040 */
+export interface Meeting {
+  id: string;
+  workspaceId: string;
+  createdBy?: string;
+  title: string;
+  meetingDate?: string;   // YYYY-MM-DD
+  meetingTime?: string;
+  content?: string;        // 회의록 본문
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 /** 인앱 알림센터 항목 — 마이그 039 */
 export interface AppNotification {
   id: string;
@@ -469,6 +482,7 @@ export interface TaskItem {
   workspaceId?: string;
   isShared?: boolean;
   assigneeId?: string;     // 담당자(추천받은 사람)
+  meetingId?: string;      // 연결된 회의(회의록에서 나온 액션아이템) — 마이그 040
   // ── 추적(2026-08) ──
   source?: string;         // 생성 원천: manual|content|decision|memory|campaign|ai
   completedAt?: string;    // 완료 시각(완료율·리드타임 분석용)

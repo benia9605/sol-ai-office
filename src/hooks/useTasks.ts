@@ -42,6 +42,7 @@ function toTaskItem(row: TaskRow): TaskItem {
     workspaceId: row.workspace_id,
     isShared: row.is_shared,
     assigneeId: row.assignee_id,
+    meetingId: row.meeting_id,
     source: row.source ?? 'manual',   // 레거시(NULL) 행은 manual로 해석 — 필터·분석 누락 방지
     completedAt: row.completed_at,
   };
@@ -230,6 +231,7 @@ export function useTasks() {
         workspace_id: activeWorkspaceId ?? undefined,
         assignee_id: data.assigneeId,
         source: data.source ?? 'manual',
+        meeting_id: data.meetingId,
       });
       setTasks((prev) => [toTaskItem(row), ...prev]);
       // 이벤트 알림 — 담당자 배정 시(오피스만, best-effort). 나에게 배정은 서버가 액터 제외로 거름.
@@ -286,6 +288,7 @@ export function useTasks() {
           dbPatch.completed_at = patch.status === 'completed' ? new Date().toISOString() : null;
         }
         if (patch.assigneeId !== undefined) dbPatch.assignee_id = patch.assigneeId || null;
+        if (patch.meetingId !== undefined) dbPatch.meeting_id = patch.meetingId || null;
         if (patch.date !== undefined) dbPatch.due_date = patch.date || null;
         if (patch.notes !== undefined) dbPatch.notes = patch.notes || null;
         if (patch.repeat !== undefined) dbPatch.repeat = patch.repeat || null;

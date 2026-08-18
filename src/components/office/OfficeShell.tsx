@@ -16,6 +16,7 @@ import {
 } from './views';
 import { StaffView } from './StaffView';
 import { NotificationBell } from './NotificationBell';
+import { MeetingsView } from './MeetingsView';
 import { BrandView } from './BrandView';
 import { ContentPage } from '../../pages/ContentPage';
 import { fetchCredits, fetchUsage } from '../../services/credits.service';
@@ -23,7 +24,7 @@ import { fetchStaff } from '../../services/staff.service';
 import { StaffUsage } from '../../types';
 import { createPortal } from 'react-dom';
 
-type ViewId = 'dashboard' | 'briefing' | 'staff' | 'todos' | 'schedule' | 'insights' | 'contents' | 'content' | 'products' | 'sales' | 'memory' | 'log' | 'activity' | 'members' | 'brand';
+type ViewId = 'dashboard' | 'briefing' | 'staff' | 'todos' | 'schedule' | 'meetings' | 'insights' | 'contents' | 'content' | 'products' | 'sales' | 'memory' | 'log' | 'activity' | 'members' | 'brand';
 
 const NAV: { id: ViewId; label: string; emoji: string }[] = [
   { id: 'dashboard', label: '대시보드', emoji: '📊' },
@@ -31,6 +32,7 @@ const NAV: { id: ViewId; label: string; emoji: string }[] = [
   { id: 'staff', label: 'AI 직원', emoji: '🤖' },
   { id: 'todos', label: '할일', emoji: '✅' },
   { id: 'schedule', label: '일정', emoji: '📅' },
+  { id: 'meetings', label: '회의', emoji: '📋' },
   { id: 'insights', label: '인사이트', emoji: '📈' },
   { id: 'contents', label: '콘텐츠', emoji: '🎬' },
   { id: 'products', label: '제품', emoji: '📦' },
@@ -237,6 +239,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             {view === 'staff' && <StaffView key={staffKey} workspace={workspace} onRan={refreshCredits} />}
             {view === 'todos' && <TodosView workspace={workspace} />}
             {view === 'schedule' && <ScheduleView workspace={workspace} />}
+            {view === 'meetings' && <MeetingsView workspace={workspace} />}
             {view === 'insights' && <InsightsView workspace={workspace} />}
             {view === 'contents' && <ContentItemsView workspace={workspace} />}
             {view === 'content' && <ContentPage embedded workspaceId={workspace.id} />}

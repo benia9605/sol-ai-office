@@ -23,6 +23,7 @@ export interface ScheduleRow {
   tags?: string[];
   workspace_id?: string;
   is_shared?: boolean;
+  meeting_id?: string;
   // 플랜 지원 (migration 021)
   completed?: boolean;
   completed_at?: string;

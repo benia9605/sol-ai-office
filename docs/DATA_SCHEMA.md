@@ -55,13 +55,14 @@
 ## 4. 할일 / 일정 / 인사이트 / 기록 (콘텐츠 — 004에서 공유 컬럼 추가)
 | 테이블 | 컬럼 |
 |---|---|
-| `tasks` | id, user_id, title, type, project, goal_id, status('todo'\|'in_progress'\|'done'), priority, starred, due_date, category, notes, repeat, tags, estimated_time, actual_time, conversation_id, completed_at, **workspace_id**, **is_shared**, **assignee_id**, **source**('manual'\|'content'\|'decision'\|'memory'\|'campaign'\|'ai'), created_at |
+| `tasks` | id, user_id, title, type, project, goal_id, status('todo'\|'in_progress'\|'done'), priority, starred, due_date, category, notes, repeat, tags, estimated_time, actual_time, conversation_id, completed_at, **workspace_id**, **is_shared**, **assignee_id**, **meeting_id**(→meetings, 회의 액션아이템 연결·마이그 040), **source**('manual'\|'content'\|'decision'\|'memory'\|'campaign'\|'ai'), created_at |
+| `meetings` (회의 + 회의록) | id, **workspace_id**, created_by, title, meeting_date, meeting_time, content(회의록 본문), created_at, updated_at · 마이그 040. 액션아이템은 `tasks.meeting_id`, 캘린더 연동은 `schedules.meeting_id`(category='회의'). 참석자/투표 없음 |
 | `products` | id, **workspace_id**, created_by, name, sku, category, status('active'\|'draft'\|'discontinued'), price, cost, stock, image_url, description, tags, created_at, updated_at (마이그 026) |
 | `content_items` | id, **workspace_id**, created_by, title, platform, content_type('desire'\|'info'\|'worldview'\|'behind'), status('idea'\|'approved'\|'scripted'\|'shooting'\|'editing'\|'scheduled'\|'published'\|'archived'), hook, script, shot_list, url, published_at, **primary_product_id**, **content_purpose**('view'\|'follow'\|'save'\|'sale'\|'brand'), **owner**, **scheduled_for**, created_at, updated_at (마이그 027·028) |
 | `content_metrics` | id, **workspace_id**, content_item_id, checkpoint('h24'\|'h72'\|'d7'), views, likes, comments, saves, shares, watch_time, completion_rate, follower_delta, measured_at, created_at, updated_at, UNIQUE(content_item_id,checkpoint) (마이그 029) |
 | `sales_daily` | id, **workspace_id**, created_by, date, source('smartstore'\|'coupang'\|'ohouse'\|'self'\|'instagram'\|'total'\|'other'), revenue, orders, visitors, memo, extra(jsonb), created_at, updated_at, UNIQUE(workspace_id,source,date) — aov·전환율은 계산값 (마이그 030) |
 | `company_memory` | id, **workspace_id**, created_by, kind('idea'\|'insight'\|'philosophy'\|'failure'\|'experiment'\|'reference'\|'competitor'\|'ceo_memo'), title, body, summary, tags, salience(0~100), pinned, status('active'\|'archived'), created_at, updated_at (마이그 031) |
-| `schedules` | id, user_id, title, date, end_date, time, project, color, category, repeat, reminder, notes, tags, **workspace_id**, **is_shared**, **completed**, **completed_at**, **is_milestone**, **plan_id**, **phase**, **sort_order**, **generated_by**, created_at · 플랜 컬럼은 021에서 추가 |
+| `schedules` | id, user_id, title, date, end_date, time, project, color, category, repeat, reminder, notes, tags, **workspace_id**, **is_shared**, **completed**, **completed_at**, **is_milestone**, **plan_id**, **phase**, **sort_order**, **generated_by**, **meeting_id**(→meetings ON DELETE CASCADE, 회의 캘린더 연동·마이그 040), created_at · 플랜 컬럼은 021에서 추가 |
 | `schedule_plans` (플랜 — D-day 프로젝트) | id, user_id, **workspace_id**, name, emoji, goal, description, target_date, start_date, phases(jsonb 주차정의), categories(jsonb 카테고리정의), status('active'\|'done'\|'archived'), generated_by('manual'\|'ai'), created_at · 021에서 신설. 소속 일정은 `schedules.plan_id`로 연결 |
 | `insights` | id, user_id, title, content, source, link, tags, project, priority, starred, time, **workspace_id**, **is_shared**, created_at |
 | `readings` | id, user_id, title, author, category, total_pages, current_page, total_lessons, current_lesson, status, cover_emoji, cover_image, start_date, completed_date, rating, review, tags, link, price, toc, chapters, isbn13, **workspace_id**, **is_shared**, **recommended_by**, created_at |
@@ -117,5 +118,6 @@
 | `015_fix_workspace_create.sql` | 워크스페이스 생성 실패 수정(SELECT 정책에 created_by 추가) + office 삭제 허용 |
 | `016_staff_saved_items.sql` | 직원 보관함 — ⭐로 저장한 산출물(output_kind별, payload JSONB) |
 | `017_brand_cs_policy.sql` | 회사 브레인에 cs_policies·cs_tone (CS 직원 정책·톤) |
+| `040_meetings.sql` | 회의 전용 메뉴 — meetings(회의+회의록) + tasks.meeting_id(액션아이템) + schedules.meeting_id(캘린더 연동, CASCADE) + RLS |
 
 > ⚠️ **base 테이블(tasks·schedules·insights·journals·readings·projects·conversations·messages·goals·kpis·user_profiles 등)은 레포에 DDL이 없음** — 과거 Supabase에 직접 생성. 새로 환경을 만들 땐 이 문서를 기준으로 재생성 필요. (TODO: base 스키마 덤프를 `000_base_schema.sql`로 박제하면 완전 재현 가능)
