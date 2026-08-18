@@ -53,6 +53,17 @@ function YouTubeGlyph({ className = '' }: { className?: string }) {
 }
 
 /** 코인 사용 내역(요금) 모달 */
+/** 코인 SVG 아이콘 (동전) */
+function CoinIcon({ className = 'w-[18px] h-[18px]' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M14.8 9.3c-.5-.9-1.6-1.3-2.8-1.3-1.7 0-2.8.8-2.8 2 0 2.7 5.6 1.3 5.6 4 0 1.2-1.1 2-2.8 2-1.2 0-2.3-.4-2.8-1.3" />
+      <path d="M12 6.6v10.8" />
+    </svg>
+  );
+}
+
 function UsageModal({ workspace, credits, onClose }: { workspace: Workspace; credits: number | null; onClose: () => void }) {
   const [usage, setUsage] = useState<StaffUsage[]>([]);
   const [staffMap, setStaffMap] = useState<Record<string, string>>({});
@@ -210,11 +221,11 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
           </button>
           <span className="hidden lg:block text-sm text-gray-400 truncate max-w-[45%]">{workspace.bizInfo || ''}</span>
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <NotificationBell workspace={workspace} onNavigate={onNavigate} />
             <button onClick={() => setShowUsage(true)} title="코인 잔액 — 클릭하면 사용 내역(요금)"
-              className={`flex items-center gap-1.5 text-sm font-bold transition-all duration-300 hover:opacity-70 active:scale-95 ${coinPulse ? 'scale-125 text-amber-500' : 'text-gray-500'}`}>
-              <span>🪙</span><span>{credits != null ? credits.toLocaleString() : '—'}</span>
+              className={`flex items-center gap-1 text-sm font-bold transition-all duration-300 hover:opacity-70 active:scale-95 ${coinPulse ? 'scale-110 text-amber-500' : 'text-gray-500'}`}>
+              <CoinIcon /><span>{credits != null ? credits.toLocaleString() : '—'}</span>
             </button>
+            <NotificationBell workspace={workspace} onNavigate={onNavigate} />
           </div>
          </div>
         </header>
