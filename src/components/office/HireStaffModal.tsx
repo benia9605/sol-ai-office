@@ -77,9 +77,9 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
           <div className="grid grid-cols-2 gap-3">
             {STAFF_TYPES.map(t => (
               <button key={t.key} onClick={() => choose(t)}
-                className="rounded-[22px] border border-gray-100 bg-white hover:bg-primary-50/50 hover:border-primary-200
+                className="rounded-[22px] border border-gray-100 bg-white hover:bg-surface-muted/50 hover:border-line
                   p-4 text-left transition-all active:scale-[0.97] shadow-sm hover:shadow-md">
-                <span className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center text-2xl mb-2">{t.emoji}</span>
+                <span className="w-12 h-12 rounded-2xl bg-surface-muted flex items-center justify-center text-2xl mb-2">{t.emoji}</span>
                 <div className="text-sm font-bold text-gray-800">{t.label}</div>
                 <div className="text-[11px] text-gray-400 mt-0.5">{t.roleLine}</div>
               </button>
@@ -91,7 +91,7 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
         {type && (
           <div className="space-y-4">
             {/* 가이드 — 이 직원이 무슨 일을 하는지 */}
-            <div className="rounded-2xl bg-primary-50/60 border border-primary-100 p-3.5 flex items-start gap-2.5">
+            <div className="rounded-2xl bg-surface-muted/60 border border-line p-3.5 flex items-start gap-2.5">
               <span className="text-base flex-shrink-0">💡</span>
               <p className="text-[12px] text-gray-600 leading-relaxed">{type.guide}</p>
             </div>
@@ -99,7 +99,7 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">이름</label>
               <input value={name} onChange={e => setName(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300" />
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-line" />
             </div>
 
             <div>
@@ -108,7 +108,7 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
                 {MODEL_OPTIONS.map(o => (
                   <button key={o.key} onClick={() => setModel(o.key)}
                     className={`px-3 py-2 rounded-2xl text-left transition-all active:scale-[0.97] border
-                      ${model === o.key ? 'bg-primary-500 text-white border-primary-500' : 'bg-gray-50 text-gray-600 border-gray-100'}`}>
+                      ${model === o.key ? 'bg-foreground text-white border-foreground' : 'bg-gray-50 text-gray-600 border-gray-100'}`}>
                     <div className="text-[13px] font-semibold">{o.label}</div>
                     <div className={`text-[10px] ${model === o.key ? 'text-white/80' : 'text-gray-400'}`}>{o.desc}</div>
                   </button>
@@ -124,7 +124,7 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
                   return (
                     <button key={r} onClick={() => toggleRoutine(r)}
                       className="w-full flex items-start gap-2 px-3 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-left transition-colors">
-                      <span className={`w-4 h-4 mt-0.5 rounded-md flex items-center justify-center text-[10px] text-white flex-shrink-0 ${routines.includes(r) ? 'bg-primary-500' : 'bg-gray-300'}`}>✓</span>
+                      <span className={`w-4 h-4 mt-0.5 rounded-md flex items-center justify-center text-[10px] text-white flex-shrink-0 ${routines.includes(r) ? 'bg-foreground' : 'bg-gray-300'}`}>✓</span>
                       <span className="min-w-0">
                         <span className="block text-sm text-gray-700">{r}</span>
                         {guide && <span className="block text-[11px] text-gray-400 leading-relaxed mt-0.5">{guide}</span>}
@@ -139,13 +139,13 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">프롬프트 <span className="text-gray-300 font-normal">(이 직원의 성격·지시)</span></label>
               <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
                 placeholder={type.promptPlaceholder}
-                className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300 resize-none" />
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-line resize-none" />
             </div>
 
             <div className="flex gap-2.5 pt-1">
               <button onClick={() => setType(null)} className="px-5 py-3 rounded-2xl text-sm text-gray-500 hover:bg-gray-100 transition-colors active:scale-95">← 뒤로</button>
               <button onClick={submit} disabled={!name.trim() || busy}
-                className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all active:scale-[0.97]">
+                className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all active:scale-[0.97]">
                 {busy ? '채용 중…' : '채용하기'}
               </button>
             </div>

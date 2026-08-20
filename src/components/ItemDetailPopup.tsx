@@ -57,12 +57,14 @@ const reminderOptions = [
   { value: '1day', label: '1일 전' },
 ];
 
-/** 타입별 테마 색상 */
+/** 타입별 테마 색상 — 모노 통일(모던톤). 네 타입 모두 동일한 무채색 액센트. */
+const monoTheme = {
+  tag: 'bg-surface-muted text-foreground-muted', tagX: 'text-foreground-faint hover:text-foreground',
+  ring: 'focus:ring-line-strong', manage: 'text-foreground-muted hover:text-foreground',
+  saveBtn: 'bg-foreground hover:opacity-85', headerBg: 'bg-surface-muted',
+} as const;
 const typeTheme = {
-  schedule: { tag: 'bg-orange-100 text-orange-600', tagX: 'text-orange-400 hover:text-orange-600', ring: 'focus:ring-orange-200', manage: 'text-orange-500 hover:text-orange-600', saveBtn: 'bg-orange-500 hover:bg-orange-600', headerBg: 'bg-orange-50' },
-  task:     { tag: 'bg-green-100 text-green-600',   tagX: 'text-green-400 hover:text-green-600',   ring: 'focus:ring-green-200',  manage: 'text-green-500 hover:text-green-600',   saveBtn: 'bg-green-500 hover:bg-green-600', headerBg: 'bg-green-50' },
-  insight:  { tag: 'bg-amber-100 text-amber-600',   tagX: 'text-amber-400 hover:text-amber-600',   ring: 'focus:ring-amber-200',  manage: 'text-amber-500 hover:text-amber-600',   saveBtn: 'bg-amber-500 hover:bg-amber-600', headerBg: 'bg-amber-50' },
-  reading:  { tag: 'bg-blue-100 text-blue-600',     tagX: 'text-blue-400 hover:text-blue-600',     ring: 'focus:ring-blue-200',   manage: 'text-blue-500 hover:text-blue-600',     saveBtn: 'bg-blue-500 hover:bg-blue-600', headerBg: 'bg-blue-50' },
+  schedule: monoTheme, task: monoTheme, insight: monoTheme, reading: monoTheme,
 } as const;
 
 /** 뷰어 모드 라벨 섹션 */

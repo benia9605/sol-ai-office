@@ -15,8 +15,8 @@ import { recordActivity } from '../../services/activities.service';
 import { ViewHead, Card, EmptyState, TaskProgress } from './ui';
 import { getTodayStr } from '../../utils/dateCalc';
 
-const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
-const miniCls = 'min-w-0 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-xs text-gray-600 focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
+const miniCls = 'min-w-0 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-xs text-gray-600 focus:outline-none focus:bg-white focus:border-foreground transition-colors';
 
 export function MeetingsView({ workspace }: { workspace: Workspace }) {
   const [list, setList] = useState<Meeting[]>([]);
@@ -65,7 +65,7 @@ export function MeetingsView({ workspace }: { workspace: Workspace }) {
     <>
       <ViewHead eyebrow="MEETINGS" title="회의" sub={`${list.length}건`} />
       <div className="flex items-center mb-3">
-        <button onClick={() => setShowForm(v => !v)} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 새 회의</button>
+        <button onClick={() => setShowForm(v => !v)} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 새 회의</button>
       </div>
       {showForm && (
         <Card className="p-4 mb-3 space-y-2.5">
@@ -76,7 +76,7 @@ export function MeetingsView({ workspace }: { workspace: Workspace }) {
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100">취소</button>
-            <button onClick={create} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40">만들기</button>
+            <button onClick={create} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">만들기</button>
           </div>
         </Card>
       )}
@@ -177,7 +177,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
   return (
     <>
       <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-3">← 회의</button>
-      <div className="rounded-[20px] bg-primary-50/50 border border-primary-100 p-5 mb-4">
+      <div className="rounded-[20px] bg-surface-muted/50 border border-line p-5 mb-4">
         <div className="text-lg font-extrabold text-gray-800">{meeting.title}</div>
         {meeting.meetingDate && <div className="text-sm text-gray-500 mt-0.5">📅 {meeting.meetingDate}{meeting.meetingTime ? ` ${meeting.meetingTime}` : ''}</div>}
         {progress.total > 0 && <div className="mt-3"><TaskProgress done={progress.done} total={progress.total} /></div>}
@@ -188,7 +188,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">📝 회의록</span>
         </div>
-        <textarea value={note} onChange={e => setNote(e.target.value)} rows={7} placeholder="회의 내용·결정사항·다음 액션을 적어요…" className="w-full rounded-xl border border-gray-200 px-3.5 py-3 text-sm leading-relaxed focus:outline-none focus:border-primary-400 resize-none" />
+        <textarea value={note} onChange={e => setNote(e.target.value)} rows={7} placeholder="회의 내용·결정사항·다음 액션을 적어요…" className="w-full rounded-xl border border-gray-200 px-3.5 py-3 text-sm leading-relaxed focus:outline-none focus:border-foreground resize-none" />
       </div>
 
       {/* 액션아이템 (할일 연동) */}
@@ -203,7 +203,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
             <div key={a.id ?? `new-${i}`} className="group rounded-xl border border-gray-100 p-2.5 space-y-2 hover:border-gray-200">
               <div className="flex items-center gap-2">
                 <button onClick={() => toggleStatus(i)} disabled={!a.id} title={a.id ? '완료 토글' : '저장하면 완료 체크 가능'}
-                  className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${a.status === 'completed' ? 'bg-primary-500 border-primary-500' : 'border-gray-300'} ${!a.id ? 'opacity-30' : ''}`}>
+                  className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${a.status === 'completed' ? 'bg-foreground border-foreground' : 'border-gray-300'} ${!a.id ? 'opacity-30' : ''}`}>
                   {a.status === 'completed' && <span className="text-white text-[9px]">✓</span>}
                 </button>
                 <input value={a.title} onChange={e => updateAction(i, { title: e.target.value })} onKeyDown={e => { if (e.key === 'Enter') addAction(); }}
@@ -219,7 +219,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
               </div>
             </div>
           ))}
-          <button onClick={addAction} className="w-full text-left text-xs text-gray-400 hover:text-primary-500 px-2 py-1.5">＋ 할일 추가</button>
+          <button onClick={addAction} className="w-full text-left text-xs text-gray-400 hover:text-foreground px-2 py-1.5">＋ 할일 추가</button>
 
           {/* 전체 과제 — 전원 일괄 배정 */}
           {members.length > 1 && (
@@ -237,7 +237,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
 
       {/* 저장 — 회의록 + 할일 일괄 반영 */}
       <div className="flex justify-end pb-6">
-        <button onClick={save} disabled={saving} className="px-5 py-2.5 rounded-xl text-sm font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 active:scale-95 transition-all">{saving ? '저장 중…' : '저장'}</button>
+        <button onClick={save} disabled={saving} className="px-5 py-2.5 rounded-xl text-sm font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-50 active:scale-95 transition-all">{saving ? '저장 중…' : '저장'}</button>
       </div>
     </>
   );

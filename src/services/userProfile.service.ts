@@ -27,26 +27,42 @@ export async function fetchUserProfile(): Promise<UserProfileRow | null> {
     .from('user_profiles')
     .select('*')
     .eq('user_id', userId)
+    .order('created_at', { ascending: true })
     .limit(1)
-    .single();
+    .maybeSingle();   // 0행이어도 throw 없이 null
 
-  if (error) {
-    if (error.code === 'PGRST116') return null; // no rows
-    throw error;
-  }
-  return data;
+  if (error && error.code !== 'PGRST116') throw error;
+  return data ?? null;
+}
+
+/**
+ * user_id가 아직 없거나(레거시 단일 프로필) 내 것인 행 1건을 찾는다.
+ * 다른 유저의 행은 절대 흡수하지 않는다(user_id가 채워져 있고 내 것이 아니면 제외).
+ */
+async function fetchAdoptableProfile(userId: string): Promise<UserProfileRow | null> {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .order('created_at', { ascending: true })
+    .limit(5);
+  if (error && error.code !== 'PGRST116') throw error;
+  const rows = (data ?? []) as UserProfileRow[];
+  return rows.find(r => r.user_id == null || r.user_id === userId) ?? null;
 }
 
 export async function upsertUserProfile(
   fields: Partial<Omit<UserProfileRow, 'id' | 'created_at' | 'updated_at'>>,
 ): Promise<UserProfileRow> {
-  // 기존 프로필 확인
-  const existing = await fetchUserProfile();
+  const userId = await getCurrentUserId();
+  // 1) 내 프로필(user_id 일치) 우선, 2) 없으면 레거시 미할당 행을 흡수 —
+  //    이게 없으면 user_id가 NULL/불일치인 기존 행을 못 찾아 중복 INSERT 되거나
+  //    UPDATE가 0행이 되어 "저장이 안 되는" 버그가 난다.
+  const existing = (await fetchUserProfile()) ?? (await fetchAdoptableProfile(userId));
 
   if (existing) {
     const { data, error } = await supabase
       .from('user_profiles')
-      .update({ ...fields, updated_at: new Date().toISOString() })
+      .update({ ...fields, user_id: userId, updated_at: new Date().toISOString() })  // 흡수 시 user_id 채움
       .eq('id', existing.id)
       .select()
       .single();
@@ -54,8 +70,7 @@ export async function upsertUserProfile(
     return data;
   }
 
-  // 없으면 새로 생성
-  const userId = await getCurrentUserId();
+  // 정말 아무 행도 없을 때만 새로 생성
   const { data, error } = await supabase
     .from('user_profiles')
     .insert({ name: fields.name || 'User', ...fields, user_id: userId })

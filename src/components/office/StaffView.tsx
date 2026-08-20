@@ -27,7 +27,7 @@ import { HireStaffModal, MODEL_OPTIONS } from './HireStaffModal';
 
 function StatePill({ state }: { state: Staff['state'] }) {
   return state === 'working'
-    ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 font-medium">● 근무 중</span>
+    ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground font-medium">● 근무 중</span>
     : <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-400 font-medium">대기</span>;
 }
 
@@ -97,7 +97,7 @@ function AnalystDataPanel({ workspace }: { workspace: Workspace }) {
   const man = (n: number) => `${Math.round(n / 10000).toLocaleString()}`;
   const perBtn = (d: number) => (
     <button key={d} onClick={() => setPeriod(d)}
-      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${period === d ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{d}일</button>
+      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${period === d ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{d}일</button>
   );
 
   return (
@@ -133,7 +133,7 @@ function AnalystDataPanel({ workspace }: { workspace: Workspace }) {
             {a.sales.hasData && a.sales.byChannel.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {a.sales.byChannel.map(c => (
-                  <span key={c.source} className="text-[11px] px-2 py-1 rounded-full bg-primary-50 text-primary-600">{c.label} {man(c.revenue)}만원</span>
+                  <span key={c.source} className="text-[11px] px-2 py-1 rounded-full bg-surface-muted text-foreground">{c.label} {man(c.revenue)}만원</span>
                 ))}
               </div>
             )}
@@ -147,7 +147,7 @@ function AnalystDataPanel({ workspace }: { workspace: Workspace }) {
                     <div key={i} className="flex items-center gap-2 text-[12px]">
                       <span className="text-gray-600 flex-1">{f.label}</span>
                       <span className="font-bold text-gray-800 tabular-nums">{f.value}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${f.n > 10 ? 'bg-emerald-50 text-emerald-600' : f.n >= 6 ? 'bg-primary-50 text-primary-600' : f.n >= 3 ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-400'}`}>{f.nLabel}·n{f.n}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${f.n > 10 ? 'bg-emerald-50 text-emerald-600' : f.n >= 6 ? 'bg-surface-muted text-foreground' : f.n >= 3 ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-400'}`}>{f.nLabel}·n{f.n}</span>
                     </div>
                   ))}
                 </div>
@@ -182,7 +182,7 @@ function AnalystDataPanel({ workspace }: { workspace: Workspace }) {
 /* ── 일정비서 전용: 오늘 실행 계획 (타임라인·충돌·빈시간·이번주) ── */
 const KIND_BADGE: Record<string, { label: string; cls: string }> = {
   schedule: { label: '일정', cls: 'bg-gray-100 text-gray-500' },
-  content: { label: '콘텐츠', cls: 'bg-primary-50 text-primary-600' },
+  content: { label: '콘텐츠', cls: 'bg-surface-muted text-foreground' },
   task: { label: '마감', cls: 'bg-amber-50 text-amber-600' },
 };
 function SchedulerDataPanel({ workspace }: { workspace: Workspace }) {
@@ -272,10 +272,10 @@ function SchedulerDataPanel({ workspace }: { workspace: Workspace }) {
               <div className="text-[11px] font-semibold text-gray-400 mb-1.5">이번 주</div>
               <div className="grid grid-cols-7 gap-1">
                 {a.week.map(d => (
-                  <div key={d.date} className={`rounded-lg px-1 py-1.5 text-center ${d.isToday ? 'bg-primary-50 border border-primary-200' : 'bg-gray-50'}`}>
+                  <div key={d.date} className={`rounded-lg px-1 py-1.5 text-center ${d.isToday ? 'bg-surface-muted border border-line' : 'bg-gray-50'}`}>
                     <div className="text-[10px] text-gray-400">{d.weekday}</div>
                     <div className="text-[11px] font-bold text-gray-700 tabular-nums">{d.date.slice(8)}</div>
-                    {d.items.length > 0 && <div className="text-[9px] text-primary-500 mt-0.5">{d.items.length}건</div>}
+                    {d.items.length > 0 && <div className="text-[9px] text-foreground mt-0.5">{d.items.length}건</div>}
                   </div>
                 ))}
               </div>
@@ -337,8 +337,8 @@ function CSDataPanel({ workspace }: { workspace: Workspace }) {
       <div className="flex items-center h-9 mb-2 gap-2">
         <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">💬 문의 관리</span>
         <div className="ml-auto flex gap-1">
-          <button onClick={() => setTab('tickets')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'tickets' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'}`}>티켓 {tickets.length}</button>
-          <button onClick={() => setTab('faq')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'faq' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'}`}>FAQ {faq.length}</button>
+          <button onClick={() => setTab('tickets')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'tickets' ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500'}`}>티켓 {tickets.length}</button>
+          <button onClick={() => setTab('faq')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'faq' ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500'}`}>FAQ {faq.length}</button>
         </div>
       </div>
       <Card className="p-4 space-y-3">
@@ -353,12 +353,12 @@ function CSDataPanel({ workspace }: { workspace: Workspace }) {
             {/* 입력 (붙여넣기 → 자동 분류) */}
             <div className="space-y-2">
               <textarea value={text} onChange={e => setText(e.target.value)} rows={2} placeholder="고객 문의를 붙여넣으면 유형·긴급도·감정을 자동 분류해요…"
-                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-primary-400 resize-none" />
+                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-foreground resize-none" />
               <div className="flex gap-2">
                 <select value={channel} onChange={e => setChannel(e.target.value as TicketChannel)} className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs bg-white">
                   {Object.entries(CH_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
-                <button onClick={add} disabled={adding || !text.trim()} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">＋ 분류·추가</button>
+                <button onClick={add} disabled={adding || !text.trim()} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">＋ 분류·추가</button>
               </div>
             </div>
             {/* 티켓 리스트 */}
@@ -367,7 +367,7 @@ function CSDataPanel({ workspace }: { workspace: Workspace }) {
                 <div key={t.id} className="group rounded-xl border border-gray-100 p-3">
                   <div className="flex items-center gap-1.5 flex-wrap mb-1">
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{CH_LABEL[t.channel]}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary-50 text-primary-600">{CAT_LABEL[t.category]}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-muted text-foreground">{CAT_LABEL[t.category]}</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded ${URG_UI[t.urgency].cls}`}>{URG_UI[t.urgency].label}</span>
                     {t.sentiment === 'negative' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-50 text-rose-500">부정</span>}
                     {t.needsApproval && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600">승인 필요</span>}
@@ -388,7 +388,7 @@ function CSDataPanel({ workspace }: { workspace: Workspace }) {
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-gray-400">원목·도마·가구·배송·A/S FAQ</span>
               {seedMsg && <span className="text-[11px] text-emerald-600">{seedMsg}</span>}
-              <button onClick={seed} disabled={seeding} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-50">{seeding ? '추가 중…' : '🌱 시목 FAQ 채우기'}</button>
+              <button onClick={seed} disabled={seeding} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-muted text-foreground hover:bg-surface-muted disabled:opacity-50">{seeding ? '추가 중…' : '🌱 시목 FAQ 채우기'}</button>
             </div>
             <div className="space-y-1.5">
               {faq.map(f => (
@@ -409,7 +409,7 @@ function CSDataPanel({ workspace }: { workspace: Workspace }) {
 
 /* ── 모니터링 전용: 트렌드 레이더 (경쟁사 워치리스트 + 고객 키워드) ── */
 const WTYPE_LABEL: Record<string, string> = { direct: '직접 경쟁', adjacent: '인접', aspirational: '지향', product: '제품', desire: '생활욕망', mood: '감성', format: '포맷' };
-const WTYPE_CLS: Record<string, string> = { direct: 'bg-rose-50 text-rose-600', adjacent: 'bg-amber-50 text-amber-600', aspirational: 'bg-primary-50 text-primary-600', product: 'bg-primary-50 text-primary-600', desire: 'bg-emerald-50 text-emerald-600', mood: 'bg-violet-50 text-violet-600', format: 'bg-gray-100 text-gray-500' };
+const WTYPE_CLS: Record<string, string> = { direct: 'bg-rose-50 text-rose-600', adjacent: 'bg-amber-50 text-amber-600', aspirational: 'bg-surface-muted text-foreground', product: 'bg-surface-muted text-foreground', desire: 'bg-emerald-50 text-emerald-600', mood: 'bg-violet-50 text-violet-600', format: 'bg-gray-100 text-gray-500' };
 function MonitorDataPanel({ workspace }: { workspace: Workspace }) {
   const [tab, setTab] = useState<'competitor' | 'keyword'>('competitor');
   const [items, setItems] = useState<WatchItem[]>([]);
@@ -447,8 +447,8 @@ function MonitorDataPanel({ workspace }: { workspace: Workspace }) {
         <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">📡 트렌드 레이더</span>
         {msg && <span className="text-[11px] text-emerald-600">{msg}</span>}
         <div className="ml-auto flex gap-1">
-          <button onClick={() => setTab('competitor')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'competitor' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'}`}>경쟁사 {competitors.length}</button>
-          <button onClick={() => setTab('keyword')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'keyword' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'}`}>키워드 {keywords.length}</button>
+          <button onClick={() => setTab('competitor')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'competitor' ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500'}`}>경쟁사 {competitors.length}</button>
+          <button onClick={() => setTab('keyword')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'keyword' ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500'}`}>키워드 {keywords.length}</button>
         </div>
       </div>
       <Card className="p-4 space-y-3">
@@ -456,9 +456,9 @@ function MonitorDataPanel({ workspace }: { workspace: Workspace }) {
           <>
             <div className="flex gap-2">
               <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') add(); }}
-                placeholder={tab === 'competitor' ? '경쟁사 이름·URL' : '추적할 키워드'} className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:border-primary-400" />
-              <button onClick={add} disabled={!name.trim()} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40">＋ 추가</button>
-              <button onClick={seed} disabled={seeding} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-50">{seeding ? '…' : '🌱 시목 시드'}</button>
+                placeholder={tab === 'competitor' ? '경쟁사 이름·URL' : '추적할 키워드'} className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:border-foreground" />
+              <button onClick={add} disabled={!name.trim()} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">＋ 추가</button>
+              <button onClick={seed} disabled={seeding} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-muted text-foreground hover:bg-surface-muted disabled:opacity-50">{seeding ? '…' : '🌱 시목 시드'}</button>
             </div>
             {tab === 'competitor' ? (
               <div className="space-y-1.5">
@@ -491,7 +491,7 @@ function MonitorDataPanel({ workspace }: { workspace: Workspace }) {
 }
 
 /* ── 운영매니저 전용: CEO 브리핑 편집장 (여기서 생성 → 대시보드 렌더) ── */
-const OPS_SEV: Record<string, string> = { critical: 'border-l-rose-400', warning: 'border-l-amber-400', info: 'border-l-primary-400', positive: 'border-l-emerald-400' };
+const OPS_SEV: Record<string, string> = { critical: 'border-l-rose-400', warning: 'border-l-amber-400', info: 'border-l-foreground', positive: 'border-l-emerald-400' };
 function OpsDataPanel({ workspace }: { workspace: Workspace }) {
   const [brief, setBrief] = useState<BriefingJson | null>(null);
   const [loading, setLoading] = useState(true);
@@ -510,7 +510,7 @@ function OpsDataPanel({ workspace }: { workspace: Workspace }) {
       <div className="flex items-center h-9 mb-2">
         <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">🧭 CEO 브리핑 편집장</span>
         <span className="ml-2 text-[11px] text-gray-300 hidden sm:inline">여기서 생성하면 대시보드에 반영돼요</span>
-        <button onClick={generate} disabled={gen} className="ml-auto text-[11px] px-3 py-1.5 rounded-lg bg-primary-500 text-white font-medium hover:bg-primary-600 disabled:opacity-50">{gen ? '생성 중…' : brief ? '↻ 새로고침' : '브리핑 생성'}</button>
+        <button onClick={generate} disabled={gen} className="ml-auto text-[11px] px-3 py-1.5 rounded-lg bg-foreground text-white font-medium hover:opacity-85 disabled:opacity-50">{gen ? '생성 중…' : brief ? '↻ 새로고침' : '브리핑 생성'}</button>
       </div>
       <Card className="p-4 space-y-3">
         {loading ? <p className="text-xs text-gray-300 py-4 text-center">불러오는 중…</p> : !brief ? (
@@ -606,7 +606,7 @@ function StaffUsageGuide({ typeKey }: { typeKey: string }) {
     );
   }
   return (
-    <div className="rounded-[20px] border border-primary-200 bg-primary-50/40 p-4 mb-4 space-y-2">
+    <div className="rounded-[20px] border border-line bg-surface-muted/40 p-4 mb-4 space-y-2">
       <div className="flex items-center gap-2">
         <span className="text-sm font-bold text-gray-800">📖 활용 가이드</span>
         <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STAGE_UI[g.stage].cls}`}>{STAGE_UI[g.stage].label}</span>
@@ -616,7 +616,7 @@ function StaffUsageGuide({ typeKey }: { typeKey: string }) {
         <p><b className="text-gray-700">이 화면:</b> <span className="text-gray-600">{g.screen}</span></p>
         <p><b className="text-gray-700">쓰는 법:</b> <span className="text-gray-600">{g.how}</span></p>
       </div>
-      <p className="text-[11px] text-gray-400 pt-1.5 border-t border-primary-100">📌 개발 단계: {g.stageNote}</p>
+      <p className="text-[11px] text-gray-400 pt-1.5 border-t border-line">📌 개발 단계: {g.stageNote}</p>
     </div>
   );
 }
@@ -636,7 +636,7 @@ function ReportComments({ reportId, initial }: { reportId: string; initial?: Rep
   return (
     <div className="border-t border-gray-100 pt-2.5">
       <button onClick={() => setOpen(o => !o)} className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors inline-flex items-center gap-1">
-        💬 코멘트{comments.length > 0 && <span className="text-primary-500 font-semibold">{comments.length}</span>}
+        💬 코멘트{comments.length > 0 && <span className="text-foreground font-semibold">{comments.length}</span>}
       </button>
       {open && (
         <div className="mt-2 space-y-2">
@@ -648,8 +648,8 @@ function ReportComments({ reportId, initial }: { reportId: string; initial?: Rep
           ))}
           <div className="flex gap-1.5">
             <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') add(); }}
-              placeholder="내 의견 남기기…" className="flex-1 rounded-xl border border-gray-200 px-3 py-1.5 text-sm focus:border-primary-400 focus:outline-none" />
-            <button onClick={add} disabled={saving} className="px-3 py-1.5 rounded-xl bg-primary-500 text-white text-xs font-medium hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-50">남기기</button>
+              placeholder="내 의견 남기기…" className="flex-1 rounded-xl border border-gray-200 px-3 py-1.5 text-sm focus:border-foreground focus:outline-none" />
+            <button onClick={add} disabled={saving} className="px-3 py-1.5 rounded-xl bg-foreground text-white text-xs font-medium hover:opacity-85 active:scale-95 transition-all disabled:opacity-50">남기기</button>
           </div>
         </div>
       )}
@@ -722,13 +722,13 @@ function SavedCard({ item, onDelete }: { item: StaffSavedItem; onDelete: (id: st
   return (
     <Card className="group p-3 relative space-y-1">
       <button onClick={() => onDelete(item.id)} className="absolute top-2 right-2 text-[11px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">삭제</button>
-      {p.type && <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary-50 text-primary-600">{p.type}</span>}
+      {p.type && <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground">{p.type}</span>}
       {p.thumbnailUrl && <img src={p.thumbnailUrl} alt="" className="w-full rounded-lg border border-gray-100" />}
       {(p.headline || p.title || p.coreLine) && <div className="text-sm font-bold text-gray-800 pr-8">{p.headline || p.title || p.coreLine}</div>}
       {p.sub && <div className="text-xs text-gray-500">{p.sub}</div>}
       {p.detail && <div className="text-xs text-gray-400">{p.detail}</div>}
       {(p.body || p.text) && <div className="text-xs text-gray-600 whitespace-pre-wrap line-clamp-3">{p.body || p.text}</div>}
-      {p.cta && <div className="text-xs text-primary-600 font-medium">→ {p.cta}</div>}
+      {p.cta && <div className="text-xs text-foreground font-medium">→ {p.cta}</div>}
       <div className="flex items-center gap-2 pt-0.5">
         {copyText && <button onClick={() => navigator.clipboard?.writeText(copyText)} className="text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 active:scale-95 transition-all">복사</button>}
         {p.variantId && <span className="text-[10px] text-gray-300">{p.variantId}</span>}
@@ -798,10 +798,10 @@ function ManualRunModal({ staff, workspace, fields, presetMode, emoji, onClose, 
                   <label className="block text-xs font-medium text-gray-600 mb-1">{f.label}{f.required && <span className="text-rose-400"> *</span>}</label>
                   {f.type === 'textarea' ? (
                     <textarea value={input[f.name] || ''} onChange={e => setField(f.name, e.target.value)} rows={3} placeholder={f.placeholder}
-                      className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none resize-none" />
+                      className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-foreground focus:outline-none resize-none" />
                   ) : f.type === 'select' ? (
                     <select value={input[f.name] || ''} onChange={e => setField(f.name, e.target.value)}
-                      className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 bg-white focus:border-primary-400 focus:outline-none">
+                      className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 bg-white focus:border-foreground focus:outline-none">
                       <option value="">선택</option>
                       {f.options?.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
@@ -810,7 +810,7 @@ function ManualRunModal({ staff, workspace, fields, presetMode, emoji, onClose, 
                       {f.options?.map(o => {
                         const sel = (input[f.name] || '').split(',').filter(Boolean).includes(o);
                         return <button key={o} type="button" onClick={() => toggleMulti(f.name, o)}
-                          className={`text-[11px] px-2.5 py-1 rounded-full transition-all active:scale-95 ${sel ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'}`}>{o}</button>;
+                          className={`text-[11px] px-2.5 py-1 rounded-full transition-all active:scale-95 ${sel ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500'}`}>{o}</button>;
                       })}
                     </div>
                   ) : f.type === 'duration' ? (() => {
@@ -823,23 +823,23 @@ function ManualRunModal({ staff, workspace, fields, presetMode, emoji, onClose, 
                         <div className="flex gap-1 flex-shrink-0">
                           {['숏폼', '롱폼'].map(o => (
                             <button key={o} type="button" onClick={() => setDur(o, len)}
-                              className={`px-3 py-2 rounded-xl text-sm font-medium transition-all active:scale-95 ${ftype === o ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'}`}>{o}</button>
+                              className={`px-3 py-2 rounded-xl text-sm font-medium transition-all active:scale-95 ${ftype === o ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500'}`}>{o}</button>
                           ))}
                         </div>
                         <input value={len} onChange={e => setDur(ftype || '숏폼', e.target.value)} placeholder={f.placeholder}
-                          className="flex-1 min-w-0 rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none" />
+                          className="flex-1 min-w-0 rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-foreground focus:outline-none" />
                       </div>
                     );
                   })() : (
                     <input type={f.type === 'number' ? 'number' : 'text'} value={input[f.name] || ''} onChange={e => setField(f.name, e.target.value)} placeholder={f.placeholder}
-                      className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none" />
+                      className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-foreground focus:outline-none" />
                   )}
                 </div>
               ))}
             </div>
             <div className="flex gap-2 mt-5">
               <button onClick={onClose} className="flex-1 py-2.5 rounded-2xl bg-gray-100 text-gray-500 text-sm font-medium hover:bg-gray-200 transition-all">취소</button>
-              <button onClick={run} disabled={running} className="flex-1 py-2.5 rounded-2xl bg-primary-500 text-white text-sm font-bold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-50">
+              <button onClick={run} disabled={running} className="flex-1 py-2.5 rounded-2xl bg-foreground text-white text-sm font-bold hover:opacity-85 active:scale-95 transition-all disabled:opacity-50">
                 {running ? '실행 중…' : '▶ 실행'}
               </button>
             </div>
@@ -854,7 +854,7 @@ function ManualRunModal({ staff, workspace, fields, presetMode, emoji, onClose, 
             </div>
             <div className="flex gap-2 mt-5">
               <button onClick={() => setPreview(null)} className="flex-1 py-2.5 rounded-2xl bg-gray-100 text-gray-500 text-sm font-medium hover:bg-gray-200 transition-all">↺ 다시</button>
-              <button onClick={save} disabled={saving} className="flex-1 py-2.5 rounded-2xl bg-primary-500 text-white text-sm font-bold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-50">
+              <button onClick={save} disabled={saving} className="flex-1 py-2.5 rounded-2xl bg-foreground text-white text-sm font-bold hover:opacity-85 active:scale-95 transition-all disabled:opacity-50">
                 {saving ? '저장 중…' : '💾 일일 리포트에 저장'}
               </button>
             </div>
@@ -893,11 +893,11 @@ function PromptModal({ staff, onClose, onSaved }: { staff: Staff; onClose: () =>
         <p className="text-[11px] text-gray-400 mb-3">실제 실행 = 타입 베이스 SOP + 브랜드 정보 + <b className="text-gray-500">이 프롬프트</b> 결합</p>
         <textarea autoFocus value={val} onChange={e => setVal(e.target.value)} rows={7}
           placeholder="이 직원의 성격·톤·세부 지시를 자세히…"
-          className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm leading-relaxed focus:outline-none focus:bg-white focus:border-primary-300 resize-none" />
+          className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm leading-relaxed focus:outline-none focus:bg-white focus:border-line resize-none" />
         <div className="flex gap-2.5 pt-3">
           <button onClick={onClose} className="px-5 py-3 rounded-2xl text-sm text-gray-500 hover:bg-gray-100 transition-colors active:scale-95">취소</button>
           <button onClick={save} disabled={busy}
-            className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all active:scale-[0.97]">
+            className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all active:scale-[0.97]">
             {busy ? '저장 중…' : '저장'}
           </button>
         </div>
@@ -960,7 +960,7 @@ function RoutineScheduleModal({
 
   const seg = (v: typeof schedule, t: string) => (
     <button onClick={() => setSchedule(v)}
-      className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all active:scale-95 ${schedule === v ? 'bg-primary-500 text-white' : 'bg-gray-50 text-gray-500'}`}>{t}</button>
+      className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all active:scale-95 ${schedule === v ? 'bg-foreground text-white' : 'bg-gray-50 text-gray-500'}`}>{t}</button>
   );
 
   return createPortal(
@@ -982,7 +982,7 @@ function RoutineScheduleModal({
             <p className="px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm text-gray-400">추가할 수 있는 기본 업무가 없어요 (이미 다 추가됨)</p>
           ) : (
             <select value={label} onChange={e => setLabel(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-primary-300">
+              className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-line">
               {opts.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           )}
@@ -997,10 +997,10 @@ function RoutineScheduleModal({
         {schedule === 'daily' && (
           <div className="flex items-center gap-3">
             <button onClick={() => setHasTime(h => !h)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${hasTime ? 'bg-primary-50 border-primary-200 text-primary-600' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${hasTime ? 'bg-surface-muted border-line text-foreground' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
               {hasTime ? '✓ 시간 지정' : '시간 지정 안 함'}
             </button>
-            {hasTime && <input type="time" value={time} onChange={e => setTime(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:border-primary-300" />}
+            {hasTime && <input type="time" value={time} onChange={e => setTime(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:border-line" />}
           </div>
         )}
 
@@ -1010,10 +1010,10 @@ function RoutineScheduleModal({
             <div className="flex gap-1.5">
               {DOW.map((d, i) => (
                 <button key={i} onClick={() => setDow(i)}
-                  className={`w-9 h-9 rounded-xl text-sm font-medium transition-all active:scale-90 ${dow === i ? 'bg-primary-500 text-white' : 'bg-gray-50 text-gray-500'}`}>{d}</button>
+                  className={`w-9 h-9 rounded-xl text-sm font-medium transition-all active:scale-90 ${dow === i ? 'bg-foreground text-white' : 'bg-gray-50 text-gray-500'}`}>{d}</button>
               ))}
             </div>
-            <input type="time" value={time} onChange={e => setTime(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:border-primary-300" />
+            <input type="time" value={time} onChange={e => setTime(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:border-line" />
           </div>
         )}
 
@@ -1021,17 +1021,17 @@ function RoutineScheduleModal({
         {schedule === 'monthly' && (
           <div className="flex items-center gap-2">
             <select value={dom} onChange={e => setDom(Number(e.target.value))}
-              className="px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:border-primary-300">
+              className="px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:border-line">
               {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}일</option>)}
             </select>
-            <input type="time" value={time} onChange={e => setTime(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:border-primary-300" />
+            <input type="time" value={time} onChange={e => setTime(e.target.value)} className="px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:border-line" />
           </div>
         )}
 
         <div className="flex gap-2.5 pt-1">
           <button onClick={onClose} className="px-5 py-3 rounded-2xl text-sm text-gray-500 hover:bg-gray-100 transition-colors active:scale-95">취소</button>
           <button onClick={submit} disabled={!label.trim() || busy}
-            className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all active:scale-[0.97]">
+            className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all active:scale-[0.97]">
             {busy ? '저장 중…' : (isEdit ? '저장' : '추가')}
           </button>
         </div>
@@ -1161,9 +1161,9 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
         <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">← AI 직원</button>
         <div className="flex items-center gap-1.5">
           <button onClick={() => setShowPrompt(true)}
-            className="px-3 py-1 rounded-full text-[11px] font-medium bg-primary-50 text-primary-600 hover:bg-primary-100 transition-all active:scale-95">📝 프롬프트</button>
+            className="px-3 py-1 rounded-full text-[11px] font-medium bg-surface-muted text-foreground hover:bg-surface-muted transition-all active:scale-95">📝 프롬프트</button>
           <button onClick={toggle}
-            className="px-3 py-1 rounded-full text-[11px] font-medium border border-primary-200 text-primary-600 hover:bg-primary-50 transition-all active:scale-95">
+            className="px-3 py-1 rounded-full text-[11px] font-medium border border-line text-foreground hover:bg-surface-muted transition-all active:scale-95">
             {state === 'working' ? '⏸ 일시정지' : '▶ 가동 시작'}
           </button>
           <button onClick={remove}
@@ -1172,15 +1172,15 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
       </div>
 
       {/* 프로필 히어로 (이름 수정 가능) */}
-      <div className="rounded-[24px] bg-primary-50 border border-primary-100 p-5 flex items-center gap-4 mb-4">
+      <div className="rounded-[24px] bg-surface-muted border border-line p-5 flex items-center gap-4 mb-4">
         <button onClick={onBack} title="직원 홈으로" className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-sm hover:bg-gray-50 active:scale-95 transition-all">{type?.emoji || '🤖'}</button>
         <div className="flex-1 min-w-0">
           {editName ? (
             <div className="flex items-center gap-2">
               <input autoFocus value={nameVal} onChange={e => setNameVal(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setEditName(false); setNameVal(staff.name); } }}
-                className="text-lg font-extrabold text-gray-800 px-2 py-1 rounded-lg border border-primary-300 focus:outline-none" />
-              <button onClick={saveName} className="text-xs px-2 py-1 rounded-lg bg-primary-500 text-white">저장</button>
+                className="text-lg font-extrabold text-gray-800 px-2 py-1 rounded-lg border border-line focus:outline-none" />
+              <button onClick={saveName} className="text-xs px-2 py-1 rounded-lg bg-foreground text-white">저장</button>
             </div>
           ) : (
             <div className="flex items-center gap-1.5">
@@ -1193,7 +1193,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
             <StatePill state={state} />
             <div className="relative">
               <button onClick={() => setShowModel(s => !s)}
-                className="text-[11px] px-2 py-0.5 rounded-full bg-white text-gray-500 border border-gray-100 hover:border-primary-200 transition-colors">
+                className="text-[11px] px-2 py-0.5 rounded-full bg-white text-gray-500 border border-gray-100 hover:border-line transition-colors">
                 🧠 {modelLabel(staff.model)} ▾
               </button>
               {showModel && (
@@ -1202,7 +1202,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
                   <div className="absolute z-20 top-7 left-0 w-56 bg-white rounded-2xl shadow-lg border border-gray-100 p-1.5">
                     {MODEL_OPTIONS.map(o => (
                       <button key={o.key} onClick={() => changeModel(o.key)}
-                        className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-colors ${staff.model === o.key ? 'bg-primary-50' : 'hover:bg-gray-50'}`}>
+                        className={`w-full text-left px-2.5 py-1.5 rounded-xl transition-colors ${staff.model === o.key ? 'bg-surface-muted' : 'hover:bg-gray-50'}`}>
                         <div className="text-[12px] font-medium text-gray-700">{o.label}{staff.model === o.key && ' ✓'}</div>
                         <div className="text-[10px] text-gray-400">{o.desc}</div>
                       </button>
@@ -1223,7 +1223,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
             <div className="min-w-0 flex-1">
               <p className="text-sm text-gray-600 leading-relaxed">{type.guide}</p>
               <button onClick={() => setShowGuide(s => !s)}
-                className="mt-2 text-[11px] font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                className="mt-2 text-[11px] font-semibold text-foreground hover:text-foreground transition-colors">
                 {showGuide ? '접기 ▲' : '이렇게 쓰세요 ▾'}
               </button>
             </div>
@@ -1267,11 +1267,11 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
           <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">매일 하는 일 (자동)</span>
           <div className="flex items-center gap-1.5">
             <button onClick={run} disabled={running || runningRoutineId !== null} title="모든 활성 일과를 한 번에 실행"
-              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 transition-all active:scale-95">
+              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-foreground text-white hover:opacity-85 disabled:opacity-50 transition-all active:scale-95">
               {running ? '실행 중…' : '▶ 전체 실행'}
             </button>
             <button onClick={() => setShowRoutine(true)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-50 text-primary-600 hover:bg-primary-100 transition-all active:scale-95">＋ 추가</button>
+              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-surface-muted text-foreground hover:bg-surface-muted transition-all active:scale-95">＋ 추가</button>
           </div>
         </div>
         <Card className="p-2">
@@ -1282,23 +1282,23 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
               <div key={r.id}>
                 <div className="group flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors">
                   <button onClick={() => toggleRoutine(r)} title={r.enabled ? '끄기' : '켜기'}
-                    className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] text-white transition-colors flex-shrink-0 ${r.enabled ? 'bg-primary-500' : 'bg-gray-300'}`}>✓</button>
+                    className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] text-white transition-colors flex-shrink-0 ${r.enabled ? 'bg-foreground' : 'bg-gray-300'}`}>✓</button>
                   <button onClick={() => guide && setExpandedRoutine(open ? null : r.id)} title={guide ? '무슨 일인지 보기' : undefined}
-                    className={`text-sm flex-1 min-w-0 text-left flex items-center gap-1 ${r.enabled ? 'text-gray-700' : 'text-gray-300 line-through'} ${guide ? 'cursor-pointer hover:text-primary-600' : 'cursor-default'} transition-colors`}>
+                    className={`text-sm flex-1 min-w-0 text-left flex items-center gap-1 ${r.enabled ? 'text-gray-700' : 'text-gray-300 line-through'} ${guide ? 'cursor-pointer hover:text-foreground' : 'cursor-default'} transition-colors`}>
                     <span className="truncate">{r.label}</span>
                     {guide && <span className={`text-[9px] text-gray-300 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>}
                   </button>
                   <button onClick={() => setEditingRoutine(r)} title="주기·시간 설정"
-                    className="text-[10px] text-gray-400 flex-shrink-0 hover:text-primary-500 transition-colors">{formatSchedule(r)} ✎</button>
+                    className="text-[10px] text-gray-400 flex-shrink-0 hover:text-foreground transition-colors">{formatSchedule(r)} ✎</button>
                   <button onClick={() => runRoutine(r)} disabled={runningRoutineId !== null || running} title="이 업무만 지금 실행"
-                    className="flex-shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-40 transition-all active:scale-95">
+                    className="flex-shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-surface-muted text-foreground hover:bg-surface-muted disabled:opacity-40 transition-all active:scale-95">
                     {runningRoutineId === r.id ? '실행 중…' : '▶ 실행'}
                   </button>
                   <button onClick={() => removeRoutine(r.id)} title="삭제"
                     className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-rose-400 text-sm transition-all flex-shrink-0">×</button>
                 </div>
                 {open && guide && (
-                  <p className="mx-2 mb-2 -mt-0.5 px-3 py-2 rounded-xl bg-primary-50/60 text-[12px] text-gray-600 leading-relaxed">{guide}</p>
+                  <p className="mx-2 mb-2 -mt-0.5 px-3 py-2 rounded-xl bg-surface-muted/60 text-[12px] text-gray-600 leading-relaxed">{guide}</p>
                 )}
               </div>
             );
@@ -1315,17 +1315,17 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {modeOptions.map(m => (
                 <button key={m} onClick={() => openManual(m)}
-                  className="flex flex-col items-center justify-center gap-2 py-6 px-2 rounded-[24px] bg-primary-50 border border-primary-100 hover:bg-primary-100 hover:shadow-md active:scale-95 transition-all">
+                  className="flex flex-col items-center justify-center gap-2 py-6 px-2 rounded-[24px] bg-surface-muted border border-line hover:bg-surface-muted hover:shadow-md active:scale-95 transition-all">
                   <span className="text-3xl">{modeIcon(m)}</span>
-                  <span className="text-xs font-bold text-primary-700 text-center leading-tight">{m}</span>
+                  <span className="text-xs font-bold text-foreground text-center leading-tight">{m}</span>
                 </button>
               ))}
             </div>
           ) : (
             <button onClick={() => openManual()}
-              className="w-full flex flex-col items-center justify-center gap-2 py-6 rounded-[24px] bg-primary-50 border border-primary-100 hover:bg-primary-100 hover:shadow-md active:scale-95 transition-all">
+              className="w-full flex flex-col items-center justify-center gap-2 py-6 rounded-[24px] bg-surface-muted border border-line hover:bg-surface-muted hover:shadow-md active:scale-95 transition-all">
               <span className="text-3xl">{type?.emoji || '▶'}</span>
-              <span className="text-sm font-bold text-primary-700">직접 시키기</span>
+              <span className="text-sm font-bold text-foreground">직접 시키기</span>
             </button>
           )}
         </div>
@@ -1341,9 +1341,9 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
               const title = String((a.payload as { title?: string })?.title || '');
               return (
                 <div key={a.id} className="flex items-center gap-2 p-2 rounded-2xl bg-gray-50">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-600 flex-shrink-0">{label}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground flex-shrink-0">{label}</span>
                   <span className="text-sm text-gray-700 flex-1 truncate">{title}</span>
-                  <button onClick={() => approve(a)} className="text-[11px] px-2.5 py-1 rounded-lg bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all flex-shrink-0">승인</button>
+                  <button onClick={() => approve(a)} className="text-[11px] px-2.5 py-1 rounded-lg bg-foreground text-white hover:opacity-85 active:scale-95 transition-all flex-shrink-0">승인</button>
                   <button onClick={() => dismiss(a.id)} className="text-[11px] px-2.5 py-1 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all flex-shrink-0">반려</button>
                 </div>
               );
@@ -1425,7 +1425,7 @@ export function StaffView({ workspace, onRan }: { workspace: Workspace; onRan?: 
             <button key={s.id} onClick={() => setSelected(s)}
               className="rounded-[24px] bg-white border border-gray-100 shadow-sm hover:shadow-md p-4 text-left transition-all active:scale-[0.98]">
               <div className="flex items-center justify-between mb-2">
-                <span className="w-11 h-11 rounded-2xl bg-primary-50 flex items-center justify-center text-2xl">{type?.emoji || '🤖'}</span>
+                <span className="w-11 h-11 rounded-2xl bg-surface-muted flex items-center justify-center text-2xl">{type?.emoji || '🤖'}</span>
                 <StatePill state={s.state} />
               </div>
               <div className="text-sm font-bold text-gray-800">{s.name}</div>
@@ -1436,8 +1436,8 @@ export function StaffView({ workspace, onRan }: { workspace: Workspace; onRan?: 
         })}
 
         <button onClick={() => setShowHire(true)}
-          className="rounded-[24px] border-2 border-dashed border-gray-200 hover:border-primary-300 hover:bg-primary-50/40
-            p-4 flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-primary-500 transition-all active:scale-[0.98] min-h-[140px]">
+          className="rounded-[24px] border-2 border-dashed border-gray-200 hover:border-line hover:bg-surface-muted/40
+            p-4 flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-foreground transition-all active:scale-[0.98] min-h-[140px]">
           <span className="text-3xl">＋</span>
           <span className="text-sm font-medium">직원 채용</span>
           <span className="text-[11px] text-gray-300">역할 정하고 24시간 맡기기</span>

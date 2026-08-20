@@ -57,7 +57,7 @@ export function LikeCommentBlock({ resource, resId, members }: {
   const fmt = (iso: string) => { try { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } catch { return ''; } };
 
   const Comment = ({ c, isReply }: { c: SocialComment; isReply?: boolean }) => (
-    <div className={`${isReply ? 'ml-6 border-l-2 border-primary-100 pl-3' : ''} py-1.5`}>
+    <div className={`${isReply ? 'ml-6 border-l-2 border-line pl-3' : ''} py-1.5`}>
       <div className="flex items-baseline gap-2">
         <span className="text-[12px] font-semibold text-gray-700">{isReply ? '↳ ' : ''}{nameOf(c.userId)}</span>
         <span className="text-[10px] text-gray-300">{fmt(c.createdAt)}</span>
@@ -65,7 +65,7 @@ export function LikeCommentBlock({ resource, resId, members }: {
       </div>
       <p className="text-[13px] text-gray-700 whitespace-pre-wrap leading-relaxed mt-0.5">{c.content}</p>
       {!isReply && (
-        <button onClick={() => { setReplyTo(replyTo === c.id ? null : c.id); setReplyDraft(''); }} className="text-[10px] text-primary-500 hover:underline mt-0.5">
+        <button onClick={() => { setReplyTo(replyTo === c.id ? null : c.id); setReplyDraft(''); }} className="text-[10px] text-foreground hover:underline mt-0.5">
           {replyTo === c.id ? '취소' : '답글'}
         </button>
       )}
@@ -73,9 +73,9 @@ export function LikeCommentBlock({ resource, resId, members }: {
         <div className="flex gap-1.5 mt-1.5">
           <input autoFocus value={replyDraft} onChange={(e) => setReplyDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { submit(replyDraft, c.id).then(() => { setReplyDraft(''); setReplyTo(null); }); } }}
-            placeholder="답글…" className="flex-1 rounded-lg border border-gray-200 px-2.5 py-1 text-[13px] focus:outline-none focus:border-primary-400" />
+            placeholder="답글…" className="flex-1 rounded-lg border border-gray-200 px-2.5 py-1 text-[13px] focus:outline-none focus:border-foreground" />
           <button onClick={() => submit(replyDraft, c.id).then(() => { setReplyDraft(''); setReplyTo(null); })} disabled={busy || !replyDraft.trim()}
-            className="text-[11px] px-2 py-1 rounded-lg bg-primary-500 text-white disabled:opacity-40">등록</button>
+            className="text-[11px] px-2 py-1 rounded-lg bg-foreground text-white disabled:opacity-40">등록</button>
         </div>
       )}
       {repliesOf(c.id).map((r) => <Comment key={r.id} c={r} isReply />)}
@@ -97,9 +97,9 @@ export function LikeCommentBlock({ resource, resId, members }: {
         <input value={draft} onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') submit(draft).then(() => setDraft('')); }}
           placeholder={top.length === 0 ? '첫 댓글을 남겨보세요' : '댓글 남기기…'}
-          className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:border-primary-400" />
+          className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:border-foreground" />
         <button onClick={() => submit(draft).then(() => setDraft(''))} disabled={busy || !draft.trim()}
-          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40">등록</button>
+          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">등록</button>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ export function MarkdownView({ text, className }: { text: string; className?: st
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">{children}</a>,
+          a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline">{children}</a>,
         }}
       >
         {text}

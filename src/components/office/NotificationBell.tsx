@@ -73,7 +73,7 @@ export function NotificationBell({ workspace, onNavigate }: { workspace: Workspa
         <div className="absolute right-0 top-11 w-80 max-w-[86vw] bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
           <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-gray-100">
             <span className="text-sm font-bold text-gray-800">알림 {unread > 0 && <span className="text-rose-500">{unread}</span>}</span>
-            {unread > 0 && <button onClick={readAll} className="text-[11px] text-gray-400 hover:text-primary-500">모두 읽음</button>}
+            {unread > 0 && <button onClick={readAll} className="text-[11px] text-gray-400 hover:text-foreground">모두 읽음</button>}
           </div>
           <div className="max-h-[60vh] overflow-y-auto">
             {items.length === 0 ? (
@@ -82,7 +82,7 @@ export function NotificationBell({ workspace, onNavigate }: { workspace: Workspa
                 <p className="text-xs text-gray-400">새 알림이 없어요</p>
               </div>
             ) : items.map((n) => (
-              <button key={n.id} onClick={() => onItem(n)} className={`w-full text-left px-3.5 py-2.5 border-b border-gray-50 hover:bg-gray-50 transition-colors ${n.readAt ? '' : 'bg-primary-50/40'}`}>
+              <button key={n.id} onClick={() => onItem(n)} className={`w-full text-left px-3.5 py-2.5 border-b border-gray-50 hover:bg-gray-50 transition-colors ${n.readAt ? '' : 'bg-surface-muted/40'}`}>
                 <div className="flex items-center gap-1.5">
                   {!n.readAt && <span className="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0" />}
                   <span className="text-[13px] font-semibold text-gray-800 truncate flex-1">{n.title}</span>

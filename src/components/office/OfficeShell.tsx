@@ -83,8 +83,8 @@ function UsageModal({ workspace, credits, onClose }: { workspace: Workspace; cre
           <h2 className="text-base font-extrabold text-gray-800">🪙 코인 사용 내역</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center">✕</button>
         </div>
-        <div className="rounded-2xl bg-primary-50 p-3 mb-3 flex items-center justify-between">
-          <div><div className="text-[11px] text-gray-400">남은 코인</div><div className="text-xl font-bold text-primary-600">{credits != null ? credits.toLocaleString() : '—'}</div></div>
+        <div className="rounded-2xl bg-surface-muted p-3 mb-3 flex items-center justify-between">
+          <div><div className="text-[11px] text-gray-400">남은 코인</div><div className="text-xl font-bold text-foreground">{credits != null ? credits.toLocaleString() : '—'}</div></div>
           <div className="text-right"><div className="text-[11px] text-gray-400">최근 사용</div><div className="text-sm font-semibold text-gray-600">{totalCoins.toLocaleString()}코인 · {usd(totalCoins)}</div></div>
         </div>
         <div className="flex-1 overflow-y-auto space-y-1.5">
@@ -145,7 +145,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
       className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-gray-100 transition-colors text-left">
       {ws.imageUrl ? <img src={ws.imageUrl} alt={ws.name} className="w-5 h-5 rounded object-cover" /> : <span className="text-base">{ws.emoji || '🏢'}</span>}
       <span className={ws.id === workspace.id ? 'font-semibold text-gray-800' : 'text-gray-600'}>{ws.name}</span>
-      {ws.id === workspace.id && <span className="ml-auto text-primary-500 text-xs">✓</span>}
+      {ws.id === workspace.id && <span className="ml-auto text-foreground text-xs">✓</span>}
     </button>
   );
 
@@ -197,7 +197,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
           return (
             <button key={n.id} onClick={() => goNav(n.id)} title={n.label}
               className={`relative w-11 h-11 rounded-xl flex items-center justify-center text-lg transition-all active:scale-90
-                ${on ? 'bg-primary-100 text-primary-800' : 'text-gray-400 hover:bg-gray-100'}`}>
+                ${on ? 'bg-surface-muted text-foreground' : 'text-gray-400 hover:bg-gray-100'}`}>
               {n.id === 'content'
                 ? <YouTubeGlyph className="w-[22px] h-[22px]" />
                 : <span className={on ? '' : 'grayscale opacity-80'}>{n.emoji}</span>}
@@ -207,7 +207,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
         <div className="flex-1" />
         <button title="회사 브레인 · 설정" onClick={() => setView('brand')}
           className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-90
-            ${view === 'brand' ? 'bg-primary-100 text-primary-800' : 'text-gray-400 hover:bg-gray-100'}`}>⚙️</button>
+            ${view === 'brand' ? 'bg-surface-muted text-foreground' : 'text-gray-400 hover:bg-gray-100'}`}>⚙️</button>
       </aside>
 
       {/* 메인 */}
@@ -262,7 +262,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
           const on = view === n.id;
           return (
             <button key={n.id} onClick={() => goNav(n.id)}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${on ? 'text-primary-600' : 'text-gray-400'}`}>
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${on ? 'text-foreground' : 'text-gray-400'}`}>
               <span className={`text-lg ${on ? '' : 'grayscale opacity-80'}`}>{n.emoji}</span>
               <span className="text-[10px] font-medium">{n.label}</span>
             </button>
@@ -296,14 +296,14 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                 const on = view === n.id;
                 return (
                   <button key={n.id} onClick={() => { goNav(n.id); setMoreOpen(false); }}
-                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${on ? 'bg-primary-100 text-primary-800' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
+                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${on ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
                     <span className="text-xl">{n.emoji}</span>
                     <span className="text-[11px] font-medium">{n.label}</span>
                   </button>
                 );
               })}
               <button onClick={() => { setView('brand'); setMoreOpen(false); }}
-                className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'brand' ? 'bg-primary-100 text-primary-800' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
+                className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'brand' ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
                 <span className="text-xl">⚙️</span>
                 <span className="text-[11px] font-medium">회사 브레인</span>
               </button>

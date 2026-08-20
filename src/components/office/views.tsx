@@ -123,7 +123,7 @@ function OfficeDailyGuide() {
         <div className="mt-4 space-y-3">
           {steps.map(s => (
             <div key={s.n} className="flex items-start gap-3">
-              <span className="w-6 h-6 rounded-md bg-primary-50 text-primary-600 text-xs font-bold flex items-center justify-center flex-shrink-0">{s.n}</span>
+              <span className="w-6 h-6 rounded-md bg-surface-muted text-foreground text-xs font-bold flex items-center justify-center flex-shrink-0">{s.n}</span>
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-gray-800">{s.emoji} {s.title}</div>
                 <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">{s.desc}</div>
@@ -169,7 +169,7 @@ const STATUS_UI: Record<BriefStatus, { dot: string; bar: string; label: string }
   critical: { dot: 'bg-rose-400', bar: 'border-rose-200 bg-rose-50/60', label: '🔴 확인 필요' },
 };
 const SEV_UI: Record<Severity, string> = {
-  critical: 'border-l-rose-400', warning: 'border-l-amber-400', info: 'border-l-primary-400', positive: 'border-l-emerald-400',
+  critical: 'border-l-rose-400', warning: 'border-l-amber-400', info: 'border-l-foreground', positive: 'border-l-emerald-400',
 };
 
 function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavigate: Nav }) {
@@ -212,7 +212,7 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
           {brief && <span className="text-[11px] text-gray-400">{brief.briefing_date} · 운영매니저</span>}
         </div>
         <button onClick={generate} disabled={gen}
-          className="text-[11px] px-3 py-1.5 rounded-lg bg-primary-500 text-white font-medium hover:bg-primary-600 disabled:opacity-50 transition-all active:scale-95">
+          className="text-[11px] px-3 py-1.5 rounded-lg bg-foreground text-white font-medium hover:opacity-85 disabled:opacity-50 transition-all active:scale-95">
           {gen ? '생성 중…' : brief ? '↻ 새로고침' : '브리핑 생성'}
         </button>
       </div>
@@ -247,7 +247,7 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
                       <span className="text-sm font-semibold text-gray-800 flex-1">{t.title}</span>
                       {t.recommended_action && (
                         <button onClick={() => onNavigate(t.type === 'content' ? 'contents' : t.type === 'schedule' ? 'schedule' : (t.type === 'decision' || t.type === 'cs') ? 'staff' : 'todos')}
-                          className="text-[11px] px-2 py-0.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:border-primary-300 flex-shrink-0">{t.recommended_action.label}</button>
+                          className="text-[11px] px-2 py-0.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:border-line flex-shrink-0">{t.recommended_action.label}</button>
                       )}
                     </div>
                     <p className="text-[12px] text-gray-500 mt-0.5">{t.summary}</p>
@@ -265,15 +265,15 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
                 <span className="text-[11px] font-semibold text-gray-500">💰 매출</span>
                 {brief.sales.month_target != null
                   ? <span className="ml-auto text-[10px] text-gray-400">목표 {man(brief.sales.month_target)}</span>
-                  : (!editTarget && <button onClick={() => { setEditTarget(true); setTargetInput(target ? String(Math.round(target / 10000)) : ''); }} className="ml-auto text-[10px] text-primary-500 hover:underline">월 목표 설정</button>)}
+                  : (!editTarget && <button onClick={() => { setEditTarget(true); setTargetInput(target ? String(Math.round(target / 10000)) : ''); }} className="ml-auto text-[10px] text-foreground hover:underline">월 목표 설정</button>)}
               </div>
               {editTarget ? (
                 <div className="flex items-center gap-1.5">
                   <input autoFocus type="number" value={targetInput} onChange={e => setTargetInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') saveTarget(); if (e.key === 'Escape') setEditTarget(false); }}
-                    placeholder="예: 3000" className="w-24 px-2 py-1 rounded-lg border border-primary-300 text-sm focus:outline-none" />
+                    placeholder="예: 3000" className="w-24 px-2 py-1 rounded-lg border border-line text-sm focus:outline-none" />
                   <span className="text-[11px] text-gray-400">만원</span>
-                  <button onClick={saveTarget} className="text-[11px] px-2 py-1 rounded-lg bg-primary-500 text-white">저장</button>
+                  <button onClick={saveTarget} className="text-[11px] px-2 py-1 rounded-lg bg-foreground text-white">저장</button>
                 </div>
               ) : (
                 <p className="text-[12px] text-gray-600 leading-relaxed">{brief.sales.one_line}</p>
@@ -349,7 +349,7 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
 /** 대시보드 — 확인이 필요한 일(top5) + 내 할일 버킷 (가이드 §10.7/§10.8). tasks=내 미완료. */
 const BUCKET_META: { key: DateBucket; label: string; tone: string }[] = [
   { key: 'overdue', label: '지연', tone: 'text-rose-500' },
-  { key: 'today', label: '오늘', tone: 'text-primary-500' },
+  { key: 'today', label: '오늘', tone: 'text-foreground' },
   { key: 'this_week', label: '이번 주', tone: 'text-gray-700' },
   { key: 'later', label: '나중', tone: 'text-gray-400' },
   { key: 'no_date', label: '기한 없음', tone: 'text-gray-300' },
@@ -370,7 +370,7 @@ function MyTaskFocus({ tasks, onNavigate }: { tasks: TaskItem[]; onNavigate: Nav
       <Card className="p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">확인이 필요한 일 <span className="text-gray-300 tabular-nums">{tasks.length}</span></span>
-          <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-primary-500 transition-colors">전체 ›</button>
+          <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-foreground transition-colors">전체 ›</button>
         </div>
         {pending.map(t => {
           const overdue = t.date ? (daysUntil(t.date) ?? 0) < 0 : false;
@@ -386,7 +386,7 @@ function MyTaskFocus({ tasks, onNavigate }: { tasks: TaskItem[]; onNavigate: Nav
       <Card className="p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">내 할일</span>
-          <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-primary-500 transition-colors">전체 ›</button>
+          <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-foreground transition-colors">전체 ›</button>
         </div>
         {BUCKET_META.filter(b => (grouped.get(b.key)?.length ?? 0) > 0).map(b => {
           const items = grouped.get(b.key)!;
@@ -400,7 +400,7 @@ function MyTaskFocus({ tasks, onNavigate }: { tasks: TaskItem[]; onNavigate: Nav
                     {t.date && <span className="text-[10px] text-gray-300 flex-shrink-0">{t.date.slice(5)}</span>}
                   </button>
                 ))}
-                {items.length > 4 && <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-primary-500">그 외 {items.length - 4}건 →</button>}
+                {items.length > 4 && <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-foreground">그 외 {items.length - 4}건 →</button>}
               </div>
             </div>
           );
@@ -440,7 +440,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
   const SecHead = ({ title, to }: { title: string; to?: string }) => (
     <div className="flex items-center justify-between mb-2">
       <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{title}</span>
-      {to && <button onClick={() => onNavigate(to)} className="text-[11px] text-gray-400 hover:text-primary-500 transition-colors">전체 ›</button>}
+      {to && <button onClick={() => onNavigate(to)} className="text-[11px] text-gray-400 hover:text-foreground transition-colors">전체 ›</button>}
     </div>
   );
   const Empty = ({ t }: { t: string }) => <p className="text-xs text-gray-300 py-3 text-center">{t}</p>;
@@ -449,7 +449,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
     <div className="space-y-5">
       {/* 인사말 히어로 — 무지 모던톤 (라이트 대형 헤드라인) */}
       <div className="mb-10">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-500 mb-3">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}</div>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground mb-3">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}</div>
         <h1 className="text-3xl sm:text-4xl font-light leading-[1.2] text-gray-800">{greeting} 👋</h1>
         <p className="text-sm text-gray-400 mt-3">{workspace.name} · 진행 중 할일 {open.length}건 · 멤버 {members.length}명</p>
       </div>
@@ -482,7 +482,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
 
       {/* 브리핑 배너 — 네모·라인 (무지톤) */}
       <button onClick={() => onNavigate('briefing')}
-        className="w-full flex items-center gap-3 p-5 rounded-lg bg-primary-500 text-white transition-colors hover:bg-primary-600 text-left">
+        className="w-full flex items-center gap-3 p-5 rounded-lg bg-foreground text-white transition-colors hover:opacity-85 text-left">
         <span className="text-xl">☀️</span>
         <span className="flex-1">
           <span className="block text-sm font-semibold">오늘의 브리핑 읽기</span>
@@ -501,7 +501,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
           {upcoming.length ? upcoming.map(s => (
             <div key={s.id} className="flex items-center gap-2 py-1.5">
               <span className="text-[11px] font-bold text-gray-700 w-14 flex-shrink-0">{s.date.slice(5)}{s.time ? ' ' + s.time : ''}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-foreground flex-shrink-0" />
               <span className="text-sm text-gray-600 truncate">{s.title}</span>
             </div>
           )) : <Empty t="예정된 일정이 없어요" />}
@@ -544,7 +544,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
         <SecHead title="AI 직원 활동" to="activity" />
         {reports.length ? reports.slice(0, 5).map(r => (
           <div key={r.id} className="flex items-center gap-2 py-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-foreground flex-shrink-0" />
             <span className="text-sm text-gray-600 truncate flex-1">🤖 {r.title}</span>
             <span className="text-[10px] text-gray-300 flex-shrink-0">{r.date?.slice(5)}</span>
           </div>
@@ -558,7 +558,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
           <div className="flex flex-wrap gap-2">
             {members.map(m => (
               <span key={m.userId} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 border border-gray-200 text-xs text-gray-600">
-                <span className="w-5 h-5 rounded-md bg-primary-500 text-white flex items-center justify-center text-[10px] font-bold">{(m.nickname || m.userId).slice(0, 1).toUpperCase()}</span>
+                <span className="w-5 h-5 rounded-md bg-foreground text-white flex items-center justify-center text-[10px] font-bold">{(m.nickname || m.userId).slice(0, 1).toUpperCase()}</span>
                 {m.nickname || '멤버'}{m.role === 'owner' && ' 👑'}
               </span>
             ))}
@@ -597,7 +597,7 @@ function PriorityDot({ p }: { p: TaskItem['priority'] }) {
 }
 
 const STATUS_RING: Record<TaskItem['status'], string> = {
-  pending: 'border-gray-300', in_progress: 'border-amber-400', completed: 'bg-primary-500 border-primary-500',
+  pending: 'border-gray-300', in_progress: 'border-amber-400', completed: 'bg-foreground border-foreground',
 };
 const TASK_CATEGORIES = ['콘텐츠', '제품', '쇼룸', '촬영', '회의', '운영', '마케팅', 'CS', 'AI'];
 const isAiTask = (t: TaskItem) => t.category === '🤖 AI' || t.source === 'ai';
@@ -624,8 +624,8 @@ function TaskCol({ title, items, onOpen, onCycle, memberName, onMeeting }: {
               <span className={`text-sm flex-1 truncate ${t.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-700'}`}>{t.title}</span>
               {t.category && t.category !== '🤖 AI' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{t.category}</span>}
               {t.date && <span className="text-[10px] text-gray-400 flex-shrink-0">{t.date.slice(5)}</span>}
-              {isAiTask(t) && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-600 flex-shrink-0">🤖 AI</span>}
-              {t.assigneeId && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-500 flex-shrink-0">{memberName(t.assigneeId)}</span>}
+              {isAiTask(t) && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground flex-shrink-0">🤖 AI</span>}
+              {t.assigneeId && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground flex-shrink-0">{memberName(t.assigneeId)}</span>}
             </button>
             {t.meetingId && onMeeting && (
               <button onClick={onMeeting} title="회의로 이동" className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 flex-shrink-0">↗회의</button>
@@ -656,7 +656,7 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
     fetchMeetings(task.workspaceId).then(setMeetings).catch(() => {});
   }, [task.workspaceId]);
   const memberName = (m: WorkspaceMember) => m.nickname || m.name || m.email || '멤버';
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-[440px] max-w-[92vw] max-h-[88dvh] overflow-y-auto p-6 space-y-3 my-auto" onMouseDown={e => e.stopPropagation()}>
@@ -708,7 +708,7 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
             <button onClick={() => onSave({ title: title.trim() || task.title, priority, status, date: date || undefined, assigneeId: assigneeId || undefined, category: category || undefined, meetingId: meetingId || undefined })}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
           </div>
         </div>
         {/* 좋아요·댓글 (오피스 할일만) */}
@@ -747,7 +747,7 @@ export function TodosView({ workspace, onNavigate }: { workspace: Workspace; onN
     const m = members.find(x => x.userId === uid);
     return m ? (m.nickname || m.name || m.email || '멤버') : '담당';
   };
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
 
   const save = async () => {
     if (!form.title.trim()) return;
@@ -830,7 +830,7 @@ export function TodosView({ workspace, onNavigate }: { workspace: Workspace; onN
 
   const chip = (id: string, label: string) => (
     <button key={id} onClick={() => setFilter(id)}
-      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
   );
   const scopeTab = (id: typeof scope, label: string, count: number) => (
     <button key={id} onClick={() => setScope(id)}
@@ -838,7 +838,7 @@ export function TodosView({ workspace, onNavigate }: { workspace: Workspace; onN
   );
   const modeBtn = (m: typeof mode, label: string) => (
     <button key={m} onClick={() => setMode(m)}
-      className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${mode === m ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+      className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${mode === m ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
   );
 
   return (
@@ -856,7 +856,7 @@ export function TodosView({ workspace, onNavigate }: { workspace: Workspace; onN
       <div className="flex items-center gap-1.5 mb-2.5">
         <div className="flex gap-1">{modeBtn('day', '일별')}{modeBtn('list', '전체')}{modeBtn('calendar', '캘린더')}</div>
         <button onClick={() => setShowForm(v => !v)}
-          className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 할일 추가</button>
+          className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 할일 추가</button>
       </div>
 
       {/* 담당자/AI 하위 필터 (전체 스코프에서만) */}
@@ -897,7 +897,7 @@ export function TodosView({ workspace, onNavigate }: { workspace: Workspace; onN
             <button onClick={() => { setShowForm(false); setForm(blankForm()); }}
               className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
             <button onClick={save} disabled={!form.title.trim()}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">추가</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
         </Card>
       )}
@@ -909,7 +909,7 @@ export function TodosView({ workspace, onNavigate }: { workspace: Workspace; onN
             <button onClick={() => setCursor(c => addDays(c, -1))} className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all">‹</button>
             <div className="text-center min-w-[9rem]">
               <div className="text-base font-bold text-gray-800">{fmtDay(cursor)}</div>
-              {cursor !== today && <button onClick={() => setCursor(today)} className="text-[11px] text-primary-500 hover:underline">오늘로</button>}
+              {cursor !== today && <button onClick={() => setCursor(today)} className="text-[11px] text-foreground hover:underline">오늘로</button>}
               {cursor === today && <div className="text-[11px] text-gray-400">오늘</div>}
             </div>
             <button onClick={() => setCursor(c => addDays(c, 1))} className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all">›</button>
@@ -990,7 +990,7 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
   const insertClaude = () => insertTpl(`${form.content && !form.content.endsWith('\n') ? '\n' : ''}[나]\n\n[Claude]\n\n`);
   const insertQA = () => insertTpl(`${form.content && !form.content.endsWith('\n') ? '\n' : ''}[질문]\n\n[답변]\n\n`);
 
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
   const save = async () => {
     if (!form.title.trim()) return;
     try {
@@ -1012,7 +1012,7 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
       <ViewHead eyebrow="INSIGHTS" title="인사이트" sub={`인사이트 ${list.length}건`} />
       <div className="flex justify-end mb-3">
         <button onClick={() => setShowForm(v => !v)}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 인사이트 추가</button>
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 인사이트 추가</button>
       </div>
       {showForm && (
         <Card className="p-4 mb-3 space-y-2.5">
@@ -1030,7 +1030,7 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
           <div className="flex gap-2 justify-end">
             <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
             <button onClick={save} disabled={!form.title.trim()}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">저장</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">저장</button>
           </div>
         </Card>
       )}
@@ -1042,11 +1042,11 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
             <Card key={i.id} className="group p-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-gray-800 flex-1">{i.title}</span>
-                {i.tags?.includes('🤖 AI') && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-600 flex-shrink-0">🤖 {i.source}</span>}
+                {i.tags?.includes('🤖 AI') && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground flex-shrink-0">🤖 {i.source}</span>}
                 <button onClick={() => del(i.id)} className="text-[11px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">삭제</button>
               </div>
               {i.content && i.content !== i.title && <p className="text-xs text-gray-500 mt-1 whitespace-pre-wrap">{i.content}</p>}
-              {i.link && <a href={i.link} target="_blank" rel="noreferrer" className="text-[11px] text-primary-500 mt-1 inline-block break-all">{i.link}</a>}
+              {i.link && <a href={i.link} target="_blank" rel="noreferrer" className="text-[11px] text-foreground mt-1 inline-block break-all">{i.link}</a>}
             </Card>
           ))}
         </div>
@@ -1098,12 +1098,12 @@ export function LogView({ workspace }: { workspace: Workspace }) {
       <ViewHead eyebrow="MEMO" title="기록" sub={`메모 ${memos.length}개`} />
       <div className="flex justify-end mb-3">
         <button onClick={() => setWriting(v => !v)}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 메모</button>
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 메모</button>
       </div>
       {writing && (
         <Card className="p-4 mb-3 space-y-2.5">
           <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="제목"
-            className="w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors" />
+            className="w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors" />
           <div className="flex justify-end">
             <ClaudeQuickButtons
               onClaude={() => editorRef.current?.insertClaudeBlock()}
@@ -1115,7 +1115,7 @@ export function LogView({ workspace }: { workspace: Workspace }) {
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setWriting(false); setTitle(''); setBody(undefined); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
-            <button onClick={save} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
+            <button onClick={save} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
           </div>
         </Card>
       )}
@@ -1211,7 +1211,7 @@ function ContentMetricsEditor({ item, workspaceId }: { item: ContentItem; worksp
 
   const setN = (k: keyof ContentMetric, v: string) => setF(prev => ({ ...prev, [k]: v === '' ? undefined : Number(v) }));
   const rate = (n?: number) => (f.views && f.views > 0 && n != null ? `${((n / f.views) * 100).toFixed(1)}%` : '—');
-  const inputCls = 'w-full px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-300';
+  const inputCls = 'w-full px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-line';
   const save = async () => {
     setSaving(true);
     try { await saveMetric(workspaceId, item.id, cp, f); await load(); }
@@ -1233,16 +1233,16 @@ function ContentMetricsEditor({ item, workspaceId }: { item: ContentItem; worksp
         <div className="flex gap-1">
           {(['h24', 'h72', 'd7'] as ContentCheckpoint[]).map(c => (
             <button key={c} onClick={() => setCp(c)}
-              className={`px-2 py-1 rounded-lg text-[11px] ${cp === c ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+              className={`px-2 py-1 rounded-lg text-[11px] ${cp === c ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
               {CHECKPOINT_LABEL[c]}{metrics[c] ? ' ●' : ''}
             </button>
           ))}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xl bg-primary-50 p-2 text-center">
+        <div className="rounded-xl bg-surface-muted p-2 text-center">
           <div className="text-[10px] text-gray-400">저장률 (saves/views)</div>
-          <div className="text-lg font-extrabold text-primary-600">{rate(f.saves)}</div>
+          <div className="text-lg font-extrabold text-foreground">{rate(f.saves)}</div>
         </div>
         <div className="rounded-xl bg-emerald-50 p-2 text-center">
           <div className="text-[10px] text-gray-400">공유율 (shares/views)</div>
@@ -1273,7 +1273,7 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
 }) {
   const [f, setF] = useState<Partial<ContentItem>>({ ...item });
   const set = (patch: Partial<ContentItem>) => setF(prev => ({ ...prev, ...patch }));
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
   const next = f.status ? nextContentStatus(f.status) : null;
 
   // 발행 연동: published로 전환 시 published_at 자동, URL 없으면 경고(저장은 허용)
@@ -1311,7 +1311,7 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
           </select>
           {next && (
             <button onClick={() => set({ status: next })}
-              className="px-3 py-2 rounded-xl text-xs font-semibold bg-primary-50 text-primary-600 hover:bg-primary-100 whitespace-nowrap flex-shrink-0">
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-surface-muted text-foreground hover:bg-surface-muted whitespace-nowrap flex-shrink-0">
               다음 → {CONTENT_STATUS_LABEL[next]}
             </button>
           )}
@@ -1348,7 +1348,7 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
             className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
-            <button onClick={doSave} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
+            <button onClick={doSave} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
           </div>
         </div>
       </div>
@@ -1371,7 +1371,7 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
     fetchProducts(workspace.id, workspaceErpSource(workspace)).then(setProducts).catch(() => setProducts([]));
     /* eslint-disable-next-line */
   }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
 
   const save = async () => {
     if (!form.title.trim()) return;
@@ -1384,7 +1384,7 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
   const shown = filter === 'all' ? list : list.filter(c => c.status === filter);
   const chip = (id: ContentStatus | 'all', label: string) => (
     <button key={id} onClick={() => setFilter(id)}
-      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
   );
 
   return (
@@ -1395,7 +1395,7 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
         {chip('all', '전체')}
         {CONTENT_STATUS_ORDER.map(s => chip(s, CONTENT_STATUS_LABEL[s]))}
         <button onClick={() => setShowForm(v => !v)}
-          className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 콘텐츠</button>
+          className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 콘텐츠</button>
       </div>
 
       {showForm && (
@@ -1415,7 +1415,7 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setShowForm(false); setForm({ title: '', platform: '', contentType: '' }); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
             <button onClick={save} disabled={!form.title.trim()}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">추가</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
         </Card>
       )}
@@ -1494,7 +1494,7 @@ function ProductEditPopup({ product, onSave, onDelete, onClose }: {
     cost: product.cost?.toString() ?? '', stock: product.stock?.toString() ?? '', sku: product.sku ?? '',
     status: product.status, description: product.description ?? '',
   });
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-[460px] max-w-[92vw] max-h-[86vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
@@ -1524,7 +1524,7 @@ function ProductEditPopup({ product, onSave, onDelete, onClose }: {
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
             <button onClick={() => onSave(formToFields(f))} disabled={!f.name.trim()}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">저장</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">저장</button>
           </div>
         </div>
       </div>
@@ -1541,7 +1541,7 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
   const [selected, setSelected] = useState<Product | null>(null);
   const load = () => fetchProducts(workspace.id, erp).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
 
   const save = async () => {
     if (!form.name.trim()) return;
@@ -1558,7 +1558,7 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
       {compat && (
         <div className="flex justify-end mb-3">
           <button onClick={() => setShowForm(v => !v)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 제품 추가</button>
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 제품 추가</button>
         </div>
       )}
 
@@ -1577,7 +1577,7 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setShowForm(false); setForm(emptyProductForm); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
             <button onClick={save} disabled={!form.name.trim()}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">추가</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
         </Card>
       )}
@@ -1645,7 +1645,7 @@ export function SalesDailyView({ workspace }: { workspace: Workspace }) {
   const [editing, setEditing] = useState<SalesDaily | null>(null);
   const load = () => fetchSalesDaily(workspace.id, 90, erp).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
 
   const save = async (f: SalesForm) => {
     if (!f.date) return;
@@ -1683,7 +1683,7 @@ export function SalesDailyView({ workspace }: { workspace: Workspace }) {
         {editMode && editing ? <button onClick={() => del(editing.id)} className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button> : <span />}
         <div className="flex gap-2">
           <button onClick={onCancel} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
-          <button onClick={onSubmit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">{editMode ? '저장' : '추가'}</button>
+          <button onClick={onSubmit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">{editMode ? '저장' : '추가'}</button>
         </div>
       </div>
       {editMode && <p className="text-[10px] text-gray-300">※ 날짜·채널은 키라서 수정 불가 — 바꾸려면 삭제 후 새로 추가.</p>}
@@ -1697,7 +1697,7 @@ export function SalesDailyView({ workspace }: { workspace: Workspace }) {
       {compat && (
         <div className="flex justify-end mb-3">
           <button onClick={() => { setEditing(null); setForm(emptyForm()); setShowForm(v => !v); }}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all">＋ 매출 입력</button>
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 매출 입력</button>
         </div>
       )}
 
@@ -1755,7 +1755,7 @@ function MemoryDetailPopup({ item, onSave, onArchive, onDelete, onClose }: {
     title: item.title, body: item.body ?? '', kind: (item.kind ?? 'ceo_memo') as MemoryKind,
     tags: (item.tags ?? []).join(', '), salience: item.salience ?? 50, pinned: item.pinned ?? false,
   });
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
   const submit = () => onSave({
     title: f.title.trim() || item.title, body: f.body.trim() || undefined, kind: f.kind,
     tags: f.tags ? f.tags.split(',').map(t => t.trim()).filter(Boolean) : [], salience: f.salience, pinned: f.pinned,
@@ -1788,7 +1788,7 @@ function MemoryDetailPopup({ item, onSave, onArchive, onDelete, onClose }: {
           </div>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
-            <button onClick={submit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all">저장</button>
+            <button onClick={submit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
           </div>
         </div>
       </div>
@@ -1806,7 +1806,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
   const [showArchived, setShowArchived] = useState(false);
   const load = () => fetchMemories(workspace.id).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-primary-400 transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
 
   const save = async () => {
     if (!form.title.trim()) return;
@@ -1826,7 +1826,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
 
   const chip = (id: MemoryKind | 'all', label: string) => (
     <button key={id} onClick={() => setKindFilter(id)}
-      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${kindFilter === id ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${kindFilter === id ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
   );
 
   return (
@@ -1836,7 +1836,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
       <div className="flex items-center gap-2 mb-2">
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 제목·내용·태그 검색" className={`${fieldCls} flex-1`} />
         <button onClick={() => setShowForm(v => !v)}
-          className="px-3 py-2 rounded-lg text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 active:scale-95 transition-all whitespace-nowrap">＋ 기억</button>
+          className="px-3 py-2 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all whitespace-nowrap">＋ 기억</button>
       </div>
       <div className="flex flex-wrap items-center gap-1.5 mb-3">
         {chip('all', '전체')}
@@ -1863,7 +1863,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
           </label>
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setShowForm(false); setForm({ title: '', body: '', kind: 'ceo_memo', tags: '', salience: 50, pinned: false }); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
-            <button onClick={save} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-40 transition-all">추가</button>
+            <button onClick={save} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
         </Card>
       )}
@@ -1884,7 +1884,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
                 {(m.summary || m.body) && <p className="text-xs text-gray-500 line-clamp-2">{m.summary || m.body}</p>}
                 {m.tags && m.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
-                    {m.tags.map(t => <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-500">#{t}</span>)}
+                    {m.tags.map(t => <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground">#{t}</span>)}
                   </div>
                 )}
               </button>
@@ -1949,7 +1949,7 @@ function MemberDetailView({ member, label, tasks, onBack }: {
   return (
     <>
       <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-3">← 멤버</button>
-      <div className="rounded-[20px] bg-primary-50/50 border border-primary-100 p-5 mb-4">
+      <div className="rounded-[20px] bg-surface-muted/50 border border-line p-5 mb-4">
         <div className="text-lg font-extrabold text-gray-800">{label}</div>
         <div className="text-sm text-gray-500 mt-0.5">담당 할일 {open.length}건 진행 중</div>
         {p.total > 0 && <div className="mt-3"><TaskProgress done={p.done} total={p.total} overdue={p.overdue} /></div>}
@@ -2081,7 +2081,7 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
         <Card className="p-4 mb-3 space-y-2">
           <div className="text-[11px] font-semibold text-gray-400 tracking-wide">초대 코드</div>
           <div className="flex items-center gap-2">
-            <code className="text-lg font-bold text-primary-600 tracking-[0.2em] bg-primary-50 px-3 py-1.5 rounded-xl flex-1 text-center">{workspace.inviteCode}</code>
+            <code className="text-lg font-bold text-foreground tracking-[0.2em] bg-surface-muted px-3 py-1.5 rounded-xl flex-1 text-center">{workspace.inviteCode}</code>
             <button onClick={copyCode}
               className="text-xs px-3 py-2 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all flex-shrink-0">{copied ? '복사됨 ✓' : '복사'}</button>
           </div>
@@ -2096,7 +2096,7 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
           const editing = editingId === m.userId;
           return (
           <div key={m.userId} className="flex items-center gap-2.5 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
-            <span className="w-9 h-9 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+            <span className="w-9 h-9 rounded-full bg-foreground text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
               {(m.nickname || m.userId).slice(0, 1).toUpperCase()}
             </span>
             {editing ? (
@@ -2104,8 +2104,8 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
                 <input autoFocus value={nickVal} onChange={e => setNickVal(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') saveNick(m.userId); if (e.key === 'Escape') setEditingId(null); }}
                   placeholder="표시할 닉네임" maxLength={20}
-                  className="flex-1 min-w-0 px-2.5 py-1 rounded-lg border border-primary-300 text-sm focus:outline-none focus:border-primary-500" />
-                <button onClick={() => saveNick(m.userId)} disabled={savingNick} className="text-[11px] px-2 py-1 rounded-lg bg-primary-500 text-white font-medium disabled:opacity-50 flex-shrink-0">저장</button>
+                  className="flex-1 min-w-0 px-2.5 py-1 rounded-lg border border-line text-sm focus:outline-none focus:border-foreground" />
+                <button onClick={() => saveNick(m.userId)} disabled={savingNick} className="text-[11px] px-2 py-1 rounded-lg bg-foreground text-white font-medium disabled:opacity-50 flex-shrink-0">저장</button>
                 <button onClick={() => setEditingId(null)} className="text-[11px] px-1.5 py-1 rounded-lg text-gray-400 hover:bg-gray-100 flex-shrink-0">취소</button>
               </div>
             ) : (
@@ -2114,17 +2114,17 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
                   {m.nickname || <span className="text-gray-400 italic">닉네임 없음</span>}{m.userId === myId && ' (나)'}
                 </span>
                 {canEditNick && (
-                  <button onClick={() => startEdit(m)} title="닉네임 수정" className="text-gray-300 hover:text-primary-500 text-sm flex-shrink-0">✏️</button>
+                  <button onClick={() => startEdit(m)} title="닉네임 수정" className="text-gray-300 hover:text-foreground text-sm flex-shrink-0">✏️</button>
                 )}
               </>
             )}
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{m.role === 'owner' ? '오너' : '멤버'}</span>
             {!editing && (
-              <button onClick={() => setDetailMember(m)} className="text-[11px] text-gray-400 hover:text-primary-500 flex-shrink-0">담당 할일 ›</button>
+              <button onClick={() => setDetailMember(m)} className="text-[11px] text-gray-400 hover:text-foreground flex-shrink-0">담당 할일 ›</button>
             )}
             {iAmOwner && m.userId !== myId && !editing && (
               <>
-                <button onClick={() => toggleRole(m)} className="text-[11px] text-gray-400 hover:text-primary-500 flex-shrink-0">{m.role === 'owner' ? '멤버로' : '오너로'}</button>
+                <button onClick={() => toggleRole(m)} className="text-[11px] text-gray-400 hover:text-foreground flex-shrink-0">{m.role === 'owner' ? '멤버로' : '오너로'}</button>
                 <button onClick={() => kick(m.userId)} className="text-[11px] text-rose-400 hover:text-rose-600 flex-shrink-0">내보내기</button>
               </>
             )}

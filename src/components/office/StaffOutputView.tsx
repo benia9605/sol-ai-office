@@ -103,7 +103,7 @@ function AxisRow({ label, v, reason }: { label: string; v: number; reason?: stri
   return (
     <div className="flex items-start gap-2">
       <span className="text-[11px] text-gray-500 w-14 flex-shrink-0 pt-0.5">{label}</span>
-      <div className="flex gap-0.5 flex-shrink-0 pt-1">{[0, 1].map(i => <span key={i} className={`w-5 h-1.5 rounded-full ${(v ?? 0) > i ? 'bg-primary-500' : 'bg-gray-200'}`} />)}</div>
+      <div className="flex gap-0.5 flex-shrink-0 pt-1">{[0, 1].map(i => <span key={i} className={`w-5 h-1.5 rounded-full ${(v ?? 0) > i ? 'bg-foreground' : 'bg-gray-200'}`} />)}</div>
       {reason && <span className="text-[11px] text-gray-400 leading-relaxed">{reason}</span>}
     </div>
   );
@@ -163,7 +163,7 @@ function SourcingView({ d, onSave }: { d: any; onSave?: (itemType: string, paylo
         <Section>
           <div className="space-y-2.5">
             {d.persona && <div><SectionLabel>타겟 페르소나</SectionLabel><p className="text-sm text-gray-600 mt-0.5">{d.persona}</p></div>}
-            {Array.isArray(d.channels) && d.channels.length > 0 && <div className="space-y-1"><SectionLabel>추천 채널</SectionLabel><Chips items={d.channels} color="bg-primary-50 text-primary-600" /></div>}
+            {Array.isArray(d.channels) && d.channels.length > 0 && <div className="space-y-1"><SectionLabel>추천 채널</SectionLabel><Chips items={d.channels} color="bg-surface-muted text-foreground" /></div>}
             {Array.isArray(d.risks) && d.risks.length > 0 && <div className="space-y-1"><SectionLabel>리스크</SectionLabel><Chips items={d.risks} color="bg-rose-50 text-rose-500" /></div>}
           </div>
         </Section>
@@ -224,7 +224,7 @@ function DetailBuilderView({ d, onSave }: { d: any; onSave?: (itemType: string, 
         <Card className="p-3 space-y-2">
           {brief.productName && <div className="text-sm font-bold text-gray-800">{brief.productName}</div>}
           {brief.target && <div className="text-xs text-gray-500">타겟: {brief.target}</div>}
-          {Array.isArray(brief.usp) && brief.usp.length > 0 && <Chips items={brief.usp} color="bg-primary-50 text-primary-600" />}
+          {Array.isArray(brief.usp) && brief.usp.length > 0 && <Chips items={brief.usp} color="bg-surface-muted text-foreground" />}
           {Array.isArray(brief.customerPain) && brief.customerPain.length > 0 && <div className="text-[11px] text-gray-400">고객 불안: {brief.customerPain.join(' · ')}</div>}
           {Array.isArray(brief.banned) && brief.banned.length > 0 && <div className="text-[11px] text-rose-400">금지표현: {brief.banned.join(', ')}</div>}
         </Card>
@@ -234,7 +234,7 @@ function DetailBuilderView({ d, onSave }: { d: any; onSave?: (itemType: string, 
         {sections.map((s: any, i: number) => (
           <Card key={i} className="p-3 space-y-2.5">
             <div className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-full bg-primary-100 text-primary-600 text-[11px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+              <span className="w-5 h-5 rounded-full bg-surface-muted text-foreground text-[11px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
               <span className="text-sm font-semibold text-gray-800">{s.title || s.key}</span>
               {s.status && <span className="ml-auto text-[10px] text-gray-400">{s.status}</span>}
             </div>
@@ -245,7 +245,7 @@ function DetailBuilderView({ d, onSave }: { d: any; onSave?: (itemType: string, 
                 {s.coreLine && <div className="text-sm font-bold text-gray-800 leading-relaxed">{s.coreLine}</div>}
                 {s.subLine && <div className="text-xs text-gray-500 leading-relaxed">{s.subLine}</div>}
                 {Array.isArray(s.bullets) && s.bullets.length > 0 && <ul className="space-y-1">{s.bullets.map((b: any, j: number) => <li key={j} className="text-xs text-gray-600 leading-relaxed">· {String(b)}</li>)}</ul>}
-                {s.cta && <div className="text-xs text-primary-600 font-medium">→ {s.cta}</div>}
+                {s.cta && <div className="text-xs text-foreground font-medium">→ {s.cta}</div>}
               </div>
             )}
             {s.visual && <div className="text-[11px] text-gray-400">🖼 {s.visual}</div>}
@@ -312,7 +312,7 @@ function TicketListView({ d, onSave }: { d: any; onSave?: (itemType: string, pay
             )}
             {confirm && <div className="text-[11px] text-gray-400">확인 필요: {confirm}</div>}
             {t.needsHumanApproval && t.approvalReason && <div className="text-[11px] text-amber-500">승인 사유: {t.approvalReason}</div>}
-            {t.faqCandidate?.shouldCreate && <div className="text-[11px] text-primary-500">⭐ FAQ 후보: {t.faqCandidate.question}</div>}
+            {t.faqCandidate?.shouldCreate && <div className="text-[11px] text-foreground">⭐ FAQ 후보: {t.faqCandidate.question}</div>}
             {Array.isArray(t.nextActions) && t.nextActions.length > 0 && (
               <span className="text-[11px] text-gray-400">→ {t.nextActions.map((a: any) => `${STAFF_META[a.target]?.label || a.target}: ${a.title}`).join(' · ')}</span>
             )}
@@ -327,7 +327,7 @@ function TicketListView({ d, onSave }: { d: any; onSave?: (itemType: string, pay
 function SnsTags({ h }: { h: any }) {
   const all = [...(h?.large || []), ...(h?.medium || []), ...(h?.small || []), ...(h?.brand || [])];
   if (!all.length) return null;
-  return <div className="flex flex-wrap gap-x-2 gap-y-0.5">{all.map((t: any, i: number) => <span key={i} className="text-[11px] text-primary-500">{String(t)}</span>)}</div>;
+  return <div className="flex flex-wrap gap-x-2 gap-y-0.5">{all.map((t: any, i: number) => <span key={i} className="text-[11px] text-foreground">{String(t)}</span>)}</div>;
 }
 /** 콘텐츠 믹스 스택바 + 경고 (GPT 권장: 도넛보다 스택바) */
 const MIX_LABELS: Record<string, string> = { info: '정보', empathy: '공감', product: '상품', ugc: '후기', behind: '비하인드' };
@@ -349,7 +349,7 @@ function ContentMixBar({ summary }: { summary: any }) {
           {Object.entries(mix).map(([k, v]) => (
             <div key={k} className="flex items-center gap-2">
               <span className="text-[11px] text-gray-500 w-12 flex-shrink-0">{MIX_LABELS[k] || k}</span>
-              <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden"><div className="h-full bg-primary-400 rounded-full" style={{ width: `${Math.min(100, Number(v) || 0)}%` }} /></div>
+              <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden"><div className="h-full bg-foreground rounded-full" style={{ width: `${Math.min(100, Number(v) || 0)}%` }} /></div>
               <span className="text-[10px] text-gray-400 w-8 text-right">{String(v)}%</span>
             </div>
           ))}
@@ -364,7 +364,7 @@ const hashtagText = (h: any) => h ? [...(h.large || []), ...(h.medium || []), ..
 function CopyIconButton({ text, title = '전체 복사' }: { text: string; title?: string }) {
   return (
     <button onClick={() => navigator.clipboard?.writeText(text)} title={title}
-      className="absolute top-2 right-2 w-6 h-6 rounded-lg bg-white text-gray-400 hover:text-primary-500 flex items-center justify-center shadow-sm active:scale-90 transition-all">
+      className="absolute top-2 right-2 w-6 h-6 rounded-lg bg-white text-gray-400 hover:text-foreground flex items-center justify-center shadow-sm active:scale-90 transition-all">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
     </button>
   );
@@ -386,7 +386,7 @@ function SnsQueueView({ d, onSave }: { d: any; onSave?: (itemType: string, paylo
               {p.date && <span className="font-semibold text-gray-700">{p.date}{p.time ? ` ${p.time}` : ''}</span>}
               {p.channel && <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{p.channel}</span>}
               {p.format && <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{p.format}</span>}
-              {p.objective && <span className="px-2 py-0.5 rounded-full bg-primary-50 text-primary-600">{p.objective}</span>}
+              {p.objective && <span className="px-2 py-0.5 rounded-full bg-surface-muted text-foreground">{p.objective}</span>}
               {p.status && <span className="ml-auto text-gray-400">{p.status}</span>}
               {onSave && <button onClick={() => onSave('post', { ...p, title: hookText || (p.body ? String(p.body).slice(0, 30) : '게시물') })} title="콘텐츠 보관" className={`text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all ${p.status ? '' : 'ml-auto'}`}>⭐</button>}
             </div>
@@ -399,7 +399,7 @@ function SnsQueueView({ d, onSave }: { d: any; onSave?: (itemType: string, paylo
                 </div>
               )}
               {p.body && <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{p.body}</p>}
-              {ctaText && <div className="text-xs text-primary-600 font-medium">→ {ctaText}</div>}
+              {ctaText && <div className="text-xs text-foreground font-medium">→ {ctaText}</div>}
               {p.hashtags && <SnsTags h={p.hashtags} />}
             </div>
             {p.imageBrief && <div className="text-[11px] text-gray-400">🖼 {typeof p.imageBrief === 'string' ? p.imageBrief : JSON.stringify(p.imageBrief)}</div>}
@@ -450,7 +450,7 @@ function CopyVariantsView({ d, onSave }: { d: any; onSave?: (itemType: string, p
         <Card className="p-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
           {pr.name && <span className="font-semibold text-gray-700">{pr.name}</span>}
           {pr.price != null && <span className="text-gray-400">{typeof pr.price === 'number' ? pr.price.toLocaleString() : pr.price}원</span>}
-          {pr.goal && <span className="px-2 py-0.5 rounded-full bg-primary-50 text-primary-600">{pr.goal}</span>}
+          {pr.goal && <span className="px-2 py-0.5 rounded-full bg-surface-muted text-foreground">{pr.goal}</span>}
           {pr.angle && <span className="text-gray-500">· {pr.angle}</span>}
           {Array.isArray(pr.channels) && pr.channels.length > 0 && <span className="text-gray-400">· {pr.channels.join('/')}</span>}
         </Card>
@@ -461,7 +461,7 @@ function CopyVariantsView({ d, onSave }: { d: any; onSave?: (itemType: string, p
           {sets.map((s: any, i: number) => (
             <Card key={i} className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary-50 text-primary-600">{s.type || '카피'}</span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground">{s.type || '카피'}</span>
                 <div className="flex items-center gap-1.5">
                   {s.status && <span className="text-[10px] text-gray-400">{s.status}</span>}
                   {onSave && <button onClick={() => onSave('copy', s)} title="보관함에 저장" className="text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all">⭐</button>}
@@ -473,7 +473,7 @@ function CopyVariantsView({ d, onSave }: { d: any; onSave?: (itemType: string, p
                   {s.headline && <div className="text-sm font-bold text-gray-800 leading-relaxed">{s.headline}</div>}
                   {s.sub && <div className="text-xs text-gray-500 leading-relaxed">{s.sub}</div>}
                   {s.detail && <div className="text-xs text-gray-400 leading-relaxed">{s.detail}</div>}
-                  {s.cta && <div className="text-xs text-primary-600 font-medium">→ {s.cta}</div>}
+                  {s.cta && <div className="text-xs text-foreground font-medium">→ {s.cta}</div>}
                 </div>
               )}
               {s.imageDirection && <div className="text-[11px] text-gray-400">🖼 {s.imageDirection}</div>}
@@ -555,7 +555,7 @@ function MonitorDigestView({ d }: { d: any }) {
           </div>
           {a.change && <div className="text-xs text-gray-600">변화: {a.change}</div>}
           {a.impact && <div className="text-xs text-gray-500">영향: {a.impact}</div>}
-          {a.recommendation && <div className="text-xs text-primary-600">→ {a.recommendation}</div>}
+          {a.recommendation && <div className="text-xs text-foreground">→ {a.recommendation}</div>}
           {a.source && <SourceList sources={[a.source]} />}
         </Card>
       ))}
@@ -635,7 +635,7 @@ function MetricDigestView({ d }: { d: any }) {
               {a.meaning && <div className="text-xs text-gray-600">{a.meaning}</div>}
               {a.hypothesis && <div className="text-xs text-gray-500">가설: {a.hypothesis}</div>}
               {Array.isArray(a.evidence) && a.evidence.length > 0 && <div className="text-[11px] text-gray-400">근거: {a.evidence.join(' · ')}</div>}
-              {a.nextAction && <div className="text-xs text-primary-600">→ {a.nextAction}</div>}
+              {a.nextAction && <div className="text-xs text-foreground">→ {a.nextAction}</div>}
             </Card>
           ))}
         </div>
@@ -648,7 +648,7 @@ function MetricDigestView({ d }: { d: any }) {
             {actions.map((a: any, i: number) => (
               <Card key={i} className="p-2.5 space-y-0.5">
                 <div className="flex items-center gap-1.5 text-sm text-gray-700 flex-wrap">
-                  {a.priority != null && <span className="w-4 h-4 rounded-full bg-primary-100 text-primary-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0">{a.priority}</span>}
+                  {a.priority != null && <span className="w-4 h-4 rounded-full bg-surface-muted text-foreground text-[10px] font-bold flex items-center justify-center flex-shrink-0">{a.priority}</span>}
                   <span className="font-medium">{a.title}</span>
                   {a.owner && STAFF_META[a.owner] && <span className="text-[11px] text-gray-400">{STAFF_META[a.owner].emoji}</span>}
                   {a.approvalRequired && <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600">승인 필요</span>}
@@ -678,7 +678,7 @@ function RatioBadge({ ratio }: { ratio: string }) {
 function ShotRow({ s, grade }: { s: any; grade: string }) {
   return (
     <div className="flex items-center gap-1.5 text-xs flex-wrap">
-      <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${grade === 'MUST' ? 'bg-primary-50 text-primary-600' : 'bg-gray-100 text-gray-400'}`}>{grade}</span>
+      <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${grade === 'MUST' ? 'bg-surface-muted text-foreground' : 'bg-gray-100 text-gray-400'}`}>{grade}</span>
       <span className="text-gray-700">{s.label || s.type}</span>
       {s.purpose && <span className="text-gray-400">· {s.purpose}</span>}
       <RatioBadge ratio={s.ratio} />
@@ -738,7 +738,7 @@ function ImageBriefView({ d, onSave, workspaceId, staffId, onCredits }: { d: any
         <Card key={i} className="p-3 space-y-2">
           <div className="flex items-center gap-1.5 flex-wrap">
             <RatioBadge ratio={p.ratio} />
-            {p.engine && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary-50 text-primary-500">{p.engine}</span>}
+            {p.engine && <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-muted text-foreground">{p.engine}</span>}
             {Array.isArray(p.useCase) && p.useCase.length > 0 && <span className="text-[10px] text-gray-400">{p.useCase.join(', ')}</span>}
             {p.status && <span className="ml-auto text-[10px] text-gray-400">{p.status}</span>}
             {onSave && <button onClick={() => onSave('prompt', { ...p, title: (p.text ? String(p.text).slice(0, 30) : '프롬프트') })} title="프롬프트 보관" className={`text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all ${p.status ? '' : 'ml-auto'}`}>⭐</button>}
@@ -748,7 +748,7 @@ function ImageBriefView({ d, onSave, workspaceId, staffId, onCredits }: { d: any
             <button onClick={() => navigator.clipboard?.writeText(String(p.text || ''))}
               className="text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 active:scale-95 transition-all">복사</button>
             <button onClick={() => gen(p, i)} disabled={busy === i}
-              className="text-[11px] px-2 py-0.5 rounded-lg bg-primary-50 text-primary-600 hover:bg-primary-100 disabled:opacity-50 active:scale-95 transition-all">{busy === i ? '생성 중…' : '🎨 이미지 생성'}</button>
+              className="text-[11px] px-2 py-0.5 rounded-lg bg-surface-muted text-foreground hover:bg-surface-muted disabled:opacity-50 active:scale-95 transition-all">{busy === i ? '생성 중…' : '🎨 이미지 생성'}</button>
           </div>
           {imgs[i] && (
             <div className="space-y-1">
@@ -812,7 +812,7 @@ function OpsDigestView({ d }: { d: any }) {
               </div>
               {t.whyNow && <div className="text-xs text-gray-500">왜 지금: {t.whyNow}</div>}
               {(t.decisionNeeded || t.decision) && <div className="text-xs text-gray-700">{t.decisionNeeded || t.decision}</div>}
-              {t.recommendation && <div className="text-xs text-primary-600">→ {t.recommendation}</div>}
+              {t.recommendation && <div className="text-xs text-foreground">→ {t.recommendation}</div>}
               <div className="flex items-center gap-1.5 flex-wrap">
                 {Array.isArray(t.owners) && t.owners.map((o: string, j: number) => STAFF_META[o] && <span key={j} className="text-[11px] text-gray-400">{STAFF_META[o].emoji} {STAFF_META[o].label}</span>)}
                 {t.sourceStaff && <span className="text-[10px] text-gray-300 ml-auto">출처: {STAFF_META[t.sourceStaff]?.label || t.sourceStaff}</span>}
@@ -860,7 +860,7 @@ const PLAN_TYPE: Record<string, { emoji: string; cls: string }> = {
   meeting: { emoji: '👥', cls: 'bg-amber-50 text-amber-600' },
   personal: { emoji: '🌿', cls: 'bg-emerald-50 text-emerald-600' },
   break: { emoji: '☕', cls: 'bg-gray-100 text-gray-400' },
-  todo: { emoji: '✅', cls: 'bg-primary-50 text-primary-600' },
+  todo: { emoji: '✅', cls: 'bg-surface-muted text-foreground' },
   errand: { emoji: '🚶', cls: 'bg-orange-50 text-orange-500' },
 };
 function SchedulePlanView({ d }: { d: any }) {
@@ -873,7 +873,7 @@ function SchedulePlanView({ d }: { d: any }) {
     <div className="space-y-2.5">
       {(d.date || d.summary) && (
         <Section>
-          {d.date && <div className="text-[11px] font-semibold text-primary-500 mb-0.5">{String(d.date)}{d.period === 'week' ? ' · 주간' : ''}</div>}
+          {d.date && <div className="text-[11px] font-semibold text-foreground mb-0.5">{String(d.date)}{d.period === 'week' ? ' · 주간' : ''}</div>}
           {d.summary && <p className="text-sm text-gray-700 leading-relaxed">{d.summary}</p>}
         </Section>
       )}

@@ -74,13 +74,13 @@ function Field({ label, value, onChange, hint, textarea, warn }: FieldProps) {
         <textarea
           value={value} onChange={onChange} rows={3}
           placeholder={hint}
-          className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none resize-none leading-relaxed"
+          className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-foreground focus:outline-none resize-none leading-relaxed"
         />
       ) : (
         <input
           value={value} onChange={onChange}
           placeholder={hint}
-          className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none"
+          className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-foreground focus:outline-none"
         />
       )}
     </div>
@@ -156,7 +156,7 @@ export function BrandView({ workspace }: { workspace: Workspace }) {
           <button
             onClick={copyPrompt}
             title="클로드·GPT에 붙여넣어 항목을 자동으로 채워보세요"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-gray-200 text-xs font-semibold text-gray-600 hover:border-primary-400 hover:text-primary-600 transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-gray-200 text-xs font-semibold text-gray-600 hover:border-foreground hover:text-foreground transition-all active:scale-95"
           >
             {copied ? (
               <>✓ 복사됨</>
@@ -212,7 +212,7 @@ export function BrandView({ workspace }: { workspace: Workspace }) {
           <div className="flex items-center gap-3 pt-1 pb-6">
             <button
               onClick={onSave} disabled={saving}
-              className="px-5 py-2.5 rounded-2xl bg-primary-500 text-white text-sm font-bold hover:bg-primary-600 transition-all active:scale-95 disabled:opacity-50"
+              className="px-5 py-2.5 rounded-2xl bg-foreground text-white text-sm font-bold hover:opacity-85 transition-all active:scale-95 disabled:opacity-50"
             >
               {saving ? '저장 중…' : '회사 브레인 저장'}
             </button>
