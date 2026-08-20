@@ -22,7 +22,7 @@ import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
 import { SchedulesPageModern } from '../../pages/SchedulesPage.modern';
-import { fetchInsights, addInsight, deleteInsight, InsightRow } from '../../services/insights.service';
+import { fetchInsights, addInsight, updateInsight, deleteInsight, InsightRow } from '../../services/insights.service';
 import { fetchRecords, addRecord, deleteRecord, updateRecord, RecordRow } from '../../services/records.service';
 import { fetchProducts, addProduct, updateProduct, deleteProduct } from '../../services/products.service';
 import { fetchContentItems, addContentItem, updateContentItem, deleteContentItem } from '../../services/contentItems.service';
@@ -36,7 +36,8 @@ import { fetchWorkspaceAnalytics, WorkspaceAnalytics } from '../../services/anal
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
-import { Spark, ViewHead, Card, EmptyState, TaskProgress } from './ui';
+import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, fieldCls as monoField } from './ui';
+import { RichText, docToText, parseDoc, serializeDoc } from './RichText';
 
 /** TaskRow(DB) → TaskItem(프론트). 워크스페이스 팀 화면에서 남이 만든 할일도 다루기 위해 로컬 매핑. */
 function rowToTaskItem(r: TaskRow): TaskItem {
@@ -973,85 +974,123 @@ export function ScheduleView({ workspace }: { workspace: Workspace }) {
 export function InsightsView({ workspace }: { workspace: Workspace }) {
   const [list, setList] = useState<InsightRow[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', content: '', source: '', link: '', tags: '' });
-  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const blank = () => ({ title: '', content: parseDoc(''), source: '', link: '', tags: '' });
+  const [form, setForm] = useState(blank);
+  const [selected, setSelected] = useState<InsightRow | null>(null);
   const load = () => fetchInsights(workspace.id).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
 
-  // 커서 위치에 템플릿 삽입 (content는 plain text라 텍스트 템플릿으로)
-  const insertTpl = (tpl: string) => {
-    const el = contentRef.current;
-    const cur = form.content;
-    const pos = el ? el.selectionStart : cur.length;
-    const next = cur.slice(0, pos) + tpl + cur.slice(pos);
-    setForm(f => ({ ...f, content: next }));
-    requestAnimationFrame(() => { if (el) { el.focus(); const c = pos + tpl.length; el.setSelectionRange(c, c); } });
-  };
-  const insertClaude = () => insertTpl(`${form.content && !form.content.endsWith('\n') ? '\n' : ''}[나]\n\n[Claude]\n\n`);
-  const insertQA = () => insertTpl(`${form.content && !form.content.endsWith('\n') ? '\n' : ''}[질문]\n\n[답변]\n\n`);
-
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
   const save = async () => {
     if (!form.title.trim()) return;
     try {
       await addInsight({
-        title: form.title.trim(), content: form.content, source: form.source || '직접 입력', link: form.link || undefined,
+        title: form.title.trim(), content: serializeDoc(form.content), source: form.source || '직접 입력', link: form.link || undefined,
         tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         workspace_id: workspace.id,
       } as Omit<InsightRow, 'id' | 'created_at' | 'conversation_id'>);
-      setForm({ title: '', content: '', source: '', link: '', tags: '' }); setShowForm(false); load();
+      setForm(blank()); setShowForm(false); load();
     } catch (e) {
       console.error('[InsightsView] 저장 실패:', e);
       alert('인사이트 저장에 실패했어요. 잠시 후 다시 시도해 주세요.');
     }
   };
-  const del = async (id: string) => { await deleteInsight(id).catch(() => {}); load(); };
 
   return (
     <>
-      <ViewHead eyebrow="INSIGHTS" title="인사이트" sub={`인사이트 ${list.length}건`} />
-      <div className="flex justify-end mb-3">
-        <button onClick={() => setShowForm(v => !v)}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 인사이트 추가</button>
-      </div>
-      {showForm && (
-        <Card className="p-4 mb-3 space-y-2.5">
-          <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="제목" className={fieldCls} />
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-gray-500">내용</label>
-            <ClaudeQuickButtons onClaude={insertClaude} onQA={insertQA} />
-          </div>
-          <textarea ref={contentRef} value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="내용" rows={4} className={`${fieldCls} resize-none`} />
-          <div className="flex gap-2">
-            <input value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} placeholder="출처 (선택)" className={fieldCls} />
-            <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="태그 (쉼표로)" className={fieldCls} />
-          </div>
-          <input value={form.link} onChange={e => setForm({ ...form, link: e.target.value })} placeholder="링크 (선택)" className={fieldCls} />
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
-            <button onClick={save} disabled={!form.title.trim()}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">저장</button>
-          </div>
-        </Card>
-      )}
+      <ViewHead eyebrow="INSIGHTS" title="인사이트" sub={`인사이트 ${list.length}건`}
+        action={<AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="인사이트" />} />
+      <InlineAddCard open={showForm}>
+        <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="제목" className={monoField} />
+        <div>
+          <label className="text-xs font-semibold text-foreground-muted mb-1.5 block">내용</label>
+          <TiptapEditor content={form.content} onChange={(json) => setForm(f => ({ ...f, content: json }))} placeholder="인사이트 내용을 작성하세요..." />
+        </div>
+        <div className="flex gap-2">
+          <input value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} placeholder="출처 (선택)" className={monoField} />
+          <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="태그 (쉼표로)" className={monoField} />
+        </div>
+        <input value={form.link} onChange={e => setForm({ ...form, link: e.target.value })} placeholder="링크 (선택)" className={monoField} />
+        <div className="flex gap-2 justify-end">
+          <button onClick={() => { setShowForm(false); setForm(blank()); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
+          <button onClick={save} disabled={!form.title.trim()}
+            className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-surface hover:opacity-85 disabled:opacity-40 transition-all">저장</button>
+        </div>
+      </InlineAddCard>
+
       {list.length === 0 ? (
         <EmptyState emoji="💡" title="아직 인사이트가 없어요" sub="직접 추가하거나, AI 직원이 트렌드·소구점을 자동 도출해요" />
       ) : (
         <div className="space-y-2">
-          {list.map(i => (
-            <Card key={i.id} className="group p-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-gray-800 flex-1">{i.title}</span>
-                {i.tags?.includes('🤖 AI') && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground flex-shrink-0">🤖 {i.source}</span>}
-                <button onClick={() => del(i.id)} className="text-[11px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">삭제</button>
-              </div>
-              {i.content && i.content !== i.title && <p className="text-xs text-gray-500 mt-1 whitespace-pre-wrap">{i.content}</p>}
-              {i.link && <a href={i.link} target="_blank" rel="noreferrer" className="text-[11px] text-foreground mt-1 inline-block break-all">{i.link}</a>}
-            </Card>
-          ))}
+          {list.map(i => {
+            const preview = docToText(i.content);
+            return (
+              <button key={i.id} onClick={() => setSelected(i)}
+                className="w-full text-left rounded-xl border border-line bg-surface hover:bg-surface-muted p-4 transition-colors active:scale-[0.99]">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground flex-1 truncate">{i.title}</span>
+                  {i.tags?.includes('🤖 AI') && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground-muted flex-shrink-0">🤖 {i.source}</span>}
+                </div>
+                {preview && preview !== i.title && <p className="text-xs text-foreground-muted mt-1 line-clamp-2">{preview}</p>}
+              </button>
+            );
+          })}
         </div>
       )}
+
+      {selected && (
+        <InsightDetailPopup insight={selected} onSaved={() => { setSelected(null); load(); }}
+          onDeleted={() => { setSelected(null); load(); }} onClose={() => setSelected(null)} />
+      )}
     </>
+  );
+}
+
+/** 인사이트 상세/수정 팝업 (모노) — 개인 오피스 팝업 톤 */
+function InsightDetailPopup({ insight, onSaved, onDeleted, onClose }: {
+  insight: InsightRow; onSaved: () => void; onDeleted: () => void; onClose: () => void;
+}) {
+  const [title, setTitle] = useState(insight.title);
+  const [content, setContent] = useState(() => parseDoc(insight.content));
+  const [source, setSource] = useState(insight.source ?? '');
+  const [link, setLink] = useState(insight.link ?? '');
+  const [tags, setTags] = useState((insight.tags ?? []).join(', '));
+  const [saving, setSaving] = useState(false);
+  const doSave = async () => {
+    setSaving(true);
+    try {
+      await updateInsight(insight.id, {
+        title: title.trim() || insight.title, content: serializeDoc(content),
+        source: source || undefined, link: link || undefined,
+        tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      });
+      onSaved();
+    } catch (e) { console.error(e); alert('저장 실패'); } finally { setSaving(false); }
+  };
+  const doDelete = async () => { if (!confirm('삭제할까요?')) return; await deleteInsight(insight.id).catch(() => {}); onDeleted(); };
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-foreground/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
+      <div className="bg-surface rounded-2xl shadow-xl w-[520px] max-w-[94vw] max-h-[88dvh] overflow-y-auto p-6 space-y-3 my-auto" onMouseDown={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-foreground">인사이트</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-surface-muted text-foreground-faint flex items-center justify-center">✕</button>
+        </div>
+        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="제목" className={monoField} />
+        <TiptapEditor content={content} onChange={setContent} placeholder="인사이트 내용을 작성하세요..." />
+        <div className="flex gap-2">
+          <input value={source} onChange={e => setSource(e.target.value)} placeholder="출처 (선택)" className={monoField} />
+          <input value={tags} onChange={e => setTags(e.target.value)} placeholder="태그 (쉼표로)" className={monoField} />
+        </div>
+        <input value={link} onChange={e => setLink(e.target.value)} placeholder="링크 (선택)" className={monoField} />
+        {link && <a href={link} target="_blank" rel="noreferrer" className="text-[11px] text-foreground-muted inline-block break-all">↗ {link}</a>}
+        <div className="flex items-center justify-between pt-1">
+          <button onClick={doDelete} className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
+            <button onClick={doSave} disabled={saving} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-surface hover:opacity-85 disabled:opacity-50 transition-all">{saving ? '저장 중…' : '저장'}</button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
