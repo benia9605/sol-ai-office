@@ -26,24 +26,40 @@ import { createPortal } from 'react-dom';
 
 type ViewId = 'dashboard' | 'briefing' | 'staff' | 'todos' | 'schedule' | 'meetings' | 'insights' | 'contents' | 'content' | 'products' | 'sales' | 'memory' | 'log' | 'activity' | 'teamlog' | 'members' | 'brand';
 
-const NAV: { id: ViewId; label: string; emoji: string }[] = [
-  { id: 'dashboard', label: '대시보드', emoji: '📊' },
-  { id: 'briefing', label: '오늘의 브리핑', emoji: '☀️' },
-  { id: 'staff', label: 'AI 직원', emoji: '🤖' },
-  { id: 'todos', label: '할일', emoji: '✅' },
-  { id: 'schedule', label: '일정', emoji: '📅' },
-  { id: 'meetings', label: '회의', emoji: '📋' },
-  { id: 'insights', label: '인사이트', emoji: '📈' },
-  { id: 'contents', label: '콘텐츠', emoji: '🎬' },
-  { id: 'products', label: '제품', emoji: '📦' },
-  { id: 'sales', label: '매출', emoji: '💰' },
-  { id: 'content', label: '유튜브', emoji: '▶️' },
-  { id: 'memory', label: '기억', emoji: '🧠' },
-  { id: 'log', label: '기록', emoji: '📝' },
-  { id: 'activity', label: '활동 로그', emoji: '🧾' },
-  { id: 'members', label: '멤버', emoji: '👥' },
-  { id: 'teamlog', label: '팀 활동', emoji: '📣' },
+type NavItem = { id: ViewId; label: string; emoji: string };
+type NavGroup = { id: string; label: string; items: NavItem[] };
+
+/** 상단바 단일 소스 — 5그룹(홈·운영·콘텐츠·비즈니스·팀). 그룹 클릭 시 하위 항목 드롭다운. */
+const NAV_GROUPS: NavGroup[] = [
+  { id: 'home', label: '홈', items: [
+    { id: 'dashboard', label: '대시보드', emoji: '📊' },
+    { id: 'briefing', label: '오늘의 브리핑', emoji: '☀️' },
+  ] },
+  { id: 'ops', label: '운영', items: [
+    { id: 'todos', label: '할일', emoji: '✅' },
+    { id: 'schedule', label: '일정', emoji: '📅' },
+    { id: 'meetings', label: '회의', emoji: '📋' },
+  ] },
+  { id: 'content', label: '콘텐츠', items: [
+    { id: 'insights', label: '인사이트', emoji: '📈' },
+    { id: 'contents', label: '콘텐츠', emoji: '🎬' },
+    { id: 'content', label: '유튜브', emoji: '▶️' },
+    { id: 'memory', label: '기억', emoji: '🧠' },
+    { id: 'log', label: '기록', emoji: '📝' },
+  ] },
+  { id: 'biz', label: '비즈니스', items: [
+    { id: 'products', label: '제품', emoji: '📦' },
+    { id: 'sales', label: '매출', emoji: '💰' },
+  ] },
+  { id: 'team', label: '팀', items: [
+    { id: 'staff', label: 'AI 직원', emoji: '🤖' },
+    { id: 'members', label: '멤버', emoji: '👥' },
+    { id: 'activity', label: '활동 로그', emoji: '🧾' },
+    { id: 'teamlog', label: '팀 활동', emoji: '📣' },
+  ] },
 ];
+const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap(g => g.items);
+const groupOf = (v: ViewId) => NAV_GROUPS.find(g => g.items.some(it => it.id === v))?.id ?? null;
 
 /** 유튜브 브랜드 로고 (실제 SVG) */
 function YouTubeGlyph({ className = '' }: { className?: string }) {
@@ -108,8 +124,10 @@ function UsageModal({ workspace, credits, onClose }: { workspace: Workspace; cre
 export function OfficeShell({ workspace }: { workspace: Workspace }) {
   const [view, setView] = useState<ViewId>('dashboard');
   const [staffKey, setStaffKey] = useState(0); // 🤖 직원 아이콘 누를 때마다 목록(홈)으로 리셋
-  const onNavigate = (v: string) => setView(v as ViewId);
-  const goNav = (id: ViewId) => { if (id === 'staff') setStaffKey(k => k + 1); setView(id); };
+  const [openGroup, setOpenGroup] = useState<string | null>(null); // 상단바 메가메뉴
+  const navRef = useRef<HTMLDivElement>(null);
+  const onNavigate = (v: string) => { setView(v as ViewId); setOpenGroup(null); };
+  const goNav = (id: ViewId) => { if (id === 'staff') setStaffKey(k => k + 1); setView(id); setOpenGroup(null); setMoreOpen(false); };
 
   // ── 코인 잔액 ──
   const [credits, setCredits] = useState<number | null>(null);
@@ -129,7 +147,9 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 모바일 하단 네비 주요 항목 (나머지는 더보기)
-  const BOTTOM_NAV = NAV.filter(n => ['dashboard', 'staff', 'todos', 'content'].includes(n.id));
+  const BOTTOM_NAV = ['dashboard', 'todos', 'schedule', 'staff']
+    .map(id => NAV_ITEMS.find(n => n.id === id)!)
+    .filter(Boolean);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -137,6 +157,16 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, [menuOpen]);
+
+  // 상단바 메가메뉴 — 바깥클릭 / ESC 로 닫힘
+  useEffect(() => {
+    if (!openGroup) return;
+    const onPointer = (e: PointerEvent) => { if (navRef.current && !navRef.current.contains(e.target as Node)) setOpenGroup(null); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenGroup(null); };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('pointerdown', onPointer); document.removeEventListener('keydown', onKey); };
+  }, [openGroup]);
 
   const pick = (id: ActiveWorkspace) => { setActiveWorkspace(id); setMenuOpen(false); setMoreOpen(false); };
 
@@ -150,79 +180,72 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
   );
 
   return (
-    <div className="office-shell h-[100dvh] overflow-hidden flex bg-gray-50 text-gray-800">
-      {/* 좌측 아이콘 레일 (PC) */}
-      <aside className="w-[76px] flex-shrink-0 bg-white border-r border-gray-100 hidden lg:flex flex-col items-center py-4 gap-1">
-        {/* 프로필 = 워크스페이스 전환 토글 */}
-        <div className="relative mb-3" ref={menuRef}>
-          <button onClick={() => setMenuOpen(o => !o)} className="flex flex-col items-center gap-1 active:scale-95 transition-transform" title="워크스페이스 전환">
-            <span className="w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center text-2xl">
-              {workspace.imageUrl
-                ? <img src={workspace.imageUrl} alt={workspace.name} className="w-full h-full object-cover rounded-2xl" />
-                : <span>{workspace.emoji || '🏢'}</span>}
-            </span>
-            <span className="text-[10px] font-semibold text-gray-600 leading-tight text-center max-w-[60px] truncate">{workspace.name}</span>
-          </button>
-
-          {menuOpen && (
-            <div className="absolute left-[60px] top-0 w-56 bg-white rounded-2xl shadow-lg border border-gray-100 p-1.5 z-50">
-              {offices.length > 0 && (
-                <>
-                  <p className="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">오피스</p>
-                  {offices.map(o => <Row key={o.id} ws={o} />)}
-                </>
-              )}
-              {personal && (
-                <>
-                  <div className="my-1 border-t border-gray-100" />
-                  <p className="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">개인 공간</p>
-                  <Row ws={personal} />
-                </>
-              )}
-              <div className="my-1 border-t border-gray-100" />
-              <button onClick={() => { setMenuOpen(false); setShowWsSettings(true); }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-colors text-left">
-                <span className="text-base leading-none">✎</span> 오피스 설정 (이름·이미지)
-              </button>
-              <button onClick={() => { setMenuOpen(false); setShowCreate(true); }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-colors text-left">
-                <span className="text-base leading-none">＋</span> 추가하기
-              </button>
-            </div>
-          )}
-        </div>
-
-        {NAV.map(n => {
-          const on = view === n.id;
-          return (
-            <button key={n.id} onClick={() => goNav(n.id)} title={n.label}
-              className={`relative w-11 h-11 rounded-xl flex items-center justify-center text-lg transition-all active:scale-90
-                ${on ? 'bg-surface-muted text-foreground' : 'text-gray-400 hover:bg-gray-100'}`}>
-              {n.id === 'content'
-                ? <YouTubeGlyph className="w-[22px] h-[22px]" />
-                : <span className={on ? '' : 'grayscale opacity-80'}>{n.emoji}</span>}
+    <div className="office-shell h-[100dvh] overflow-hidden flex flex-col bg-gray-50 text-gray-800">
+      {/* 상단바 */}
+      <header ref={navRef} className="relative flex-shrink-0 bg-white border-b border-gray-100 z-30 pt-[env(safe-area-inset-top)]">
+        <div className="h-14 flex items-center gap-2 px-4 sm:px-6">
+          {/* 브랜드 = 워크스페이스 (PC: 전환 드롭다운 / 모바일: 더보기) */}
+          <div className="relative flex-shrink-0" ref={menuRef}>
+            <button onClick={() => setMenuOpen(o => !o)} className="hidden lg:flex items-center gap-2 pr-2 active:scale-95 transition-transform" title="워크스페이스 전환">
+              <span className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center text-lg flex-shrink-0">
+                {workspace.imageUrl ? <img src={workspace.imageUrl} alt={workspace.name} className="w-full h-full object-cover rounded-xl" /> : <span>{workspace.emoji || '🏢'}</span>}
+              </span>
+              <span className="text-sm font-bold text-gray-800 truncate max-w-[120px]">{workspace.name}</span>
+              <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
             </button>
-          );
-        })}
-        <div className="flex-1" />
-        <button title="회사 브레인 · 설정" onClick={() => setView('brand')}
-          className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-90
-            ${view === 'brand' ? 'bg-surface-muted text-foreground' : 'text-gray-400 hover:bg-gray-100'}`}>⚙️</button>
-      </aside>
+            <button onClick={() => setMoreOpen(true)} className="lg:hidden flex items-center gap-1.5 min-w-0 active:scale-95 transition-transform">
+              <span className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center text-lg flex-shrink-0">
+                {workspace.imageUrl ? <img src={workspace.imageUrl} alt={workspace.name} className="w-full h-full object-cover rounded-lg" /> : <span>{workspace.emoji || '🏢'}</span>}
+              </span>
+              <span className="text-sm font-bold text-gray-800 truncate">{workspace.name}</span>
+              <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
+            </button>
 
-      {/* 메인 */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="flex-shrink-0 bg-white border-b border-gray-100 pt-[env(safe-area-inset-top)]">
-         <div className="h-14 flex items-center justify-between px-4 sm:px-5 gap-2">
-          {/* 모바일: 워크스페이스 버튼(더보기 열기) / PC: 사업 정보 */}
-          <button onClick={() => setMoreOpen(true)} className="lg:hidden flex items-center gap-1.5 min-w-0 active:scale-95 transition-transform">
-            <span className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center text-lg flex-shrink-0">
-              {workspace.imageUrl ? <img src={workspace.imageUrl} alt={workspace.name} className="w-full h-full object-cover rounded-lg" /> : <span>{workspace.emoji || '🏢'}</span>}
-            </span>
-            <span className="text-sm font-bold text-gray-800 truncate">{workspace.name}</span>
-            <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
-          </button>
-          <span className="hidden lg:block text-sm text-gray-400 truncate max-w-[45%]">{workspace.bizInfo || ''}</span>
+            {menuOpen && (
+              <div className="absolute left-0 top-[52px] w-56 bg-white rounded-2xl shadow-lg border border-gray-100 p-1.5 z-50">
+                {offices.length > 0 && (
+                  <>
+                    <p className="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">오피스</p>
+                    {offices.map(o => <Row key={o.id} ws={o} />)}
+                  </>
+                )}
+                {personal && (
+                  <>
+                    <div className="my-1 border-t border-gray-100" />
+                    <p className="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">개인 공간</p>
+                    <Row ws={personal} />
+                  </>
+                )}
+                <div className="my-1 border-t border-gray-100" />
+                <button onClick={() => { setMenuOpen(false); setShowWsSettings(true); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-colors text-left">
+                  <span className="text-base leading-none">✎</span> 오피스 설정 (이름·이미지)
+                </button>
+                <button onClick={() => { setMenuOpen(false); setShowCreate(true); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-colors text-left">
+                  <span className="text-base leading-none">＋</span> 추가하기
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* PC 그룹 네비 */}
+          <nav className="hidden lg:flex items-center gap-0.5 text-sm ml-1">
+            {NAV_GROUPS.map(g => {
+              const active = groupOf(view) === g.id;
+              const open = openGroup === g.id;
+              return (
+                <button key={g.id} type="button" onClick={() => setOpenGroup(open ? null : g.id)} aria-expanded={open}
+                  className={`px-3 py-1.5 rounded-lg transition-colors ${active || open ? 'text-gray-800 font-semibold' : 'text-gray-400 hover:text-gray-700'}`}>
+                  {g.label}
+                </button>
+              );
+            })}
+            <button type="button" onClick={() => setView('brand')} title="회사 브레인 · 설정"
+              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'brand' ? 'text-gray-800' : 'text-gray-400 hover:text-gray-700'}`}>⚙️</button>
+          </nav>
+
+          <div className="flex-1" />
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <button onClick={() => setShowUsage(true)} title="코인 잔액 — 클릭하면 사용 내역(요금)"
               className={`flex items-center gap-1 text-sm font-bold transition-all duration-300 hover:opacity-70 active:scale-95 ${coinPulse ? 'scale-110 text-amber-500' : 'text-gray-500'}`}>
@@ -230,31 +253,49 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             </button>
             <NotificationBell workspace={workspace} onNavigate={onNavigate} />
           </div>
-         </div>
-        </header>
+        </div>
 
-        <main className="flex-1 overflow-y-auto px-5 sm:px-10 py-8 sm:py-12 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12">
-          <div className="max-w-5xl mx-auto">
-            {view === 'dashboard' && <DashboardView onNavigate={onNavigate} workspace={workspace} />}
-            {view === 'briefing' && <BriefingView workspace={workspace} />}
-            {view === 'staff' && <StaffView key={staffKey} workspace={workspace} onRan={refreshCredits} />}
-            {view === 'todos' && <TodosView workspace={workspace} onNavigate={onNavigate} />}
-            {view === 'schedule' && <ScheduleView workspace={workspace} />}
-            {view === 'meetings' && <MeetingsView workspace={workspace} />}
-            {view === 'insights' && <InsightsView workspace={workspace} />}
-            {view === 'contents' && <ContentItemsView workspace={workspace} />}
-            {view === 'content' && <ContentPage embedded workspaceId={workspace.id} />}
-            {view === 'products' && <ProductsView workspace={workspace} />}
-            {view === 'sales' && <SalesDailyView workspace={workspace} />}
-            {view === 'memory' && <CompanyMemoryView workspace={workspace} />}
-            {view === 'log' && <LogView workspace={workspace} />}
-            {view === 'activity' && <ActivityView workspace={workspace} />}
-            {view === 'teamlog' && <ActivityFeedView workspace={workspace} />}
-            {view === 'members' && <MembersView workspace={workspace} />}
-            {view === 'brand' && <BrandView workspace={workspace} />}
+        {/* PC 메가메뉴 드롭다운 — 클릭한 그룹의 항목 */}
+        {openGroup && (
+          <div className="hidden lg:block absolute left-0 right-0 top-full bg-white border-b border-gray-100 shadow-sm z-20">
+            <div className="px-4 sm:px-6 py-3 flex flex-wrap gap-1">
+              {NAV_GROUPS.find(g => g.id === openGroup)!.items.map(it => {
+                const on = view === it.id;
+                return (
+                  <button key={it.id} type="button" onClick={() => goNav(it.id)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${on ? 'bg-surface-muted text-foreground' : 'text-gray-500 hover:bg-gray-50'}`}>
+                    {it.id === 'content' ? <YouTubeGlyph className="w-4 h-4" /> : <span className={on ? '' : 'grayscale opacity-80'}>{it.emoji}</span>}
+                    <span>{it.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </main>
-      </div>
+        )}
+      </header>
+
+      {/* 본문 */}
+      <main className="flex-1 overflow-y-auto px-5 sm:px-10 py-8 sm:py-12 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12">
+        <div className="max-w-5xl mx-auto">
+          {view === 'dashboard' && <DashboardView onNavigate={onNavigate} workspace={workspace} />}
+          {view === 'briefing' && <BriefingView workspace={workspace} />}
+          {view === 'staff' && <StaffView key={staffKey} workspace={workspace} onRan={refreshCredits} />}
+          {view === 'todos' && <TodosView workspace={workspace} onNavigate={onNavigate} />}
+          {view === 'schedule' && <ScheduleView workspace={workspace} />}
+          {view === 'meetings' && <MeetingsView workspace={workspace} />}
+          {view === 'insights' && <InsightsView workspace={workspace} />}
+          {view === 'contents' && <ContentItemsView workspace={workspace} />}
+          {view === 'content' && <ContentPage embedded workspaceId={workspace.id} />}
+          {view === 'products' && <ProductsView workspace={workspace} />}
+          {view === 'sales' && <SalesDailyView workspace={workspace} />}
+          {view === 'memory' && <CompanyMemoryView workspace={workspace} />}
+          {view === 'log' && <LogView workspace={workspace} />}
+          {view === 'activity' && <ActivityView workspace={workspace} />}
+          {view === 'teamlog' && <ActivityFeedView workspace={workspace} />}
+          {view === 'members' && <MembersView workspace={workspace} />}
+          {view === 'brand' && <BrandView workspace={workspace} />}
+        </div>
+      </main>
 
       {/* 모바일 하단 네비 */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-100 flex items-stretch min-h-16 pt-1 pb-[max(env(safe-area-inset-bottom),0.25rem)]">
@@ -289,24 +330,33 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                 className="text-xs px-3 py-1.5 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all">✎ 설정</button>
             </div>
 
-            {/* 전체 메뉴 */}
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">메뉴</p>
-            <div className="grid grid-cols-4 gap-2 mb-5">
-              {NAV.map(n => {
-                const on = view === n.id;
-                return (
-                  <button key={n.id} onClick={() => { goNav(n.id); setMoreOpen(false); }}
-                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${on ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                    <span className="text-xl">{n.emoji}</span>
-                    <span className="text-[11px] font-medium">{n.label}</span>
-                  </button>
-                );
-              })}
-              <button onClick={() => { setView('brand'); setMoreOpen(false); }}
-                className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'brand' ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                <span className="text-xl">⚙️</span>
-                <span className="text-[11px] font-medium">회사 브레인</span>
-              </button>
+            {/* 전체 메뉴 — 그룹별 */}
+            <div className="space-y-4 mb-5">
+              {NAV_GROUPS.map(g => (
+                <div key={g.id}>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">{g.label}</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {g.items.map(n => {
+                      const on = view === n.id;
+                      return (
+                        <button key={n.id} onClick={() => goNav(n.id)}
+                          className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${on ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
+                          <span className="text-xl">{n.emoji}</span>
+                          <span className="text-[11px] font-medium">{n.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">설정</p>
+                <button onClick={() => { setView('brand'); setMoreOpen(false); }}
+                  className={`flex flex-col items-center gap-1 py-3 w-1/4 rounded-2xl transition-colors ${view === 'brand' ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
+                  <span className="text-xl">⚙️</span>
+                  <span className="text-[11px] font-medium">회사 브레인</span>
+                </button>
+              </div>
             </div>
 
             {/* 워크스페이스 전환 */}
