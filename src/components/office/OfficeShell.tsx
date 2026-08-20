@@ -9,7 +9,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Workspace, ActiveWorkspace } from '../../types';
 import { useWorkspaceContext } from '../../contexts/WorkspaceContext';
 import { WorkspaceCreateModal } from '../WorkspaceCreateModal';
-import { WorkspaceSettingsModal } from '../WorkspaceSettingsModal';
 import {
   DashboardView, BriefingView, TodosView, ScheduleView,
   InsightsView, LogView, ActivityView, ActivityFeedView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView,
@@ -17,14 +16,15 @@ import {
 import { StaffView } from './StaffView';
 import { NotificationBell } from './NotificationBell';
 import { MeetingsView } from './MeetingsView';
-import { BrandView } from './BrandView';
+import { CompanySettingsView } from './CompanySettingsView';
+import { MeView } from './MeView';
 import { ContentPage } from '../../pages/ContentPage';
 import { fetchCredits, fetchUsage } from '../../services/credits.service';
 import { fetchStaff } from '../../services/staff.service';
 import { StaffUsage } from '../../types';
 import { createPortal } from 'react-dom';
 
-type ViewId = 'dashboard' | 'briefing' | 'staff' | 'todos' | 'schedule' | 'meetings' | 'insights' | 'contents' | 'content' | 'products' | 'sales' | 'memory' | 'log' | 'activity' | 'teamlog' | 'members' | 'brand';
+type ViewId = 'dashboard' | 'briefing' | 'staff' | 'todos' | 'schedule' | 'meetings' | 'insights' | 'contents' | 'content' | 'products' | 'sales' | 'memory' | 'log' | 'activity' | 'teamlog' | 'members' | 'brand' | 'company' | 'me';
 
 type NavItem = { id: ViewId; label: string; emoji: string };
 type NavGroup = { id: string; label: string; items: NavItem[] };
@@ -53,7 +53,6 @@ const NAV_GROUPS: NavGroup[] = [
   ] },
   { id: 'team', label: '팀', items: [
     { id: 'staff', label: 'AI 직원', emoji: '🤖' },
-    { id: 'members', label: '멤버', emoji: '👥' },
     { id: 'activity', label: '활동 로그', emoji: '🧾' },
     { id: 'teamlog', label: '팀 활동', emoji: '📣' },
   ] },
@@ -142,7 +141,6 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
   const { personal, offices, setActiveWorkspace, reload } = useWorkspaceContext();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
-  const [showWsSettings, setShowWsSettings] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);   // 모바일 더보기 시트
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -217,9 +215,9 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                   </>
                 )}
                 <div className="my-1 border-t border-gray-100" />
-                <button onClick={() => { setMenuOpen(false); setShowWsSettings(true); }}
+                <button onClick={() => { setMenuOpen(false); setView('company'); setOpenGroup(null); }}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-colors text-left">
-                  <span className="text-base leading-none">✎</span> 오피스 설정 (이름·이미지)
+                  <span className="text-base leading-none">⚙️</span> 회사 설정 (정보·브레인·멤버)
                 </button>
                 <button onClick={() => { setMenuOpen(false); setShowCreate(true); }}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-colors text-left">
@@ -241,8 +239,14 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                 </button>
               );
             })}
-            <button type="button" onClick={() => setView('brand')} title="회사 브레인 · 설정"
-              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'brand' ? 'text-gray-800' : 'text-gray-400 hover:text-gray-700'}`}>⚙️</button>
+            <button type="button" onClick={() => { setView('me'); setOpenGroup(null); }} title="나 — 프로필 · 내 할일"
+              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'me' ? 'text-gray-800' : 'text-gray-400 hover:text-gray-700'}`}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="inline-block align-middle">
+                <path d="M20 21a8 8 0 0 0-16 0" /><circle cx="12" cy="7" r="4" />
+              </svg>
+            </button>
+            <button type="button" onClick={() => { setView('company'); setOpenGroup(null); }} title="회사 설정 — 정보 · 브레인 · 멤버"
+              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'company' ? 'text-gray-800' : 'text-gray-400 hover:text-gray-700'}`}>⚙️</button>
           </nav>
 
           <div className="flex-1" />
@@ -293,7 +297,8 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
           {view === 'activity' && <ActivityView workspace={workspace} />}
           {view === 'teamlog' && <ActivityFeedView workspace={workspace} />}
           {view === 'members' && <MembersView workspace={workspace} />}
-          {view === 'brand' && <BrandView workspace={workspace} />}
+          {view === 'company' && <CompanySettingsView workspace={workspace} onSaved={reload} />}
+          {view === 'me' && <MeView workspace={workspace} onNavigate={onNavigate} />}
         </div>
       </main>
 
@@ -326,8 +331,8 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                 {workspace.imageUrl ? <img src={workspace.imageUrl} alt={workspace.name} className="w-full h-full object-cover rounded-xl" /> : <span>{workspace.emoji || '🏢'}</span>}
               </span>
               <span className="text-base font-extrabold text-gray-800 flex-1 truncate">{workspace.name}</span>
-              <button onClick={() => { setMoreOpen(false); setShowWsSettings(true); }}
-                className="text-xs px-3 py-1.5 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all">✎ 설정</button>
+              <button onClick={() => { setMoreOpen(false); setView('company'); }}
+                className="text-xs px-3 py-1.5 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all">⚙️ 회사 설정</button>
             </div>
 
             {/* 전체 메뉴 — 그룹별 */}
@@ -351,11 +356,18 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
               ))}
               <div>
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">설정</p>
-                <button onClick={() => { setView('brand'); setMoreOpen(false); }}
-                  className={`flex flex-col items-center gap-1 py-3 w-1/4 rounded-2xl transition-colors ${view === 'brand' ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                  <span className="text-xl">⚙️</span>
-                  <span className="text-[11px] font-medium">회사 브레인</span>
-                </button>
+                <div className="grid grid-cols-4 gap-2">
+                  <button onClick={() => { setView('me'); setMoreOpen(false); }}
+                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'me' ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
+                    <span className="text-xl">🙋</span>
+                    <span className="text-[11px] font-medium">나</span>
+                  </button>
+                  <button onClick={() => { setView('company'); setMoreOpen(false); }}
+                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'company' ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
+                    <span className="text-xl">⚙️</span>
+                    <span className="text-[11px] font-medium">회사 설정</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -375,9 +387,6 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
 
       <WorkspaceCreateModal open={showCreate} onClose={() => setShowCreate(false)}
         onCreated={async (ws) => { await reload(); setActiveWorkspace(ws.id); }} />
-      {showWsSettings && (
-        <WorkspaceSettingsModal workspace={workspace} onClose={() => setShowWsSettings(false)} onSaved={reload} />
-      )}
       {showUsage && <UsageModal workspace={workspace} credits={credits} onClose={() => setShowUsage(false)} />}
     </div>
   );
