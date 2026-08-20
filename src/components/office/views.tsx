@@ -37,7 +37,7 @@ import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
 import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, fieldCls as monoField } from './ui';
-import { RichText, docToText, parseDoc, serializeDoc } from './RichText';
+import { docToText, parseDoc, serializeDoc } from './RichText';
 
 /** TaskRow(DB) → TaskItem(프론트). 워크스페이스 팀 화면에서 남이 만든 할일도 다루기 위해 로컬 매핑. */
 function rowToTaskItem(r: TaskRow): TaskItem {
@@ -856,8 +856,7 @@ export function TodosView({ workspace, onNavigate }: { workspace: Workspace; onN
       {/* 뷰 토글 (일별/전체/캘린더) + 추가 */}
       <div className="flex items-center gap-1.5 mb-2.5">
         <div className="flex gap-1">{modeBtn('day', '일별')}{modeBtn('list', '전체')}{modeBtn('calendar', '캘린더')}</div>
-        <button onClick={() => setShowForm(v => !v)}
-          className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 할일 추가</button>
+        <AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="할일" className="ml-auto" />
       </div>
 
       {/* 담당자/AI 하위 필터 (전체 스코프에서만) */}
@@ -1433,8 +1432,7 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
       <div className="flex flex-wrap items-center gap-1.5 mb-3">
         {chip('all', '전체')}
         {CONTENT_STATUS_ORDER.map(s => chip(s, CONTENT_STATUS_LABEL[s]))}
-        <button onClick={() => setShowForm(v => !v)}
-          className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 콘텐츠</button>
+        <AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="콘텐츠" className="ml-auto" />
       </div>
 
       {showForm && (
@@ -1596,8 +1594,7 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
       <ErpSourceBanner what="제품·재고" compat={compat} />
       {compat && (
         <div className="flex justify-end mb-3">
-          <button onClick={() => setShowForm(v => !v)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 제품 추가</button>
+          <AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="제품" />
         </div>
       )}
 
@@ -1735,8 +1732,7 @@ export function SalesDailyView({ workspace }: { workspace: Workspace }) {
       <ErpSourceBanner what="매출·주문" compat={compat} />
       {compat && (
         <div className="flex justify-end mb-3">
-          <button onClick={() => { setEditing(null); setForm(emptyForm()); setShowForm(v => !v); }}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 매출 입력</button>
+          <AddButton open={showForm} onClick={() => { setEditing(null); setForm(emptyForm()); setShowForm(v => !v); }} label="매출 입력" />
         </div>
       )}
 
@@ -1874,8 +1870,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
 
       <div className="flex items-center gap-2 mb-2">
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 제목·내용·태그 검색" className={`${fieldCls} flex-1`} />
-        <button onClick={() => setShowForm(v => !v)}
-          className="px-3 py-2 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all whitespace-nowrap">＋ 기억</button>
+        <AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="기억" className="whitespace-nowrap" />
       </div>
       <div className="flex flex-wrap items-center gap-1.5 mb-3">
         {chip('all', '전체')}

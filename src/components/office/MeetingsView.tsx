@@ -12,7 +12,7 @@ import { fetchMeetings, addMeeting, updateMeeting, notifyMeetingNote, syncMeetin
 import { fetchMembers } from '../../services/workspaces.service';
 import { fetchTasks, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
 import { recordActivity } from '../../services/activities.service';
-import { ViewHead, Card, EmptyState, TaskProgress } from './ui';
+import { ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard } from './ui';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
 import { parseDoc, serializeDoc, docToText } from './RichText';
 import { getTodayStr } from '../../utils/dateCalc';
@@ -65,23 +65,19 @@ export function MeetingsView({ workspace }: { workspace: Workspace }) {
 
   return (
     <>
-      <ViewHead eyebrow="MEETINGS" title="회의" sub={`${list.length}건`} />
-      <div className="flex items-center mb-3">
-        <button onClick={() => setShowForm(v => !v)} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 새 회의</button>
-      </div>
-      {showForm && (
-        <Card className="p-4 mb-3 space-y-2.5">
-          <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} onKeyDown={e => { if (e.key === 'Enter') create(); }} placeholder="회의 제목" className={fieldCls} />
-          <div className="grid grid-cols-2 gap-2">
-            <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className={fieldCls} />
-            <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} className={fieldCls} />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100">취소</button>
-            <button onClick={create} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">만들기</button>
-          </div>
-        </Card>
-      )}
+      <ViewHead eyebrow="MEETINGS" title="회의" sub={`${list.length}건`}
+        action={<AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="새 회의" />} />
+      <InlineAddCard open={showForm}>
+        <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} onKeyDown={e => { if (e.key === 'Enter') create(); }} placeholder="회의 제목" className={fieldCls} />
+        <div className="grid grid-cols-2 gap-2">
+          <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className={fieldCls} />
+          <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} className={fieldCls} />
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100">취소</button>
+          <button onClick={create} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">만들기</button>
+        </div>
+      </InlineAddCard>
       {list.length === 0 ? (
         <EmptyState emoji="📋" title="아직 회의가 없어요" sub="＋ 새 회의로 만들고, 회의록·액션아이템(할일)을 정리하세요" />
       ) : (
