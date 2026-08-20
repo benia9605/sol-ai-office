@@ -44,16 +44,64 @@ export function Spark({ data, h = 36 }: { data: number[]; h?: number }) {
   );
 }
 
-export function ViewHead({ eyebrow, title, sub, action }: { eyebrow: string; title: string; sub?: string; action?: ReactNode }) {
+export function ViewHead({ eyebrow, title, sub, action }: { eyebrow?: string; title: string; sub?: string; action?: ReactNode }) {
   return (
     <div className="mb-10 flex items-end justify-between gap-4 flex-wrap">
       <div>
-        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground-faint mb-3">{eyebrow}</div>
+        {eyebrow && <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground-faint mb-3">{eyebrow}</div>}
         <h1 className="text-3xl sm:text-4xl font-light leading-[1.2] text-foreground">{title}</h1>
         {sub && <p className="text-sm text-foreground-muted mt-3">{sub}</p>}
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}
     </div>
+  );
+}
+
+/**
+ * 설정 섹션 — 통일된 카드 프레임: 헤더(제목·설명·우측 액션) + 본문 + (선택)푸터.
+ * 저장 버튼은 항상 footer 슬롯에 두어 섹션마다 위치가 일정하도록 한다.
+ * 본문에는 중첩 Card를 쓰지 않는다(이중 테두리 방지) — 그룹은 SectionGroup 사용.
+ */
+export function Section({ title, desc, action, children, footer }: {
+  title: string; desc?: string; action?: ReactNode; children: ReactNode; footer?: ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl bg-surface border border-line">
+      <div className="flex items-start justify-between gap-3 px-5 sm:px-6 pt-5 pb-4 border-b border-line">
+        <div className="min-w-0">
+          <h3 className="text-base font-bold text-foreground">{title}</h3>
+          {desc && <p className="text-xs text-foreground-muted mt-1 leading-relaxed">{desc}</p>}
+        </div>
+        {action && <div className="flex-shrink-0">{action}</div>}
+      </div>
+      <div className="px-5 sm:px-6 py-5 space-y-4">{children}</div>
+      {footer && <div className="px-5 sm:px-6 py-4 border-t border-line flex items-center gap-3">{footer}</div>}
+    </section>
+  );
+}
+
+/** 섹션 본문 안의 하위 그룹 — 얇은 구분선 위에 소제목. 중첩 카드 대신 사용. */
+export function SectionGroup({ label, children }: { label?: string; children: ReactNode }) {
+  return (
+    <div className="space-y-3">
+      {label && <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">{label}</div>}
+      {children}
+    </div>
+  );
+}
+
+/** 섹션 공용 저장 버튼 (footer 슬롯용) — 모노 · 일관 스타일 */
+export function SaveButton({ onClick, busy, saved, label = '저장', savedText = '✓ 저장됐어요' }: {
+  onClick: () => void; busy?: boolean; saved?: boolean; label?: string; savedText?: string;
+}) {
+  return (
+    <>
+      <button onClick={onClick} disabled={busy}
+        className="px-5 py-2.5 rounded-xl bg-foreground text-surface text-sm font-bold hover:opacity-85 transition-all active:scale-95 disabled:opacity-40">
+        {busy ? '저장 중…' : label}
+      </button>
+      {saved && <span className="text-sm text-emerald-500 font-medium">{savedText}</span>}
+    </>
   );
 }
 

@@ -36,7 +36,7 @@ import { fetchWorkspaceAnalytics, WorkspaceAnalytics } from '../../services/anal
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
-import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, fieldCls as monoField } from './ui';
+import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, fieldCls as monoField } from './ui';
 import { docToText, parseDoc, serializeDoc } from './RichText';
 
 /** TaskRow(DB) → TaskItem(프론트). 워크스페이스 팀 화면에서 남이 만든 할일도 다루기 위해 로컬 매핑. */
@@ -2108,28 +2108,27 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
   };
 
   return (
-    <>
-      <ViewHead eyebrow="MEMBERS" title="멤버" sub={`멤버 ${members.length}명`} />
+    <Section title="멤버" desc={`${members.length}명 · 초대코드로 팀원을 초대하고 담당 할일을 관리해요`}>
       {/* 초대 코드 (오피스만) */}
       {workspace.type === 'office' && workspace.inviteCode && (
-        <Card className="p-4 mb-3 space-y-2">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide">초대 코드</div>
+        <div className="rounded-xl bg-surface-muted border border-line p-4 space-y-2">
+          <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">초대 코드</div>
           <div className="flex items-center gap-2">
-            <code className="text-lg font-bold text-foreground tracking-[0.2em] bg-surface-muted px-3 py-1.5 rounded-xl flex-1 text-center">{workspace.inviteCode}</code>
+            <code className="text-lg font-bold text-foreground tracking-[0.2em] bg-surface px-3 py-1.5 rounded-xl flex-1 text-center border border-line">{workspace.inviteCode}</code>
             <button onClick={copyCode}
-              className="text-xs px-3 py-2 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all flex-shrink-0">{copied ? '복사됨 ✓' : '복사'}</button>
+              className="text-xs px-3 py-2 rounded-xl bg-foreground text-surface hover:opacity-85 active:scale-95 transition-all flex-shrink-0">{copied ? '복사됨 ✓' : '복사'}</button>
           </div>
-          <p className="text-[11px] text-gray-400">이 코드를 멤버에게 공유하세요. 멤버는 왼쪽 위 <b>워크스페이스 메뉴 → 🔑 코드로 합류</b>에서 이 코드를 입력하면 합류돼요.</p>
-        </Card>
+          <p className="text-[11px] text-foreground-faint">이 코드를 멤버에게 공유하세요. 멤버는 왼쪽 위 <b>워크스페이스 메뉴 → 코드로 합류</b>에서 입력하면 합류돼요.</p>
+        </div>
       )}
       {/* 팀 진행률 보드 — 담당자별 + 미지정 */}
       <TeamProgressBoard tasks={wsTasks} members={members} memberLabel={memberLabel} onOpen={setDetailMember} />
-      <Card className="p-3">
+      <div className="rounded-xl border border-line divide-y divide-line overflow-hidden">
         {members.map(m => {
           const canEditNick = m.userId === myId || iAmOwner;
           const editing = editingId === m.userId;
           return (
-          <div key={m.userId} className="flex items-center gap-2.5 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
+          <div key={m.userId} className="flex items-center gap-2.5 px-3 py-3 hover:bg-surface-muted transition-colors">
             <span className="w-9 h-9 rounded-full bg-foreground text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
               {(m.nickname || m.userId).slice(0, 1).toUpperCase()}
             </span>
@@ -2169,8 +2168,8 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
           </div>
           );
         })}
-        {members.length === 0 && <p className="text-xs text-gray-300 py-4 text-center">{loaded ? '멤버를 불러오지 못했어요 · 새로고침해 주세요' : '불러오는 중…'}</p>}
-      </Card>
-    </>
+        {members.length === 0 && <p className="text-xs text-foreground-faint py-4 text-center">{loaded ? '멤버를 불러오지 못했어요 · 새로고침해 주세요' : '불러오는 중…'}</p>}
+      </div>
+    </Section>
   );
 }

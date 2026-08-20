@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import { Workspace, BrandContext } from '../../types';
 import { fetchBrandContext, saveBrandContext } from '../../services/brandContexts.service';
-import { ViewHead, Card } from './ui';
+import { Section, SectionGroup, SaveButton } from './ui';
 
 /** 사업을 잘 아는 AI(클로드/GPT)에게 회사 브레인 16개 항목을 최적으로 받아오는 프롬프트 */
 function buildBrandPrompt(bizName: string): string {
@@ -74,13 +74,13 @@ function Field({ label, value, onChange, hint, textarea, warn }: FieldProps) {
         <textarea
           value={value} onChange={onChange} rows={3}
           placeholder={hint}
-          className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-foreground focus:outline-none resize-none leading-relaxed"
+          className="w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors resize-none leading-relaxed"
         />
       ) : (
         <input
           value={value} onChange={onChange}
           placeholder={hint}
-          className="w-full rounded-2xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-foreground focus:outline-none"
+          className="w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors"
         />
       )}
     </div>
@@ -146,80 +146,64 @@ export function BrandView({ workspace }: { workspace: Workspace }) {
     <Field label={label} value={form[k]} onChange={set(k)} hint={hint} textarea={opts?.textarea} warn={opts?.warn} />
   );
 
-  return (
-    <>
-      <ViewHead
-        eyebrow="COMPANY BRAIN"
-        title="회사 브레인"
-        sub="모든 AI 직원이 공유하는 회사의 정체성 · 한 번 입력하면 전 직원 프롬프트에 자동 반영"
-        action={
-          <button
-            onClick={copyPrompt}
-            title="클로드·GPT에 붙여넣어 항목을 자동으로 채워보세요"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-gray-200 text-xs font-semibold text-gray-600 hover:border-foreground hover:text-foreground transition-all active:scale-95"
-          >
-            {copied ? (
-              <>✓ 복사됨</>
-            ) : (
-              <>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="9" width="11" height="11" rx="2" />
-                  <path d="M5 15V5a2 2 0 0 1 2-2h10" />
-                </svg>
-                AI로 채우기 프롬프트
-              </>
-            )}
-          </button>
-        }
-      />
+  const copyBtn = (
+    <button
+      onClick={copyPrompt}
+      title="클로드·GPT에 붙여넣어 항목을 자동으로 채워보세요"
+      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-line text-xs font-semibold text-foreground-muted hover:border-foreground hover:text-foreground transition-all active:scale-95"
+    >
+      {copied ? (<>✓ 복사됨</>) : (
+        <>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="9" width="11" height="11" rx="2" />
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+          </svg>
+          AI로 채우기
+        </>
+      )}
+    </button>
+  );
 
+  return (
+    <Section
+      title="회사 브레인"
+      desc="모든 AI 직원이 공유하는 회사의 정체성 · 한 번 입력하면 전 직원 프롬프트에 자동 반영돼요"
+      action={copyBtn}
+      footer={loading ? undefined : <SaveButton onClick={onSave} busy={saving} saved={saved} label="회사 브레인 저장" savedText="✓ 저장됐어요 · 다음 실행부터 반영" />}
+    >
       {loading ? (
-        <p className="text-xs text-gray-300 py-8 text-center">불러오는 중…</p>
+        <p className="text-xs text-foreground-faint py-8 text-center">불러오는 중…</p>
       ) : (
-        <div className="space-y-3">
-          <Card className="p-5 space-y-4">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">기본 정체성</div>
+        <div className="space-y-6">
+          <SectionGroup label="기본 정체성">
             {f('정체성 한 줄', 'identity', '예: 시목 — 오래 쓰는 원목 가구·소품. 기준 있는 선택.')}
             {f('카테고리', 'category', '예: 원목 인테리어 가구/소품')}
             {f('톤앤매너', 'tone', '예: 장인·자연·따뜻·담백. 과장 금지.')}
             {f('주요 타겟', 'target', '예: 2030 신혼·자취 + 친환경 니즈')}
-          </Card>
+          </SectionGroup>
 
-          <Card className="p-5 space-y-4">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">강점 · 판매</div>
+          <SectionGroup label="강점 · 판매">
             {f('핵심 USP (줄바꿈으로 여러 개)', 'usp', '예: 통원목 한 장\n천연오일 마감\n국내 수작업', { textarea: true })}
             {f('판매 채널', 'channels', '예: 네이버 스마트스토어, 인스타그램')}
             {f('가격 포지셔닝', 'pricePosition', '예: 프리미엄 (가격 정당화 필요)')}
             {f('광고 소구점', 'adAngle', '예: 품질 · 원목 · 오래가는')}
-          </Card>
+          </SectionGroup>
 
-          <Card className="p-5 space-y-4">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">상품 · 시장 <span className="text-gray-300 normal-case">(채울수록 직원이 똑똑해져요)</span></div>
+          <SectionGroup label="상품 · 시장">
             {f('주력 상품', 'mainProducts', '예: 티크 도마, OO 원목 식탁')}
             {f('대표 가격대', 'priceRange', '예: 3~5만원 (소품) / 20~40만원 (식탁)')}
             {f('주요 경쟁사', 'competitors', '예: OO몰, △△브랜드')}
             {f('창업 스토리 · 차별점', 'story', '시목이 어떻게 시작됐고 결정적 차별점은 무엇인지 한 문단', { textarea: true })}
-          </Card>
+          </SectionGroup>
 
-          <Card className="p-5 space-y-4">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">규제 · 자유 입력</div>
-            {f('⚠️ 금지표현 (줄바꿈으로 여러 개)', 'compliance', "예: '평생 보장' 단정 금지\n'100% 무독성'은 근거 있을 때만", { textarea: true, warn: true })}
-            {f('💬 CS 정책 (배송/교환/환불/파손 기준)', 'csPolicies', "예: 단순변심 교환은 수령 7일 내·왕복배송비 고객부담\n파손은 사진 확인 후 무료 재배송\n주문 제작품은 환불 불가", { textarea: true })}
-            {f('💬 CS 응대 톤', 'csTone', '예: 정중한 존댓말, 이모지 최소, 먼저 공감 후 해결책. 환불은 정책 내 최대한 수용적으로', { textarea: true })}
+          <SectionGroup label="규제 · 자유 입력">
+            {f('금지표현 (줄바꿈으로 여러 개)', 'compliance', "예: '평생 보장' 단정 금지\n'100% 무독성'은 근거 있을 때만", { textarea: true, warn: true })}
+            {f('CS 정책 (배송/교환/환불/파손 기준)', 'csPolicies', "예: 단순변심 교환은 수령 7일 내·왕복배송비 고객부담\n파손은 사진 확인 후 무료 재배송\n주문 제작품은 환불 불가", { textarea: true })}
+            {f('CS 응대 톤', 'csTone', '예: 정중한 존댓말, 이모지 최소, 먼저 공감 후 해결책. 환불은 정책 내 최대한 수용적으로', { textarea: true })}
             {f('자유 서술 (AI에 그대로 전달)', 'raw', '위 항목으로 안 담기는 추가 맥락을 자유롭게', { textarea: true })}
-          </Card>
-
-          <div className="flex items-center gap-3 pt-1 pb-6">
-            <button
-              onClick={onSave} disabled={saving}
-              className="px-5 py-2.5 rounded-2xl bg-foreground text-white text-sm font-bold hover:opacity-85 transition-all active:scale-95 disabled:opacity-50"
-            >
-              {saving ? '저장 중…' : '회사 브레인 저장'}
-            </button>
-            {saved && <span className="text-sm text-emerald-500 font-medium">✓ 저장됐어요 · 다음 실행부터 반영돼요</span>}
-          </div>
+          </SectionGroup>
         </div>
       )}
-    </>
+    </Section>
   );
 }

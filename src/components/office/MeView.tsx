@@ -9,7 +9,7 @@ import { Workspace } from '../../types';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchWorkspaceTasks, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
-import { ViewHead, Card, EmptyState, fieldCls } from './ui';
+import { ViewHead, Section, SaveButton, EmptyState, fieldCls } from './ui';
 import { NotificationSettings } from '../NotificationSettings';
 import { dueLabel, daysUntil } from '../../utils/dateCalc';
 
@@ -74,10 +74,13 @@ function ProfileCard() {
   };
 
   return (
-    <Card className="p-5 space-y-4">
-      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">내 프로필</div>
+    <Section
+      title="내 프로필"
+      desc="AI 직원들이 나를 이해하는 데 쓰는 정보예요"
+      footer={loading ? undefined : <SaveButton onClick={onSave} busy={busy} saved={saved} label="프로필 저장" />}
+    >
       {loading ? (
-        <p className="text-xs text-gray-300 py-6 text-center">불러오는 중…</p>
+        <p className="text-xs text-foreground-faint py-6 text-center">불러오는 중…</p>
       ) : (
         <>
           <div>
@@ -103,16 +106,9 @@ function ProfileCard() {
             <label className="block text-xs font-semibold text-gray-500 mb-1.5">이모지 사용</label>
             <ChipGroup value={emoji} options={EMOJI} onChange={v => { setEmoji(v); setSaved(false); }} />
           </div>
-          <div className="flex items-center gap-3 pt-1">
-            <button onClick={onSave} disabled={!name.trim() || busy}
-              className="px-5 py-2.5 rounded-2xl bg-foreground text-white text-sm font-bold hover:opacity-85 transition-all active:scale-95 disabled:opacity-40">
-              {busy ? '저장 중…' : '프로필 저장'}
-            </button>
-            {saved && <span className="text-sm text-emerald-500 font-medium">✓ 저장됐어요</span>}
-          </div>
         </>
       )}
-    </Card>
+    </Section>
   );
 }
 
@@ -145,13 +141,13 @@ function MyTasksCard({ workspace, onNavigate }: { workspace: Workspace; onNaviga
   };
 
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">내 할일 <span className="text-gray-300 normal-case">· 나에게 배정된 것</span></div>
-        <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-foreground transition-colors">전체 할일 ›</button>
-      </div>
+    <Section
+      title="내 할일"
+      desc="나에게 배정된 미완료 할일"
+      action={<button onClick={() => onNavigate('todos')} className="text-xs text-foreground-muted hover:text-foreground transition-colors">전체 할일 ›</button>}
+    >
       {loading ? (
-        <p className="text-xs text-gray-300 py-6 text-center">불러오는 중…</p>
+        <p className="text-xs text-foreground-faint py-6 text-center">불러오는 중…</p>
       ) : tasks.length === 0 ? (
         <EmptyState emoji="✅" title="배정된 할일이 없어요" sub="나에게 배정된 미완료 할일이 여기 모여요" />
       ) : (
@@ -178,7 +174,7 @@ function MyTasksCard({ workspace, onNavigate }: { workspace: Workspace; onNaviga
           })}
         </ul>
       )}
-    </Card>
+    </Section>
   );
 }
 
@@ -188,15 +184,14 @@ export function MeView({ workspace, onNavigate }: { workspace: Workspace; onNavi
 
   return (
     <>
-      <ViewHead eyebrow="ME" title="나" sub="내 프로필과 나에게 배정된 할일을 확인해요" />
+      <ViewHead title="나" sub="내 프로필과 나에게 배정된 할일을 확인해요" />
       <div className="space-y-6">
         <ProfileCard />
         <MyTasksCard workspace={workspace} onNavigate={onNavigate} />
         {uid && (
-          <Card className="p-5">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">알림 설정</div>
+          <Section title="알림 설정" desc="푸시 알림 종류를 켜고 끌 수 있어요">
             <NotificationSettings userId={uid} />
-          </Card>
+          </Section>
         )}
       </div>
     </>

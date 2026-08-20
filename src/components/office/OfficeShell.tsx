@@ -15,6 +15,7 @@ import {
 } from './views';
 import { StaffView } from './StaffView';
 import { NotificationBell } from './NotificationBell';
+import { NavIcon } from './NavIcons';
 import { MeetingsView } from './MeetingsView';
 import { CompanySettingsView } from './CompanySettingsView';
 import { MeView } from './MeView';
@@ -59,16 +60,6 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap(g => g.items);
 const groupOf = (v: ViewId) => NAV_GROUPS.find(g => g.items.some(it => it.id === v))?.id ?? null;
-
-/** 유튜브 브랜드 로고 (실제 SVG) */
-function YouTubeGlyph({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 28 20" className={className} aria-label="YouTube" role="img">
-      <path d="M27.4 3.12a3.5 3.5 0 0 0-2.46-2.48C22.76 0.03 14 0.03 14 0.03S5.24 0.03 3.06 0.64A3.5 3.5 0 0 0 .6 3.12 36.5 36.5 0 0 0 0 10a36.5 36.5 0 0 0 .6 6.88 3.5 3.5 0 0 0 2.46 2.48C5.24 19.97 14 19.97 14 19.97s8.76 0 10.94-.61a3.5 3.5 0 0 0 2.46-2.48A36.5 36.5 0 0 0 28 10a36.5 36.5 0 0 0-.6-6.88Z" fill="#FF0000" />
-      <path d="M11.2 14.28 18.5 10 11.2 5.72v8.56Z" fill="#fff" />
-    </svg>
-  );
-}
 
 /** 코인 사용 내역(요금) 모달 */
 /** 코인 SVG 아이콘 (동전) */
@@ -268,7 +259,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                 return (
                   <button key={it.id} type="button" onClick={() => goNav(it.id)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${on ? 'bg-surface-muted text-foreground' : 'text-gray-500 hover:bg-gray-50'}`}>
-                    {it.id === 'content' ? <YouTubeGlyph className="w-4 h-4" /> : <span className={on ? '' : 'grayscale opacity-80'}>{it.emoji}</span>}
+                    <NavIcon id={it.id} size={16} className={on ? 'text-foreground' : 'text-gray-400'} />
                     <span>{it.label}</span>
                   </button>
                 );
@@ -309,14 +300,14 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
           return (
             <button key={n.id} onClick={() => goNav(n.id)}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${on ? 'text-foreground' : 'text-gray-400'}`}>
-              <span className={`text-lg ${on ? '' : 'grayscale opacity-80'}`}>{n.emoji}</span>
+              <NavIcon id={n.id} size={21} className={on ? 'text-foreground' : 'text-gray-400'} />
               <span className="text-[10px] font-medium">{n.label}</span>
             </button>
           );
         })}
         <button onClick={() => setMoreOpen(true)}
           className="flex-1 flex flex-col items-center justify-center gap-0.5 text-gray-400">
-          <span className="text-lg">☰</span>
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           <span className="text-[10px] font-medium">더보기</span>
         </button>
       </nav>
@@ -346,7 +337,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                       return (
                         <button key={n.id} onClick={() => goNav(n.id)}
                           className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${on ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                          <span className="text-xl">{n.emoji}</span>
+                          <NavIcon id={n.id} size={22} className={on ? 'text-foreground' : 'text-gray-500'} />
                           <span className="text-[11px] font-medium">{n.label}</span>
                         </button>
                       );
@@ -359,12 +350,12 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                 <div className="grid grid-cols-4 gap-2">
                   <button onClick={() => { setView('me'); setMoreOpen(false); }}
                     className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'me' ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                    <span className="text-xl">🙋</span>
+                    <NavIcon id="me" size={22} className={view === 'me' ? 'text-foreground' : 'text-gray-500'} />
                     <span className="text-[11px] font-medium">나</span>
                   </button>
                   <button onClick={() => { setView('company'); setMoreOpen(false); }}
                     className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'company' ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                    <span className="text-xl">⚙️</span>
+                    <NavIcon id="company" size={22} className={view === 'company' ? 'text-foreground' : 'text-gray-500'} />
                     <span className="text-[11px] font-medium">회사 설정</span>
                   </button>
                 </div>

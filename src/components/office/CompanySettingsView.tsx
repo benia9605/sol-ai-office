@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Workspace } from '../../types';
 import { updateWorkspace } from '../../services/workspaces.service';
 import { uploadImage } from '../../services/storage.service';
-import { ViewHead, Card, fieldCls } from './ui';
+import { ViewHead, Section, SaveButton, fieldCls } from './ui';
 import { BrandView } from './BrandView';
 import { MembersView } from './views';
 
@@ -66,9 +66,11 @@ function CompanyInfoCard({ workspace, onSaved }: { workspace: Workspace; onSaved
   };
 
   return (
-    <Card className="p-5 space-y-4">
-      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">회사 정보</div>
-
+    <Section
+      title="회사 정보"
+      desc="이름 · 대표 이미지 · 사업 정보를 관리해요"
+      footer={<SaveButton onClick={save} busy={busy} saved={saved} label="회사 정보 저장" />}
+    >
       {/* 이미지 + 이모지 */}
       <div className="flex items-center gap-4">
         <button onClick={() => fileRef.current?.click()}
@@ -115,25 +117,18 @@ function CompanyInfoCard({ workspace, onSaved }: { workspace: Workspace; onSaved
         </div>
       )}
 
-      <div className="flex items-center gap-3 pt-1">
-        <button onClick={save} disabled={!name.trim() || busy}
-          className="px-5 py-2.5 rounded-2xl bg-foreground text-white text-sm font-bold hover:opacity-85 transition-all active:scale-95 disabled:opacity-40">
-          {busy ? '저장 중…' : '회사 정보 저장'}
-        </button>
-        {saved && <span className="text-sm text-emerald-500 font-medium">✓ 저장됐어요</span>}
-      </div>
-    </Card>
+    </Section>
   );
 }
 
 export function CompanySettingsView({ workspace, onSaved }: { workspace: Workspace; onSaved: () => void | Promise<void> }) {
   return (
     <>
-      <ViewHead eyebrow="SETTINGS" title="회사 설정" sub="회사 정보 · 브레인 · 초대코드 · 멤버를 한 곳에서 관리해요" />
-      <div className="space-y-10">
+      <ViewHead title="회사 설정" sub="회사 정보 · 브레인 · 초대코드 · 멤버를 한 곳에서 관리해요" />
+      <div className="space-y-6">
         <CompanyInfoCard workspace={workspace} onSaved={onSaved} />
-        <div><BrandView workspace={workspace} /></div>
-        <div><MembersView workspace={workspace} /></div>
+        <BrandView workspace={workspace} />
+        <MembersView workspace={workspace} />
       </div>
     </>
   );
