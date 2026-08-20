@@ -150,9 +150,12 @@ export function SettingsPageModern() {
               <button
                 type="button"
                 onClick={() => setProfileEditing(true)}
-                className="text-xs text-foreground-muted hover:text-foreground transition-colors"
+                aria-label="수정" title="수정"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-foreground-muted hover:text-foreground hover:bg-surface-muted transition-colors"
               >
-                수정 →
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
               </button>
             ) : (
               <div className="flex items-center gap-2">
@@ -438,14 +441,17 @@ export function SettingsPageModern() {
                             <button
                               type="button"
                               onClick={() => startEdit(p)}
-                              className="text-xs text-foreground-muted hover:text-foreground transition-colors"
+                              aria-label="수정" title="수정"
+                              className="w-7 h-7 rounded-full flex items-center justify-center text-foreground-muted hover:text-foreground hover:bg-surface-muted transition-colors"
                             >
-                              수정
+                              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                              </svg>
                             </button>
                             <button
                               type="button"
                               onClick={() => setDeleteConfirm(p.id)}
-                              className="text-xs text-foreground-faint hover:text-primary-500 transition-colors"
+                              className="text-xs text-foreground-faint hover:text-rose-500 transition-colors"
                             >
                               삭제
                             </button>
