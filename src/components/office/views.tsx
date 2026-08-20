@@ -2148,7 +2148,11 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
                   {m.nickname || <span className="text-gray-400 italic">닉네임 없음</span>}{m.userId === myId && ' (나)'}
                 </span>
                 {canEditNick && (
-                  <button onClick={() => startEdit(m)} title="닉네임 수정" className="text-gray-300 hover:text-foreground text-sm flex-shrink-0">✏️</button>
+                  <button onClick={() => startEdit(m)} aria-label="닉네임 수정" title="닉네임 수정" className="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-foreground hover:bg-surface-muted transition-colors flex-shrink-0">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
                 )}
               </>
             )}
