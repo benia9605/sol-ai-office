@@ -60,9 +60,11 @@ export async function upsertUserProfile(
   const existing = (await fetchUserProfile()) ?? (await fetchAdoptableProfile(userId));
 
   if (existing) {
+    // ⚠️ updated_at은 클라이언트에서 쓰지 않는다 — user_profiles에 컬럼이 없으면
+    //    "column updated_at does not exist"로 UPDATE가 실패해 저장이 조용히 안 됐다.
     const { data, error } = await supabase
       .from('user_profiles')
-      .update({ ...fields, user_id: userId, updated_at: new Date().toISOString() })  // 흡수 시 user_id 채움
+      .update({ ...fields, user_id: userId })  // 흡수 시 user_id 채움
       .eq('id', existing.id)
       .select()
       .single();

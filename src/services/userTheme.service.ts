@@ -38,7 +38,7 @@ export async function setActiveTheme(theme: Theme): Promise<boolean> {
     const userId = await getCurrentUserId();
     const { error } = await supabase
       .from('user_profiles')
-      .update({ active_theme: theme, updated_at: new Date().toISOString() })
+      .update({ active_theme: theme })   // updated_at 미기재 — 컬럼 없어도 저장되게
       .eq('user_id', userId);
 
     if (error) {
