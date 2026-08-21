@@ -121,23 +121,21 @@ function ColorPalette({
 
 /** 마크다운 텍스트인지 감지 */
 function looksLikeMarkdown(text: string): boolean {
-  const patterns = [
-    /^#{1,3}\s/m,          // 제목
-    /^\s*[-*]\s/m,         // 리스트
-    /^\s*-\s\[[ x]\]/m,   // 체크박스
-    /\|---/,               // 테이블
-    /\*\*.+?\*\*/,         // 볼드
-    /^---$/m,              // 구분선
-    /^```/m,               // 코드블록
-    /^>\s/m,               // 인용문
-    /^\d+\.\s/m,           // 번호 리스트
+  // 구조적(강한) 신호 — 하나만 있어도 마크다운으로 본다 (예: "## 제목" 한 줄)
+  const strong = [
+    /^#{1,6}\s/m,             // 제목 h1~h6
+    /^\s*[-*+]\s+\S/m,        // 불릿 리스트
+    /^\s*\d+\.\s+\S/m,        // 번호 리스트
+    /^\s*[-*]\s\[[ xX]\]/m,   // 체크박스
+    /^\s*>\s/m,               // 인용문
+    /^```/m,                  // 코드블록
+    /^(-{3,}|\*{3,}|_{3,})$/m,// 구분선
+    /\|.*\|/m,                // 테이블 행(파이프)
   ];
-  let matches = 0;
-  for (const p of patterns) {
-    if (p.test(text)) matches++;
-    if (matches >= 2) return true;
-  }
-  return false;
+  if (strong.some((p) => p.test(text))) return true;
+  // 약한(인라인) 신호 — 볼드/인라인코드/링크는 2개 이상일 때만
+  const weak = [/\*\*.+?\*\*/, /`[^`]+`/, /\[.+?\]\(.+?\)/];
+  return weak.filter((p) => p.test(text)).length >= 2;
 }
 
 interface TiptapEditorProps {
@@ -153,6 +151,8 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
   placeholder = '스터디 노트를 작성하세요...',
   userName = '나',
 }: TiptapEditorProps, ref) {
+  // handlePaste 클로저에서 editor 인스턴스에 안전하게 접근하기 위한 ref
+  const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -176,17 +176,23 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
       onChange(e.getJSON() as Record<string, unknown>);
     },
     editorProps: {
-      handlePaste(view, event) {
+      handlePaste(_view, event) {
         const clipboardData = event.clipboardData;
         if (!clipboardData) return false;
 
-        // HTML이 있으면 Tiptap 기본 처리 (노션 등에서 복사 시)
+        // 진짜 서식 있는 HTML(노션 등)만 기본 처리로 넘긴다.
+        // 일부 앱은 마크다운 텍스트를 <p>/<span>로만 감싼 무의미한 HTML을 함께 넣는데,
+        // 그건 무시하고 아래 마크다운 변환을 태운다.
         const html = clipboardData.getData('text/html');
-        if (html && html.trim().length > 10) return false;
+        const htmlHasFormatting = !!html && /<(h[1-6]|ul|ol|li|table|pre|blockquote|strong|b|em|i|code|img)\b/i.test(html);
+        if (htmlHasFormatting) return false;
 
         // plain text에서 마크다운 감지
         const text = clipboardData.getData('text/plain');
         if (!text || !looksLikeMarkdown(text)) return false;
+
+        const ed = editorRef.current;
+        if (!ed?.commands) return false;
 
         // 마크다운 → HTML 변환
         event.preventDefault();
@@ -196,16 +202,8 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
           .replace(/<li>\s*<input[^>]*checked[^>]*>\s*/g, '<li data-type="taskItem" data-checked="true">')
           .replace(/<li>\s*<input[^>]*type="checkbox"[^>]*>\s*/g, '<li data-type="taskItem" data-checked="false">');
 
-        const editor = view.state;
-        if (editor) {
-          // @ts-ignore - view에서 editor 접근
-          const tiptapEditor = (view as any).editor || (view as any)._tiptapEditor;
-          if (tiptapEditor?.commands) {
-            tiptapEditor.commands.insertContent(taskHtml);
-            return true;
-          }
-        }
-        return false;
+        ed.chain().focus().insertContent(taskHtml).run();
+        return true;
       },
     },
   });
@@ -217,6 +215,9 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
       editor.chain().focus().setLink({ href: url }).run();
     }
   }, [editor]);
+
+  // handlePaste에서 쓸 수 있도록 editor 인스턴스를 ref에 동기화
+  useEffect(() => { editorRef.current = editor; }, [editor]);
 
   const imageFileRef = useRef<HTMLInputElement>(null);
   const [imageUploading, setImageUploading] = useState(false);
