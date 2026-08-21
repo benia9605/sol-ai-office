@@ -48,7 +48,7 @@ function toTaskItem(row: TaskRow): TaskItem {
   };
 }
 
-export function useTasks() {
+export function useTasks(opts?: { autoLoad?: boolean }) {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +71,8 @@ export function useTasks() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  // autoLoad:false면 개인 할일 전체 조회를 건너뛴다 (예: TodosView는 fetchWorkspaceTasks로 직접 로드)
+  useEffect(() => { if (opts?.autoLoad !== false) load(); else setLoading(false); }, [load, opts?.autoLoad]);
 
   /** 반복 태스크 완료 시 다음 주기 태스크 자동 생성 (로컬 + DB) */
   const createNextRepeat = useCallback(async (target: TaskItem) => {

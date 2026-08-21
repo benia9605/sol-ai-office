@@ -720,7 +720,7 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
 }
 
 export function TodosView({ workspace, onNavigate, initialScope }: { workspace: Workspace; onNavigate?: Nav; initialScope?: 'all' | 'mine' | 'assigned' }) {
-  const { add } = useTasks();
+  const { add } = useTasks({ autoLoad: false });  // 목록은 fetchWorkspaceTasks로 로드 — 개인 할일 전체 조회 불필요
   const [wsTasks, setWsTasks] = useState<TaskItem[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [myId, setMyId] = useState<string | null>(null);

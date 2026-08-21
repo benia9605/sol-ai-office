@@ -26,7 +26,7 @@ export async function fetchInsights(workspaceId?: string): Promise<InsightRow[]>
   const userId = await getCurrentUserId();
   let q = supabase.from('insights').select('*').eq('user_id', userId);
   q = workspaceId ? q.eq('workspace_id', workspaceId) : q.is('workspace_id', null);
-  const { data, error } = await q.order('created_at', { ascending: false });
+  const { data, error } = await q.order('created_at', { ascending: false }).limit(200);
   if (error) throw error;
   return data ?? [];
 }

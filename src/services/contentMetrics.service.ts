@@ -53,7 +53,8 @@ export async function fetchMetricsByWorkspace(workspaceId: string): Promise<Cont
   const { data, error } = await supabase
     .from('content_metrics')
     .select('*')
-    .eq('workspace_id', workspaceId);
+    .eq('workspace_id', workspaceId)
+    .limit(2000);
   if (error) throw error;
   return (data ?? []).map(toMetric);
 }

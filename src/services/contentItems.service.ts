@@ -65,7 +65,8 @@ export async function fetchContentItems(workspaceId: string): Promise<ContentIte
     .from('content_items')
     .select('*')
     .eq('workspace_id', workspaceId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(500);
   if (error) throw error;
   return (data ?? []).map(toItem);
 }

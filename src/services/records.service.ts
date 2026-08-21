@@ -34,7 +34,7 @@ export async function fetchRecords(workspaceId?: string, recordType?: string): P
   let q = supabase.from('journals').select('*').eq('user_id', userId);
   q = workspaceId ? q.eq('workspace_id', workspaceId) : q.is('workspace_id', null);
   if (recordType) q = q.eq('record_type', recordType);
-  const { data, error } = await q.order('created_at', { ascending: false });
+  const { data, error } = await q.order('created_at', { ascending: false }).limit(200);
   if (error) throw error;
   return data ?? [];
 }

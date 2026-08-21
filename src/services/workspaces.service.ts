@@ -142,7 +142,8 @@ export async function fetchMembers(workspaceId: string): Promise<WorkspaceMember
   const { data, error } = await supabase
     .from('workspace_members')
     .select('*')
-    .eq('workspace_id', workspaceId);
+    .eq('workspace_id', workspaceId)
+    .limit(200);
   if (error) throw error;
   return (data ?? []).map((m: any) => ({
     workspaceId: m.workspace_id, userId: m.user_id, role: m.role,

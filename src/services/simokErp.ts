@@ -19,6 +19,16 @@ type ErpPath = 'products' | 'summary' | 'sales-daily';
  * erp-proxy Edge Function을 통해 시목 ERP API를 조회.
  * 커서 페이지네이션을 끝까지 따라가 전체 data를 합쳐 반환.
  */
+/** functions.invoke는 자체 타임아웃이 없다 — 콜드/지연된 ERP 호출이 UI를 무한정 붙잡지 못하게 레이스. */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`시목 ERP 응답 지연(${label}) — ${ms}ms 초과`)), ms),
+    ),
+  ]);
+}
+
 export async function erpProxyGet<T>(
   path: ErpPath,
   query: Record<string, string | number | undefined> = {},
@@ -31,11 +41,15 @@ export async function erpProxyGet<T>(
 
   const all: T[] = [];
   let cursor: string | undefined;
-  // 안전장치: 최대 50페이지(무한루프 방지). 제품 ~300개라 실무상 1페이지.
-  for (let i = 0; i < 50; i++) {
-    const { data, error } = await supabase.functions.invoke('erp-proxy', {
-      body: { path, query: { ...query, ...(cursor ? { cursor } : {}) } },
-    });
+  // 안전장치: 최대 10페이지(무한루프 방지). 제품 ~300개라 실무상 1페이지.
+  for (let i = 0; i < 10; i++) {
+    const { data, error } = await withTimeout<any>(
+      supabase.functions.invoke('erp-proxy', {
+        body: { path, query: { ...query, ...(cursor ? { cursor } : {}) } },
+      }),
+      6000,
+      path,
+    );
     if (error) throw new Error(`시목 ERP 조회 실패(${path}): ${error.message}`);
     if (data?.error) throw new Error(`시목 ERP 오류(${path}): ${data.error}`);
     const env = data as ErpEnvelope<T>;

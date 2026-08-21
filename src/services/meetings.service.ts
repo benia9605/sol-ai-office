@@ -21,7 +21,8 @@ const toMeeting = (r: any): Meeting => ({
 export async function fetchMeetings(workspaceId: string): Promise<Meeting[]> {
   const { data, error } = await supabase
     .from('meetings').select('*').eq('workspace_id', workspaceId)
-    .order('meeting_date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+    .order('meeting_date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false })
+    .limit(200);
   if (error) throw error;
   return (data ?? []).map(toMeeting);
 }

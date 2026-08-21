@@ -92,7 +92,8 @@ export async function fetchWorkspaceTasks(workspaceId: string): Promise<TaskRow[
     .from('tasks')
     .select('*')
     .eq('workspace_id', workspaceId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(500);
   if (error) throw error;
   return data ?? [];
 }

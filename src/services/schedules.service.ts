@@ -40,7 +40,7 @@ export async function fetchSchedules(workspaceId?: string): Promise<ScheduleRow[
   const userId = await getCurrentUserId();
   let q = supabase.from('schedules').select('*').eq('user_id', userId);
   q = workspaceId ? q.eq('workspace_id', workspaceId) : q.is('workspace_id', null);
-  const { data, error } = await q.order('date', { ascending: true });
+  const { data, error } = await q.order('date', { ascending: true }).limit(500);
   if (error) throw error;
   return data ?? [];
 }
