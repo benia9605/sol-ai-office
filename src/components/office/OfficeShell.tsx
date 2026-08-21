@@ -113,10 +113,14 @@ function UsageModal({ workspace, credits, onClose }: { workspace: Workspace; cre
 
 export function OfficeShell({ workspace }: { workspace: Workspace }) {
   const [view, setView] = useState<ViewId>('dashboard');
+  const [todosScope, setTodosScope] = useState<'all' | 'mine' | 'assigned'>('all'); // 할일 딥링크용 탭
   const [staffKey, setStaffKey] = useState(0); // 🤖 직원 아이콘 누를 때마다 목록(홈)으로 리셋
   const [openGroup, setOpenGroup] = useState<string | null>(null); // 상단바 메가메뉴
   const navRef = useRef<HTMLDivElement>(null);
-  const onNavigate = (v: string) => { setView(v as ViewId); setOpenGroup(null); };
+  const onNavigate = (v: string, opts?: { scope?: 'all' | 'mine' | 'assigned' }) => {
+    if (opts?.scope) setTodosScope(opts.scope);
+    setView(v as ViewId); setOpenGroup(null);
+  };
   const goNav = (id: ViewId) => { if (id === 'staff') setStaffKey(k => k + 1); setView(id); setOpenGroup(null); setMoreOpen(false); };
 
   // ── 코인 잔액 ──
@@ -275,7 +279,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
           {view === 'dashboard' && <DashboardView onNavigate={onNavigate} workspace={workspace} />}
           {view === 'briefing' && <BriefingView workspace={workspace} />}
           {view === 'staff' && <StaffView key={staffKey} workspace={workspace} onRan={refreshCredits} />}
-          {view === 'todos' && <TodosView workspace={workspace} onNavigate={onNavigate} />}
+          {view === 'todos' && <TodosView workspace={workspace} onNavigate={onNavigate} initialScope={todosScope} />}
           {view === 'schedule' && <ScheduleView workspace={workspace} />}
           {view === 'meetings' && <MeetingsView workspace={workspace} />}
           {view === 'insights' && <InsightsView workspace={workspace} />}

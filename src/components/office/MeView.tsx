@@ -14,6 +14,7 @@ import { NotificationSettings } from '../NotificationSettings';
 import { dueLabel, daysUntil } from '../../utils/dateCalc';
 
 type ViewId = 'dashboard' | 'todos' | 'schedule' | 'staff' | string;
+type Nav = (v: ViewId, opts?: { scope?: 'all' | 'mine' | 'assigned' }) => void;
 
 const TONE = [
   { v: 'friendly', label: '친근하게' },
@@ -114,7 +115,7 @@ function ProfileCard() {
 
 type MyTask = { id: string; title: string; dueDate?: string };
 
-function MyTasksCard({ workspace, onNavigate }: { workspace: Workspace; onNavigate: (v: ViewId) => void }) {
+function MyTasksCard({ workspace, onNavigate }: { workspace: Workspace; onNavigate: Nav }) {
   const [tasks, setTasks] = useState<MyTask[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -144,7 +145,7 @@ function MyTasksCard({ workspace, onNavigate }: { workspace: Workspace; onNaviga
     <Section
       title="내 할일"
       desc="나에게 배정된 미완료 할일"
-      action={<button onClick={() => onNavigate('todos')} className="text-xs text-foreground-muted hover:text-foreground transition-colors">전체 할일 ›</button>}
+      action={<button onClick={() => onNavigate('todos', { scope: 'mine' })} className="text-xs text-foreground-muted hover:text-foreground transition-colors">할일에서 보기 ›</button>}
     >
       {loading ? (
         <p className="text-xs text-foreground-faint py-6 text-center">불러오는 중…</p>
@@ -163,7 +164,7 @@ function MyTasksCard({ workspace, onNavigate }: { workspace: Workspace; onNaviga
                     <path d="M20 6 9 17l-5-5" />
                   </svg>
                 </button>
-                <button onClick={() => onNavigate('todos')} className="flex-1 min-w-0 text-left">
+                <button onClick={() => onNavigate('todos', { scope: 'mine' })} className="flex-1 min-w-0 text-left">
                   <span className="text-sm text-gray-700 truncate block">{t.title}</span>
                 </button>
                 {t.dueDate && (
@@ -178,7 +179,7 @@ function MyTasksCard({ workspace, onNavigate }: { workspace: Workspace; onNaviga
   );
 }
 
-export function MeView({ workspace, onNavigate }: { workspace: Workspace; onNavigate: (v: ViewId) => void }) {
+export function MeView({ workspace, onNavigate }: { workspace: Workspace; onNavigate: Nav }) {
   const [uid, setUid] = useState('');
   useEffect(() => { getCurrentUserId().then(setUid).catch(() => {}); }, []);
 
@@ -190,7 +191,7 @@ export function MeView({ workspace, onNavigate }: { workspace: Workspace; onNavi
         <MyTasksCard workspace={workspace} onNavigate={onNavigate} />
         {uid && (
           <Section title="알림 설정" desc="푸시 알림 종류를 켜고 끌 수 있어요">
-            <NotificationSettings userId={uid} />
+            <NotificationSettings userId={uid} embedded />
           </Section>
         )}
       </div>

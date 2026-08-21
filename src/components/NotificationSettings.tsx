@@ -40,7 +40,7 @@ function NotifToggle({
       <button
         onClick={() => onChange(!checked)}
         className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
-          checked ? 'bg-primary-500' : 'bg-gray-200'
+          checked ? 'bg-foreground' : 'bg-gray-200'
         }`}
       >
         <span
@@ -231,9 +231,11 @@ function PushDiagnostics({ userId }: { userId: string }) {
 
 interface Props {
   userId: string;
+  /** 오피스 Section 안에 넣을 때 — 자체 카드/헤더 없이 내용만 렌더 */
+  embedded?: boolean;
 }
 
-export function NotificationSettings({ userId }: Props) {
+export function NotificationSettings({ userId, embedded }: Props) {
   const {
     supported,
     isStandalone,
@@ -265,6 +267,7 @@ export function NotificationSettings({ userId }: Props) {
   };
 
   if (loading) {
+    if (embedded) return <p className="text-xs text-gray-400 py-2">로딩 중...</p>;
     return (
       <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-2">
@@ -279,13 +282,15 @@ export function NotificationSettings({ userId }: Props) {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6 space-y-4">
-      {/* 헤더 */}
-      <div className="flex items-center gap-2">
-        <BellIcon className="w-5 h-5 text-gray-400" />
-        <h2 className="text-base font-bold text-gray-800">알림 설정</h2>
-      </div>
-      <p className="text-[11px] text-gray-400 -mt-2">이 알림 설정은 <b className="text-gray-500">계정 전체</b>에 적용돼요 (개인·모든 오피스 공통).</p>
+    <div className={embedded ? 'space-y-4' : 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6 space-y-4'}>
+      {/* 헤더 — embedded면 상위 Section이 제목을 그림 */}
+      {!embedded && (
+        <div className="flex items-center gap-2">
+          <BellIcon className="w-5 h-5 text-gray-400" />
+          <h2 className="text-base font-bold text-gray-800">알림 설정</h2>
+        </div>
+      )}
+      <p className="text-[11px] text-gray-400">이 알림 설정은 <b className="text-gray-500">계정 전체</b>에 적용돼요 (개인·모든 오피스 공통).</p>
 
       {/* 브라우저 미지원 */}
       {!supported && (
@@ -360,7 +365,7 @@ export function NotificationSettings({ userId }: Props) {
             <button
               onClick={sendTest}
               disabled={testing}
-              className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 transition-colors"
+              className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium bg-foreground text-white hover:opacity-85 disabled:opacity-50 transition-colors"
             >
               {testing ? '전송 중…' : '보내기'}
             </button>

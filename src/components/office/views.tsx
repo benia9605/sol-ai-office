@@ -69,7 +69,7 @@ function ClaudeQuickButtons({ onClaude, onQA }: { onClaude: () => void; onQA: ()
   );
 }
 
-type Nav = (v: string) => void;
+type Nav = (v: string, opts?: { scope?: 'all' | 'mine' | 'assigned' }) => void;
 
 /* ───────── 대시보드 ───────── */
 const FLAT_SPARK = [0, 0, 0, 0, 0, 0, 0];
@@ -719,7 +719,7 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
   );
 }
 
-export function TodosView({ workspace, onNavigate }: { workspace: Workspace; onNavigate?: Nav }) {
+export function TodosView({ workspace, onNavigate, initialScope }: { workspace: Workspace; onNavigate?: Nav; initialScope?: 'all' | 'mine' | 'assigned' }) {
   const { add } = useTasks();
   const [wsTasks, setWsTasks] = useState<TaskItem[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
@@ -730,7 +730,9 @@ export function TodosView({ workspace, onNavigate }: { workspace: Workspace; onN
     ({ title: '', priority: 'medium', date: getTodayStr(), assigneeId: '', category: '' });
   const [form, setForm] = useState(blankForm);
   const [selected, setSelected] = useState<TaskItem | null>(null);
-  const [scope, setScope] = useState<'all' | 'mine' | 'assigned'>('all');  // 전체 / 받은 할일 / 내가 배정
+  const [scope, setScope] = useState<'all' | 'mine' | 'assigned'>(initialScope ?? 'all');  // 전체 / 받은 할일 / 내가 배정
+  // MeView 등에서 '받은 할일' 탭으로 딥링크될 때 반영
+  useEffect(() => { if (initialScope) setScope(initialScope); }, [initialScope]);
   const [filter, setFilter] = useState<string>('all');                     // all 스코프의 하위 필터(멤버·미배정·AI)
   const [mode, setMode] = useState<'day' | 'list' | 'calendar'>('day');
   const [cursor, setCursor] = useState<string>(() => getTodayStr()); // 일별 뷰: 선택한 날짜
