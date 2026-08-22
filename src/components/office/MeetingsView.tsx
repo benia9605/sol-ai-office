@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Workspace, WorkspaceMember, Meeting, TaskStatus } from '../../types';
 import { fetchMeetings, addMeeting, updateMeeting, deleteMeeting, notifyMeetingNote, syncMeetingTasks, MeetingTaskDraft } from '../../services/meetings.service';
 import { fetchMembers } from '../../services/workspaces.service';
-import { fetchTasks, fetchTasksByMeeting, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
+import { fetchWorkspaceTasks, fetchTasksByMeeting, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
 import { recordActivity } from '../../services/activities.service';
 import { ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard } from './ui';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
@@ -41,7 +41,7 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
   const load = async () => {
     const [ms, ts] = await Promise.all([
       fetchMeetings(workspace.id).catch(() => [] as Meeting[]),
-      fetchTasks().catch(() => []),
+      fetchWorkspaceTasks(workspace.id).catch(() => []),  // 워크스페이스 전체 할일(팀원 것 포함)로 회의 진행률 집계
     ]);
     setList(ms);
     // 회의별 진행률 집계 (한 번의 순회 — 가이드 §11.4)
