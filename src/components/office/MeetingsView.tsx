@@ -23,13 +23,20 @@ import { getTodayStr } from '../../utils/dateCalc';
 const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
 const miniCls = 'min-w-0 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-xs text-gray-600 focus:outline-none focus:bg-white focus:border-foreground transition-colors';
 
-export function MeetingsView({ workspace }: { workspace: Workspace }) {
+export function MeetingsView({ workspace, openId }: { workspace: Workspace; openId?: string }) {
   const [list, setList] = useState<Meeting[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [progress, setProgress] = useState<Map<string, { done: number; total: number }>>(new Map());
   const [selected, setSelected] = useState<Meeting | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', date: getTodayStr(), time: '' });
+
+  // 딥링크(/meetings/:id · 알림·활동 클릭)로 들어오면 해당 회의를 연다
+  useEffect(() => {
+    if (!openId) { return; }
+    const m = list.find(x => x.id === openId);
+    if (m) setSelected(m);
+  }, [openId, list]);
 
   const load = async () => {
     const [ms, ts] = await Promise.all([

@@ -24,6 +24,9 @@ export const supabase: any = isConfigured
         // 요청별 하드 타임아웃 — 느린/멈춘 요청이 스피너를 무한정 붙잡거나
         // 브라우저 커넥션 슬롯을 점유해 다른 요청을 뒤에서 대기시키는 것을 막는다.
         fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+          // 파일 업로드(Storage)는 30MB까지 가능 → 20초 상한에서 제외 (느린 업링크에서 중단 방지)
+          const url = typeof input === 'string' ? input : (input instanceof URL ? input.href : input.url);
+          if (url && url.includes('/storage/v1/')) return fetch(input, init);
           const ctrl = new AbortController();
           const t = setTimeout(() => ctrl.abort(), 20000); // 20초 상한
           return fetch(input, { ...init, signal: ctrl.signal }).finally(() => clearTimeout(t));

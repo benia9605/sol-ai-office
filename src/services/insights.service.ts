@@ -62,19 +62,22 @@ export async function addInsight(insight: Omit<InsightRow, 'id' | 'created_at' |
 }
 
 export async function updateInsight(id: string, fields: Partial<InsightRow>): Promise<void> {
-  const { error } = await supabase
+  // .select()로 실제 반영된 행을 확인 — 권한(RLS) 때문에 0행이면 "성공한 척"하지 않고 에러
+  const { data, error } = await supabase
     .from('insights')
     .update(fields)
-    .eq('id', id);
-
+    .eq('id', id)
+    .select('id');
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error('수정 권한이 없어요 (작성자·관리자만 가능).');
 }
 
 export async function deleteInsight(id: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('insights')
     .delete()
-    .eq('id', id);
-
+    .eq('id', id)
+    .select('id');
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error('삭제 권한이 없어요 (작성자·관리자만 가능).');
 }

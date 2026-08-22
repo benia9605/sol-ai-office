@@ -302,7 +302,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             ? <TaskDetailView workspace={workspace} taskId={detailId} onBack={() => setView('todos')} />
             : <TodosView workspace={workspace} onNavigate={onNavigate} initialScope={todosScope} />)}
           {view === 'schedule' && <ScheduleView workspace={workspace} />}
-          {view === 'meetings' && <MeetingsView workspace={workspace} />}
+          {view === 'meetings' && <MeetingsView workspace={workspace} openId={detailId} />}
           {view === 'insights' && (detailId
             ? <InsightDetailView workspace={workspace} insightId={detailId} onBack={() => setView('insights')} />
             : <InsightsView workspace={workspace} onNavigate={onNavigate} />)}

@@ -111,6 +111,8 @@ function AppShell() {
           <Route path="/summaries" element={<SummariesPage />} />
           <Route path="/content" element={<ContentPage />} />
           <Route path="/project/:projectId" element={<ProjectDetailPage />} />
+          {/* 오피스에서 쓰던 경로(/todos 등)로 들어와도 흰 화면이 안 뜨게 홈으로 폴백 */}
+          <Route path="*" element={<HomePage />} />
         </Route>
       </Routes>
     </BrowserRouter>

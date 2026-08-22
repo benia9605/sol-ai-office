@@ -54,7 +54,8 @@ export async function addRecord(record: Omit<RecordRow, 'id' | 'created_at'>): P
   const userId = await getCurrentUserId();
   const { data, error } = await supabase
     .from('journals')
-    .insert({ ...record, user_id: userId, created_by: userId })
+    // 오피스(워크스페이스) 기록은 팀에 보이도록 is_shared=true (DB 기본값이 false여도 확실히)
+    .insert({ ...record, user_id: userId, created_by: userId, ...(record.workspace_id ? { is_shared: true } : {}) })
     .select()
     .single();
 
@@ -70,19 +71,21 @@ export async function addRecord(record: Omit<RecordRow, 'id' | 'created_at'>): P
 }
 
 export async function updateRecord(id: string, fields: Partial<RecordRow>): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('journals')
     .update(fields)
-    .eq('id', id);
-
+    .eq('id', id)
+    .select('id');
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error('수정 권한이 없어요 (작성자·관리자만 가능).');
 }
 
 export async function deleteRecord(id: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('journals')
     .delete()
-    .eq('id', id);
-
+    .eq('id', id)
+    .select('id');
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error('삭제 권한이 없어요 (작성자·관리자만 가능).');
 }

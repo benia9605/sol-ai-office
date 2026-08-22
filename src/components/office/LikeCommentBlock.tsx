@@ -56,8 +56,10 @@ export function LikeCommentBlock({ resource, resId, members }: {
   const repliesOf = (pid: string) => comments.filter((c) => c.parentId === pid);
   const fmt = (iso: string) => { try { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } catch { return ''; } };
 
-  const Comment = ({ c, isReply }: { c: SocialComment; isReply?: boolean }) => (
-    <div className={`${isReply ? 'ml-6 border-l-2 border-line pl-3' : ''} py-1.5`}>
+  // ⚠️ 컴포넌트(<Comment/>)로 두면 렌더마다 새 타입이 되어 입력 시 서브트리가 리마운트→포커스 유실.
+  //    함수 호출 렌더로 두면 일반 재조정이라 입력 포커스가 유지된다.
+  const renderComment = (c: SocialComment, isReply = false): React.ReactNode => (
+    <div key={c.id} className={`${isReply ? 'ml-6 border-l-2 border-line pl-3' : ''} py-1.5`}>
       <div className="flex items-baseline gap-2">
         <span className="text-[12px] font-semibold text-gray-700">{isReply ? '↳ ' : ''}{nameOf(c.userId)}</span>
         <span className="text-[10px] text-gray-300">{fmt(c.createdAt)}</span>
@@ -78,7 +80,7 @@ export function LikeCommentBlock({ resource, resId, members }: {
             className="text-[11px] px-2 py-1 rounded-lg bg-foreground text-white disabled:opacity-40">등록</button>
         </div>
       )}
-      {repliesOf(c.id).map((r) => <Comment key={r.id} c={r} isReply />)}
+      {repliesOf(c.id).map((r) => renderComment(r, true))}
     </div>
   );
 
@@ -91,7 +93,7 @@ export function LikeCommentBlock({ resource, resId, members }: {
         <span className="text-[11px] text-gray-400">댓글 {comments.length}</span>
       </div>
 
-      {top.length > 0 && <div className="divide-y divide-gray-50">{top.map((c) => <Comment key={c.id} c={c} />)}</div>}
+      {top.length > 0 && <div className="divide-y divide-gray-50">{top.map((c) => renderComment(c))}</div>}
 
       <div className="flex gap-1.5">
         <input value={draft} onChange={(e) => setDraft(e.target.value)}

@@ -967,10 +967,10 @@ export function InsightDetailView({ workspace, insightId, onBack }: { workspace:
     try {
       await updateInsight(insightId, { title: title.trim() || row!.title, source: source || undefined, link: link || undefined, content: serializeDoc(content) });
       await load(); setMode('view');
-    } catch (e) { console.error('[InsightDetailView] 저장 실패:', e); alert('저장에 실패했어요.'); }
+    } catch (e) { console.error('[InsightDetailView] 저장 실패:', e); alert(e instanceof Error ? e.message : '저장에 실패했어요.'); }
     finally { setSaving(false); }
   };
-  const del = async () => { if (!confirm('이 인사이트를 삭제할까요?')) return; await deleteInsight(insightId).catch(() => {}); onBack(); };
+  const del = async () => { if (!confirm('이 인사이트를 삭제할까요?')) return; try { await deleteInsight(insightId); onBack(); } catch (e) { alert(e instanceof Error ? e.message : '삭제에 실패했어요.'); } };
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -1075,10 +1075,10 @@ export function RecordDetailPage({ workspace, recordId, onBack }: { workspace: W
     try {
       await updateRecord(recordId, { title: title.trim() || row!.title, memo_body: body });
       await load(); setMode('view');
-    } catch (e) { console.error('[RecordDetailView] 저장 실패:', e); alert('저장에 실패했어요.'); }
+    } catch (e) { console.error('[RecordDetailView] 저장 실패:', e); alert(e instanceof Error ? e.message : '저장에 실패했어요.'); }
     finally { setSaving(false); }
   };
-  const del = async () => { if (!confirm('이 기록을 삭제할까요?')) return; await deleteRecord(recordId).catch(() => {}); onBack(); };
+  const del = async () => { if (!confirm('이 기록을 삭제할까요?')) return; try { await deleteRecord(recordId); onBack(); } catch (e) { alert(e instanceof Error ? e.message : '삭제에 실패했어요.'); } };
 
   return (
     <div className="max-w-3xl mx-auto">

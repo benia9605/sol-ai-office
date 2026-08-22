@@ -8,12 +8,32 @@ import { useEffect, useRef, useState } from 'react';
 import { Workspace, AppNotification } from '../../types';
 import { fetchNotifications, markRead, markAllRead } from '../../services/notifications.service';
 
-/** 알림 type → 이동할 뷰 */
+/** 알림 type → 이동할 뷰 (자원 id를 모를 때 폴백) */
 function viewOf(type: string): string {
   if (type.startsWith('notify_task') || type === 'notify_mention' || type === 'notify_like' || type === 'notify_comment') return 'todos';
   if (type === 'notify_schedule') return 'schedule';
   if (type === 'notify_content') return 'contents';
   return 'dashboard';
+}
+
+/**
+ * 알림 → 착지 경로. tag에서 자원 종류·id를 파싱해 상세 화면으로 딥링크.
+ * (좋아요/댓글이 무조건 '할일'로 가던 문제 해결)
+ */
+const RES_BASE: Record<string, string> = { task: 'todos', insight: 'insights', record: 'log', meeting: 'meetings' };
+const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+function linkOf(n: { type: string; tag?: string | null }): string {
+  const tag = n.tag || '';
+  // {resource}-comment|like-{resId}-…
+  let m = tag.match(new RegExp(`^(task|insight|record|meeting)-(?:comment|like)-(${UUID})`, 'i'));
+  if (m) return `${RES_BASE[m[1].toLowerCase()]}/${m[2]}`;
+  // insight-{id} / record-{id} / meeting-{id} (생성 알림)
+  m = tag.match(new RegExp(`^(insight|record|meeting)-(${UUID})$`, 'i'));
+  if (m) return `${RES_BASE[m[1].toLowerCase()]}/${m[2]}`;
+  // task-assign-{id}-… / task-{id}-done
+  m = tag.match(new RegExp(`^task-(?:assign-)?(${UUID})`, 'i'));
+  if (m) return `todos/${m[1]}`;
+  return viewOf(n.type);
 }
 function ago(iso: string): string {
   try {
@@ -58,7 +78,7 @@ export function NotificationBell({ workspace, onNavigate }: { workspace: Workspa
   const onItem = async (n: AppNotification) => {
     if (!n.readAt) { await markRead(n.id); setItems((prev) => prev.map((x) => x.id === n.id ? { ...x, readAt: new Date().toISOString() } : x)); }
     setOpen(false);
-    onNavigate(viewOf(n.type));
+    onNavigate(linkOf(n));
   };
   const readAll = async () => { await markAllRead(workspace.id); setItems((prev) => prev.map((x) => ({ ...x, readAt: x.readAt ?? new Date().toISOString() }))); };
 
