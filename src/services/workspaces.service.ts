@@ -137,18 +137,30 @@ export async function updateWorkspace(
   if (error) throw error;
 }
 
-/** 워크스페이스 멤버 목록 (표시용 이름/이메일 조인) */
-export async function fetchMembers(workspaceId: string): Promise<WorkspaceMember[]> {
+// 멤버 목록 캐시 — 화면 전환(list↔detail)마다 재조회하던 것을 줄인다. 멤버는 자주 안 바뀜.
+const _memberCache = new Map<string, { at: number; data: WorkspaceMember[] }>();
+const _MEMBER_TTL = 30000; // 30초
+/** 멤버 캐시 무효화 (멤버 변경 시). ws 없으면 전체 비움. */
+export function invalidateMembers(workspaceId?: string) {
+  if (workspaceId) _memberCache.delete(workspaceId); else _memberCache.clear();
+}
+
+/** 워크스페이스 멤버 목록 (30초 캐시). fresh:true면 캐시 무시. */
+export async function fetchMembers(workspaceId: string, opts?: { fresh?: boolean }): Promise<WorkspaceMember[]> {
+  const cached = _memberCache.get(workspaceId);
+  if (!opts?.fresh && cached && (performance.now() - cached.at) < _MEMBER_TTL) return cached.data;
   const { data, error } = await supabase
     .from('workspace_members')
     .select('*')
     .eq('workspace_id', workspaceId)
     .limit(200);
   if (error) throw error;
-  return (data ?? []).map((m: any) => ({
+  const mapped: WorkspaceMember[] = (data ?? []).map((m: any) => ({
     workspaceId: m.workspace_id, userId: m.user_id, role: m.role,
     nickname: m.nickname, avatarUrl: m.avatar_url ?? undefined, joinedAt: m.joined_at,
   }));
+  _memberCache.set(workspaceId, { at: performance.now(), data: mapped });
+  return mapped;
 }
 
 /** 내 프로필(이름·이미지)을 내 모든 워크스페이스 멤버 행에 동기화 — '나' 저장 시 호출 */
@@ -161,6 +173,7 @@ export async function updateMyMemberProfile(fields: { nickname?: string; avatarU
   if (fields.avatarUrl !== undefined) payload.avatar_url = fields.avatarUrl || null;
   if (Object.keys(payload).length === 0) return;
   await supabase.from('workspace_members').update(payload).eq('user_id', uid);
+  invalidateMembers(); // 이름·이미지 바뀜 → 전 워크스페이스 캐시 갱신
 }
 
 /** 이메일로 초대 (pending) — 가입/수락은 별도(빌드 C) */
@@ -217,6 +230,7 @@ export async function removeMember(workspaceId: string, userId: string): Promise
   const { error } = await supabase.from('workspace_members')
     .delete().eq('workspace_id', workspaceId).eq('user_id', userId);
   if (error) throw error;
+  invalidateMembers(workspaceId);
 }
 
 /** 멤버 역할 변경 (owner ↔ member) */
@@ -224,6 +238,7 @@ export async function changeMemberRole(workspaceId: string, userId: string, role
   const { error } = await supabase.from('workspace_members')
     .update({ role }).eq('workspace_id', workspaceId).eq('user_id', userId);
   if (error) throw error;
+  invalidateMembers(workspaceId);
 }
 
 /** 멤버 닉네임(표시 이름) 변경 — 본인 것(또는 오너가 타인 것) */
@@ -231,4 +246,5 @@ export async function updateMemberNickname(workspaceId: string, userId: string, 
   const { error } = await supabase.from('workspace_members')
     .update({ nickname: nickname.trim() || null }).eq('workspace_id', workspaceId).eq('user_id', userId);
   if (error) throw error;
+  invalidateMembers(workspaceId);
 }
