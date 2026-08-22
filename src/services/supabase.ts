@@ -18,6 +18,12 @@ if (!isConfigured) {
   console.warn('[Supabase] Mock 모드로 실행됩니다. (VITE_SUPABASE_URL 미설정)');
 }
 
+/** 현재 로그인 세션의 액세스 토큰 (AI 프록시 인증 헤더 x-sb-auth 용) */
+export async function sbAccessToken(): Promise<string> {
+  try { const { data } = await supabase.auth.getSession(); return data?.session?.access_token ?? ''; }
+  catch { return ''; }
+}
+
 export const supabase: any = isConfigured
   ? createClient(supabaseUrl, supabaseAnonKey, {
       global: {

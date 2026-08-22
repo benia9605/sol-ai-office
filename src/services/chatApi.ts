@@ -6,9 +6,8 @@
  * - 마키(GPT-4o), 서치(Sonar Pro)
  */
 
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
-const OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-const PERPLEXITY_KEY = import.meta.env.VITE_PERPLEXITY_API_KEY;
+// AI 키는 서버(server.js)가 주입한다. 브라우저는 로그인 토큰(x-sb-auth)만 보낸다.
+import { sbAccessToken } from './supabase';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -60,7 +59,7 @@ async function callAnthropic(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_KEY,
+      'x-sb-auth': await sbAccessToken(),
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
@@ -91,7 +90,7 @@ async function callOpenAI(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_KEY}`,
+      'x-sb-auth': await sbAccessToken(),
     },
     body: JSON.stringify({
       model: config.model,
@@ -122,7 +121,7 @@ async function callPerplexity(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${PERPLEXITY_KEY}`,
+      'x-sb-auth': await sbAccessToken(),
     },
     body: JSON.stringify({
       model: config.model,

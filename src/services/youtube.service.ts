@@ -18,7 +18,8 @@ import { supabase } from './supabase';
 import { getCurrentUserId } from './auth';
 import type { YoutubeReplyStatus, YoutubeCommentReply } from '../types';
 
-const CLAUDE_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
+// AI 키는 서버(server.js)가 주입. 브라우저는 로그인 토큰(x-sb-auth)만 보낸다.
+import { sbAccessToken } from './supabase';
 
 // ── Row 타입 ──
 
@@ -212,7 +213,7 @@ async function callClaude(prompt: string, maxTokens = 1024): Promise<string> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': CLAUDE_API_KEY,
+      'x-sb-auth': await sbAccessToken(),
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
@@ -235,7 +236,7 @@ async function research(query: string): Promise<string> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${import.meta.env.VITE_PERPLEXITY_API_KEY}`,
+      'x-sb-auth': await sbAccessToken(),
     },
     body: JSON.stringify({
       model: 'sonar-pro',

@@ -8,7 +8,8 @@
 
 import { searchBooks } from './aladinApi';
 
-const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
+// AI 키는 서버(server.js)가 주입한다. 브라우저는 로그인 토큰(x-sb-auth)만 보낸다.
+import { sbAccessToken } from './supabase';
 
 /**
  * YES24에서 ISBN으로 검색 → 상품 ID 추출
@@ -83,7 +84,7 @@ async function formatTocWithClaude(rawToc: string, title: string): Promise<strin
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
+      'x-sb-auth': await sbAccessToken(),
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
@@ -174,7 +175,7 @@ export async function generateBookToc(title: string, author: string, isbn?: stri
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
+      'x-sb-auth': await sbAccessToken(),
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({

@@ -4,7 +4,8 @@
  * - /api/openai 프록시 경유(CORS 회피). 응답 b64_json → data URL.
  * - 비용: gpt-image-1 약 $0.04/장(1024) → 코인 40 (1코인=$0.001 기준 근사)
  */
-const OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+// AI 키는 서버(server.js)가 주입. 브라우저는 로그인 토큰(x-sb-auth)만 보낸다.
+import { sbAccessToken } from './supabase';
 
 /** 비율 → gpt-image-1 size */
 export function ratioToSize(ratio?: string): string {
@@ -21,7 +22,7 @@ export function ratioToSize(ratio?: string): string {
 export async function generateImage(prompt: string, size = '1024x1024'): Promise<{ url: string; coins: number }> {
   const res = await fetch('/api/openai/v1/images/generations', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'authorization': `Bearer ${OPENAI_KEY}` },
+    headers: { 'content-type': 'application/json', 'x-sb-auth': await sbAccessToken() },
     body: JSON.stringify({ model: 'gpt-image-1', prompt, size, n: 1 }),
   });
   if (!res.ok) {
