@@ -23,7 +23,7 @@ import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
 import { SchedulesPageModern } from '../../pages/SchedulesPage.modern';
-import { fetchInsights, addInsight, updateInsight, deleteInsight, InsightRow } from '../../services/insights.service';
+import { fetchInsights, fetchInsightById, addInsight, updateInsight, deleteInsight, InsightRow } from '../../services/insights.service';
 import { fetchRecords, addRecord, deleteRecord, updateRecord, RecordRow } from '../../services/records.service';
 import { fetchProducts, addProduct, updateProduct, deleteProduct } from '../../services/products.service';
 import { fetchContentItems, addContentItem, updateContentItem, deleteContentItem } from '../../services/contentItems.service';
@@ -933,6 +933,114 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
   );
 }
 
+/**
+ * 인사이트 상세 — 전체화면 페이지 (팝업 아님). 본문 에디터 + 첨부 + 좋아요/댓글.
+ */
+export function InsightDetailView({ workspace, insightId, onBack }: { workspace: Workspace; insightId: string; onBack: () => void }) {
+  const [row, setRow] = useState<InsightRow | null>(null);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const [saving, setSaving] = useState(false);
+  const [title, setTitle] = useState('');
+  const [source, setSource] = useState('');
+  const [link, setLink] = useState('');
+  const [content, setContent] = useState<Record<string, unknown>>(() => parseDoc(undefined));
+
+  const load = async () => {
+    setLoading(true);
+    const r = await fetchInsightById(insightId).catch(() => null);
+    if (!r) { setNotFound(true); setLoading(false); return; }
+    setRow(r); setTitle(r.title); setSource(r.source || ''); setLink(r.link || '');
+    setContent(parseDoc(r.content)); setLoading(false);
+  };
+  useEffect(() => {
+    load();
+    fetchMembers(workspace.id).then(setMembers).catch(() => {});
+    /* eslint-disable-next-line */
+  }, [insightId]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await updateInsight(insightId, { title: title.trim() || row!.title, source: source || undefined, link: link || undefined, content: serializeDoc(content) });
+      await load(); setMode('view');
+    } catch (e) { console.error('[InsightDetailView] 저장 실패:', e); alert('저장에 실패했어요.'); }
+    finally { setSaving(false); }
+  };
+  const del = async () => { if (!confirm('이 인사이트를 삭제할까요?')) return; await deleteInsight(insightId).catch(() => {}); onBack(); };
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground mb-5 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+        인사이트
+      </button>
+      {loading ? (
+        <p className="text-sm text-foreground-faint py-16 text-center">불러오는 중…</p>
+      ) : notFound || !row ? (
+        <p className="text-sm text-foreground-faint py-16 text-center">인사이트를 찾을 수 없어요. <button onClick={onBack} className="underline">목록으로</button></p>
+      ) : (
+        <div className="space-y-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              {mode === 'edit'
+                ? <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="제목" className="w-full text-2xl font-light text-foreground bg-transparent border-b border-line focus:outline-none focus:border-foreground pb-1" />
+                : <h1 className="text-2xl sm:text-3xl font-light leading-snug text-foreground">{row.title}</h1>}
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {mode === 'view'
+                ? <button onClick={() => setMode('edit')} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-surface hover:opacity-85 transition-all">수정</button>
+                : <>
+                    <button onClick={() => { setMode('view'); load(); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
+                    <button onClick={save} disabled={saving} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-surface hover:opacity-85 transition-all disabled:opacity-50">{saving ? '저장 중…' : '저장'}</button>
+                  </>}
+            </div>
+          </div>
+
+          {mode === 'edit' ? (
+            <div className="grid grid-cols-2 gap-2">
+              <input value={source} onChange={e => setSource(e.target.value)} placeholder="출처 (예: 회의, 대화)" className={monoField} />
+              <input value={link} onChange={e => setLink(e.target.value)} placeholder="링크 (선택)" className={monoField} />
+            </div>
+          ) : (
+            (row.source || row.link) && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-foreground-muted">
+                {row.source && <span><span className="text-foreground-faint">출처</span> {row.source}</span>}
+                {row.link && <a href={row.link} target="_blank" rel="noreferrer" className="text-foreground hover:underline">링크 ↗</a>}
+              </div>
+            )
+          )}
+
+          <div>
+            <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">내용</div>
+            {mode === 'edit' ? (
+              <div className="rounded-xl border border-line overflow-hidden">
+                <TiptapEditor content={content} onChange={setContent} placeholder="인사이트 내용을 작성하세요… (마크다운 붙여넣기 지원)" />
+              </div>
+            ) : docToText(row.content).trim() ? (
+              <RichText value={row.content} />
+            ) : (
+              <p className="text-sm text-foreground-faint">내용이 없어요. <button onClick={() => setMode('edit')} className="underline">추가하기</button></p>
+            )}
+          </div>
+
+          <div className="pt-2 border-t border-line">
+            <AttachmentsSection workspaceId={workspace.id} refType="insight" refId={insightId} />
+          </div>
+          <div className="pt-2 border-t border-line">
+            <LikeCommentBlock resource="insight" resId={insightId} members={members} />
+          </div>
+          <div className="pt-4">
+            <button onClick={del} className="text-xs text-foreground-faint hover:text-rose-500 transition-colors">이 인사이트 삭제</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TodosView({ workspace, onNavigate, initialScope }: { workspace: Workspace; onNavigate?: Nav; initialScope?: 'all' | 'mine' | 'assigned' }) {
   const { add } = useTasks({ autoLoad: false });  // 목록은 fetchWorkspaceTasks로 로드 — 개인 할일 전체 조회 불필요
   const [wsTasks, setWsTasks] = useState<TaskItem[]>([]);
@@ -1190,12 +1298,13 @@ export function ScheduleView({ workspace }: { workspace: Workspace }) {
 }
 
 /* ───────── 인사이트 (실데이터 · 직원 AI 제안 포함) ───────── */
-export function InsightsView({ workspace }: { workspace: Workspace }) {
+export function InsightsView({ workspace, onNavigate }: { workspace: Workspace; onNavigate?: Nav }) {
   const [list, setList] = useState<InsightRow[]>([]);
   const [showForm, setShowForm] = useState(false);
   const blank = () => ({ title: '', content: parseDoc(''), source: '', link: '', tags: '' });
   const [form, setForm] = useState(blank);
   const [selected, setSelected] = useState<InsightRow | null>(null);
+  const openInsight = (i: InsightRow) => onNavigate ? onNavigate('insights/' + i.id) : setSelected(i);
   const load = () => fetchInsights(workspace.id).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
 
@@ -1243,7 +1352,7 @@ export function InsightsView({ workspace }: { workspace: Workspace }) {
           {list.map(i => {
             const preview = docToText(i.content);
             return (
-              <button key={i.id} onClick={() => setSelected(i)}
+              <button key={i.id} onClick={() => openInsight(i)}
                 className="w-full text-left rounded-xl border border-line bg-surface hover:bg-surface-muted p-4 transition-colors active:scale-[0.99]">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-foreground flex-1 truncate">{i.title}</span>

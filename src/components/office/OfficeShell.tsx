@@ -12,7 +12,7 @@ import { useWorkspaceContext } from '../../contexts/WorkspaceContext';
 import { WorkspaceCreateModal } from '../WorkspaceCreateModal';
 import {
   DashboardView, BriefingView, TodosView, ScheduleView,
-  InsightsView, LogView, ActivityView, ActivityFeedView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView, TaskDetailView,
+  InsightsView, LogView, ActivityView, ActivityFeedView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView, TaskDetailView, InsightDetailView,
 } from './views';
 import { StaffView } from './StaffView';
 import { NotificationBell } from './NotificationBell';
@@ -303,7 +303,9 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             : <TodosView workspace={workspace} onNavigate={onNavigate} initialScope={todosScope} />)}
           {view === 'schedule' && <ScheduleView workspace={workspace} />}
           {view === 'meetings' && <MeetingsView workspace={workspace} />}
-          {view === 'insights' && <InsightsView workspace={workspace} />}
+          {view === 'insights' && (detailId
+            ? <InsightDetailView workspace={workspace} insightId={detailId} onBack={() => setView('insights')} />
+            : <InsightsView workspace={workspace} onNavigate={onNavigate} />)}
           {view === 'contents' && <ContentItemsView workspace={workspace} />}
           {view === 'content' && <ContentPage embedded workspaceId={workspace.id} />}
           {view === 'products' && <ProductsView workspace={workspace} />}
