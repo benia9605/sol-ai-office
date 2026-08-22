@@ -242,11 +242,11 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
       </div>
 
       {/* 첨부파일 */}
-      <div className="pt-5 mt-5 border-t border-line">
+      <div className="mt-6">
         <AttachmentsSection workspaceId={workspace.id} refType="meeting" refId={meeting.id} />
       </div>
       {/* 좋아요·댓글 */}
-      <div className="pt-5 mt-5 border-t border-line pb-6">
+      <div className="mt-6 pb-6">
         <LikeCommentBlock resource="meeting" resId={meeting.id} members={members} />
       </div>
     </>

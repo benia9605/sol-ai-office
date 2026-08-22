@@ -91,13 +91,14 @@ export function AttachmentsSection({
   const [busy, setBusy] = useState(false);
   const [viewing, setViewing] = useState<Attachment | null>(null);
 
-  const load = async () => {
-    setLoading(true);
+  // initial=true일 때만 로딩 스피너(=깜빡임). 조용한 재조회는 스피너 없이.
+  const load = async (initial = false) => {
+    if (initial) setLoading(true);
     try { setItems(await listAttachments(refType, refId)); }
-    catch { setItems([]); }
-    finally { setLoading(false); }
+    catch { if (initial) setItems([]); }
+    finally { if (initial) setLoading(false); }
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [refType, refId]);
+  useEffect(() => { load(true); /* eslint-disable-next-line */ }, [refType, refId]);
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -105,8 +106,11 @@ export function AttachmentsSection({
     if (!files.length) return;
     setBusy(true);
     try {
-      for (const f of files) await uploadAttachment(f, workspaceId, refType, refId);
-      await load();
+      // 기존 목록은 그대로 두고, 업로드된 것만 하나씩 뒤에 추가 (전체 재조회로 인한 깜빡임 없음)
+      for (const f of files) {
+        const a = await uploadAttachment(f, workspaceId, refType, refId);
+        setItems(prev => [...prev, a]);
+      }
     } catch (err) {
       alert('업로드 실패: ' + (err instanceof Error ? err.message : String(err)));
     } finally { setBusy(false); }
@@ -114,8 +118,8 @@ export function AttachmentsSection({
 
   const onDelete = async (a: Attachment) => {
     if (!confirm(`"${a.filename}" 을(를) 삭제할까요?`)) return;
-    setItems(list => list.filter(x => x.id !== a.id)); // 낙관적
-    try { await deleteAttachment(a); } catch { load(); }
+    setItems(list => list.filter(x => x.id !== a.id)); // 낙관적 제거
+    try { await deleteAttachment(a); } catch { load(); /* 실패 시 조용히 복구(스피너 없음) */ }
   };
 
   return (
@@ -132,9 +136,7 @@ export function AttachmentsSection({
 
       {loading ? (
         <p className="text-xs text-foreground-faint py-3">불러오는 중…</p>
-      ) : items.length === 0 ? (
-        <p className="text-xs text-foreground-faint py-2">첨부된 파일이 없어요.</p>
-      ) : (
+      ) : items.length === 0 ? null : (
         <ul className="space-y-1">
           {items.map(a => (
             <li key={a.id} className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-line hover:bg-surface-muted transition-colors group">

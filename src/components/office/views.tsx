@@ -914,12 +914,12 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
           </div>
 
           {/* 첨부파일 */}
-          <div className="pt-2 border-t border-line">
+          <div className="pt-4">
             <AttachmentsSection workspaceId={workspace.id} refType="task" refId={taskId} />
           </div>
 
           {/* 좋아요·댓글 */}
-          <div className="pt-2 border-t border-line">
+          <div className="pt-4">
             <LikeCommentBlock resource="task" resId={taskId} members={members} />
           </div>
 
@@ -1026,10 +1026,10 @@ export function InsightDetailView({ workspace, insightId, onBack }: { workspace:
             )}
           </div>
 
-          <div className="pt-2 border-t border-line">
+          <div className="pt-4">
             <AttachmentsSection workspaceId={workspace.id} refType="insight" refId={insightId} />
           </div>
-          <div className="pt-2 border-t border-line">
+          <div className="pt-4">
             <LikeCommentBlock resource="insight" resId={insightId} members={members} />
           </div>
           <div className="pt-4">
@@ -1118,10 +1118,10 @@ export function RecordDetailPage({ workspace, recordId, onBack }: { workspace: W
             )}
           </div>
 
-          <div className="pt-2 border-t border-line">
+          <div className="pt-4">
             <AttachmentsSection workspaceId={workspace.id} refType="record" refId={recordId} />
           </div>
-          <div className="pt-2 border-t border-line">
+          <div className="pt-4">
             <LikeCommentBlock resource="record" resId={recordId} members={members} />
           </div>
           <div className="pt-4">
