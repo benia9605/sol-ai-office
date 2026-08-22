@@ -6,6 +6,7 @@
  * - 본문: 뷰 전환
  */
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Workspace, ActiveWorkspace } from '../../types';
 import { useWorkspaceContext } from '../../contexts/WorkspaceContext';
 import { WorkspaceCreateModal } from '../WorkspaceCreateModal';
@@ -60,6 +61,12 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap(g => g.items);
 const groupOf = (v: ViewId) => NAV_GROUPS.find(g => g.items.some(it => it.id === v))?.id ?? null;
+// URL 첫 세그먼트가 유효한 view인지 판별용 (모르는 경로는 dashboard로 폴백)
+const KNOWN_VIEWS = new Set<ViewId>([
+  'dashboard', 'briefing', 'staff', 'todos', 'schedule', 'meetings', 'insights',
+  'contents', 'content', 'products', 'sales', 'memory', 'log', 'activity',
+  'teamlog', 'members', 'company', 'me',
+]);
 
 /** 코인 사용 내역(요금) 모달 */
 /** 코인 SVG 아이콘 (동전) */
@@ -112,7 +119,15 @@ function UsageModal({ workspace, credits, onClose }: { workspace: Workspace; cre
 }
 
 export function OfficeShell({ workspace }: { workspace: Workspace }) {
-  const [view, setView] = useState<ViewId>('dashboard');
+  // ── URL ↔ view 동기화 (가이드 00 원칙 1: 팝업이 아니라 페이지) ──
+  // 경로 첫 세그먼트 = view (예: /todos), 둘째 = 상세 id (예: /todos/abc, Phase 2+에서 사용).
+  const navigate = useNavigate();
+  const location = useLocation();
+  const seg = location.pathname.split('/').filter(Boolean);
+  const rawView = (seg[0] || 'dashboard') as ViewId;
+  const view: ViewId = KNOWN_VIEWS.has(rawView) ? rawView : 'dashboard';
+  const setView = (v: ViewId) => navigate('/' + (v === 'dashboard' ? '' : v));
+
   const [todosScope, setTodosScope] = useState<'all' | 'mine' | 'assigned'>('all'); // 할일 딥링크용 탭
   const [staffKey, setStaffKey] = useState(0); // 🤖 직원 아이콘 누를 때마다 목록(홈)으로 리셋
   const [openGroup, setOpenGroup] = useState<string | null>(null); // 상단바 메가메뉴
@@ -161,7 +176,10 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
     return () => { document.removeEventListener('pointerdown', onPointer); document.removeEventListener('keydown', onKey); };
   }, [openGroup]);
 
-  const pick = (id: ActiveWorkspace) => { setActiveWorkspace(id); setMenuOpen(false); setMoreOpen(false); };
+  // 라우트가 바뀌면 열린 메뉴(메가메뉴·더보기·워크스페이스)를 닫는다 (뒤로가기 포함)
+  useEffect(() => { setOpenGroup(null); setMoreOpen(false); setMenuOpen(false); }, [location.pathname]);
+
+  const pick = (id: ActiveWorkspace) => { navigate('/'); setActiveWorkspace(id); setMenuOpen(false); setMoreOpen(false); };
 
   const Row = ({ ws }: { ws: Workspace }) => (
     <button onClick={() => pick(ws.id)}

@@ -5,7 +5,7 @@
  * - 미인증: LoginPage / 인증: BrowserRouter 라우팅
  */
 import { useEffect, useRef } from 'react';
-import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { updateLastAccess, hasActiveSubscription, subscribePush } from './services/pushNotification.service';
 import { WorkspaceProvider, useWorkspaceContext } from './contexts/WorkspaceContext';
@@ -87,13 +87,13 @@ function AppShell() {
   }
 
   if (activeWorkspace?.type === 'office') {
-    // 오피스 셸은 URL 라우팅을 쓰지 않지만, 내부 공용 컴포넌트(예: ItemDetailPopup)가
-    // useNavigate()를 호출하므로 라우터 컨텍스트가 필요하다. 브라우저 주소를 건드리지 않도록
-    // MemoryRouter로 감싼다(없으면 일정/할일 상세 클릭 시 useNavigate가 throw → 흰 화면).
+    // 오피스 셸도 실제 URL을 쓴다 (가이드 00 원칙 1 — 팝업이 아니라 페이지).
+    // OfficeShell 내부에서 useLocation/useNavigate로 view·상세를 URL과 동기화한다.
+    // 서버(server.js)가 SPA fallback을 처리하므로 새로고침·딥링크도 유지된다.
     return (
-      <MemoryRouter>
+      <BrowserRouter>
         <OfficeShell workspace={activeWorkspace} />
-      </MemoryRouter>
+      </BrowserRouter>
     );
   }
 
