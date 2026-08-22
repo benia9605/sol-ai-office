@@ -88,11 +88,13 @@ const mockData: Record<string, any[]> = {
   // 트렌드 레이더 워치리스트
   watch_items: [],
   watch_snapshots: [],
-  // 소셜 — 좋아요/댓글 (Phase 2)
+  // 소셜 — 좋아요/댓글 (Phase 2 / polymorphic 044)
   task_likes: [],
   task_comments: [],
   content_likes: [],
   content_comments: [],
+  social_likes: [],
+  social_comments: [],
   // 인앱 알림센터
   notifications: [],
   // 첨부파일 (polymorphic) — 마이그 045
