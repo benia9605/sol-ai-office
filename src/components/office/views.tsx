@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Workspace, WorkspaceMember, TaskItem, DailyReport, RecordItem, Product, ContentItem, ContentType, ContentStatus, ContentMetric, ContentCheckpoint, SalesDaily, CompanyMemory, MemoryKind } from '../../types';
 import { useTasks } from '../../hooks/useTasks';
-import { fetchMembers, removeMember, changeMemberRole, updateMemberNickname, updateWorkspace } from '../../services/workspaces.service';
+import { fetchMembers, removeMember, changeMemberRole, updateWorkspace } from '../../services/workspaces.service';
 import { generateBriefing, fetchLatestBriefing, BriefingJson, BriefStatus, Severity } from '../../services/officeBriefing.service';
 import { notify, getActorName } from '../../services/notify.service';
 import { fetchWorkspaceTasks, fetchTaskById, updateTaskStatus, updateTaskFields, deleteTask, toDbStatus, fromDbStatus, TaskRow } from '../../services/tasks.service';
@@ -39,6 +39,7 @@ import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
 import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, fieldCls as monoField } from './ui';
 import { RichText, docToText, parseDoc, serializeDoc } from './RichText';
+import { Avatar, MemberSelect } from './Avatar';
 
 /** TaskRow(DB) → TaskItem(프론트). 워크스페이스 팀 화면에서 남이 만든 할일도 다루기 위해 로컬 매핑. */
 function rowToTaskItem(r: TaskRow): TaskItem {
@@ -207,25 +208,24 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
   const man = (n: number) => `${Math.round(n / 10000).toLocaleString()}만원`;
 
   return (
-    <div className="rounded-xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-700">🧭 CEO 브리핑</span>
-          {brief && <span className="text-[11px] text-gray-400">{brief.briefing_date} · 운영매니저</span>}
+    <div className="rounded-2xl border border-line bg-surface overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-line">
+        <div className="flex items-baseline gap-2 min-w-0">
+          <span className="text-sm font-bold text-foreground">CEO 브리핑</span>
+          {brief && <span className="text-[11px] text-foreground-faint truncate">{brief.briefing_date} · 운영매니저</span>}
         </div>
         <button onClick={generate} disabled={gen}
-          className="text-[11px] px-3 py-1.5 rounded-lg bg-foreground text-white font-medium hover:opacity-85 disabled:opacity-50 transition-all active:scale-95">
-          {gen ? '생성 중…' : brief ? '↻ 새로고침' : '브리핑 생성'}
+          className="text-[11px] px-3 py-1.5 rounded-lg bg-foreground text-surface font-medium hover:opacity-85 disabled:opacity-50 transition-all active:scale-95 flex-shrink-0">
+          {gen ? '생성 중…' : brief ? '새로고침' : '브리핑 생성'}
         </button>
       </div>
 
       {loading ? (
-        <p className="text-xs text-gray-300 py-8 text-center">불러오는 중…</p>
+        <p className="text-xs text-foreground-faint py-8 text-center">불러오는 중…</p>
       ) : !brief ? (
-        <div className="py-10 text-center px-5">
-          <div className="text-3xl mb-2">🧭</div>
-          <p className="text-sm text-gray-500 font-medium">아직 브리핑이 없어요</p>
-          <p className="text-[11px] text-gray-400 mt-1">‘브리핑 생성’을 누르면 운영매니저가 오늘 볼 것을 정리해요.</p>
+        <div className="py-12 text-center px-5">
+          <p className="text-sm text-foreground-muted font-medium">아직 브리핑이 없어요</p>
+          <p className="text-[11px] text-foreground-faint mt-1">‘브리핑 생성’을 누르면 운영매니저가 오늘 볼 것을 정리해요.</p>
         </div>
       ) : (
         <div className="p-5 space-y-4">
@@ -240,19 +240,19 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
           {/* ② 대표가 볼 것 TOP3 */}
           {brief.top3.length > 0 && (
             <div>
-              <div className="text-[11px] font-semibold text-gray-400 mb-2">대표가 볼 것 {brief.top3.length}</div>
+              <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">대표가 볼 것 {brief.top3.length}</div>
               <div className="space-y-2">
                 {brief.top3.map(t => (
-                  <div key={t.rank} className={`border-l-[3px] ${SEV_UI[t.severity]} bg-gray-50 rounded-r-lg px-3 py-2`}>
+                  <div key={t.rank} className={`border-l-[3px] ${SEV_UI[t.severity]} bg-surface-muted rounded-r-lg px-3 py-2`}>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-gray-400">{t.rank}</span>
-                      <span className="text-sm font-semibold text-gray-800 flex-1">{t.title}</span>
+                      <span className="text-[10px] font-bold text-foreground-faint">{t.rank}</span>
+                      <span className="text-sm font-semibold text-foreground flex-1">{t.title}</span>
                       {t.recommended_action && (
                         <button onClick={() => onNavigate(t.type === 'content' ? 'contents' : t.type === 'schedule' ? 'schedule' : (t.type === 'decision' || t.type === 'cs') ? 'staff' : 'todos')}
-                          className="text-[11px] px-2 py-0.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:border-line flex-shrink-0">{t.recommended_action.label}</button>
+                          className="text-[11px] px-2 py-0.5 rounded-lg bg-surface border border-line text-foreground-muted hover:border-foreground flex-shrink-0">{t.recommended_action.label}</button>
                       )}
                     </div>
-                    <p className="text-[12px] text-gray-500 mt-0.5">{t.summary}</p>
+                    <p className="text-[12px] text-foreground-muted mt-0.5">{t.summary}</p>
                   </div>
                 ))}
               </div>
@@ -261,10 +261,10 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
 
           {/* ③ 매출 / 콘텐츠 한 줄 */}
           <div className="grid sm:grid-cols-2 gap-2">
-            <div className="rounded-lg bg-gray-50 px-3.5 py-3">
+            <div className="rounded-lg bg-surface-muted px-3.5 py-3">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`w-2 h-2 rounded-full ${STATUS_UI[brief.sales.status].dot}`} />
-                <span className="text-[11px] font-semibold text-gray-500">💰 매출</span>
+                <span className="text-[11px] font-semibold text-gray-500">매출</span>
                 {brief.sales.month_target != null
                   ? <span className="ml-auto text-[10px] text-gray-400">목표 {man(brief.sales.month_target)}</span>
                   : (!editTarget && <button onClick={() => { setEditTarget(true); setTargetInput(target ? String(Math.round(target / 10000)) : ''); }} className="ml-auto text-[10px] text-foreground hover:underline">월 목표 설정</button>)}
@@ -281,10 +281,10 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
                 <p className="text-[12px] text-gray-600 leading-relaxed">{brief.sales.one_line}</p>
               )}
             </div>
-            <div className="rounded-lg bg-gray-50 px-3.5 py-3">
+            <div className="rounded-lg bg-surface-muted px-3.5 py-3">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`w-2 h-2 rounded-full ${STATUS_UI[brief.content.status].dot}`} />
-                <span className="text-[11px] font-semibold text-gray-500">🎬 콘텐츠</span>
+                <span className="text-[11px] font-semibold text-gray-500">콘텐츠</span>
               </div>
               <p className="text-[12px] text-gray-600 leading-relaxed">{brief.content.one_line}</p>
             </div>
@@ -641,7 +641,7 @@ function TaskCol({ title, items, onOpen, onCycle, memberName, onMeeting, danger,
                 <span className={`text-sm flex-1 truncate ${done ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{t.title}</span>
                 {t.category && t.category !== '🤖 AI' && <span className="hidden sm:inline text-[11px] text-foreground-faint shrink-0">{t.category}</span>}
                 {isAiTask(t) && <span className="text-[11px] text-foreground-faint shrink-0">AI</span>}
-                {t.assigneeId && <span className="text-xs text-foreground-muted shrink-0 truncate max-w-[6rem]">{memberName(t.assigneeId)}</span>}
+                {t.assigneeId && <span className="flex items-center gap-1 shrink-0"><Avatar name={memberName(t.assigneeId)} size="xs" /><span className="text-xs text-foreground-muted truncate max-w-[5rem]">{memberName(t.assigneeId)}</span></span>}
                 {t.date && <span className={`text-xs shrink-0 tabular-nums ${danger ? 'text-rose-500' : 'text-foreground-faint'}`}>{t.date.slice(5)}</span>}
               </button>
               {t.meetingId && onMeeting && (
@@ -884,9 +884,7 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
                 </select>
               </div>
               {members.length > 1 && (
-                <select value={assigneeId} onChange={e => setAssigneeId(e.target.value)} className={fieldCls}>
-                  <option value="">담당자 없음</option>{members.map(m => <option key={m.userId} value={m.userId}>{memberName(m.userId)}</option>)}
-                </select>
+                <MemberSelect value={assigneeId} members={members} onChange={setAssigneeId} memberName={memberName} />
               )}
               {meetings.length > 0 && (
                 <select value={meetingId} onChange={e => setMeetingId(e.target.value)} className={fieldCls}>
@@ -1282,10 +1280,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
           <div className="grid grid-cols-2 gap-2">
             <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className={fieldCls} />
             {members.length > 1 && (
-              <select value={form.assigneeId} onChange={e => setForm({ ...form, assigneeId: e.target.value })} className={fieldCls}>
-                <option value="">담당자 없음</option>
-                {members.map(m => <option key={m.userId} value={m.userId}>{memberName(m.userId)}</option>)}
-              </select>
+              <MemberSelect value={form.assigneeId} members={members} onChange={v => setForm({ ...form, assigneeId: v })} memberName={memberName} />
             )}
           </div>
           <div className="flex gap-2 justify-end">
@@ -1892,7 +1887,7 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
       {selected && (
         <ContentEditPopup
           item={selected} products={products} workspaceId={workspace.id} members={members}
-          onSave={async (fields) => { try { const wasPublished = selected.status === 'published'; const title = fields.title || selected.title; await updateContentItem(selected.id, fields); setSelected(null); load(); if (fields.status === 'published' && !wasPublished) { const actor = await getCurrentUserId().catch(() => null); const name = await getActorName(workspace.id, actor); notify({ type: 'notify_content', workspaceId: workspace.id, actorId: actor, title: '🎬 콘텐츠 발행', body: `${name} 님이 「${title}」을 발행했어요.`, tag: `content-${selected.id}` }); } } catch (e) { console.error('[Content] 수정 실패:', e); alert('콘텐츠 수정에 실패했어요. 잠시 후 다시 시도해 주세요.'); } }}
+          onSave={async (fields) => { try { const wasPublished = selected.status === 'published'; const title = fields.title || selected.title; await updateContentItem(selected.id, fields); setSelected(null); load(); if (fields.status === 'published' && !wasPublished) { const actor = await getCurrentUserId().catch(() => null); const name = await getActorName(workspace.id, actor); notify({ type: 'notify_content', workspaceId: workspace.id, actorId: actor, title: '콘텐츠 발행', body: `${name} 님이 「${title}」을 발행했어요.`, tag: `content-${selected.id}` }); } } catch (e) { console.error('[Content] 수정 실패:', e); alert('콘텐츠 수정에 실패했어요. 잠시 후 다시 시도해 주세요.'); } }}
           onDelete={async () => { try { await deleteContentItem(selected.id); setSelected(null); load(); } catch (e) { console.error('[Content] 삭제 실패:', e); alert('콘텐츠 삭제에 실패했어요.'); } }}
           onClose={() => setSelected(null)}
         />
@@ -2457,7 +2452,7 @@ export function ActivityList({ items, members, onNavigate }: { items: ActivityIt
         const link = onNavigate ? activityLink(a) : undefined;
         const Row = (
           <>
-            <span className="text-base flex-shrink-0">{meta?.emoji ?? '•'}</span>
+            <Avatar name={actorName(a.actorId)} size="sm" />
             <span className="text-sm text-foreground-muted flex-1 min-w-0 truncate">
               <b className="text-foreground">{actorName(a.actorId)}</b> 님이 {meta ? meta.verb(title) : a.action}
             </span>
@@ -2513,9 +2508,6 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
   const [myId, setMyId] = useState('');
   const [copied, setCopied] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [nickVal, setNickVal] = useState('');
-  const [savingNick, setSavingNick] = useState(false);
   const load = () => fetchMembers(workspace.id).then(m => { setMembers(m); setLoaded(true); }).catch(() => { setMembers([]); setLoaded(true); });
   useEffect(() => {
     load();
@@ -2542,14 +2534,6 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
   const toggleRole = async (m: WorkspaceMember) => {
     await changeMemberRole(workspace.id, m.userId, m.role === 'owner' ? 'member' : 'owner').catch(() => {}); load();
   };
-  const startEdit = (m: WorkspaceMember) => { setEditingId(m.userId); setNickVal(m.nickname || ''); };
-  const saveNick = async (uid: string) => {
-    if (savingNick) return;
-    setSavingNick(true);
-    try { await updateMemberNickname(workspace.id, uid, nickVal); setEditingId(null); await load(); }
-    catch (e) { console.error('[MembersView] 닉네임 저장 실패:', e); alert('닉네임 저장에 실패했어요.'); }
-    finally { setSavingNick(false); }
-  };
 
   return (
     <Section title="멤버" desc={`${members.length}명 · 초대코드로 팀원을 초대하고 담당 할일을 관리해요`}>
@@ -2567,45 +2551,20 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
       )}
       {/* 팀 진행률 보드 — 담당자별 + 미지정 */}
       <TeamProgressBoard tasks={wsTasks} members={members} memberLabel={memberLabel} onOpen={setDetailMember} />
+      <p className="text-[11px] text-foreground-faint">이름·프로필 이미지는 <b className="text-foreground-muted">[나]</b> 메뉴에서 바꿔요.</p>
       <div className="rounded-xl border border-line divide-y divide-line overflow-hidden">
         {members.map(m => {
-          const canEditNick = m.userId === myId || iAmOwner;
-          const editing = editingId === m.userId;
           return (
           <div key={m.userId} className="flex items-center gap-2.5 px-3 py-3 hover:bg-surface-muted transition-colors">
-            <span className="w-9 h-9 rounded-full bg-foreground text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
-              {(m.nickname || m.userId).slice(0, 1).toUpperCase()}
+            <Avatar name={m.nickname || m.name || m.userId} size="md" />
+            <span className="text-sm font-medium text-foreground flex-1 min-w-0 truncate">
+              {m.nickname || m.name || <span className="text-foreground-faint italic">이름 없음</span>}{m.userId === myId && ' (나)'}
             </span>
-            {editing ? (
-              <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                <input autoFocus value={nickVal} onChange={e => setNickVal(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') saveNick(m.userId); if (e.key === 'Escape') setEditingId(null); }}
-                  placeholder="표시할 닉네임" maxLength={20}
-                  className="flex-1 min-w-0 px-2.5 py-1 rounded-lg border border-line text-sm focus:outline-none focus:border-foreground" />
-                <button onClick={() => saveNick(m.userId)} disabled={savingNick} className="text-[11px] px-2 py-1 rounded-lg bg-foreground text-white font-medium disabled:opacity-50 flex-shrink-0">저장</button>
-                <button onClick={() => setEditingId(null)} className="text-[11px] px-1.5 py-1 rounded-lg text-gray-400 hover:bg-gray-100 flex-shrink-0">취소</button>
-              </div>
-            ) : (
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground-muted flex-shrink-0">{m.role === 'owner' ? '오너' : '멤버'}</span>
+            <button onClick={() => setDetailMember(m)} className="text-[11px] text-foreground-faint hover:text-foreground flex-shrink-0">담당 할일 ›</button>
+            {iAmOwner && m.userId !== myId && (
               <>
-                <span className="text-sm font-medium text-gray-700 flex-1 min-w-0 truncate">
-                  {m.nickname || <span className="text-gray-400 italic">닉네임 없음</span>}{m.userId === myId && ' (나)'}
-                </span>
-                {canEditNick && (
-                  <button onClick={() => startEdit(m)} aria-label="닉네임 수정" title="닉네임 수정" className="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-foreground hover:bg-surface-muted transition-colors flex-shrink-0">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                    </svg>
-                  </button>
-                )}
-              </>
-            )}
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{m.role === 'owner' ? '오너' : '멤버'}</span>
-            {!editing && (
-              <button onClick={() => setDetailMember(m)} className="text-[11px] text-gray-400 hover:text-foreground flex-shrink-0">담당 할일 ›</button>
-            )}
-            {iAmOwner && m.userId !== myId && !editing && (
-              <>
-                <button onClick={() => toggleRole(m)} className="text-[11px] text-gray-400 hover:text-foreground flex-shrink-0">{m.role === 'owner' ? '멤버로' : '오너로'}</button>
+                <button onClick={() => toggleRole(m)} className="text-[11px] text-foreground-faint hover:text-foreground flex-shrink-0">{m.role === 'owner' ? '멤버로' : '오너로'}</button>
                 <button onClick={() => kick(m.userId)} className="text-[11px] text-rose-400 hover:text-rose-600 flex-shrink-0">내보내기</button>
               </>
             )}

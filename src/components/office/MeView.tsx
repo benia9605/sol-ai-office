@@ -4,15 +4,17 @@
  * - ① 내 프로필(이름·소개·대화 스타일) ② 알림 설정 ③ 내 할일(나에게 배정된 것)
  * - 프로필은 user_profiles(useUserProfile), 할일은 workspace_tasks(assignee 필터).
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Workspace, WorkspaceMember, ActivityItem } from '../../types';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchWorkspaceTasks, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
 import { fetchActivities } from '../../services/activities.service';
-import { fetchMembers } from '../../services/workspaces.service';
+import { fetchMembers, updateMemberNickname } from '../../services/workspaces.service';
+import { uploadImage } from '../../services/storage.service';
 import { ViewHead, Section, SaveButton, EmptyState, fieldCls } from './ui';
 import { ActivityList } from './views';
+import { Avatar } from './Avatar';
 import { NotificationSettings } from '../NotificationSettings';
 import { dueLabel, daysUntil } from '../../utils/dateCalc';
 
@@ -49,15 +51,18 @@ function ChipGroup({ value, options, onChange }: { value: string; options: { v: 
   );
 }
 
-function ProfileCard() {
+function ProfileCard({ workspace }: { workspace: Workspace }) {
   const { profile, loading, save } = useUserProfile();
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [tone, setTone] = useState('polite');
   const [length, setLength] = useState('short');
   const [emoji, setEmoji] = useState('moderate');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -66,12 +71,25 @@ function ProfileCard() {
     setTone(profile.tone);
     setLength(profile.responseLength);
     setEmoji(profile.emojiUsage);
+    setAvatarUrl(profile.avatarUrl);
   }, [loading, profile]);
+
+  const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    try { const url = await uploadImage(file, 'workspaces'); setAvatarUrl(url); setSaved(false); }
+    catch (err) { alert('이미지 업로드 실패: ' + (err instanceof Error ? err.message : String(err))); }
+    finally { setUploading(false); }
+  };
 
   const onSave = async () => {
     if (!name.trim() || busy) return;
     setBusy(true);
-    const ok = await save({ name: name.trim(), bio, tone, responseLength: length, emojiUsage: emoji });
+    const ok = await save({ name: name.trim(), bio, tone, responseLength: length, emojiUsage: emoji, avatarUrl });
+    // 오피스 표시 이름(닉네임)도 프로필 이름으로 맞춘다
+    const myId = await getCurrentUserId().catch(() => null);
+    if (ok && myId) await updateMemberNickname(workspace.id, myId, name.trim()).catch(() => {});
     setBusy(false);
     if (ok) { setSaved(true); setTimeout(() => setSaved(false), 2500); }
     else alert('저장에 실패했어요. 잠시 후 다시 시도해주세요.');
@@ -80,13 +98,24 @@ function ProfileCard() {
   return (
     <Section
       title="내 프로필"
-      desc="AI 직원들이 나를 이해하는 데 쓰는 정보예요"
+      desc="AI 직원들이 나를 이해하는 데 쓰는 정보예요 · 여기 이름·이미지가 오피스 전체에 보여요"
       footer={loading ? undefined : <SaveButton onClick={onSave} busy={busy} saved={saved} label="프로필 저장" />}
     >
       {loading ? (
         <p className="text-xs text-foreground-faint py-6 text-center">불러오는 중…</p>
       ) : (
         <>
+          {/* 프로필 이미지 */}
+          <div className="flex items-center gap-4">
+            <button type="button" onClick={() => fileRef.current?.click()} className="shrink-0 active:scale-95 transition-transform" title="이미지 변경">
+              <Avatar name={name} url={avatarUrl || undefined} size="lg" />
+            </button>
+            <div className="flex items-center gap-2 text-xs">
+              <button type="button" onClick={() => fileRef.current?.click()} className="text-foreground-muted hover:text-foreground">{uploading ? '올리는 중…' : (avatarUrl ? '이미지 변경' : '이미지 추가')}</button>
+              {avatarUrl && <button type="button" onClick={() => { setAvatarUrl(''); setSaved(false); }} className="text-foreground-faint hover:text-rose-500">제거</button>}
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" onChange={onPickImage} className="hidden" />
+          </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1.5">이름</label>
             <input value={name} onChange={e => { setName(e.target.value); setSaved(false); }}
@@ -219,7 +248,7 @@ export function MeView({ workspace, onNavigate }: { workspace: Workspace; onNavi
     <>
       <ViewHead title="나" sub="내 프로필과 나에게 배정된 할일을 확인해요" />
       <div className="space-y-6">
-        <ProfileCard />
+        <ProfileCard workspace={workspace} />
         <MyTasksCard workspace={workspace} onNavigate={onNavigate} />
         <MyActivityCard workspace={workspace} onNavigate={onNavigate} />
         {uid && (

@@ -15,6 +15,7 @@ import { recordActivity } from '../../services/activities.service';
 import { ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard } from './ui';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
 import { RichText, parseDoc, serializeDoc, docToText } from './RichText';
+import { Avatar, MemberSelect } from './Avatar';
 import { LikeCommentBlock } from './LikeCommentBlock';
 import { AttachmentsSection } from './AttachmentsSection';
 import { getTodayStr } from '../../utils/dateCalc';
@@ -245,7 +246,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
                     {a.status === 'completed' && <span className="text-[11px] leading-none">✓</span>}
                   </button>
                   <span className={`text-sm flex-1 truncate ${a.status === 'completed' ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{a.title}</span>
-                  {a.assigneeId && <span className="text-xs text-foreground-muted shrink-0">{memberName(a.assigneeId)}</span>}
+                  {a.assigneeId && <span className="flex items-center gap-1.5 shrink-0"><Avatar name={memberName(a.assigneeId)} size="xs" /><span className="text-xs text-foreground-muted">{memberName(a.assigneeId)}</span></span>}
                   {a.due && <span className="text-xs text-foreground-faint shrink-0 tabular-nums">{a.due.slice(5)}</span>}
                 </li>
               ) : null)}
@@ -266,10 +267,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
                 <button onClick={() => removeAction(i)} className="text-[13px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 flex-shrink-0">×</button>
               </div>
               <div className="flex gap-2 pl-6">
-                <select value={a.assigneeId} onChange={e => updateAction(i, { assigneeId: e.target.value })} className={`${miniCls} flex-1`}>
-                  <option value="">👤 담당자</option>
-                  {members.map(m => <option key={m.userId} value={m.userId}>{memberName(m.userId)}</option>)}
-                </select>
+                <MemberSelect value={a.assigneeId} members={members} onChange={v => updateAction(i, { assigneeId: v })} memberName={memberName} placeholder="담당자" className="flex-1" />
                 <input type="date" value={a.due} onChange={e => updateAction(i, { due: e.target.value })} className={`${miniCls} flex-1`} />
               </div>
             </div>

@@ -17,6 +17,7 @@ export interface UserProfile {
   responseLength: string;
   emojiUsage: string;
   activeTheme: Theme;
+  avatarUrl: string;
 }
 
 function toProfile(row: UserProfileRow): UserProfile {
@@ -28,6 +29,7 @@ function toProfile(row: UserProfileRow): UserProfile {
     responseLength: row.response_length || 'short',
     emojiUsage: row.emoji_usage || 'moderate',
     activeTheme: (row.active_theme as Theme) || 'modern',
+    avatarUrl: row.avatar_url || '',
   };
 }
 
@@ -39,6 +41,7 @@ const defaultProfile: UserProfile = {
   responseLength: 'short',
   emojiUsage: 'moderate',
   activeTheme: 'modern',
+  avatarUrl: '',
 };
 
 /** 모든 useUserProfile 인스턴스 간 동기화를 위한 이벤트 */
@@ -79,6 +82,7 @@ export function useUserProfile() {
         tone: data.tone,
         response_length: data.responseLength,
         emoji_usage: data.emojiUsage,
+        avatar_url: data.avatarUrl || null,
       });
       setProfile(toProfile(row));
       notifyAll();
