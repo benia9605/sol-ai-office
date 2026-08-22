@@ -98,6 +98,17 @@ export async function fetchWorkspaceTasks(workspaceId: string): Promise<TaskRow[
   return data ?? [];
 }
 
+/** 특정 회의에 연결된 할일만 조회 (전체 할일 스캔 방지) */
+export async function fetchTasksByMeeting(meetingId: string): Promise<TaskRow[]> {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('meeting_id', meetingId)
+    .limit(200);
+  if (error) throw error;
+  return data ?? [];
+}
+
 /** 단일 할일 조회 (상세 페이지용). 없으면 null. */
 export async function fetchTaskById(id: string): Promise<TaskRow | null> {
   const { data, error } = await supabase

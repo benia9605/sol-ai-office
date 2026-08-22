@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Workspace, WorkspaceMember, Meeting, TaskStatus } from '../../types';
 import { fetchMeetings, addMeeting, updateMeeting, deleteMeeting, notifyMeetingNote, syncMeetingTasks, MeetingTaskDraft } from '../../services/meetings.service';
 import { fetchMembers } from '../../services/workspaces.service';
-import { fetchTasks, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
+import { fetchTasks, fetchTasksByMeeting, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
 import { recordActivity } from '../../services/activities.service';
 import { ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard } from './ui';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
@@ -133,9 +133,8 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
 
   // 이 회의의 할일을 불러와 편집 줄로 시딩
   const loadItems = async () => {
-    const rows = await fetchTasks().catch(() => []);
+    const rows = await fetchTasksByMeeting(meeting.id).catch(() => []);
     const seeded = rows
-      .filter(r => r.meeting_id === meeting.id)
       .map<ActionDraft>(r => ({ id: r.id, title: r.title, assigneeId: r.assignee_id ?? '', due: r.due_date ?? '', status: fromDbStatus(r.status) }));
     setActions(seeded.length ? seeded : [emptyAction()]);
   };
