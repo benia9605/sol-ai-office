@@ -1423,21 +1423,22 @@ export function InsightsView({ workspace, onNavigate }: { workspace: Workspace; 
       {list.length === 0 ? (
         <EmptyState emoji="💡" title="아직 인사이트가 없어요" sub="직접 추가하거나, AI 직원이 트렌드·소구점을 자동 도출해요" />
       ) : (
-        <div className="space-y-2">
+        <ul className="divide-y divide-line border-t border-line">
           {list.map(i => {
             const preview = docToText(i.content);
             return (
-              <button key={i.id} onClick={() => openInsight(i)}
-                className="w-full text-left rounded-xl border border-line bg-surface hover:bg-surface-muted p-4 transition-colors active:scale-[0.99]">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-foreground flex-1 truncate">{i.title}</span>
-                  {i.tags?.includes('🤖 AI') && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground-muted flex-shrink-0">🤖 {i.source}</span>}
-                </div>
-                {preview && preview !== i.title && <p className="text-xs text-foreground-muted mt-1 line-clamp-2">{preview}</p>}
-              </button>
+              <li key={i.id}>
+                <button onClick={() => openInsight(i)} className="w-full text-left py-4 -mx-2 px-2 hover:bg-surface-muted transition-colors block">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-medium text-foreground flex-1 truncate">{i.title}</span>
+                    {i.tags?.includes('🤖 AI') && <span className="text-[11px] text-foreground-faint flex-shrink-0">AI {i.source}</span>}
+                  </div>
+                  {preview && preview !== i.title && <p className="text-xs text-foreground-muted mt-1 line-clamp-2">{preview}</p>}
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
 
       {selected && (
@@ -1564,17 +1565,23 @@ export function LogView({ workspace, onNavigate }: { workspace: Workspace; onNav
       {memos.length === 0 ? (
         <EmptyState emoji="📝" title="메모가 없어요" sub="＋ 메모로 자유롭게 기록하세요" />
       ) : (
-        <div className="space-y-2">
-          {memos.map(m => (
-            <Card key={m.id} className="group p-4 flex items-center gap-2">
-              <button onClick={() => onNavigate ? onNavigate('log/' + m.id) : setSelected(m)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
-                <span className="text-sm font-medium text-gray-700 flex-1 truncate">📝 {m.title}</span>
-                <span className="text-[11px] text-gray-400 flex-shrink-0">{m.date}</span>
-              </button>
-              <button onClick={() => del(m.id)} className="text-[11px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">삭제</button>
-            </Card>
-          ))}
-        </div>
+        <ul className="divide-y divide-line border-t border-line">
+          {memos.map(m => {
+            const preview = docToText(m.memo_body);
+            return (
+              <li key={m.id} className="group flex items-start gap-2">
+                <button onClick={() => onNavigate ? onNavigate('log/' + m.id) : setSelected(m)} className="flex-1 min-w-0 text-left py-4 -ml-2 pl-2">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-medium text-foreground flex-1 truncate">{m.title}</span>
+                    <span className="text-xs text-foreground-faint flex-shrink-0 tabular-nums">{m.date}</span>
+                  </div>
+                  {preview && preview !== m.title && <p className="text-xs text-foreground-muted mt-1 line-clamp-2">{preview}</p>}
+                </button>
+                <button onClick={() => del(m.id)} className="text-[11px] text-foreground-faint hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0 py-4">삭제</button>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       {selected && (
