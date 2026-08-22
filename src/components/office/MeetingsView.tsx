@@ -8,13 +8,13 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Workspace, WorkspaceMember, Meeting, TaskStatus } from '../../types';
-import { fetchMeetings, addMeeting, updateMeeting, notifyMeetingNote, syncMeetingTasks, MeetingTaskDraft } from '../../services/meetings.service';
+import { fetchMeetings, addMeeting, updateMeeting, deleteMeeting, notifyMeetingNote, syncMeetingTasks, MeetingTaskDraft } from '../../services/meetings.service';
 import { fetchMembers } from '../../services/workspaces.service';
 import { fetchTasks, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
 import { recordActivity } from '../../services/activities.service';
 import { ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard } from './ui';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
-import { parseDoc, serializeDoc, docToText } from './RichText';
+import { RichText, parseDoc, serializeDoc, docToText } from './RichText';
 import { LikeCommentBlock } from './LikeCommentBlock';
 import { AttachmentsSection } from './AttachmentsSection';
 import { getTodayStr } from '../../utils/dateCalc';
@@ -84,21 +84,24 @@ export function MeetingsView({ workspace }: { workspace: Workspace }) {
       {list.length === 0 ? (
         <EmptyState emoji="📋" title="아직 회의가 없어요" sub="＋ 새 회의로 만들고, 회의록·액션아이템(할일)을 정리하세요" />
       ) : (
-        <div className="space-y-2">
+        <ul className="divide-y divide-line border-t border-line">
           {list.map(m => {
             const p = progress.get(m.id);
+            const preview = m.content ? docToText(m.content).trim() : '';
             return (
-              <button key={m.id} onClick={() => setSelected(m)} className="w-full text-left rounded-xl border border-gray-100 bg-white hover:shadow-sm p-4 transition-all active:scale-[0.99]">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-gray-800 flex-1 truncate">{m.title}</span>
-                  {m.meetingDate && <span className="text-[11px] text-gray-400 flex-shrink-0">{m.meetingDate.slice(5)}{m.meetingTime ? ` ${m.meetingTime}` : ''}</span>}
-                </div>
-                {m.content && <p className="text-[12px] text-gray-500 mt-1 line-clamp-1">{docToText(m.content)}</p>}
-                {p && p.total > 0 && <div className="mt-2"><TaskProgress done={p.done} total={p.total} compact /></div>}
-              </button>
+              <li key={m.id}>
+                <button onClick={() => setSelected(m)} className="w-full text-left py-5 -mx-2 px-2 hover:bg-surface-muted transition-colors block">
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-sm font-medium text-foreground flex-1 truncate">{m.title}</span>
+                    {m.meetingDate && <span className="text-xs text-foreground-faint flex-shrink-0 tabular-nums">{m.meetingDate.slice(5)}{m.meetingTime ? ` ${m.meetingTime}` : ''}</span>}
+                  </div>
+                  {preview && <p className="text-xs text-foreground-muted mt-1.5 line-clamp-2">{preview}</p>}
+                  {p && p.total > 0 && <div className="mt-2.5 max-w-md"><TaskProgress done={p.done} total={p.total} compact /></div>}
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </>
   );
@@ -113,10 +116,12 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
   meeting: Meeting; workspace: Workspace; members: WorkspaceMember[]; memberName: (uid?: string) => string;
   onBack: () => void; onChanged: () => void;
 }) {
+  const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [note, setNote] = useState(() => parseDoc(meeting.content));
   const [saving, setSaving] = useState(false);
   const [actions, setActions] = useState<ActionDraft[]>([emptyAction()]);
   const [bulk, setBulk] = useState({ title: '', due: '' });
+  const del = async () => { if (!confirm('이 회의를 삭제할까요?')) return; await deleteMeeting(meeting.id).catch(() => {}); onBack(); };
 
   // 이 회의의 할일을 불러와 편집 줄로 시딩
   const loadItems = async () => {
@@ -172,8 +177,10 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
       await syncMeetingTasks(meeting.id, workspace.id, drafts);
       await loadItems();
       onChanged();
+      setMode('view');
     } catch (e) { console.error(e); alert('저장 실패'); } finally { setSaving(false); }
   };
+  const savedActions = actions.filter(a => a.id && a.title.trim());
 
   return (
     <>
@@ -181,31 +188,70 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
         회의
       </button>
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-light leading-snug text-foreground">{meeting.title}</h1>
-        {meeting.meetingDate && (
-          <div className="flex items-center gap-1.5 text-sm text-foreground-muted mt-2">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
-            {meeting.meetingDate}{meeting.meetingTime ? ` ${meeting.meetingTime}` : ''}
-          </div>
-        )}
-        {progress.total > 0 && <div className="mt-4"><TaskProgress done={progress.done} total={progress.total} /></div>}
-      </div>
-
-      {/* 회의록 */}
-      <div className="mb-8">
-        <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">회의록</div>
-        <div className="rounded-xl border border-line overflow-hidden">
-          <TiptapEditor content={note} onChange={setNote} placeholder="회의 내용·결정사항·다음 액션을 적어요…" />
+      <div className="flex items-start justify-between gap-4 mb-8">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-light leading-snug text-foreground">{meeting.title}</h1>
+          {meeting.meetingDate && (
+            <div className="flex items-center gap-1.5 text-sm text-foreground-muted mt-2">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+              {meeting.meetingDate}{meeting.meetingTime ? ` ${meeting.meetingTime}` : ''}
+            </div>
+          )}
+          {progress.total > 0 && <div className="mt-4 max-w-md"><TaskProgress done={progress.done} total={progress.total} /></div>}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {mode === 'view'
+            ? <>
+                <button onClick={() => setMode('edit')} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-surface hover:opacity-85 transition-all">편집</button>
+                <button onClick={del} className="text-xs text-foreground-faint hover:text-rose-500 transition-colors px-1">삭제</button>
+              </>
+            : <>
+                <button onClick={() => { setMode('view'); loadItems(); setNote(parseDoc(meeting.content)); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
+                <button onClick={save} disabled={saving} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-surface hover:opacity-85 disabled:opacity-50 transition-all">{saving ? '저장 중…' : '저장'}</button>
+              </>}
         </div>
       </div>
 
-      {/* 액션아이템 (할일 연동) */}
+      {/* ── 회의록 본문 ── */}
+      <div className="mb-8">
+        <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">회의록</div>
+        {mode === 'edit' ? (
+          <div className="rounded-xl border border-line overflow-hidden">
+            <TiptapEditor content={note} onChange={setNote} placeholder="회의 내용·결정사항·다음 액션을 적어요…" />
+          </div>
+        ) : docToText(meeting.content).trim() ? (
+          <RichText value={meeting.content} />
+        ) : (
+          <p className="text-sm text-foreground-faint">작성된 회의록이 없어요. <button onClick={() => setMode('edit')} className="underline">작성하기</button></p>
+        )}
+      </div>
+
+      {/* ── 액션 아이템 (뷰: 읽기전용 체크리스트 / 편집: 폼) ── */}
       <div className="mb-8">
         <div className="flex items-center h-9 mb-2">
           <span className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">액션 아이템</span>
-          <span className="ml-2 text-[11px] text-gray-300">저장하면 할일 메뉴에도 담당자·기한과 함께 보여요</span>
+          {mode === 'edit' && <span className="ml-2 text-[11px] text-foreground-faint">저장하면 할일 메뉴에도 담당자·기한과 함께 보여요</span>}
         </div>
+
+        {mode === 'view' ? (
+          savedActions.length === 0 ? (
+            <p className="text-sm text-foreground-faint">액션 아이템이 없어요.</p>
+          ) : (
+            <ul className="divide-y divide-line border-t border-line">
+              {actions.map((a, i) => a.id && a.title.trim() ? (
+                <li key={a.id} className="flex items-center gap-3 py-3">
+                  <button onClick={() => toggleStatus(i)} title="완료 토글"
+                    className={`size-5 shrink-0 border flex items-center justify-center transition-colors ${a.status === 'completed' ? 'border-foreground bg-foreground text-surface' : 'border-line-strong hover:border-foreground'}`}>
+                    {a.status === 'completed' && <span className="text-[11px] leading-none">✓</span>}
+                  </button>
+                  <span className={`text-sm flex-1 truncate ${a.status === 'completed' ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{a.title}</span>
+                  {a.assigneeId && <span className="text-xs text-foreground-muted shrink-0">{memberName(a.assigneeId)}</span>}
+                  {a.due && <span className="text-xs text-foreground-faint shrink-0 tabular-nums">{a.due.slice(5)}</span>}
+                </li>
+              ) : null)}
+            </ul>
+          )
+        ) : (
         <Card className="p-3 space-y-2">
           {/* 편집 줄들 — 내용 · 담당자 · 기한 */}
           {actions.map((a, i) => (
@@ -242,21 +288,19 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
             </div>
           )}
         </Card>
+        )}
       </div>
 
-      {/* 저장 — 회의록 + 할일 일괄 반영 */}
-      <div className="flex justify-end">
-        <button onClick={save} disabled={saving} className="px-5 py-2.5 rounded-xl text-sm font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-50 active:scale-95 transition-all">{saving ? '저장 중…' : '저장'}</button>
-      </div>
-
-      {/* 첨부파일 */}
+      {/* 첨부파일 — 뷰는 읽기전용, 편집에서만 관리 */}
       <div className="mt-6">
-        <AttachmentsSection workspaceId={workspace.id} refType="meeting" refId={meeting.id} />
+        <AttachmentsSection workspaceId={workspace.id} refType="meeting" refId={meeting.id} canManage={mode === 'edit'} />
       </div>
-      {/* 좋아요·댓글 */}
-      <div className="mt-6 pb-6">
-        <LikeCommentBlock resource="meeting" resId={meeting.id} members={members} />
-      </div>
+      {/* 좋아요·댓글 — 뷰 모드에서만 */}
+      {mode === 'view' && (
+        <div className="mt-6 pb-6">
+          <LikeCommentBlock resource="meeting" resId={meeting.id} members={members} />
+        </div>
+      )}
     </>
   );
 }
