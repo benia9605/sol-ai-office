@@ -95,6 +95,8 @@ const mockData: Record<string, any[]> = {
   content_comments: [],
   // 인앱 알림센터
   notifications: [],
+  // 첨부파일 (polymorphic) — 마이그 045
+  attachments: [],
   // 회의 (+회의록)
   meetings: [],
   // 코인제 — 직원 실행 사용 로그
