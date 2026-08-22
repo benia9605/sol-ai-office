@@ -1,0 +1,26 @@
+{
+  "name": "밋업 — 꿈꾸는 자들의 모임",
+  "short_name": "밋업",
+  "description": "사업가들의 비공개 커뮤니티. 일정·회의록·할일·인사이트·독서·글쓰기를 한곳에.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -12,7 +12,7 @@ import { useWorkspaceContext } from '../../contexts/WorkspaceContext';
 import { WorkspaceCreateModal } from '../WorkspaceCreateModal';
 import {
   DashboardView, BriefingView, TodosView, ScheduleView,
-  InsightsView, LogView, ActivityView, ActivityFeedView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView,
+  InsightsView, LogView, ActivityView, ActivityFeedView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView, TaskDetailView,
 } from './views';
 import { StaffView } from './StaffView';
 import { NotificationBell } from './NotificationBell';
@@ -126,6 +126,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
   const seg = location.pathname.split('/').filter(Boolean);
   const rawView = (seg[0] || 'dashboard') as ViewId;
   const view: ViewId = KNOWN_VIEWS.has(rawView) ? rawView : 'dashboard';
+  const detailId = seg[1];  // 상세 화면 id (예: /todos/abc)
   const setView = (v: ViewId) => navigate('/' + (v === 'dashboard' ? '' : v));
 
   const [todosScope, setTodosScope] = useState<'all' | 'mine' | 'assigned'>('all'); // 할일 딥링크용 탭
@@ -297,7 +298,9 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
           {view === 'dashboard' && <DashboardView onNavigate={onNavigate} workspace={workspace} />}
           {view === 'briefing' && <BriefingView workspace={workspace} />}
           {view === 'staff' && <StaffView key={staffKey} workspace={workspace} onRan={refreshCredits} />}
-          {view === 'todos' && <TodosView workspace={workspace} onNavigate={onNavigate} initialScope={todosScope} />}
+          {view === 'todos' && (detailId
+            ? <TaskDetailView workspace={workspace} taskId={detailId} onBack={() => setView('todos')} />
+            : <TodosView workspace={workspace} onNavigate={onNavigate} initialScope={todosScope} />)}
           {view === 'schedule' && <ScheduleView workspace={workspace} />}
           {view === 'meetings' && <MeetingsView workspace={workspace} />}
           {view === 'insights' && <InsightsView workspace={workspace} />}

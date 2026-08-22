@@ -10,7 +10,8 @@ import { useTasks } from '../../hooks/useTasks';
 import { fetchMembers, removeMember, changeMemberRole, updateMemberNickname, updateWorkspace } from '../../services/workspaces.service';
 import { generateBriefing, fetchLatestBriefing, BriefingJson, BriefStatus, Severity } from '../../services/officeBriefing.service';
 import { notify, getActorName } from '../../services/notify.service';
-import { fetchWorkspaceTasks, updateTaskStatus, updateTaskFields, deleteTask, toDbStatus, fromDbStatus, TaskRow } from '../../services/tasks.service';
+import { fetchWorkspaceTasks, fetchTaskById, updateTaskStatus, updateTaskFields, deleteTask, toDbStatus, fromDbStatus, TaskRow } from '../../services/tasks.service';
+import { AttachmentsSection } from './AttachmentsSection';
 import { recordActivity, fetchActivities } from '../../services/activities.service';
 import { ActivityItem } from '../../types';
 import { progressOf, progressBy } from '../../utils/taskProgress';
@@ -37,7 +38,7 @@ import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
 import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, fieldCls as monoField } from './ui';
-import { docToText, parseDoc, serializeDoc } from './RichText';
+import { RichText, docToText, parseDoc, serializeDoc } from './RichText';
 
 /** TaskRow(DB) → TaskItem(프론트). 워크스페이스 팀 화면에서 남이 만든 할일도 다루기 위해 로컬 매핑. */
 function rowToTaskItem(r: TaskRow): TaskItem {
@@ -719,6 +720,209 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
   );
 }
 
+/**
+ * 할일 상세 — 전체화면 페이지 (팝업 아님). 이식 킷 05 표준형.
+ * 본문 에디터(자료·조사 내용) + 첨부파일 + 좋아요/댓글을 한 화면에. 보기/편집 모드 토글.
+ */
+export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Workspace; taskId: string; onBack: () => void }) {
+  const [task, setTask] = useState<TaskItem | null>(null);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [myId, setMyId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const [saving, setSaving] = useState(false);
+
+  const [title, setTitle] = useState('');
+  const [priority, setPriority] = useState<TaskItem['priority']>('medium');
+  const [status, setStatus] = useState<TaskItem['status']>('pending');
+  const [date, setDate] = useState('');
+  const [assigneeId, setAssigneeId] = useState('');
+  const [category, setCategory] = useState('');
+  const [meetingId, setMeetingId] = useState('');
+  const [note, setNote] = useState<Record<string, unknown>>(() => parseDoc(undefined));
+
+  const load = async () => {
+    setLoading(true);
+    const row = await fetchTaskById(taskId).catch(() => null);
+    if (!row) { setNotFound(true); setLoading(false); return; }
+    const t = rowToTaskItem(row);
+    setTask(t);
+    setTitle(t.title); setPriority(t.priority); setStatus(t.status); setDate(t.date ?? '');
+    setAssigneeId(t.assigneeId ?? ''); setCategory(t.category && t.category !== '🤖 AI' ? t.category : '');
+    setMeetingId(t.meetingId ?? ''); setNote(parseDoc(t.notes));
+    setLoading(false);
+  };
+  useEffect(() => {
+    load();
+    fetchMembers(workspace.id).then(setMembers).catch(() => {});
+    fetchMeetings(workspace.id).then(setMeetings).catch(() => {});
+    getCurrentUserId().then(setMyId).catch(() => setMyId(null));
+    /* eslint-disable-next-line */
+  }, [taskId]);
+
+  const memberName = (uid?: string) => {
+    if (!uid) return '없음';
+    const m = members.find(x => x.userId === uid);
+    return (m ? (m.nickname || m.name || m.email || '멤버') : '멤버') + (uid === myId ? ' (나)' : '');
+  };
+  const priorityLabel = { high: '높음', medium: '보통', low: '낮음' }[priority];
+  const statusLabel = { pending: '할 일', in_progress: '진행 중', completed: '완료' }[status];
+
+  const persist = async (patch: Record<string, unknown>, opts?: { silent?: boolean }) => {
+    if (!task) return;
+    setSaving(true);
+    try {
+      await updateTaskFields(taskId, patch);
+      // 재배정 알림 (담당자가 실제로 바뀌고 본인이 아닐 때)
+      const newAssignee = patch.assignee_id as string | null | undefined;
+      if (newAssignee && newAssignee !== task.assigneeId && newAssignee !== myId) {
+        const name = await getActorName(workspace.id, myId);
+        notify({ type: 'notify_task_assigned', workspaceId: workspace.id, actorId: myId, title: '🔄 할일 배정', body: `${name} 님이 「${(patch.title as string) ?? task.title}」을 회원님께 맡겼어요.`, tag: `task-assign-${taskId}-${newAssignee}`, targetUserIds: [newAssignee] });
+      }
+      // 완료 전환 기록·알림
+      const newStatus = patch.status as string | undefined;
+      if (newStatus === 'done' && task.status !== 'completed') {
+        recordActivity({ workspaceId: workspace.id, action: 'completed_task', resourceType: 'task', resourceId: taskId, metadata: { title: (patch.title as string) ?? task.title } });
+        const name = await getActorName(workspace.id, myId);
+        notify({ type: 'notify_task_completed', workspaceId: workspace.id, actorId: myId, title: '✅ 할일 완료', body: `${name} 님이 「${(patch.title as string) ?? task.title}」을 완료했어요.`, tag: `task-${taskId}-done` });
+      }
+      await load();
+      if (!opts?.silent) setMode('view');
+    } catch (e) {
+      console.error('[TaskDetailView] 저장 실패:', e);
+      alert('저장에 실패했어요. 잠시 후 다시 시도해 주세요.');
+    } finally { setSaving(false); }
+  };
+
+  const save = () => persist({
+    title: title.trim() || task!.title, priority, status: toDbStatus(status),
+    due_date: date || null, assignee_id: assigneeId || null, category: category || null,
+    meeting_id: meetingId || null, notes: serializeDoc(note),
+    completed_at: status === 'completed' ? new Date().toISOString() : null,
+  });
+
+  const quickComplete = () => persist({ status: 'done', completed_at: new Date().toISOString() }, { silent: true });
+
+  const del = async () => {
+    if (!confirm('이 할일을 삭제할까요?')) return;
+    await deleteTask(taskId).catch(() => {});
+    onBack();
+  };
+
+  const linkedMeeting = meetings.find(m => m.id === meetingId);
+  const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      {/* 뒤로 */}
+      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground mb-5 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+        할일
+      </button>
+
+      {loading ? (
+        <p className="text-sm text-foreground-faint py-16 text-center">불러오는 중…</p>
+      ) : notFound || !task ? (
+        <p className="text-sm text-foreground-faint py-16 text-center">할일을 찾을 수 없어요. <button onClick={onBack} className="underline">목록으로</button></p>
+      ) : (
+        <div className="space-y-6">
+          {/* 헤더: 제목 + 액션 */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              {mode === 'edit' ? (
+                <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="제목" className="w-full text-2xl font-light text-foreground bg-transparent border-b border-line focus:outline-none focus:border-foreground pb-1" />
+              ) : (
+                <h1 className={`text-2xl sm:text-3xl font-light leading-snug ${status === 'completed' ? 'text-foreground-faint line-through' : 'text-foreground'}`}>{task.title}</h1>
+              )}
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {mode === 'view' ? (
+                <>
+                  {status !== 'completed' && <button onClick={quickComplete} disabled={saving} className="px-3 py-1.5 rounded-lg text-xs font-medium border border-line text-foreground-muted hover:border-foreground hover:text-foreground transition-colors">완료</button>}
+                  <button onClick={() => setMode('edit')} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-surface hover:opacity-85 transition-all">수정</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => { setMode('view'); load(); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
+                  <button onClick={save} disabled={saving} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-surface hover:opacity-85 transition-all disabled:opacity-50">{saving ? '저장 중…' : '저장'}</button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* 메타 */}
+          {mode === 'edit' ? (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <select value={priority} onChange={e => setPriority(e.target.value as TaskItem['priority'])} className={fieldCls}>
+                  <option value="high">우선순위 · 높음</option><option value="medium">우선순위 · 보통</option><option value="low">우선순위 · 낮음</option>
+                </select>
+                <select value={status} onChange={e => setStatus(e.target.value as TaskItem['status'])} className={fieldCls}>
+                  <option value="pending">할 일</option><option value="in_progress">진행 중</option><option value="completed">완료</option>
+                </select>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} className={fieldCls} />
+                <select value={category} onChange={e => setCategory(e.target.value)} className={fieldCls}>
+                  <option value="">카테고리 없음</option>{TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              {members.length > 1 && (
+                <select value={assigneeId} onChange={e => setAssigneeId(e.target.value)} className={fieldCls}>
+                  <option value="">담당자 없음</option>{members.map(m => <option key={m.userId} value={m.userId}>{memberName(m.userId)}</option>)}
+                </select>
+              )}
+              {meetings.length > 0 && (
+                <select value={meetingId} onChange={e => setMeetingId(e.target.value)} className={fieldCls}>
+                  <option value="">회의 연결 없음</option>{meetings.map(m => <option key={m.id} value={m.id}>{m.title}{m.meetingDate ? ` · ${m.meetingDate.slice(5)}` : ''}</option>)}
+                </select>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-foreground-muted">
+              <span className="inline-flex items-center gap-1.5"><span className="text-foreground-faint">상태</span> <b className="text-foreground font-medium">{statusLabel}</b></span>
+              <span className="inline-flex items-center gap-1.5"><span className="text-foreground-faint">우선순위</span> {priorityLabel}</span>
+              {date && <span className="inline-flex items-center gap-1.5"><span className="text-foreground-faint">마감</span> {date}</span>}
+              {members.length > 1 && <span className="inline-flex items-center gap-1.5"><span className="text-foreground-faint">담당</span> {memberName(assigneeId || undefined)}</span>}
+              {category && <span className="px-2 py-0.5 rounded-full bg-surface-muted text-foreground">{category}</span>}
+              {linkedMeeting && <span className="inline-flex items-center gap-1.5 text-foreground-faint">📋 {linkedMeeting.title}</span>}
+            </div>
+          )}
+
+          {/* 본문 에디터 */}
+          <div>
+            <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">내용</div>
+            {mode === 'edit' ? (
+              <div className="rounded-xl border border-line overflow-hidden">
+                <TiptapEditor content={note} onChange={setNote} placeholder="자료·조사 내용, 진행 메모 등을 자유롭게 적어요… (마크다운 붙여넣기 지원)" />
+              </div>
+            ) : docToText(task.notes).trim() ? (
+              <RichText value={task.notes} />
+            ) : (
+              <p className="text-sm text-foreground-faint">내용이 없어요. <button onClick={() => setMode('edit')} className="underline">추가하기</button></p>
+            )}
+          </div>
+
+          {/* 첨부파일 */}
+          <div className="pt-2 border-t border-line">
+            <AttachmentsSection workspaceId={workspace.id} refType="task" refId={taskId} />
+          </div>
+
+          {/* 좋아요·댓글 */}
+          <div className="pt-2 border-t border-line">
+            <LikeCommentBlock resource="task" resId={taskId} members={members} />
+          </div>
+
+          {/* 삭제 */}
+          <div className="pt-4">
+            <button onClick={del} className="text-xs text-foreground-faint hover:text-rose-500 transition-colors">이 할일 삭제</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TodosView({ workspace, onNavigate, initialScope }: { workspace: Workspace; onNavigate?: Nav; initialScope?: 'all' | 'mine' | 'assigned' }) {
   const { add } = useTasks({ autoLoad: false });  // 목록은 fetchWorkspaceTasks로 로드 — 개인 할일 전체 조회 불필요
   const [wsTasks, setWsTasks] = useState<TaskItem[]>([]);
@@ -802,6 +1006,8 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
   };
   const removeTask = async (id: string) => { await deleteTask(id).catch(() => {}); await loadWs(); };
   const openMeeting = onNavigate ? () => onNavigate('meetings') : undefined;
+  // 할일 클릭 → 팝업 대신 전용 페이지(/todos/:id)로 이동 (이식 킷: 팝업이 아니라 페이지)
+  const openTask = (t: TaskItem) => onNavigate?.('todos/' + t.id);
 
   // ── 스코프(탭) + 하위 필터 적용 ──
   const counts = {
@@ -919,11 +1125,11 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
           <div className="space-y-3">
             {overdue.length > 0 && (
               <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-1">
-                <TaskCol title="🔴 지연" items={overdue} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+                <TaskCol title="🔴 지연" items={overdue} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
               </div>
             )}
-            <TaskCol title="할 일" items={dayOpen} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
-            <TaskCol title="완료" items={dayDone} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+            <TaskCol title="할 일" items={dayOpen} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+            <TaskCol title="완료" items={dayDone} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
           </div>
         </>
       )}
@@ -931,8 +1137,8 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
       {/* 전체 리스트 — 진행/완료 2열 */}
       {mode === 'list' && (
         <div className="grid sm:grid-cols-2 gap-3">
-          <TaskCol title="할 일" items={open} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
-          <TaskCol title="완료" items={done} onOpen={setSelected} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+          <TaskCol title="할 일" items={open} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+          <TaskCol title="완료" items={done} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
         </div>
       )}
 
@@ -945,7 +1151,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
             schedules={[]}
             taskCategories={defaultTaskCategories}
             scheduleCategories={officeScheduleCategories}
-            onTaskClick={setSelected}
+            onTaskClick={openTask}
             onScheduleClick={() => {}}
             onTaskDateChange={(id, date) => saveTask(id, { date })}
             onScheduleDateChange={() => {}}

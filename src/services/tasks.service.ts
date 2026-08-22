@@ -98,6 +98,17 @@ export async function fetchWorkspaceTasks(workspaceId: string): Promise<TaskRow[
   return data ?? [];
 }
 
+/** 단일 할일 조회 (상세 페이지용). 없으면 null. */
+export async function fetchTaskById(id: string): Promise<TaskRow | null> {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data ?? null;
+}
+
 export async function addTask(task: {
   title?: string;
   project?: string;
