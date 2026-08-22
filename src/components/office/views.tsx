@@ -422,6 +422,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
   const [memos, setMemos] = useState<RecordRow[]>([]);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   useEffect(() => {
     fetchWorkspaceTasks(workspace.id).then(rows => setWsTasks(rows.map(rowToTaskItem))).catch(() => setWsTasks([]));
     getCurrentUserId().then(setMyId).catch(() => setMyId(null));
@@ -430,6 +431,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
     fetchRecords(workspace.id, 'memo').then(setMemos).catch(() => setMemos([]));
     fetchReportsByWorkspace(workspace.id, 6).then(setReports).catch(() => setReports([]));
     fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([]));
+    fetchActivities(workspace.id, 6).then(setActivities).catch(() => setActivities([]));
   }, [workspace.id]);
 
   const todayStr = getTodayStr();
@@ -495,6 +497,14 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
 
       {/* 확인이 필요한 일 + 내 할일 버킷 */}
       <MyTaskFocus tasks={myTasks} onNavigate={onNavigate} />
+
+      {/* 최근 활동 — 팀이 방금 한 일 (클릭 시 해당 화면으로) */}
+      {activities.length > 0 && (
+        <Card className="p-4">
+          <SecHead title="최근 활동" to="teamlog" />
+          <ActivityList items={activities} members={members} onNavigate={onNavigate} />
+        </Card>
+      )}
 
       {/* 다가오는 일정 + 내 할일 */}
       <div className="grid sm:grid-cols-2 gap-4">
@@ -959,8 +969,10 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
   const save = async () => {
     if (!form.title.trim()) return;
     // source='manual' — 대표가 직접 만든 할일. (content/decision/ai 등은 해당 기능이 생성 시 지정)
+    const newTitle = form.title.trim();
     try {
-      await add({ title: form.title.trim(), priority: form.priority, date: form.date || undefined, assigneeId: form.assigneeId || undefined, category: form.category || undefined, source: 'manual' });
+      await add({ title: newTitle, priority: form.priority, date: form.date || undefined, assigneeId: form.assigneeId || undefined, category: form.category || undefined, source: 'manual' });
+      recordActivity({ workspaceId: workspace.id, action: 'created_task', resourceType: 'task', metadata: { title: newTitle } });
       setForm(blankForm()); setShowForm(false); await loadWs();
     } catch (e) { console.error('[TodosView] 할일 추가 실패:', e); alert('할일 추가에 실패했어요. 잠시 후 다시 시도해 주세요.'); }
   };
@@ -2221,7 +2233,51 @@ const ACTIVITY_META: Record<string, { emoji: string; verb: (title: string) => st
   completed_task: { emoji: '✅', verb: t => `「${t}」을 완료했어요` },
   created_meeting: { emoji: '📋', verb: t => `「${t}」 회의를 만들었어요` },
   created_task: { emoji: '📝', verb: t => `「${t}」 할일을 추가했어요` },
+  created_insight: { emoji: '📈', verb: t => `「${t}」 인사이트를 남겼어요` },
+  created_record: { emoji: '📓', verb: t => `「${t}」 기록을 남겼어요` },
+  created_schedule: { emoji: '📅', verb: t => `「${t}」 일정을 등록했어요` },
+  published_content: { emoji: '🎬', verb: t => `「${t}」 콘텐츠를 발행했어요` },
+  commented_task: { emoji: '💬', verb: t => `「${t}」에 댓글을 남겼어요` },
+  commented_insight: { emoji: '💬', verb: t => `「${t}」에 댓글을 남겼어요` },
+  commented_record: { emoji: '💬', verb: t => `「${t}」에 댓글을 남겼어요` },
+  commented_meeting: { emoji: '💬', verb: t => `「${t}」에 댓글을 남겼어요` },
+  liked_task: { emoji: '❤️', verb: t => `「${t}」을 좋아해요` },
 };
+
+/** 활동 → 상세 화면 경로 (있으면). 상세 페이지가 있는 자원만 링크된다. */
+function activityLink(a: ActivityItem): string | undefined {
+  const base: Record<string, string> = { task: 'todos', meeting: 'meetings', insight: 'insights', record: 'log' };
+  const b = a.resourceType ? base[a.resourceType] : undefined;
+  return b && a.resourceId ? `${b}/${a.resourceId}` : undefined;
+}
+
+/** 공용 활동 리스트 — 대시보드(compact)와 팀활동 페이지에서 재사용 */
+function ActivityList({ items, members, onNavigate }: { items: ActivityItem[]; members: WorkspaceMember[]; onNavigate?: Nav }) {
+  const actorName = (uid?: string) => { if (!uid) return '누군가'; const m = members.find(x => x.userId === uid); return m?.nickname || m?.name || '멤버'; };
+  return (
+    <div className="divide-y divide-line">
+      {items.map(a => {
+        const meta = ACTIVITY_META[a.action];
+        const title = (a.metadata?.title as string) || '';
+        const link = onNavigate ? activityLink(a) : undefined;
+        const Row = (
+          <>
+            <span className="text-base flex-shrink-0">{meta?.emoji ?? '•'}</span>
+            <span className="text-sm text-foreground-muted flex-1 min-w-0 truncate">
+              <b className="text-foreground">{actorName(a.actorId)}</b> 님이 {meta ? meta.verb(title) : a.action}
+            </span>
+            <span className="text-[11px] text-foreground-faint flex-shrink-0">{relTime(a.createdAt)}</span>
+          </>
+        );
+        return link ? (
+          <button key={a.id} onClick={() => onNavigate!(link)} className="w-full flex items-center gap-2.5 py-2.5 text-left hover:bg-surface-muted -mx-2 px-2 rounded-lg transition-colors">{Row}</button>
+        ) : (
+          <div key={a.id} className="flex items-center gap-2.5 py-2.5">{Row}</div>
+        );
+      })}
+    </div>
+  );
+}
 function relTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60000);
@@ -2233,7 +2289,7 @@ function relTime(iso: string): string {
   if (day < 7) return `${day}일 전`;
   return iso.slice(0, 10);
 }
-export function ActivityFeedView({ workspace }: { workspace: Workspace }) {
+export function ActivityFeedView({ workspace, onNavigate }: { workspace: Workspace; onNavigate?: Nav }) {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -2241,29 +2297,14 @@ export function ActivityFeedView({ workspace }: { workspace: Workspace }) {
     fetchActivities(workspace.id, 80).then(setItems).catch(() => setItems([])).finally(() => setLoaded(true));
     fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([]));
   }, [workspace.id]);
-  const actorName = (uid?: string) => { if (!uid) return '누군가'; const m = members.find(x => x.userId === uid); return m?.nickname || m?.name || '멤버'; };
   return (
     <>
-      <ViewHead eyebrow="ACTIVITY" title="팀 활동" sub={`최근 ${items.length}건`} />
+      <ViewHead title="팀 활동" sub={`최근 ${items.length}건`} />
       {items.length === 0 ? (
         <EmptyState emoji="📣" title={loaded ? '아직 팀 활동이 없어요' : '불러오는 중…'} sub="할일 완료·회의 생성 같은 팀 활동이 여기 쌓여요" />
       ) : (
         <Card className="p-3">
-          <div className="divide-y divide-gray-100">
-            {items.map(a => {
-              const meta = ACTIVITY_META[a.action];
-              const title = (a.metadata?.title as string) || '';
-              return (
-                <div key={a.id} className="flex items-center gap-2.5 py-2.5">
-                  <span className="text-base flex-shrink-0">{meta?.emoji ?? '•'}</span>
-                  <span className="text-sm text-gray-600 flex-1 min-w-0 truncate">
-                    <b className="text-gray-800">{actorName(a.actorId)}</b> 님이 {meta ? meta.verb(title) : a.action}
-                  </span>
-                  <span className="text-[11px] text-gray-300 flex-shrink-0">{relTime(a.createdAt)}</span>
-                </div>
-              );
-            })}
-          </div>
+          <ActivityList items={items} members={members} onNavigate={onNavigate} />
         </Card>
       )}
     </>

@@ -311,7 +311,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
           {view === 'memory' && <CompanyMemoryView workspace={workspace} />}
           {view === 'log' && <LogView workspace={workspace} />}
           {view === 'activity' && <ActivityView workspace={workspace} />}
-          {view === 'teamlog' && <ActivityFeedView workspace={workspace} />}
+          {view === 'teamlog' && <ActivityFeedView workspace={workspace} onNavigate={onNavigate} />}
           {view === 'members' && <MembersView workspace={workspace} />}
           {view === 'company' && <CompanySettingsView workspace={workspace} onSaved={reload} />}
           {view === 'me' && <MeView workspace={workspace} onNavigate={onNavigate} />}
