@@ -608,45 +608,50 @@ function PriorityDot({ p }: { p: TaskItem['priority'] }) {
   return <span className={`w-2 h-2 rounded-full ${c} flex-shrink-0`} />;
 }
 
-const STATUS_RING: Record<TaskItem['status'], string> = {
-  pending: 'border-gray-300', in_progress: 'border-amber-400', completed: 'bg-foreground border-foreground',
-};
 const TASK_CATEGORIES = ['콘텐츠', '제품', '쇼룸', '촬영', '회의', '운영', '마케팅', 'CS', 'AI'];
 const isAiTask = (t: TaskItem) => t.category === '🤖 AI' || t.source === 'ai';
 
-function TaskCol({ title, items, onOpen, onCycle, memberName, onMeeting }: {
+/**
+ * 할일 리스트 섹션 (지연/할일/완료) — 일정 메뉴와 같은 hairline 리스트.
+ * 그림자·둥근카드 없이 얇은 divide-y 선, 사각 체크박스. (레퍼런스 screens/01)
+ * 비어 있으면 섹션 자체를 숨긴다.
+ */
+function TaskCol({ title, items, onOpen, onCycle, memberName, onMeeting, danger }: {
   title: string; items: TaskItem[]; onOpen: (t: TaskItem) => void; onCycle: (id: string) => void; memberName: (uid?: string) => string;
-  onMeeting?: () => void;   // 회의에서 나온 할일이면 ↗회의 링크
+  onMeeting?: () => void; danger?: boolean;
 }) {
+  if (items.length === 0) return null;
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-bold text-gray-700">{title}</span>
-        <span className="text-xs text-gray-400">{items.length}</span>
+    <section>
+      <div className="flex items-baseline gap-2 mb-1">
+        <span className={`text-[11px] font-semibold uppercase tracking-wider ${danger ? 'text-rose-500' : 'text-foreground-faint'}`}>{title}</span>
+        <span className="text-xs text-foreground-faint tabular-nums">{items.length}</span>
       </div>
-      <div className="space-y-2">
-        {items.map(t => (
-          <div key={t.id} className="w-full flex items-center gap-2 p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-all">
-            <button onClick={() => onCycle(t.id)} title="상태 변경"
-              className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${STATUS_RING[t.status]}`}>
-              {t.status === 'completed' && <span className="text-white text-[9px] leading-none">✓</span>}
-            </button>
-            <button onClick={() => onOpen(t)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
-              <PriorityDot p={t.priority} />
-              <span className={`text-sm flex-1 truncate ${t.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-700'}`}>{t.title}</span>
-              {t.category && t.category !== '🤖 AI' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{t.category}</span>}
-              {t.date && <span className="text-[10px] text-gray-400 flex-shrink-0">{t.date.slice(5)}</span>}
-              {isAiTask(t) && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground flex-shrink-0">🤖 AI</span>}
-              {t.assigneeId && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground flex-shrink-0">{memberName(t.assigneeId)}</span>}
-            </button>
-            {t.meetingId && onMeeting && (
-              <button onClick={onMeeting} title="회의로 이동" className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 flex-shrink-0">↗회의</button>
-            )}
-          </div>
-        ))}
-        {items.length === 0 && <p className="text-xs text-gray-300 py-3 text-center">없음</p>}
-      </div>
-    </Card>
+      <ul className="divide-y divide-line border-t border-line">
+        {items.map(t => {
+          const done = t.status === 'completed';
+          return (
+            <li key={t.id} className="flex items-center gap-3 py-3">
+              <button onClick={() => onCycle(t.id)} aria-label="상태 변경" title="상태 변경"
+                className={`size-5 shrink-0 border flex items-center justify-center transition-colors ${done ? 'border-foreground bg-foreground text-surface' : 'border-line-strong hover:border-foreground'}`}>
+                {done && <span className="text-[11px] leading-none">✓</span>}
+              </button>
+              <button onClick={() => onOpen(t)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
+                {!done && t.priority === 'high' && <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />}
+                <span className={`text-sm flex-1 truncate ${done ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{t.title}</span>
+                {t.category && t.category !== '🤖 AI' && <span className="hidden sm:inline text-[11px] text-foreground-faint shrink-0">{t.category}</span>}
+                {isAiTask(t) && <span className="text-[11px] text-foreground-faint shrink-0">AI</span>}
+                {t.assigneeId && <span className="text-xs text-foreground-muted shrink-0 truncate max-w-[6rem]">{memberName(t.assigneeId)}</span>}
+                {t.date && <span className={`text-xs shrink-0 tabular-nums ${danger ? 'text-rose-500' : 'text-foreground-faint'}`}>{t.date.slice(5)}</span>}
+              </button>
+              {t.meetingId && onMeeting && (
+                <button onClick={onMeeting} title="회의로 이동" className="text-xs text-foreground-faint hover:text-foreground shrink-0">↗</button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -1146,10 +1151,9 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
     ({ title: '', priority: 'medium', date: getTodayStr(), assigneeId: '', category: '' });
   const [form, setForm] = useState(blankForm);
   const [selected, setSelected] = useState<TaskItem | null>(null);
-  const [scope, setScope] = useState<'all' | 'mine' | 'assigned'>(initialScope ?? 'all');  // 전체 / 받은 할일 / 내가 배정
+  const [scope, setScope] = useState<'all' | 'mine' | 'assigned'>(initialScope ?? 'all');  // 전체 / 내 할일
   // MeView 등에서 '받은 할일' 탭으로 딥링크될 때 반영
   useEffect(() => { if (initialScope) setScope(initialScope); }, [initialScope]);
-  const [filter, setFilter] = useState<string>('all');                     // all 스코프의 하위 필터(멤버·미배정·AI)
   const [mode, setMode] = useState<'day' | 'list' | 'calendar'>('day');
   const [cursor, setCursor] = useState<string>(() => getTodayStr()); // 일별 뷰: 선택한 날짜
 
@@ -1224,21 +1228,10 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
   const openTask = (t: TaskItem) => onNavigate?.('todos/' + t.id);
 
   // ── 스코프(탭) + 하위 필터 적용 ──
-  const counts = {
-    all: wsTasks.length,
-    mine: wsTasks.filter(t => t.assigneeId === myId).length,
-    assigned: wsTasks.filter(t => t.createdBy === myId && t.assigneeId && t.assigneeId !== myId).length,
-  };
-  const scoped = scope === 'mine' ? wsTasks.filter(t => t.assigneeId === myId)
-    : scope === 'assigned' ? wsTasks.filter(t => t.createdBy === myId && !!t.assigneeId && t.assigneeId !== myId)
-      : wsTasks;
-  const applyFilter = (list: TaskItem[]) => {
-    if (scope !== 'all' || filter === 'all') return list;
-    if (filter === 'unassigned') return list.filter(t => !t.assigneeId && !isAiTask(t));
-    if (filter === 'ai') return list.filter(isAiTask);
-    return list.filter(t => t.assigneeId === filter);
-  };
-  const fTasks = applyFilter(scoped);
+  // 탭은 전체 / 내 할일 2가지. '내 할일' = 나에게 배정 + (미배정이면서 내가 만든 것)
+  const isMine = (t: TaskItem) => t.assigneeId === myId || (!t.assigneeId && t.createdBy === myId);
+  const counts = { all: wsTasks.length, mine: wsTasks.filter(isMine).length };
+  const fTasks = scope === 'mine' ? wsTasks.filter(isMine) : wsTasks;
   const open = fTasks.filter(t => t.status !== 'completed');
   const done = fTasks.filter(t => t.status === 'completed');
 
@@ -1251,45 +1244,25 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
   const dayOpen = [...fTasks.filter(t => t.status !== 'completed' && t.date === cursor), ...noDate];
   const dayDone = fTasks.filter(t => t.status === 'completed' && t.date === cursor);
 
-  const chip = (id: string, label: string) => (
-    <button key={id} onClick={() => setFilter(id)}
-      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
-  );
-  const scopeTab = (id: typeof scope, label: string, count: number) => (
-    <button key={id} onClick={() => setScope(id)}
-      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${scope === id ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label} <span className="tabular-nums opacity-70">{count}</span></button>
-  );
   const modeBtn = (m: typeof mode, label: string) => (
     <button key={m} onClick={() => setMode(m)}
       className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${mode === m ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
   );
+  // 좌우 탭 (밑줄형) — 전체 / 내 할일
+  const TabBtn = ({ id, label, count }: { id: 'all' | 'mine'; label: string; count: number }) => (
+    <button onClick={() => setScope(id)}
+      className={`pb-2.5 -mb-px border-b-2 text-sm transition-colors ${scope === id ? 'border-foreground text-foreground font-semibold' : 'border-transparent text-foreground-muted hover:text-foreground'}`}>
+      {label} <span className={`ml-1 text-xs tabular-nums ${scope === id ? 'text-foreground' : 'text-foreground-faint'}`}>{count}</span>
+    </button>
+  );
 
   return (
     <>
-      <ViewHead eyebrow="TASKS" title="할일" sub={`${open.length}건 진행 · ${done.length}건 완료${overdue.length ? ` · 지연 ${overdue.length}` : ''}`} />
+      <ViewHead eyebrow="TASKS" title="할일" sub={`${open.length}건 진행 · ${done.length}건 완료${overdue.length ? ` · 지연 ${overdue.length}` : ''}`}
+        action={<AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="할일" />} />
 
-      {/* 스코프 탭 — 전체 / 받은 할일(나에게 배정) / 내가 배정(남에게) */}
-      <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
-        {scopeTab('all', '전체', counts.all)}
-        {scopeTab('mine', '받은 할일', counts.mine)}
-        {scopeTab('assigned', '내가 배정', counts.assigned)}
-      </div>
-
-      {/* 뷰 토글 (일별/전체/캘린더) + 추가 */}
-      <div className="flex items-center gap-1.5 mb-2.5">
-        <div className="flex gap-1">{modeBtn('day', '일별')}{modeBtn('list', '전체')}{modeBtn('calendar', '캘린더')}</div>
-        <AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="할일" className="ml-auto" />
-      </div>
-
-      {/* 담당자/AI 하위 필터 (전체 스코프에서만) */}
-      {scope === 'all' && (
-        <div className="flex flex-wrap items-center gap-1.5 mb-3">
-          {chip('all', '전체')}
-          {members.length > 1 && members.map(m => chip(m.userId, memberName(m.userId)))}
-          {members.length > 1 && chip('unassigned', '미배정')}
-          {chip('ai', '🤖 AI')}
-        </div>
-      )}
+      {/* 뷰 토글 (일별/전체/캘린더) */}
+      <div className="flex items-center gap-1 mb-4">{modeBtn('day', '일별')}{modeBtn('list', '전체')}{modeBtn('calendar', '캘린더')}</div>
 
       {showForm && (
         <Card className="p-4 mb-3 space-y-2.5">
@@ -1324,10 +1297,10 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
         </Card>
       )}
 
-      {/* 일별 뷰 — 날짜 네비 + 지연 → 할일 → 완료 */}
+      {/* 일별 뷰 — 날짜 네비 → (아래) 좌우 탭 → 지연/할일/완료 리스트 */}
       {mode === 'day' && (
         <>
-          <div className="flex items-center justify-center gap-3 mb-3">
+          <div className="flex items-center justify-center gap-3 mb-4">
             <button onClick={() => setCursor(c => addDays(c, -1))} className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all">‹</button>
             <div className="text-center min-w-[9rem]">
               <div className="text-base font-bold text-gray-800">{fmtDay(cursor)}</div>
@@ -1336,24 +1309,32 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
             </div>
             <button onClick={() => setCursor(c => addDays(c, 1))} className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all">›</button>
           </div>
-          <div className="space-y-3">
-            {overdue.length > 0 && (
-              <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-1">
-                <TaskCol title="🔴 지연" items={overdue} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
-              </div>
-            )}
+          <div className="flex items-center gap-6 border-b border-line mb-5">
+            <TabBtn id="all" label="전체" count={counts.all} />
+            <TabBtn id="mine" label="내 할일" count={counts.mine} />
+          </div>
+          <div className="space-y-7">
+            <TaskCol title="지연" items={overdue} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} danger />
             <TaskCol title="할 일" items={dayOpen} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
             <TaskCol title="완료" items={dayDone} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+            {overdue.length + dayOpen.length + dayDone.length === 0 && <p className="text-sm text-foreground-faint py-10 text-center">이 날짜에 할일이 없어요.</p>}
           </div>
         </>
       )}
 
-      {/* 전체 리스트 — 진행/완료 2열 */}
+      {/* 전체 리스트 — 좌우 탭 → 할일/완료 */}
       {mode === 'list' && (
-        <div className="grid sm:grid-cols-2 gap-3">
-          <TaskCol title="할 일" items={open} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
-          <TaskCol title="완료" items={done} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
-        </div>
+        <>
+          <div className="flex items-center gap-6 border-b border-line mb-5">
+            <TabBtn id="all" label="전체" count={counts.all} />
+            <TabBtn id="mine" label="내 할일" count={counts.mine} />
+          </div>
+          <div className="space-y-7">
+            <TaskCol title="할 일" items={open} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+            <TaskCol title="완료" items={done} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+            {open.length + done.length === 0 && <p className="text-sm text-foreground-faint py-10 text-center">할일이 없어요.</p>}
+          </div>
+        </>
       )}
 
       {/* 캘린더 뷰 (개인 공간과 동일 컴포넌트 재사용) */}
