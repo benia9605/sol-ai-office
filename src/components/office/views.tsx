@@ -26,7 +26,7 @@ import { SchedulesPageModern } from '../../pages/SchedulesPage.modern';
 import { fetchInsights, fetchInsightById, addInsight, updateInsight, deleteInsight, InsightRow } from '../../services/insights.service';
 import { fetchRecords, fetchRecordById, addRecord, deleteRecord, updateRecord, RecordRow } from '../../services/records.service';
 import { fetchProducts, addProduct, updateProduct, deleteProduct } from '../../services/products.service';
-import { fetchContentItems, addContentItem, updateContentItem, deleteContentItem } from '../../services/contentItems.service';
+import { fetchContentItems, fetchContentItemById, addContentItem, updateContentItem, deleteContentItem } from '../../services/contentItems.service';
 import { fetchMetricsByItem, saveMetric } from '../../services/contentMetrics.service';
 import { fetchSalesDaily, saveSalesDaily, deleteSalesDaily } from '../../services/salesDaily.service';
 import { fetchMemories, addMemory, updateMemory, deleteMemory } from '../../services/companyMemory.service';
@@ -1807,7 +1807,140 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
   );
 }
 
-export function ContentItemsView({ workspace }: { workspace: Workspace }) {
+/**
+ * 콘텐츠 상세 — 전체화면 페이지(팝업 아님). 보기/편집 토글 + 성과 + 좋아요/댓글.
+ */
+export function ContentDetailView({ workspace, contentId, onBack }: { workspace: Workspace; contentId: string; onBack: () => void }) {
+  const [item, setItem] = useState<ContentItem | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const [saving, setSaving] = useState(false);
+  const [f, setF] = useState<Partial<ContentItem>>({});
+  const set = (patch: Partial<ContentItem>) => setF(prev => ({ ...prev, ...patch }));
+
+  const load = async () => {
+    setLoading(true);
+    const it = await fetchContentItemById(contentId).catch(() => null);
+    if (!it) { setNotFound(true); setLoading(false); return; }
+    setItem(it); setF({ ...it }); setLoading(false);
+  };
+  useEffect(() => {
+    load();
+    fetchMembers(workspace.id).then(setMembers).catch(() => {});
+    fetchProducts(workspace.id, workspaceErpSource(workspace)).then(setProducts).catch(() => {});
+    /* eslint-disable-next-line */
+  }, [contentId]);
+
+  const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+  const next = f.status ? nextContentStatus(f.status) : null;
+  const productName = (id?: string) => products.find(p => p.id === id)?.name;
+
+  const save = async () => {
+    if (!item) return;
+    setSaving(true);
+    try {
+      const fields: Partial<ContentItem> = { ...f, title: (f.title || '').trim() || item.title };
+      if (fields.status === 'published' && !item.publishedAt) fields.publishedAt = new Date().toISOString();
+      if (fields.status === 'published' && !fields.url && !confirm('발행 URL이 비어 있어요. 그래도 발행 상태로 저장할까요?')) { setSaving(false); return; }
+      const wasPublished = item.status === 'published';
+      await updateContentItem(item.id, fields);
+      if (fields.status === 'published' && !wasPublished) {
+        const actor = await getCurrentUserId().catch(() => null);
+        const name = await getActorName(workspace.id, actor);
+        notify({ type: 'notify_content', workspaceId: workspace.id, actorId: actor, title: '🎬 콘텐츠 발행', body: `${name} 님이 「${fields.title}」을 발행했어요.`, tag: `content-${item.id}` });
+      }
+      await load(); setMode('view');
+    } catch (e) { console.error('[ContentDetailView] 저장 실패:', e); alert('저장에 실패했어요.'); }
+    finally { setSaving(false); }
+  };
+  const del = async () => { if (!confirm('이 콘텐츠를 삭제할까요?')) return; try { await deleteContentItem(contentId); onBack(); } catch { alert('삭제에 실패했어요.'); } };
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground mb-5 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+        콘텐츠
+      </button>
+      {loading ? (
+        <p className="text-sm text-foreground-faint py-16 text-center">불러오는 중…</p>
+      ) : notFound || !item ? (
+        <p className="text-sm text-foreground-faint py-16 text-center">콘텐츠를 찾을 수 없어요. <button onClick={onBack} className="underline">목록으로</button></p>
+      ) : (
+        <div className="space-y-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              {mode === 'edit'
+                ? <input autoFocus value={f.title ?? ''} onChange={e => set({ title: e.target.value })} placeholder="제목" className="w-full text-2xl font-light text-foreground bg-transparent border-b border-line focus:outline-none focus:border-foreground pb-1" />
+                : <h1 className="text-2xl sm:text-3xl font-light leading-snug text-foreground">{item.title}</h1>}
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {mode === 'view'
+                ? <><button onClick={() => setMode('edit')} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-surface hover:opacity-85 transition-all">수정</button>
+                    <button onClick={del} className="text-xs text-foreground-faint hover:text-rose-500 transition-colors px-1">삭제</button></>
+                : <><button onClick={() => { setMode('view'); load(); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
+                    <button onClick={save} disabled={saving} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-surface hover:opacity-85 disabled:opacity-50 transition-all">{saving ? '저장 중…' : '저장'}</button></>}
+            </div>
+          </div>
+
+          {mode === 'edit' ? (
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-2 gap-2">
+                <select value={f.platform ?? ''} onChange={e => set({ platform: e.target.value || undefined })} className={fieldCls}><option value="">플랫폼</option>{CONTENT_PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}</select>
+                <select value={f.contentType ?? ''} onChange={e => set({ contentType: (e.target.value || undefined) as ContentType | undefined })} className={fieldCls}><option value="">유형</option>{(Object.keys(CONTENT_TYPE_LABEL) as ContentType[]).map(t => <option key={t} value={t}>{CONTENT_TYPE_LABEL[t]}</option>)}</select>
+              </div>
+              <div className="flex items-center gap-2">
+                <select value={f.status} onChange={e => set({ status: e.target.value as ContentStatus })} className={fieldCls}>{CONTENT_STATUS_ORDER.map(s => <option key={s} value={s}>{CONTENT_STATUS_LABEL[s]}</option>)}</select>
+                {next && <button onClick={() => set({ status: next })} className="px-3 py-2 rounded-xl text-xs font-semibold bg-surface-muted text-foreground whitespace-nowrap flex-shrink-0">다음 → {CONTENT_STATUS_LABEL[next]}</button>}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <select value={f.contentPurpose ?? ''} onChange={e => set({ contentPurpose: e.target.value || undefined })} className={fieldCls}><option value="">목적</option>{CONTENT_PURPOSES.map(p => <option key={p.v} value={p.v}>{p.label}</option>)}</select>
+                <select value={f.owner ?? ''} onChange={e => set({ owner: e.target.value || undefined })} className={fieldCls}><option value="">담당자</option>{CONTENT_OWNERS.map(o => <option key={o} value={o}>{o}</option>)}</select>
+              </div>
+              <select value={f.primaryProductId ?? ''} onChange={e => set({ primaryProductId: e.target.value || undefined })} className={fieldCls}><option value="">대표 제품 없음</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+              <label className="block"><span className="text-[10px] text-foreground-faint">발행 예정일</span>
+                <input type="datetime-local" value={f.scheduledFor ? f.scheduledFor.slice(0, 16) : ''} onChange={e => set({ scheduledFor: e.target.value || undefined })} className={fieldCls} /></label>
+              <input value={f.hook ?? ''} onChange={e => set({ hook: e.target.value })} placeholder="훅 (첫 문장)" className={fieldCls} />
+              <textarea value={f.script ?? ''} onChange={e => set({ script: e.target.value })} placeholder="대본" rows={4} className={`${fieldCls} resize-none`} />
+              <textarea value={f.shotList ?? ''} onChange={e => set({ shotList: e.target.value })} placeholder="촬영 컷 (줄 단위)" rows={2} className={`${fieldCls} resize-none`} />
+              <input value={f.url ?? ''} onChange={e => set({ url: e.target.value })} placeholder="발행 URL" className={fieldCls} />
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
+                <span className={`px-2 py-0.5 rounded-full ${CONTENT_STATUS_CLS[item.status]}`}>{CONTENT_STATUS_LABEL[item.status]}</span>
+                {item.platform && <span className="text-foreground-muted">{item.platform}</span>}
+                {item.contentType && <span className="text-foreground-muted">{CONTENT_TYPE_LABEL[item.contentType]}</span>}
+                {item.owner && <span className="text-foreground-faint">담당 {item.owner}</span>}
+                {item.primaryProductId && productName(item.primaryProductId) && <span className="text-foreground-faint">제품 {productName(item.primaryProductId)}</span>}
+                {item.scheduledFor && <span className="text-foreground-faint">예정 {item.scheduledFor.slice(0, 16).replace('T', ' ')}</span>}
+                {item.publishedAt && <span className="text-emerald-600">발행 {item.publishedAt.slice(0, 10)}</span>}
+                {item.url && <a href={item.url} target="_blank" rel="noreferrer" className="text-foreground hover:underline">링크 ↗</a>}
+              </div>
+              {item.hook && <div><div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-1">훅</div><p className="text-sm text-foreground">{item.hook}</p></div>}
+              {item.script && <div><div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-1">대본</div><p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{item.script}</p></div>}
+              {item.shotList && <div><div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-1">촬영 컷</div><p className="text-sm text-foreground-muted whitespace-pre-wrap">{item.shotList}</p></div>}
+            </>
+          )}
+
+          {/* 성과 (24h/72h/7d) */}
+          <ContentMetricsEditor item={item} workspaceId={workspace.id} />
+
+          {/* 좋아요·댓글 — 뷰 모드에서만 */}
+          {mode === 'view' && (
+            <div className="pt-2">
+              <LikeCommentBlock resource="content" resId={item.id} members={members} />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspace; onNavigate?: Nav }) {
   const [list, setList] = useState<ContentItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
@@ -1833,6 +1966,7 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
   };
 
   const shown = filter === 'all' ? list : list.filter(c => c.status === filter);
+  const openContent = (c: ContentItem) => onNavigate ? onNavigate('contents/' + c.id) : setSelected(c);
   const chip = (id: ContentStatus | 'all', label: string) => (
     <button key={id} onClick={() => setFilter(id)}
       className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
@@ -1873,18 +2007,18 @@ export function ContentItemsView({ workspace }: { workspace: Workspace }) {
       {shown.length === 0 ? (
         <EmptyState emoji="🎬" title="콘텐츠가 없어요" sub="＋ 콘텐츠로 아이디어를 등록하고 발행까지 관리하세요" />
       ) : (
-        <div className="space-y-2">
+        <ul className="divide-y divide-line border-t border-line">
           {shown.map(c => (
-            <Card key={c.id} className="group p-4 flex items-center gap-2">
-              <button onClick={() => setSelected(c)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
-                <span className="text-sm font-semibold text-gray-800 truncate">{c.title}</span>
-                {c.contentType && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{CONTENT_TYPE_LABEL[c.contentType]}</span>}
-                {c.platform && <span className="text-[10px] text-gray-400 flex-shrink-0">{c.platform}</span>}
-                <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${CONTENT_STATUS_CLS[c.status]}`}>{CONTENT_STATUS_LABEL[c.status]}</span>
+            <li key={c.id}>
+              <button onClick={() => openContent(c)} className="w-full flex items-center gap-2 py-4 -mx-2 px-2 hover:bg-surface-muted transition-colors text-left">
+                <span className="text-sm font-medium text-foreground truncate flex-1 min-w-0">{c.title}</span>
+                {c.contentType && <span className="hidden sm:inline text-[11px] text-foreground-faint flex-shrink-0">{CONTENT_TYPE_LABEL[c.contentType]}</span>}
+                {c.platform && <span className="text-[11px] text-foreground-faint flex-shrink-0">{c.platform}</span>}
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${CONTENT_STATUS_CLS[c.status]}`}>{CONTENT_STATUS_LABEL[c.status]}</span>
               </button>
-            </Card>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       {selected && (

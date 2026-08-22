@@ -71,6 +71,13 @@ export async function fetchContentItems(workspaceId: string): Promise<ContentIte
   return (data ?? []).map(toItem);
 }
 
+/** 단일 콘텐츠 조회 (상세 페이지용). 없으면 null. */
+export async function fetchContentItemById(id: string): Promise<ContentItem | null> {
+  const { data, error } = await supabase.from('content_items').select('*').eq('id', id).maybeSingle();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data ? toItem(data) : null;
+}
+
 /** 콘텐츠 추가 */
 export async function addContentItem(workspaceId: string, fields: Partial<ContentItem>): Promise<ContentItem> {
   const userId = await getCurrentUserId();
