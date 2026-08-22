@@ -15,6 +15,8 @@ import { recordActivity } from '../../services/activities.service';
 import { ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard } from './ui';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
 import { parseDoc, serializeDoc, docToText } from './RichText';
+import { LikeCommentBlock } from './LikeCommentBlock';
+import { AttachmentsSection } from './AttachmentsSection';
 import { getTodayStr } from '../../utils/dateCalc';
 
 const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
@@ -234,8 +236,17 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
       </div>
 
       {/* 저장 — 회의록 + 할일 일괄 반영 */}
-      <div className="flex justify-end pb-6">
+      <div className="flex justify-end">
         <button onClick={save} disabled={saving} className="px-5 py-2.5 rounded-xl text-sm font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-50 active:scale-95 transition-all">{saving ? '저장 중…' : '저장'}</button>
+      </div>
+
+      {/* 첨부파일 */}
+      <div className="pt-5 mt-5 border-t border-line">
+        <AttachmentsSection workspaceId={workspace.id} refType="meeting" refId={meeting.id} />
+      </div>
+      {/* 좋아요·댓글 */}
+      <div className="pt-5 mt-5 border-t border-line pb-6">
+        <LikeCommentBlock resource="meeting" resId={meeting.id} members={members} />
       </div>
     </>
   );
