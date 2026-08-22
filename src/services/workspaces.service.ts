@@ -147,8 +147,20 @@ export async function fetchMembers(workspaceId: string): Promise<WorkspaceMember
   if (error) throw error;
   return (data ?? []).map((m: any) => ({
     workspaceId: m.workspace_id, userId: m.user_id, role: m.role,
-    nickname: m.nickname, joinedAt: m.joined_at,
+    nickname: m.nickname, avatarUrl: m.avatar_url ?? undefined, joinedAt: m.joined_at,
   }));
+}
+
+/** 내 프로필(이름·이미지)을 내 모든 워크스페이스 멤버 행에 동기화 — '나' 저장 시 호출 */
+export async function updateMyMemberProfile(fields: { nickname?: string; avatarUrl?: string | null }): Promise<void> {
+  const { getCurrentUserId } = await import('./auth');
+  const uid = await getCurrentUserId().catch(() => null);
+  if (!uid) return;
+  const payload: Record<string, unknown> = {};
+  if (fields.nickname !== undefined) payload.nickname = fields.nickname;
+  if (fields.avatarUrl !== undefined) payload.avatar_url = fields.avatarUrl || null;
+  if (Object.keys(payload).length === 0) return;
+  await supabase.from('workspace_members').update(payload).eq('user_id', uid);
 }
 
 /** 이메일로 초대 (pending) — 가입/수락은 별도(빌드 C) */

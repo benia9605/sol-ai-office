@@ -616,8 +616,9 @@ const isAiTask = (t: TaskItem) => t.category === '🤖 AI' || t.source === 'ai';
  * 그림자·둥근카드 없이 얇은 divide-y 선, 사각 체크박스. (레퍼런스 screens/01)
  * 비어 있으면 섹션 자체를 숨긴다.
  */
-function TaskCol({ title, items, onOpen, onCycle, memberName, onMeeting, danger, noTopBorder }: {
+function TaskCol({ title, items, onOpen, onCycle, memberName, memberAvatar, onMeeting, danger, noTopBorder }: {
   title: string; items: TaskItem[]; onOpen: (t: TaskItem) => void; onCycle: (id: string) => void; memberName: (uid?: string) => string;
+  memberAvatar?: (uid?: string) => string | undefined;
   onMeeting?: () => void; danger?: boolean; noTopBorder?: boolean;
 }) {
   if (items.length === 0) return null;
@@ -641,7 +642,7 @@ function TaskCol({ title, items, onOpen, onCycle, memberName, onMeeting, danger,
                 <span className={`text-sm flex-1 truncate ${done ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{t.title}</span>
                 {t.category && t.category !== '🤖 AI' && <span className="hidden sm:inline text-[11px] text-foreground-faint shrink-0">{t.category}</span>}
                 {isAiTask(t) && <span className="text-[11px] text-foreground-faint shrink-0">AI</span>}
-                {t.assigneeId && <span className="flex items-center gap-1 shrink-0"><Avatar name={memberName(t.assigneeId)} size="xs" /><span className="text-xs text-foreground-muted truncate max-w-[5rem]">{memberName(t.assigneeId)}</span></span>}
+                {t.assigneeId && <span className="flex items-center gap-1 shrink-0"><Avatar name={memberName(t.assigneeId)} url={memberAvatar?.(t.assigneeId)} size="xs" /><span className="text-xs text-foreground-muted truncate max-w-[5rem]">{memberName(t.assigneeId)}</span></span>}
                 {t.date && <span className={`text-xs shrink-0 tabular-nums ${danger ? 'text-rose-500' : 'text-foreground-faint'}`}>{t.date.slice(5)}</span>}
               </button>
               {t.meetingId && onMeeting && (
@@ -782,6 +783,7 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
     const m = members.find(x => x.userId === uid);
     return (m ? (m.nickname || m.name || m.email || '멤버') : '멤버') + (uid === myId ? ' (나)' : '');
   };
+  const memberAvatar = (uid?: string) => members.find(x => x.userId === uid)?.avatarUrl;
   const priorityLabel = { high: '높음', medium: '보통', low: '낮음' }[priority];
   const statusLabel = { pending: '할 일', in_progress: '진행 중', completed: '완료' }[status];
 
@@ -884,7 +886,7 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
                 </select>
               </div>
               {members.length > 1 && (
-                <MemberSelect value={assigneeId} members={members} onChange={setAssigneeId} memberName={memberName} />
+                <MemberSelect value={assigneeId} members={members} onChange={setAssigneeId} memberName={memberName} avatarUrl={memberAvatar} />
               )}
               {meetings.length > 0 && (
                 <select value={meetingId} onChange={e => setMeetingId(e.target.value)} className={fieldCls}>
@@ -1168,6 +1170,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
     const m = members.find(x => x.userId === uid);
     return m ? (m.nickname || m.name || m.email || '멤버') : '담당';
   };
+  const memberAvatar = (uid?: string) => members.find(x => x.userId === uid)?.avatarUrl;
   const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
 
   const save = async () => {
@@ -1280,7 +1283,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
           <div className="grid grid-cols-2 gap-2">
             <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className={fieldCls} />
             {members.length > 1 && (
-              <MemberSelect value={form.assigneeId} members={members} onChange={v => setForm({ ...form, assigneeId: v })} memberName={memberName} />
+              <MemberSelect value={form.assigneeId} members={members} onChange={v => setForm({ ...form, assigneeId: v })} memberName={memberName} avatarUrl={memberAvatar} />
             )}
           </div>
           <div className="flex gap-2 justify-end">
@@ -1311,11 +1314,11 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
           <div className="space-y-7">
             {overdue.length > 0 && (
               <div className="rounded-xl border border-rose-200 bg-rose-50/60 px-4 py-3">
-                <TaskCol title="지연" items={overdue} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} danger noTopBorder />
+                <TaskCol title="지연" items={overdue} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} danger noTopBorder />
               </div>
             )}
-            <TaskCol title="할 일" items={dayOpen} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
-            <TaskCol title="완료" items={dayDone} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+            <TaskCol title="할 일" items={dayOpen} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
+            <TaskCol title="완료" items={dayDone} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
             {overdue.length + dayOpen.length + dayDone.length === 0 && <p className="text-sm text-foreground-faint py-10 text-center">이 날짜에 할일이 없어요.</p>}
           </div>
         </>
@@ -1329,8 +1332,8 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
             <TabBtn id="mine" label="내 할일" count={counts.mine} />
           </div>
           <div className="space-y-7">
-            <TaskCol title="할 일" items={open} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
-            <TaskCol title="완료" items={done} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
+            <TaskCol title="할 일" items={open} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
+            <TaskCol title="완료" items={done} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
             {open.length + done.length === 0 && <p className="text-sm text-foreground-faint py-10 text-center">할일이 없어요.</p>}
           </div>
         </>
@@ -2444,6 +2447,7 @@ function activityLink(a: ActivityItem): string | undefined {
 /** 공용 활동 리스트 — 대시보드·팀활동·나 페이지에서 재사용 */
 export function ActivityList({ items, members, onNavigate }: { items: ActivityItem[]; members: WorkspaceMember[]; onNavigate?: Nav }) {
   const actorName = (uid?: string) => { if (!uid) return '누군가'; const m = members.find(x => x.userId === uid); return m?.nickname || m?.name || '멤버'; };
+  const actorAvatar = (uid?: string) => members.find(x => x.userId === uid)?.avatarUrl;
   return (
     <div className="divide-y divide-line">
       {items.map(a => {
@@ -2452,7 +2456,7 @@ export function ActivityList({ items, members, onNavigate }: { items: ActivityIt
         const link = onNavigate ? activityLink(a) : undefined;
         const Row = (
           <>
-            <Avatar name={actorName(a.actorId)} size="sm" />
+            <Avatar name={actorName(a.actorId)} url={actorAvatar(a.actorId)} size="sm" />
             <span className="text-sm text-foreground-muted flex-1 min-w-0 truncate">
               <b className="text-foreground">{actorName(a.actorId)}</b> 님이 {meta ? meta.verb(title) : a.action}
             </span>
@@ -2556,7 +2560,7 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
         {members.map(m => {
           return (
           <div key={m.userId} className="flex items-center gap-2.5 px-3 py-3 hover:bg-surface-muted transition-colors">
-            <Avatar name={m.nickname || m.name || m.userId} size="md" />
+            <Avatar name={m.nickname || m.name || m.userId} url={m.avatarUrl} size="md" />
             <span className="text-sm font-medium text-foreground flex-1 min-w-0 truncate">
               {m.nickname || m.name || <span className="text-foreground-faint italic">이름 없음</span>}{m.userId === myId && ' (나)'}
             </span>

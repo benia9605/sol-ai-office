@@ -10,7 +10,7 @@ import { useUserProfile } from '../../hooks/useUserProfile';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchWorkspaceTasks, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
 import { fetchActivities } from '../../services/activities.service';
-import { fetchMembers, updateMemberNickname } from '../../services/workspaces.service';
+import { fetchMembers, updateMyMemberProfile } from '../../services/workspaces.service';
 import { uploadImage } from '../../services/storage.service';
 import { ViewHead, Section, SaveButton, EmptyState, fieldCls } from './ui';
 import { ActivityList } from './views';
@@ -51,7 +51,7 @@ function ChipGroup({ value, options, onChange }: { value: string; options: { v: 
   );
 }
 
-function ProfileCard({ workspace }: { workspace: Workspace }) {
+function ProfileCard() {
   const { profile, loading, save } = useUserProfile();
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
@@ -87,9 +87,8 @@ function ProfileCard({ workspace }: { workspace: Workspace }) {
     if (!name.trim() || busy) return;
     setBusy(true);
     const ok = await save({ name: name.trim(), bio, tone, responseLength: length, emojiUsage: emoji, avatarUrl });
-    // 오피스 표시 이름(닉네임)도 프로필 이름으로 맞춘다
-    const myId = await getCurrentUserId().catch(() => null);
-    if (ok && myId) await updateMemberNickname(workspace.id, myId, name.trim()).catch(() => {});
+    // 오피스 표시 이름·이미지도 내 모든 멤버 행에 동기화
+    if (ok) await updateMyMemberProfile({ nickname: name.trim(), avatarUrl }).catch(() => {});
     setBusy(false);
     if (ok) { setSaved(true); setTimeout(() => setSaved(false), 2500); }
     else alert('저장에 실패했어요. 잠시 후 다시 시도해주세요.');
@@ -248,7 +247,7 @@ export function MeView({ workspace, onNavigate }: { workspace: Workspace; onNavi
     <>
       <ViewHead title="나" sub="내 프로필과 나에게 배정된 할일을 확인해요" />
       <div className="space-y-6">
-        <ProfileCard workspace={workspace} />
+        <ProfileCard />
         <MyTasksCard workspace={workspace} onNavigate={onNavigate} />
         <MyActivityCard workspace={workspace} onNavigate={onNavigate} />
         {uid && (

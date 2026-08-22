@@ -252,7 +252,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
                     {a.status === 'completed' && <span className="text-[11px] leading-none">✓</span>}
                   </button>
                   <span className={`text-sm flex-1 truncate ${a.status === 'completed' ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{a.title}</span>
-                  {a.assigneeId && <span className="flex items-center gap-1.5 shrink-0"><Avatar name={memberName(a.assigneeId)} size="xs" /><span className="text-xs text-foreground-muted">{memberName(a.assigneeId)}</span></span>}
+                  {a.assigneeId && <span className="flex items-center gap-1.5 shrink-0"><Avatar name={memberName(a.assigneeId)} url={members.find(m => m.userId === a.assigneeId)?.avatarUrl} size="xs" /><span className="text-xs text-foreground-muted">{memberName(a.assigneeId)}</span></span>}
                   {a.due && <span className="text-xs text-foreground-faint shrink-0 tabular-nums">{a.due.slice(5)}</span>}
                 </li>
               ) : null)}
@@ -273,7 +273,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
                 <button onClick={() => removeAction(i)} className="text-[13px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 flex-shrink-0">×</button>
               </div>
               <div className="flex gap-2 pl-6">
-                <MemberSelect value={a.assigneeId} members={members} onChange={v => updateAction(i, { assigneeId: v })} memberName={memberName} placeholder="담당자" className="flex-1" />
+                <MemberSelect value={a.assigneeId} members={members} onChange={v => updateAction(i, { assigneeId: v })} memberName={memberName} avatarUrl={uid => members.find(m => m.userId === uid)?.avatarUrl} placeholder="담당자" className="flex-1" />
                 <input type="date" value={a.due} onChange={e => updateAction(i, { due: e.target.value })} className={`${miniCls} flex-1`} />
               </div>
             </div>

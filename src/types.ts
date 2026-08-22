@@ -48,6 +48,7 @@ export interface WorkspaceMember {
   userId: string;
   role: 'owner' | 'member';
   nickname?: string;
+  avatarUrl?: string;   // 프로필 이미지 (마이그 049 · '나'에서 저장 시 동기화)
   joinedAt: string;
   // 표시용(조인) — 선택
   email?: string;
