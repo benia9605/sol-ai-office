@@ -177,25 +177,33 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
 
   return (
     <>
-      <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-3">← 회의</button>
-      <div className="rounded-[20px] bg-surface-muted/50 border border-line p-5 mb-4">
-        <div className="text-lg font-extrabold text-gray-800">{meeting.title}</div>
-        {meeting.meetingDate && <div className="text-sm text-gray-500 mt-0.5">📅 {meeting.meetingDate}{meeting.meetingTime ? ` ${meeting.meetingTime}` : ''}</div>}
-        {progress.total > 0 && <div className="mt-3"><TaskProgress done={progress.done} total={progress.total} /></div>}
+      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground mb-6 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+        회의
+      </button>
+      <div className="mb-8">
+        <h1 className="text-2xl sm:text-3xl font-light leading-snug text-foreground">{meeting.title}</h1>
+        {meeting.meetingDate && (
+          <div className="flex items-center gap-1.5 text-sm text-foreground-muted mt-2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+            {meeting.meetingDate}{meeting.meetingTime ? ` ${meeting.meetingTime}` : ''}
+          </div>
+        )}
+        {progress.total > 0 && <div className="mt-4"><TaskProgress done={progress.done} total={progress.total} /></div>}
       </div>
 
       {/* 회의록 */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">📝 회의록</span>
+      <div className="mb-8">
+        <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">회의록</div>
+        <div className="rounded-xl border border-line overflow-hidden">
+          <TiptapEditor content={note} onChange={setNote} placeholder="회의 내용·결정사항·다음 액션을 적어요…" />
         </div>
-        <TiptapEditor content={note} onChange={setNote} placeholder="회의 내용·결정사항·다음 액션을 적어요…" />
       </div>
 
       {/* 액션아이템 (할일 연동) */}
-      <div className="mb-4">
+      <div className="mb-8">
         <div className="flex items-center h-9 mb-2">
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">✅ 액션 아이템</span>
+          <span className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">액션 아이템</span>
           <span className="ml-2 text-[11px] text-gray-300">저장하면 할일 메뉴에도 담당자·기한과 함께 보여요</span>
         </div>
         <Card className="p-3 space-y-2">

@@ -852,6 +852,7 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
                 <>
                   {status !== 'completed' && <button onClick={quickComplete} disabled={saving} className="px-3 py-1.5 rounded-lg text-xs font-medium border border-line text-foreground-muted hover:border-foreground hover:text-foreground transition-colors">완료</button>}
                   <button onClick={() => setMode('edit')} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-surface hover:opacity-85 transition-all">수정</button>
+                  <button onClick={del} className="text-xs text-foreground-faint hover:text-rose-500 transition-colors px-1">삭제</button>
                 </>
               ) : (
                 <>
@@ -913,20 +914,17 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
             )}
           </div>
 
-          {/* 첨부파일 */}
+          {/* 첨부파일 — 뷰 모드는 읽기전용(canManage=false), 편집 모드에서만 추가/삭제 */}
           <div className="pt-4">
-            <AttachmentsSection workspaceId={workspace.id} refType="task" refId={taskId} />
+            <AttachmentsSection workspaceId={workspace.id} refType="task" refId={taskId} canManage={mode === 'edit'} />
           </div>
 
-          {/* 좋아요·댓글 */}
-          <div className="pt-4">
-            <LikeCommentBlock resource="task" resId={taskId} members={members} />
-          </div>
-
-          {/* 삭제 */}
-          <div className="pt-4">
-            <button onClick={del} className="text-xs text-foreground-faint hover:text-rose-500 transition-colors">이 할일 삭제</button>
-          </div>
+          {/* 좋아요·댓글 — 뷰 모드에서만 (편집 중엔 감춤) */}
+          {mode === 'view' && (
+            <div className="pt-4">
+              <LikeCommentBlock resource="task" resId={taskId} members={members} />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -991,7 +989,10 @@ export function InsightDetailView({ workspace, insightId, onBack }: { workspace:
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {mode === 'view'
-                ? <button onClick={() => setMode('edit')} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-surface hover:opacity-85 transition-all">수정</button>
+                ? <>
+                    <button onClick={() => setMode('edit')} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-surface hover:opacity-85 transition-all">수정</button>
+                    <button onClick={del} className="text-xs text-foreground-faint hover:text-rose-500 transition-colors px-1">삭제</button>
+                  </>
                 : <>
                     <button onClick={() => { setMode('view'); load(); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
                     <button onClick={save} disabled={saving} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-surface hover:opacity-85 transition-all disabled:opacity-50">{saving ? '저장 중…' : '저장'}</button>
@@ -1027,14 +1028,13 @@ export function InsightDetailView({ workspace, insightId, onBack }: { workspace:
           </div>
 
           <div className="pt-4">
-            <AttachmentsSection workspaceId={workspace.id} refType="insight" refId={insightId} />
+            <AttachmentsSection workspaceId={workspace.id} refType="insight" refId={insightId} canManage={mode === 'edit'} />
           </div>
-          <div className="pt-4">
-            <LikeCommentBlock resource="insight" resId={insightId} members={members} />
-          </div>
-          <div className="pt-4">
-            <button onClick={del} className="text-xs text-foreground-faint hover:text-rose-500 transition-colors">이 인사이트 삭제</button>
-          </div>
+          {mode === 'view' && (
+            <div className="pt-4">
+              <LikeCommentBlock resource="insight" resId={insightId} members={members} />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1097,7 +1097,10 @@ export function RecordDetailPage({ workspace, recordId, onBack }: { workspace: W
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {mode === 'view'
-                ? <button onClick={() => setMode('edit')} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-surface hover:opacity-85 transition-all">수정</button>
+                ? <>
+                    <button onClick={() => setMode('edit')} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-surface hover:opacity-85 transition-all">수정</button>
+                    <button onClick={del} className="text-xs text-foreground-faint hover:text-rose-500 transition-colors px-1">삭제</button>
+                  </>
                 : <>
                     <button onClick={() => { setMode('view'); load(); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
                     <button onClick={save} disabled={saving} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-surface hover:opacity-85 transition-all disabled:opacity-50">{saving ? '저장 중…' : '저장'}</button>
@@ -1119,14 +1122,13 @@ export function RecordDetailPage({ workspace, recordId, onBack }: { workspace: W
           </div>
 
           <div className="pt-4">
-            <AttachmentsSection workspaceId={workspace.id} refType="record" refId={recordId} />
+            <AttachmentsSection workspaceId={workspace.id} refType="record" refId={recordId} canManage={mode === 'edit'} />
           </div>
-          <div className="pt-4">
-            <LikeCommentBlock resource="record" resId={recordId} members={members} />
-          </div>
-          <div className="pt-4">
-            <button onClick={del} className="text-xs text-foreground-faint hover:text-rose-500 transition-colors">이 기록 삭제</button>
-          </div>
+          {mode === 'view' && (
+            <div className="pt-4">
+              <LikeCommentBlock resource="record" resId={recordId} members={members} />
+            </div>
+          )}
         </div>
       )}
     </div>

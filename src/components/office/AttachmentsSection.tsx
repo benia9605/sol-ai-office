@@ -122,6 +122,9 @@ export function AttachmentsSection({
     try { await deleteAttachment(a); } catch { load(); /* 실패 시 조용히 복구(스피너 없음) */ }
   };
 
+  // 읽기 전용(뷰 모드)인데 첨부가 하나도 없으면 섹션 자체를 숨긴다
+  if (!canManage && !loading && items.length === 0) return null;
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
