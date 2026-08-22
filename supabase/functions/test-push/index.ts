@@ -20,15 +20,22 @@ Deno.serve(async (req) => {
 
   try {
     const { user_id, title, body, tag, url } = await req.json();
-    if (!user_id) {
+
+    const supabase = getSupabaseAdmin();
+    // 로그인 유저가 호출하면 '본인에게만' 테스트 푸시 (남에게 위장 푸시 방지).
+    // 서버(service-role) 호출은 user가 없으므로 body.user_id 그대로.
+    const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+    let callerId: string | null = null;
+    try { const { data } = await supabase.auth.getUser(token); callerId = data?.user?.id ?? null; } catch { callerId = null; }
+    const targetUser = callerId || user_id;
+    if (!targetUser) {
       return new Response(JSON.stringify({ error: 'user_id required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const supabase = getSupabaseAdmin();
-    const sent = await sendPushToUser(supabase, user_id, {
+    const sent = await sendPushToUser(supabase, targetUser, {
       title: title || '테스트 알림',
       body: body || 'Teamie 푸시 알림 테스트입니다!',
       tag: tag || 'test',

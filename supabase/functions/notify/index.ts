@@ -52,6 +52,27 @@ Deno.serve(async (req: Request) => {
 
   const supabase = getSupabaseAdmin();
 
+  // 0) 호출자 검증 — 로그인 유저(클라이언트) 호출이면 위장 방지:
+  //    · 해당 workspace 멤버여야 하고, actor_id는 본인으로 강제,
+  //    · target_user_ids는 그 workspace 멤버로만 제한.
+  //    서버(cron·service-role) 호출은 user가 없으므로 그대로 신뢰(기존 동작 유지).
+  const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  let callerId: string | null = null;
+  try { const { data } = await supabase.auth.getUser(token); callerId = data?.user?.id ?? null; } catch { callerId = null; }
+  if (callerId) {
+    const { data: me } = await supabase
+      .from('workspace_members').select('user_id')
+      .eq('workspace_id', body.workspace_id).eq('user_id', callerId).maybeSingle();
+    if (!me) return json({ error: 'forbidden' }, 403);
+    body.actor_id = callerId; // 액터 스푸핑 방지
+    if (body.target_user_ids?.length) {
+      const { data: members } = await supabase
+        .from('workspace_members').select('user_id').eq('workspace_id', body.workspace_id);
+      const set = new Set((members ?? []).map((m: { user_id: string }) => m.user_id));
+      body.target_user_ids = body.target_user_ids.filter((u) => set.has(u));
+    }
+  }
+
   // 1) 수신자 결정
   let candidateIds: string[];
   if (body.target_user_ids?.length) {
