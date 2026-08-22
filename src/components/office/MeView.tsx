@@ -5,11 +5,14 @@
  * - 프로필은 user_profiles(useUserProfile), 할일은 workspace_tasks(assignee 필터).
  */
 import { useEffect, useState } from 'react';
-import { Workspace } from '../../types';
+import { Workspace, WorkspaceMember, ActivityItem } from '../../types';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchWorkspaceTasks, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
+import { fetchActivities } from '../../services/activities.service';
+import { fetchMembers } from '../../services/workspaces.service';
 import { ViewHead, Section, SaveButton, EmptyState, fieldCls } from './ui';
+import { ActivityList } from './views';
 import { NotificationSettings } from '../NotificationSettings';
 import { dueLabel, daysUntil } from '../../utils/dateCalc';
 
@@ -179,6 +182,35 @@ function MyTasksCard({ workspace, onNavigate }: { workspace: Workspace; onNaviga
   );
 }
 
+function MyActivityCard({ workspace, onNavigate }: { workspace: Workspace; onNavigate: Nav }) {
+  const [items, setItems] = useState<ActivityItem[]>([]);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      const myId = await getCurrentUserId().catch(() => null);
+      const [acts, mem] = await Promise.all([
+        fetchActivities(workspace.id, 100).catch(() => []),
+        fetchMembers(workspace.id).catch(() => []),
+      ]);
+      setItems(acts.filter(a => a.actorId === myId).slice(0, 15));
+      setMembers(mem);
+      setLoading(false);
+    })();
+  }, [workspace.id]);
+  return (
+    <Section title="내 활동" desc="내가 최근 한 일">
+      {loading ? (
+        <p className="text-xs text-foreground-faint py-3">불러오는 중…</p>
+      ) : items.length === 0 ? (
+        <EmptyState emoji="🧾" title="아직 활동이 없어요" sub="할일 완료·기록·인사이트 같은 내 활동이 여기 쌓여요" />
+      ) : (
+        <ActivityList items={items} members={members} onNavigate={onNavigate} />
+      )}
+    </Section>
+  );
+}
+
 export function MeView({ workspace, onNavigate }: { workspace: Workspace; onNavigate: Nav }) {
   const [uid, setUid] = useState('');
   useEffect(() => { getCurrentUserId().then(setUid).catch(() => {}); }, []);
@@ -189,6 +221,7 @@ export function MeView({ workspace, onNavigate }: { workspace: Workspace; onNavi
       <div className="space-y-6">
         <ProfileCard />
         <MyTasksCard workspace={workspace} onNavigate={onNavigate} />
+        <MyActivityCard workspace={workspace} onNavigate={onNavigate} />
         {uid && (
           <Section title="알림 설정" desc="푸시 알림 종류를 켜고 끌 수 있어요">
             <NotificationSettings userId={uid} embedded />

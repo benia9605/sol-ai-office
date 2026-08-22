@@ -2452,8 +2452,8 @@ function activityLink(a: ActivityItem): string | undefined {
   return b && a.resourceId ? `${b}/${a.resourceId}` : undefined;
 }
 
-/** 공용 활동 리스트 — 대시보드(compact)와 팀활동 페이지에서 재사용 */
-function ActivityList({ items, members, onNavigate }: { items: ActivityItem[]; members: WorkspaceMember[]; onNavigate?: Nav }) {
+/** 공용 활동 리스트 — 대시보드·팀활동·나 페이지에서 재사용 */
+export function ActivityList({ items, members, onNavigate }: { items: ActivityItem[]; members: WorkspaceMember[]; onNavigate?: Nav }) {
   const actorName = (uid?: string) => { if (!uid) return '누군가'; const m = members.find(x => x.userId === uid); return m?.nickname || m?.name || '멤버'; };
   return (
     <div className="divide-y divide-line">

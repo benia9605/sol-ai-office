@@ -55,6 +55,7 @@ export function MeetingsView({ workspace }: { workspace: Workspace }) {
     if (!form.title.trim()) return;
     try {
       const m = await addMeeting(workspace.id, { title: form.title.trim(), meetingDate: form.date || undefined, meetingTime: form.time || undefined });
+      recordActivity({ workspaceId: workspace.id, action: 'created_meeting', resourceType: 'meeting', resourceId: m.id, metadata: { title: m.title } });
       setForm({ title: '', date: getTodayStr(), time: '' }); setShowForm(false);
       await load(); setSelected(m);
     } catch (e) { console.error(e); alert('회의 생성 실패'); }
