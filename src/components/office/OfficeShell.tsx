@@ -192,7 +192,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
   );
 
   return (
-    <div className="office-shell h-[100dvh] overflow-hidden flex flex-col bg-[#f4f8f5] text-gray-800">
+    <div className="office-shell h-[100dvh] overflow-hidden flex flex-col bg-[#f8fcfa] text-gray-800">
       {/* 상단바 */}
       <header ref={navRef} className="relative flex-shrink-0 bg-white border-b border-gray-100 z-30 pt-[env(safe-area-inset-top)]">
         <div className="h-14 flex items-center gap-2 px-4 sm:px-6">

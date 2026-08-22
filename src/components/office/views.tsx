@@ -616,9 +616,9 @@ const isAiTask = (t: TaskItem) => t.category === '🤖 AI' || t.source === 'ai';
  * 그림자·둥근카드 없이 얇은 divide-y 선, 사각 체크박스. (레퍼런스 screens/01)
  * 비어 있으면 섹션 자체를 숨긴다.
  */
-function TaskCol({ title, items, onOpen, onCycle, memberName, onMeeting, danger }: {
+function TaskCol({ title, items, onOpen, onCycle, memberName, onMeeting, danger, noTopBorder }: {
   title: string; items: TaskItem[]; onOpen: (t: TaskItem) => void; onCycle: (id: string) => void; memberName: (uid?: string) => string;
-  onMeeting?: () => void; danger?: boolean;
+  onMeeting?: () => void; danger?: boolean; noTopBorder?: boolean;
 }) {
   if (items.length === 0) return null;
   return (
@@ -627,7 +627,7 @@ function TaskCol({ title, items, onOpen, onCycle, memberName, onMeeting, danger 
         <span className={`text-[11px] font-semibold uppercase tracking-wider ${danger ? 'text-rose-500' : 'text-foreground-faint'}`}>{title}</span>
         <span className="text-xs text-foreground-faint tabular-nums">{items.length}</span>
       </div>
-      <ul className="divide-y divide-line border-t border-line">
+      <ul className={`divide-y ${danger ? 'divide-rose-200/70' : 'divide-line'} ${noTopBorder ? '' : `border-t ${danger ? 'border-rose-200/70' : 'border-line'}`}`}>
         {items.map(t => {
           const done = t.status === 'completed';
           return (
@@ -1314,7 +1314,11 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
             <TabBtn id="mine" label="내 할일" count={counts.mine} />
           </div>
           <div className="space-y-7">
-            <TaskCol title="지연" items={overdue} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} danger />
+            {overdue.length > 0 && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50/60 px-4 py-3">
+                <TaskCol title="지연" items={overdue} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} danger noTopBorder />
+              </div>
+            )}
             <TaskCol title="할 일" items={dayOpen} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
             <TaskCol title="완료" items={dayDone} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} onMeeting={openMeeting} />
             {overdue.length + dayOpen.length + dayDone.length === 0 && <p className="text-sm text-foreground-faint py-10 text-center">이 날짜에 할일이 없어요.</p>}
