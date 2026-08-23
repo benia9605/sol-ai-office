@@ -560,3 +560,23 @@
   opacity: 1;
   transition-delay: 350ms;
 }
+
+/* ───────────────────────────────────────────────
+   유튜브 임베드 (youtube 노드) — 16:9 반응형
+   ─────────────────────────────────────────────── */
+.tiptap-youtube {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 12px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+.tiptap-youtube iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}

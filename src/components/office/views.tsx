@@ -38,7 +38,7 @@ import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
 import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, SearchBar, fieldCls as monoField } from './ui';
-import { RichText, docToText, parseDoc, serializeDoc } from './RichText';
+import { RichText, docToText, docHasContent, parseDoc, serializeDoc } from './RichText';
 import { Avatar, MemberSelect } from './Avatar';
 import { NavIcon } from './NavIcons';
 
@@ -918,10 +918,10 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
           <div>
             <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">내용</div>
             {mode === 'edit' ? (
-              <div className="rounded-xl border border-line overflow-hidden">
+              <div>
                 <TiptapEditor content={note} onChange={setNote} placeholder="자료·조사 내용, 진행 메모 등을 자유롭게 적어요… (마크다운 붙여넣기 지원)" />
               </div>
-            ) : docToText(task.notes).trim() ? (
+            ) : docHasContent(task.notes) ? (
               <RichText value={task.notes} />
             ) : (
               <p className="text-sm text-foreground-faint">내용이 없어요. <button onClick={() => setMode('edit')} className="underline">추가하기</button></p>
@@ -1031,10 +1031,10 @@ export function InsightDetailView({ workspace, insightId, onBack }: { workspace:
           <div>
             <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">내용</div>
             {mode === 'edit' ? (
-              <div className="rounded-xl border border-line overflow-hidden">
+              <div>
                 <TiptapEditor content={content} onChange={setContent} placeholder="인사이트 내용을 작성하세요… (마크다운 붙여넣기 지원)" />
               </div>
-            ) : docToText(row.content).trim() ? (
+            ) : docHasContent(row.content) ? (
               <RichText value={row.content} />
             ) : (
               <p className="text-sm text-foreground-faint">내용이 없어요. <button onClick={() => setMode('edit')} className="underline">추가하기</button></p>
@@ -1125,10 +1125,10 @@ export function RecordDetailPage({ workspace, recordId, onBack }: { workspace: W
           <div>
             <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">내용</div>
             {mode === 'edit' ? (
-              <div className="rounded-xl border border-line overflow-hidden">
+              <div>
                 <TiptapEditor content={body} onChange={setBody} placeholder="기록을 작성하세요… (마크다운 붙여넣기 지원)" />
               </div>
-            ) : docToText(row.memo_body).trim() ? (
+            ) : docHasContent(row.memo_body) ? (
               <RichText value={row.memo_body} />
             ) : (
               <p className="text-sm text-foreground-faint">내용이 없어요. <button onClick={() => setMode('edit')} className="underline">추가하기</button></p>

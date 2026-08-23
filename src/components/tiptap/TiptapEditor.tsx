@@ -15,6 +15,7 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
+import { YoutubeNode, toYoutubeEmbed } from './youtube';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
@@ -165,6 +166,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
       TaskItem.configure({ nested: true }),
       Link.configure({ openOnClick: false }),
       Image.configure({ inline: true, allowBase64: true }),
+      YoutubeNode,
       Table.configure({ resizable: false }),
       TableRow,
       TableHeader,
@@ -283,6 +285,15 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
   const addImage = useCallback(() => {
     imageFileRef.current?.click();
   }, []);
+
+  const addYoutube = useCallback(() => {
+    if (!editor) return;
+    const url = window.prompt('유튜브 링크를 붙여넣으세요 (커서 위치에 영상이 들어가요)');
+    if (!url) return;
+    const embed = toYoutubeEmbed(url);
+    if (!embed) { alert('유튜브 링크를 인식하지 못했어요. (예: youtube.com/watch?v=… 또는 youtu.be/…)'); return; }
+    editor.chain().focus().insertContent({ type: 'youtube', attrs: { src: embed } }).run();
+  }, [editor]);
 
   const handleImageFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -465,6 +476,9 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
             : <span className="text-xs">🖼</span>}
         </button>
         <input ref={imageFileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={handleImageFile} />
+        <button onClick={addYoutube} data-tip="유튜브 영상 삽입">
+          <svg width="18" height="14" viewBox="0 0 24 18" aria-hidden><rect x="0" y="0" width="24" height="18" rx="4" fill="#FF0000" /><path d="M9.6 12.3 15.6 9 9.6 5.7v6.6Z" fill="#fff" /></svg>
+        </button>
         <button onClick={() => editor.chain().focus().setHorizontalRule().run()} data-tip="구분선">
           <span className="text-xs">—</span>
         </button>

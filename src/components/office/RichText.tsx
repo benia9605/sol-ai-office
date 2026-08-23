@@ -42,6 +42,24 @@ export function serializeDoc(json: Doc): string {
   return JSON.stringify(json);
 }
 
+/** 실제 내용이 있는지 — 텍스트뿐 아니라 이미지·유튜브 등 미디어 노드도 '내용'으로 친다.
+ *  (이미지만 넣고 저장했을 때 '내용 없음'으로 오판하던 버그 방지) */
+export function docHasContent(value: unknown): boolean {
+  if (value == null) return false;
+  if (typeof value === 'string' && !value.trim().startsWith('{')) return value.trim().length > 0;
+  const doc = parseDoc(value);
+  const MEDIA = new Set(['image', 'youtube', 'horizontalRule', 'table']);
+  let found = false;
+  const walk = (n: any) => {
+    if (found || !n) return;
+    if (typeof n.text === 'string' && n.text.trim()) { found = true; return; }
+    if (n.type && MEDIA.has(n.type)) { found = true; return; }
+    if (Array.isArray(n.content)) n.content.forEach(walk);
+  };
+  walk(doc);
+  return found;
+}
+
 /** 미리보기/요약용 평문 추출 (에디터 문서면 텍스트만, 평문이면 그대로) */
 export function docToText(value: unknown): string {
   if (typeof value === 'string' && !value.trim().startsWith('{')) return value;
@@ -59,7 +77,7 @@ export function docToText(value: unknown): string {
 /** 저장값 읽기전용 렌더 — 에디터 문서면 TiptapReadOnly, 아니면 평문. 비었으면 null. */
 export function RichText({ value, className = '' }: { value: unknown; className?: string }) {
   const text = docToText(value);
-  if (!text) return null;
+  if (!docHasContent(value)) return null;
   // 에디터로 작성된 문서만 리치 렌더, 그 외(AI 자동생성 평문 등)는 평문 표시
   const isDoc = isTiptapDoc(value) || (typeof value === 'string' && value.trim().startsWith('{') && isTiptapDoc(safeParse(value)));
   if (isDoc) return <div className={className}><TiptapReadOnly content={parseDoc(value)} /></div>;

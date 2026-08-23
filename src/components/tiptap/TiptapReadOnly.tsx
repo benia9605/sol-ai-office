@@ -14,6 +14,7 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
+import { YoutubeNode } from './youtube';
 import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
@@ -35,6 +36,7 @@ export function TiptapReadOnly({ content }: TiptapReadOnlyProps) {
       TaskItem.configure({ nested: true }),
       Link.configure({ openOnClick: true }),
       Image.configure({ inline: true, allowBase64: true }),
+      YoutubeNode,
       Table.configure({ resizable: false }),
       TableRow,
       TableHeader,

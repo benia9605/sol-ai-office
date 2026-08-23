@@ -14,7 +14,7 @@ import { fetchWorkspaceTasks, fetchTasksByMeeting, updateTaskStatus, fromDbStatu
 import { recordActivity } from '../../services/activities.service';
 import { ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, SearchBar } from './ui';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
-import { RichText, parseDoc, serializeDoc, docToText } from './RichText';
+import { RichText, parseDoc, serializeDoc, docToText, docHasContent } from './RichText';
 import { Avatar, MemberSelect } from './Avatar';
 import { LikeCommentBlock } from './LikeCommentBlock';
 import { AttachmentsSection } from './AttachmentsSection';
@@ -228,10 +228,10 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
       <div className="mb-8">
         <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">회의록</div>
         {mode === 'edit' ? (
-          <div className="rounded-xl border border-line overflow-hidden">
+          <div>
             <TiptapEditor content={note} onChange={setNote} placeholder="회의 내용·결정사항·다음 액션을 적어요…" />
           </div>
-        ) : docToText(meeting.content).trim() ? (
+        ) : docHasContent(meeting.content) ? (
           <RichText value={meeting.content} />
         ) : (
           <p className="text-sm text-foreground-faint">작성된 회의록이 없어요. <button onClick={() => setMode('edit')} className="underline">작성하기</button></p>
