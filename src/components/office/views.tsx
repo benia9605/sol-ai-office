@@ -1270,7 +1270,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
         action={<AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="할일" />} />
 
       {/* 뷰 토글 (일별/전체/캘린더) */}
-      <div className="flex items-center gap-1 mb-4">{modeBtn('day', '일별')}{modeBtn('list', '전체')}{modeBtn('calendar', '캘린더')}</div>
+      <div className="flex items-center gap-1 mb-4">{modeBtn('day', '일별')}{modeBtn('calendar', '캘린더')}{modeBtn('list', '전체')}</div>
 
       {showForm && (
         <Card className="p-4 mb-3 space-y-2.5">
