@@ -471,14 +471,14 @@ export function NotificationSettings({ userId, embedded }: Props) {
               onChange={(v) => togglePref('notifyTaskDue', v)}
             />
             <NotifToggle
-              label="댓글"
-              desc="내 항목에 댓글·답글 (곧 지원)"
+              label="댓글·답글"
+              desc="내 할일·인사이트·기록·회의에 댓글/답글이 달리면 알림"
               checked={prefs.notifyComment}
               onChange={(v) => togglePref('notifyComment', v)}
             />
             <NotifToggle
               label="좋아요"
-              desc="내 항목에 좋아요 (기본 꺼짐, 곧 지원)"
+              desc="내 항목에 좋아요를 누르면 알림"
               checked={prefs.notifyLike}
               onChange={(v) => togglePref('notifyLike', v)}
             />
