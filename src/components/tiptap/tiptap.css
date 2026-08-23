@@ -580,3 +580,16 @@
   height: 100%;
   border: 0;
 }
+
+/* 원본 HTML 블록 (rawHtml 노드) — sandbox iframe 래퍼 */
+.raw-html-block {
+  margin: 0.75rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--color-surface-muted, #f7f7f5);
+}
+.raw-html-block iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+}

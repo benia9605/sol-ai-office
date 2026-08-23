@@ -48,7 +48,7 @@ export function docHasContent(value: unknown): boolean {
   if (value == null) return false;
   if (typeof value === 'string' && !value.trim().startsWith('{')) return value.trim().length > 0;
   const doc = parseDoc(value);
-  const MEDIA = new Set(['image', 'youtube', 'horizontalRule', 'table']);
+  const MEDIA = new Set(['image', 'youtube', 'horizontalRule', 'table', 'rawHtml']);
   let found = false;
   const walk = (n: any) => {
     if (found || !n) return;

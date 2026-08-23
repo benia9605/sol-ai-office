@@ -206,6 +206,7 @@ export interface Meeting {
   title: string;
   meetingDate?: string;   // YYYY-MM-DD
   meetingTime?: string;
+  agenda?: string;         // 아젠다(안건) — 줄바꿈으로 여러 개
   content?: string;        // 회의록 본문
   createdAt?: string;
   updatedAt?: string;

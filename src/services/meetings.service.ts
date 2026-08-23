@@ -15,7 +15,7 @@ import { recordActivity } from './activities.service';
 const toMeeting = (r: any): Meeting => ({
   id: r.id, workspaceId: r.workspace_id, createdBy: r.created_by, title: r.title,
   meetingDate: r.meeting_date ?? undefined, meetingTime: r.meeting_time ?? undefined,
-  content: r.content ?? undefined, createdAt: r.created_at, updatedAt: r.updated_at,
+  agenda: r.agenda ?? undefined, content: r.content ?? undefined, createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
 export async function fetchMeetings(workspaceId: string): Promise<Meeting[]> {
@@ -55,6 +55,7 @@ export async function updateMeeting(id: string, fields: Partial<Meeting>): Promi
   if (fields.title !== undefined) p.title = fields.title;
   if (fields.meetingDate !== undefined) p.meeting_date = fields.meetingDate || null;
   if (fields.meetingTime !== undefined) p.meeting_time = fields.meetingTime || null;
+  if (fields.agenda !== undefined) p.agenda = fields.agenda || null;
   if (fields.content !== undefined) p.content = fields.content || null;
   const { error } = await supabase.from('meetings').update(p).eq('id', id);
   if (error) throw error;

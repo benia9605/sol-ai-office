@@ -56,7 +56,7 @@
 | 테이블 | 컬럼 |
 |---|---|
 | `tasks` | id, user_id, title, type, project, goal_id, status('todo'\|'in_progress'\|'done'), priority, starred, due_date, category, notes, repeat, tags, estimated_time, actual_time, conversation_id, completed_at, **workspace_id**, **is_shared**, **assignee_id**, **meeting_id**(→meetings, 회의 액션아이템 연결·마이그 040), **source**('manual'\|'content'\|'decision'\|'memory'\|'campaign'\|'ai'), created_at |
-| `meetings` (회의 + 회의록) | id, **workspace_id**, created_by, title, meeting_date, meeting_time, content(회의록 본문), created_at, updated_at · 마이그 040. 액션아이템은 `tasks.meeting_id`, 캘린더 연동은 `schedules.meeting_id`(category='회의'). 참석자/투표 없음 |
+| `meetings` (회의 + 회의록) | id, **workspace_id**, created_by, title, meeting_date, meeting_time, **agenda**(안건 목록, '\n' join 문자열·마이그 050), content(회의록 본문), created_at, updated_at · 마이그 040. 액션아이템은 `tasks.meeting_id`, 캘린더 연동은 `schedules.meeting_id`(category='회의'). 참석자/투표 없음 |
 | `products` | id, **workspace_id**, created_by, name, sku, category, status('active'\|'draft'\|'discontinued'), price, cost, stock, image_url, description, tags, created_at, updated_at (마이그 026) |
 | `content_items` | id, **workspace_id**, created_by, title, platform, content_type('desire'\|'info'\|'worldview'\|'behind'), status('idea'\|'approved'\|'scripted'\|'shooting'\|'editing'\|'scheduled'\|'published'\|'archived'), hook, script, shot_list, url, published_at, **primary_product_id**, **content_purpose**('view'\|'follow'\|'save'\|'sale'\|'brand'), **owner**, **scheduled_for**, created_at, updated_at (마이그 027·028) |
 | `content_metrics` | id, **workspace_id**, content_item_id, checkpoint('h24'\|'h72'\|'d7'), views, likes, comments, saves, shares, watch_time, completion_rate, follower_delta, measured_at, created_at, updated_at, UNIQUE(content_item_id,checkpoint) (마이그 029) |
@@ -121,5 +121,6 @@
 | `040_meetings.sql` | 회의 전용 메뉴 — meetings(회의+회의록) + tasks.meeting_id(액션아이템) + schedules.meeting_id(캘린더 연동, CASCADE) + RLS |
 | `041_tasks_team_and_activities.sql` | 팀 할일 가시성 — tasks에 SELECT(공유+멤버)·UPDATE(담당자) 정책 '추가' + workspace_activities(활동 로그) 테이블·RLS |
 | `042_user_profiles_dedup_unique.sql` | user_profiles 중복 정리(user_id별 최신 1건) + user_id 부분 UNIQUE 인덱스 — 프로필 저장 안 됨 버그 방어 |
+| `050_meeting_agenda.sql` | meetings에 agenda(안건 목록) 컬럼 추가 — 회의록 아젠다를 본문과 분리(이식 킷 06) |
 
 > ⚠️ **base 테이블(tasks·schedules·insights·journals·readings·projects·conversations·messages·goals·kpis·user_profiles 등)은 레포에 DDL이 없음** — 과거 Supabase에 직접 생성. 새로 환경을 만들 땐 이 문서를 기준으로 재생성 필요. (TODO: base 스키마 덤프를 `000_base_schema.sql`로 박제하면 완전 재현 가능)

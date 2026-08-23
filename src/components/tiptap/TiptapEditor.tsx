@@ -16,6 +16,7 @@ import TaskItem from '@tiptap/extension-task-item';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import { YoutubeNode, toYoutubeEmbed } from './youtube';
+import { RawHtml } from './rawHtml';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
@@ -167,6 +168,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
       Link.configure({ openOnClick: false }),
       Image.configure({ inline: true, allowBase64: true }),
       YoutubeNode,
+      RawHtml,
       Table.configure({ resizable: false }),
       TableRow,
       TableHeader,
@@ -319,6 +321,17 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
     if (!editor) return;
     setUrlVal(''); setUrlMode('youtube');
   }, [editor]);
+
+  // HTML 코드 삽입 팝오버 (툴바 아래 열리는 textarea) — 이식 킷 06
+  const [htmlOpen, setHtmlOpen] = useState(false);
+  const [htmlSrc, setHtmlSrc] = useState('');
+  const insertHtml = useCallback(() => {
+    if (!editor) return;
+    const src = htmlSrc.trim();
+    if (!src) return;
+    editor.chain().focus().insertContent({ type: 'rawHtml', attrs: { html: src } }).run();
+    setHtmlSrc(''); setHtmlOpen(false);
+  }, [editor, htmlSrc]);
 
   const handleImageFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -513,6 +526,9 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
         <button onClick={() => editor.chain().focus().setHorizontalRule().run()} data-tip="구분선">
           <span className="text-xs">—</span>
         </button>
+        <button onClick={() => setHtmlOpen(v => !v)} className={htmlOpen ? 'is-active' : ''} data-tip="HTML 코드 삽입">
+          <span className="text-[11px] font-bold tracking-tight">&lt;/&gt;</span>
+        </button>
 
         <div className="divider" />
 
@@ -526,6 +542,31 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
           <span className="text-xs">↪</span>
         </button>
       </div>
+
+      {/* HTML 코드 삽입 패널 — 붙인 그대로 sandbox iframe으로 렌더 (이식 킷 06) */}
+      {htmlOpen && (
+        <div className="border-t border-gray-200 bg-white px-2.5 py-2.5 space-y-2">
+          <textarea
+            autoFocus
+            value={htmlSrc}
+            onChange={e => setHtmlSrc(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Escape') { setHtmlOpen(false); }
+              else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); insertHtml(); }
+            }}
+            rows={5}
+            placeholder={'<table>…</table> 같은 HTML 코드를 붙여넣으세요. 붙인 그대로 렌더링됩니다.'}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-mono leading-relaxed focus:outline-none focus:border-foreground resize-y"
+          />
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] text-gray-400">⌘/Ctrl+Enter 로 삽입</p>
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setHtmlOpen(false); setHtmlSrc(''); }} className="px-2.5 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100">취소</button>
+              <button onClick={insertHtml} disabled={!htmlSrc.trim()} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">삽입</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 드래그 선택 시 표시되는 인라인 팝업 (볼드/이탤릭/취소선/하이라이트/색) */}
       <BubbleMenu

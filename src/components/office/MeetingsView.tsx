@@ -6,22 +6,37 @@
  *   각 줄: 내용 · 담당자 · 기한. 「+ 할일 추가」로 빠르게 여러 줄, 「전체 과제」로 전원 일괄 배정.
  * - 회의 등록·회의록 저장 시 멤버 알림, 할일 배정 시 담당자 알림.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Workspace, WorkspaceMember, Meeting, TaskStatus } from '../../types';
 import { fetchMeetings, addMeeting, updateMeeting, deleteMeeting, notifyMeetingNote, syncMeetingTasks, MeetingTaskDraft } from '../../services/meetings.service';
 import { fetchMembers } from '../../services/workspaces.service';
 import { fetchWorkspaceTasks, fetchTasksByMeeting, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
 import { recordActivity } from '../../services/activities.service';
-import { ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, SearchBar } from './ui';
+import { ViewHead, EmptyState, TaskProgress, AddButton, InlineAddCard, SearchBar } from './ui';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
 import { RichText, parseDoc, serializeDoc, docToText, docHasContent } from './RichText';
-import { Avatar, MemberSelect } from './Avatar';
+import { Avatar } from './Avatar';
 import { LikeCommentBlock } from './LikeCommentBlock';
 import { AttachmentsSection } from './AttachmentsSection';
 import { getTodayStr } from '../../utils/dateCalc';
 
 const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
-const miniCls = 'min-w-0 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-xs text-gray-600 focus:outline-none focus:bg-white focus:border-foreground transition-colors';
+// 이식 킷 06 — 밑줄만 있는 인풋 / 배지형 버튼 (박스 없음)
+const inputClass = 'w-full border-b border-line-strong px-0 py-2 text-sm focus:border-foreground focus:outline-none bg-transparent placeholder:text-foreground-faint';
+const chipBtn = 'border border-line-strong px-3 py-1.5 text-xs text-foreground-muted hover:border-foreground hover:text-foreground transition-colors';
+
+/** 폼 섹션 — 제목 + 얇은 밑줄 + (선택) 부제. 섹션 사이는 space-y-12. (이식 킷 06) */
+function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
+  return (
+    <section>
+      <div className="mb-5 border-b border-line pb-3">
+        <h2 className="text-base text-foreground">{title}</h2>
+        {subtitle && <p className="mt-1 text-xs text-foreground-faint">{subtitle}</p>}
+      </div>
+      <div className="space-y-5">{children}</div>
+    </section>
+  );
+}
 
 export function MeetingsView({ workspace, openId }: { workspace: Workspace; openId?: string }) {
   const [list, setList] = useState<Meeting[]>([]);
@@ -134,6 +149,15 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
   const [saving, setSaving] = useState(false);
   const [actions, setActions] = useState<ActionDraft[]>([emptyAction()]);
   const [bulk, setBulk] = useState({ title: '', due: '' });
+  const [wsTasks, setWsTasks] = useState<any[]>([]);   // '기존 할일 불러오기' 후보
+  const [pickerOpen, setPickerOpen] = useState(false);
+  useEffect(() => { fetchWorkspaceTasks(workspace.id).then(setWsTasks).catch(() => setWsTasks([])); }, [workspace.id]);
+  const parseAgenda = (a?: string) => { const arr = (a || '').split('\n').map(s => s.trim()).filter(Boolean); return arr.length ? arr : ['']; };
+  const [agenda, setAgenda] = useState<string[]>(() => parseAgenda(meeting.agenda));
+  const agendaView = (meeting.agenda || '').split('\n').map(s => s.trim()).filter(Boolean);
+  const updateAgenda = (i: number, v: string) => setAgenda(prev => prev.map((x, idx) => idx === i ? v : x));
+  const addAgenda = () => setAgenda(prev => [...prev, '']);
+  const removeAgenda = (i: number) => setAgenda(prev => prev.length === 1 ? [''] : prev.filter((_, idx) => idx !== i));
   const del = async () => { if (!confirm('이 회의를 삭제할까요?')) return; await deleteMeeting(meeting.id).catch(() => {}); onBack(); };
 
   // 이 회의의 할일을 불러와 편집 줄로 시딩
@@ -183,7 +207,8 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
     setSaving(true);
     try {
       const hadContent = !!docToText(meeting.content);
-      await updateMeeting(meeting.id, { content: serializeDoc(note) });
+      const agendaStr = agenda.map(s => s.trim()).filter(Boolean).join('\n');
+      await updateMeeting(meeting.id, { content: serializeDoc(note), agenda: agendaStr });
       if (!hadContent && docToText(note).trim()) await notifyMeetingNote(workspace.id, meeting);
       const drafts: MeetingTaskDraft[] = actions.map(a => ({ id: a.id, title: a.title, assigneeId: a.assigneeId, due: a.due }));
       await syncMeetingTasks(meeting.id, workspace.id, drafts);
@@ -194,17 +219,26 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
   };
   const savedActions = actions.filter(a => a.id && a.title.trim());
 
+  const candidates = wsTasks.filter(t => !actions.some(a => a.id === t.id));
+  const addExisting = (rows: ActionDraft[]) => setActions(prev => {
+    const base = prev.length === 1 && !prev[0].title && !prev[0].id ? [] : prev;
+    return [...base, ...rows];
+  });
+
   return (
-    <>
-      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground mb-6 transition-colors">
+    <div className="max-w-3xl">
+      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-foreground-muted hover:text-foreground mb-8 transition-colors">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
         회의
       </button>
-      <div className="flex items-start justify-between gap-4 mb-8">
+
+      {/* ── 헤더 — 제목 · 일시 · 진행률 · (뷰)편집/삭제 (편집)취소/저장 ── */}
+      <header className="flex items-start justify-between gap-4 mb-10">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl sm:text-3xl font-light leading-snug text-foreground">{meeting.title}</h1>
+          <p className="label">Meeting Note</p>
+          <h1 className="mt-3 text-3xl sm:text-4xl font-light leading-tight text-foreground">{meeting.title}</h1>
           {meeting.meetingDate && (
-            <div className="flex items-center gap-1.5 text-sm text-foreground-muted mt-2">
+            <div className="flex items-center gap-1.5 text-sm text-foreground-muted mt-3">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
               {meeting.meetingDate}{meeting.meetingTime ? ` ${meeting.meetingTime}` : ''}
             </div>
@@ -214,102 +248,193 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
         <div className="flex items-center gap-2 flex-shrink-0">
           {mode === 'view'
             ? <>
-                <button onClick={() => setMode('edit')} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-surface hover:opacity-85 transition-all">편집</button>
-                <button onClick={del} className="text-xs text-foreground-faint hover:text-rose-500 transition-colors px-1">삭제</button>
+                <button onClick={() => setMode('edit')} className="border border-line-strong px-4 py-2 text-sm text-foreground hover:border-foreground transition-colors">편집</button>
+                <button onClick={del} className="border border-line-strong px-4 py-2 text-sm text-rose-500 hover:border-rose-400 transition-colors">삭제</button>
               </>
             : <>
-                <button onClick={() => { setMode('view'); loadItems(); setNote(parseDoc(meeting.content)); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
-                <button onClick={save} disabled={saving} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-surface hover:opacity-85 disabled:opacity-50 transition-all">{saving ? '저장 중…' : '저장'}</button>
+                <button onClick={() => { setMode('view'); loadItems(); setNote(parseDoc(meeting.content)); setAgenda(parseAgenda(meeting.agenda)); }} className="border border-line-strong px-4 py-2 text-sm text-foreground hover:border-foreground transition-colors">취소</button>
+                <button onClick={save} disabled={saving} className="border border-foreground bg-foreground px-5 py-2 text-sm text-surface hover:opacity-85 disabled:opacity-60 transition-all">{saving ? '저장 중…' : '저장'}</button>
               </>}
         </div>
-      </div>
+      </header>
 
-      {/* ── 회의록 본문 ── */}
-      <div className="mb-8">
-        <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">회의록</div>
-        {mode === 'edit' ? (
-          <div>
-            <TiptapEditor content={note} onChange={setNote} placeholder="회의 내용·결정사항·다음 액션을 적어요…" />
-          </div>
-        ) : docHasContent(meeting.content) ? (
-          <RichText value={meeting.content} />
-        ) : (
-          <p className="text-sm text-foreground-faint">작성된 회의록이 없어요. <button onClick={() => setMode('edit')} className="underline">작성하기</button></p>
-        )}
-      </div>
-
-      {/* ── 액션 아이템 (뷰: 읽기전용 체크리스트 / 편집: 폼) ── */}
-      <div className="mb-8">
-        <div className="flex items-center h-9 mb-2">
-          <span className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">액션 아이템</span>
-          {mode === 'edit' && <span className="ml-2 text-[11px] text-foreground-faint">저장하면 할일 메뉴에도 담당자·기한과 함께 보여요</span>}
-        </div>
-
-        {mode === 'view' ? (
-          savedActions.length === 0 ? (
-            <p className="text-sm text-foreground-faint">액션 아이템이 없어요.</p>
-          ) : (
-            <ul className="divide-y divide-line border-t border-line">
-              {actions.map((a, i) => a.id && a.title.trim() ? (
-                <li key={a.id} className="flex items-center gap-3 py-3">
-                  <button onClick={() => toggleStatus(i)} title="완료 토글"
-                    className={`size-5 shrink-0 border flex items-center justify-center transition-colors ${a.status === 'completed' ? 'border-foreground bg-foreground text-surface' : 'border-line-strong hover:border-foreground'}`}>
-                    {a.status === 'completed' && <span className="text-[11px] leading-none">✓</span>}
-                  </button>
-                  <span className={`text-sm flex-1 truncate ${a.status === 'completed' ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{a.title}</span>
-                  {a.assigneeId && <span className="flex items-center gap-1.5 shrink-0"><Avatar name={memberName(a.assigneeId)} url={members.find(m => m.userId === a.assigneeId)?.avatarUrl} size="xs" /><span className="text-xs text-foreground-muted">{memberName(a.assigneeId)}</span></span>}
-                  {a.due && <span className="text-xs text-foreground-faint shrink-0 tabular-nums">{a.due.slice(5)}</span>}
+      {mode === 'edit' ? (
+        /* ═══════════ 편집 모드 (이식 킷 06 그대로) ═══════════ */
+        <div className="space-y-12">
+          {/* ── 아젠다 ── */}
+          <Section title="아젠다">
+            <ul className="space-y-2">
+              {agenda.map((item, i) => (
+                <li key={i} className="flex items-center gap-2">
+                  <span className="text-xs text-foreground-faint w-6 shrink-0 text-right tabular-nums">{i + 1}.</span>
+                  <input value={item} onChange={e => updateAgenda(i, e.target.value)} placeholder="안건" className={inputClass} />
+                  <button type="button" onClick={() => removeAgenda(i)} aria-label="아젠다 삭제"
+                    className="text-xl leading-none text-foreground-faint hover:text-rose-500 px-2 -mr-2 disabled:opacity-30"
+                    disabled={agenda.length === 1 && !agenda[0]}>×</button>
                 </li>
-              ) : null)}
+              ))}
             </ul>
-          )
-        ) : (
-        <Card className="p-3 space-y-2">
-          {/* 편집 줄들 — 내용 · 담당자 · 기한 */}
-          {actions.map((a, i) => (
-            <div key={a.id ?? `new-${i}`} className="group rounded-xl border border-gray-100 p-2.5 space-y-2 hover:border-gray-200">
-              <div className="flex items-center gap-2">
-                <button onClick={() => toggleStatus(i)} disabled={!a.id} title={a.id ? '완료 토글' : '저장하면 완료 체크 가능'}
-                  className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${a.status === 'completed' ? 'bg-foreground border-foreground' : 'border-gray-300'} ${!a.id ? 'opacity-30' : ''}`}>
-                  {a.status === 'completed' && <span className="text-white text-[9px]">✓</span>}
-                </button>
-                <input value={a.title} onChange={e => updateAction(i, { title: e.target.value })} onKeyDown={e => { if (e.key === 'Enter') addAction(); }}
-                  placeholder="할 일 내용" className={`flex-1 bg-transparent text-sm focus:outline-none ${a.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-700'}`} />
-                <button onClick={() => removeAction(i)} className="text-[13px] text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 flex-shrink-0">×</button>
-              </div>
-              <div className="flex gap-2 pl-6">
-                <MemberSelect value={a.assigneeId} members={members} onChange={v => updateAction(i, { assigneeId: v })} memberName={memberName} avatarUrl={uid => members.find(m => m.userId === uid)?.avatarUrl} placeholder="담당자" className="flex-1" />
-                <input type="date" value={a.due} onChange={e => updateAction(i, { due: e.target.value })} className={`${miniCls} flex-1`} />
-              </div>
-            </div>
-          ))}
-          <button onClick={addAction} className="w-full text-left text-xs text-gray-400 hover:text-foreground px-2 py-1.5">＋ 할일 추가</button>
+            <button type="button" onClick={addAgenda} className="mt-3 text-xs text-foreground-muted hover:text-foreground">+ 아젠다 추가</button>
+          </Section>
 
-          {/* 전체 과제 — 전원 일괄 배정 */}
-          {members.length > 1 && (
-            <div className="border-t border-gray-100 pt-2.5 mt-1">
-              <p className="text-[11px] text-gray-400 mb-1.5">전체 과제 · 모든 멤버에게 일괄 배정</p>
-              <div className="flex gap-2">
-                <input value={bulk.title} onChange={e => setBulk({ ...bulk, title: e.target.value })} placeholder="예: 다음 회의 전까지 자료 정리" className={`${miniCls} flex-1`} />
-                <input type="date" value={bulk.due} onChange={e => setBulk({ ...bulk, due: e.target.value })} className={`${miniCls} w-32`} />
-                <button onClick={bulkAdd} disabled={!bulk.title.trim()} className="px-3 py-2 rounded-lg text-xs font-bold bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-40 flex-shrink-0">{members.length}명 추가</button>
+          {/* ── 회의 내용 ── */}
+          <Section title="회의 내용">
+            <div>
+              <label className="text-xs text-foreground-muted">본문</label>
+              <div className="mt-2">
+                <TiptapEditor content={note} onChange={setNote} placeholder="아젠다 별로 정리한 토론 내용을 적습니다." />
               </div>
             </div>
+          </Section>
+
+          {/* ── 할일 ── */}
+          <Section title="할일" subtitle="회의 결과로 정해진 액션 아이템. 저장 시 회의록에 연결된 할일로 등록됩니다.">
+            {/* 방식 ② 전체 일괄 배정 */}
+            {members.length > 0 && (
+              <div className="border border-line p-4 space-y-3 bg-surface-muted">
+                <p className="label">전체 과제 · 모든 멤버에게 일괄 배정</p>
+                <div className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-[1fr_140px_auto] sm:gap-2 sm:items-center">
+                  <input value={bulk.title} onChange={e => setBulk({ ...bulk, title: e.target.value })} placeholder="예: 다음 회의 전까지 자료 정리" className={inputClass} />
+                  <input type="date" value={bulk.due} onChange={e => setBulk({ ...bulk, due: e.target.value })} className={`${inputClass} w-32 sm:w-auto`} aria-label="기한" />
+                  <button type="button" onClick={bulkAdd} disabled={!bulk.title.trim() || members.length === 0}
+                    className="bg-primary-500 text-white px-4 py-2 text-xs hover:opacity-85 disabled:opacity-60">멤버 {members.length}명에게 추가</button>
+                </div>
+              </div>
+            )}
+
+            {/* 방식 ① 개별 행 */}
+            <ul className="mt-6 space-y-4 sm:space-y-3">
+              {actions.map((row, i) => (
+                <li key={row.id ?? `new-${i}`} className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-[1fr_160px_140px_auto] sm:gap-2 sm:items-center">
+                  <input value={row.title} onChange={e => updateAction(i, { title: e.target.value })} placeholder="내용" className={inputClass} />
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-2 sm:contents">
+                    <select value={row.assigneeId} onChange={e => updateAction(i, { assigneeId: e.target.value })} className={inputClass} aria-label="담당자">
+                      <option value="">담당자 미지정</option>
+                      {members.map(m => <option key={m.userId} value={m.userId}>{memberName(m.userId)}</option>)}
+                    </select>
+                    <input type="date" value={row.due} onChange={e => updateAction(i, { due: e.target.value })} className={`${inputClass} w-32 sm:w-auto`} aria-label="기한" />
+                    <button type="button" onClick={() => removeAction(i)} aria-label="할일 삭제"
+                      className="text-xl leading-none text-foreground-faint hover:text-rose-500 px-2 sm:px-0 sm:w-8 sm:text-right disabled:opacity-30"
+                      disabled={actions.length === 1 && !row.title && !row.assigneeId && !row.due}>×</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* 리스트 하단 — 배지형 버튼 */}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button type="button" onClick={addAction} className={chipBtn}>+ 할일 추가</button>
+              {candidates.length > 0 && (
+                <button type="button" onClick={() => setPickerOpen(v => !v)} className={`${chipBtn} ${pickerOpen ? 'border-foreground text-foreground' : ''}`}>+ 기존 할일 불러오기</button>
+              )}
+            </div>
+            {pickerOpen && candidates.length > 0 && (
+              <ExistingTaskPanel candidates={candidates} memberName={memberName} onAdd={addExisting} onClose={() => setPickerOpen(false)} />
+            )}
+          </Section>
+
+          {/* 첨부파일 */}
+          <Section title="첨부파일">
+            <AttachmentsSection workspaceId={workspace.id} refType="meeting" refId={meeting.id} canManage />
+          </Section>
+        </div>
+      ) : (
+        /* ═══════════ 뷰 모드 ═══════════ */
+        <div className="space-y-12">
+          {/* ── 아젠다 ── */}
+          {agendaView.length > 0 && (
+            <Section title="아젠다">
+              <ol className="space-y-2">
+                {agendaView.map((item, i) => (
+                  <li key={i} className="flex gap-2 text-sm text-foreground">
+                    <span className="text-foreground-faint w-6 shrink-0 text-right tabular-nums">{i + 1}.</span>
+                    <span className="flex-1">{item}</span>
+                  </li>
+                ))}
+              </ol>
+            </Section>
           )}
-        </Card>
-        )}
-      </div>
 
-      {/* 첨부파일 — 뷰는 읽기전용, 편집에서만 관리 */}
-      <div className="mt-6">
-        <AttachmentsSection workspaceId={workspace.id} refType="meeting" refId={meeting.id} canManage={mode === 'edit'} />
-      </div>
-      {/* 좋아요·댓글 — 뷰 모드에서만 */}
-      {mode === 'view' && (
-        <div className="mt-6 pb-6">
-          <LikeCommentBlock resource="meeting" resId={meeting.id} members={members} />
+          {/* ── 회의 내용 ── */}
+          <Section title="회의 내용">
+            {docHasContent(meeting.content)
+              ? <RichText value={meeting.content} />
+              : <p className="text-sm text-foreground-faint">작성된 회의록이 없어요. <button onClick={() => setMode('edit')} className="underline">작성하기</button></p>}
+          </Section>
+
+          {/* ── 할일 ── */}
+          <Section title="할일">
+            {savedActions.length === 0 ? (
+              <p className="text-sm text-foreground-faint">액션 아이템이 없어요.</p>
+            ) : (
+              <ul className="divide-y divide-line border-t border-line">
+                {actions.map((a, i) => a.id && a.title.trim() ? (
+                  <li key={a.id} className="flex items-center gap-3 py-3">
+                    <button onClick={() => toggleStatus(i)} title="완료 토글"
+                      className={`size-5 shrink-0 border flex items-center justify-center transition-colors ${a.status === 'completed' ? 'border-foreground bg-foreground text-surface' : 'border-line-strong hover:border-foreground'}`}>
+                      {a.status === 'completed' && <span className="text-[11px] leading-none">✓</span>}
+                    </button>
+                    <span className={`text-sm flex-1 truncate ${a.status === 'completed' ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{a.title}</span>
+                    {a.assigneeId && <span className="flex items-center gap-1.5 shrink-0"><Avatar name={memberName(a.assigneeId)} url={members.find(m => m.userId === a.assigneeId)?.avatarUrl} size="xs" /><span className="text-xs text-foreground-muted">{memberName(a.assigneeId)}</span></span>}
+                    {a.due && <span className="text-xs text-foreground-faint shrink-0 tabular-nums">{a.due.slice(5)}</span>}
+                  </li>
+                ) : null)}
+              </ul>
+            )}
+          </Section>
+
+          {/* 첨부파일 (읽기전용) */}
+          <Section title="첨부파일">
+            <AttachmentsSection workspaceId={workspace.id} refType="meeting" refId={meeting.id} canManage={false} />
+          </Section>
+
+          {/* 좋아요·댓글 */}
+          <div className="pb-6">
+            <LikeCommentBlock resource="meeting" resId={meeting.id} members={members} />
+          </div>
         </div>
       )}
-    </>
+    </div>
+  );
+}
+
+// ── 기존 할일 불러오기 (다중 선택 패널) — 이식 킷 06 ──
+function ExistingTaskPanel({ candidates, memberName, onAdd, onClose }: {
+  candidates: any[]; memberName: (uid?: string) => string;
+  onAdd: (rows: ActionDraft[]) => void; onClose: () => void;
+}) {
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const toggle = (id: string) => setChecked(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const handleAdd = () => {
+    const rows: ActionDraft[] = candidates.filter(t => checked.has(t.id)).map(t => ({
+      id: t.id, title: t.title, assigneeId: t.assignee_id ?? '', due: t.due_date ? t.due_date.slice(0, 10) : '', status: fromDbStatus(t.status),
+    }));
+    if (!rows.length) return;
+    onAdd(rows); setChecked(new Set()); onClose();
+  };
+  return (
+    <div className="mt-2 border border-line">
+      <ul className="max-h-64 overflow-y-auto divide-y divide-line">
+        {candidates.map(t => {
+          const on = checked.has(t.id);
+          return (
+            <li key={t.id}>
+              <button type="button" onClick={() => toggle(t.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${on ? 'bg-surface-muted' : 'hover:bg-surface-muted'}`}>
+                <span aria-hidden className={`shrink-0 w-4 h-4 border flex items-center justify-center text-[10px] ${on ? 'bg-foreground border-foreground text-surface' : 'border-line-strong text-transparent'}`}>✓</span>
+                <span className="min-w-0 flex-1">
+                  <span className={`block text-sm truncate ${t.status === 'done' ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{t.title}</span>
+                  <span className="block text-xs text-foreground-faint truncate">{memberName(t.assignee_id) || '미지정'}{t.meeting_id ? ' · 다른 회의에 연결됨' : ''}</span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="flex items-center justify-end gap-2 border-t border-line px-3 py-2">
+        <span className="mr-auto text-xs text-foreground-faint">{checked.size}개 선택</span>
+        <button type="button" onClick={handleAdd} disabled={checked.size === 0} className="bg-primary-500 text-white px-4 py-2 text-xs hover:opacity-85 disabled:opacity-60">연결</button>
+      </div>
+    </div>
   );
 }
