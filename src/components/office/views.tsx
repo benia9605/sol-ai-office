@@ -1280,10 +1280,11 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
       <ViewHead eyebrow="TASKS" title="할일" sub={`${open.length}건 진행 · ${done.length}건 완료${overdue.length ? ` · 지연 ${overdue.length}` : ''}`}
         action={<AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="할일" />} />
 
+      {/* 검색 — +할일 아래 · 필터(뷰토글·탭) 위 */}
+      <SearchBar value={q} onChange={setQ} placeholder="할일 검색" />
+
       {/* 뷰 토글 (일별/전체/캘린더) */}
       <div className="flex items-center gap-1 mb-4">{modeBtn('day', '일별')}{modeBtn('calendar', '캘린더')}{modeBtn('list', '전체')}</div>
-
-      <SearchBar value={q} onChange={setQ} placeholder="할일 검색" />
 
       {showForm && (
         <Card className="p-4 mb-3 space-y-2.5">
@@ -1426,6 +1427,7 @@ export function InsightsView({ workspace, onNavigate }: { workspace: Workspace; 
     <>
       <ViewHead eyebrow="INSIGHTS" title="인사이트" sub={`인사이트 ${list.length}건`}
         action={<AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="인사이트" />} />
+      {list.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="인사이트 검색" />}
       <InlineAddCard open={showForm}>
         <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="제목" className={monoField} />
         <div>
@@ -1444,7 +1446,6 @@ export function InsightsView({ workspace, onNavigate }: { workspace: Workspace; 
         </div>
       </InlineAddCard>
 
-      {list.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="인사이트 검색" />}
       {list.length === 0 ? (
         <EmptyState emoji="💡" title="아직 인사이트가 없어요" sub="직접 추가하거나, AI 직원이 트렌드·소구점을 자동 도출해요" />
       ) : shown.length === 0 ? (
@@ -1571,6 +1572,7 @@ export function LogView({ workspace, onNavigate }: { workspace: Workspace; onNav
         <button onClick={() => setWriting(v => !v)}
           className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 메모</button>
       </div>
+      {memos.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="기록 검색" />}
       {writing && (
         <Card className="p-4 mb-3 space-y-2.5">
           <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="제목"
@@ -1590,7 +1592,6 @@ export function LogView({ workspace, onNavigate }: { workspace: Workspace; onNav
           </div>
         </Card>
       )}
-      {memos.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="기록 검색" />}
       {(() => { const shown = q.trim() ? memos.filter(m => `${m.title} ${docToText(m.memo_body)}`.toLowerCase().includes(q.trim().toLowerCase())) : memos; return (
         memos.length === 0 ? (
         <EmptyState emoji="📝" title="메모가 없어요" sub="＋ 메모로 자유롭게 기록하세요" />
@@ -2008,6 +2009,8 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
     <>
       <ViewHead eyebrow="CONTENT" title="콘텐츠" sub={`${list.length}건 · 아이디어→발행`} />
 
+      {list.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="콘텐츠 검색" />}
+
       <div className="flex flex-wrap items-center gap-1.5 mb-3">
         {chip('all', '전체')}
         {CONTENT_STATUS_ORDER.map(s => chip(s, CONTENT_STATUS_LABEL[s]))}
@@ -2036,7 +2039,6 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
         </Card>
       )}
 
-      {list.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="콘텐츠 검색" />}
       {list.length === 0 ? (
         <EmptyState emoji="🎬" title="콘텐츠가 없어요" sub="＋ 콘텐츠로 아이디어를 등록하고 발행까지 관리하세요" />
       ) : shown.length === 0 ? (

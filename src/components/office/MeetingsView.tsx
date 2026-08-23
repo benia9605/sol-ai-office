@@ -79,6 +79,7 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
     <>
       <ViewHead eyebrow="MEETINGS" title="회의" sub={`${list.length}건`}
         action={<AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="새 회의" />} />
+      {list.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="회의 검색" />}
       <InlineAddCard open={showForm}>
         <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} onKeyDown={e => { if (e.key === 'Enter') create(); }} placeholder="회의 제목" className={fieldCls} />
         <div className="grid grid-cols-2 gap-2">
@@ -90,7 +91,6 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
           <button onClick={create} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">만들기</button>
         </div>
       </InlineAddCard>
-      {list.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="회의 검색" />}
       {(() => { const shown = q.trim() ? list.filter(m => `${m.title} ${m.content ? docToText(m.content) : ''}`.toLowerCase().includes(q.trim().toLowerCase())) : list; return (
         list.length === 0 ? (
         <EmptyState emoji="📋" title="아직 회의가 없어요" sub="＋ 새 회의로 만들고, 회의록·액션아이템(할일)을 정리하세요" />
