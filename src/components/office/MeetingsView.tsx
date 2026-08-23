@@ -12,7 +12,7 @@ import { fetchMeetings, addMeeting, updateMeeting, deleteMeeting, notifyMeetingN
 import { fetchMembers } from '../../services/workspaces.service';
 import { fetchWorkspaceTasks, fetchTasksByMeeting, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
 import { recordActivity } from '../../services/activities.service';
-import { ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard } from './ui';
+import { ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, SearchBar } from './ui';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
 import { RichText, parseDoc, serializeDoc, docToText } from './RichText';
 import { Avatar, MemberSelect } from './Avatar';
@@ -30,6 +30,7 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
   const [selected, setSelected] = useState<Meeting | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', date: getTodayStr(), time: '' });
+  const [q, setQ] = useState('');
 
   // 딥링크(/meetings/:id · 알림·활동 클릭)로 들어오면 해당 회의를 연다
   useEffect(() => {
@@ -89,11 +90,15 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
           <button onClick={create} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">만들기</button>
         </div>
       </InlineAddCard>
-      {list.length === 0 ? (
+      {list.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="회의 검색" />}
+      {(() => { const shown = q.trim() ? list.filter(m => `${m.title} ${m.content ? docToText(m.content) : ''}`.toLowerCase().includes(q.trim().toLowerCase())) : list; return (
+        list.length === 0 ? (
         <EmptyState emoji="📋" title="아직 회의가 없어요" sub="＋ 새 회의로 만들고, 회의록·액션아이템(할일)을 정리하세요" />
+      ) : shown.length === 0 ? (
+        <p className="text-sm text-foreground-faint py-10 text-center">‘{q.trim()}’ 결과가 없어요.</p>
       ) : (
         <ul className="divide-y divide-line border-t border-line">
-          {list.map(m => {
+          {shown.map(m => {
             const p = progress.get(m.id);
             const preview = m.content ? docToText(m.content).trim() : '';
             return (
@@ -110,7 +115,7 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
             );
           })}
         </ul>
-      )}
+      )); })()}
     </>
   );
 }

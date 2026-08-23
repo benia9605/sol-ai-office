@@ -37,7 +37,7 @@ import { fetchWorkspaceAnalytics, WorkspaceAnalytics } from '../../services/anal
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
-import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, fieldCls as monoField } from './ui';
+import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, SearchBar, fieldCls as monoField } from './ui';
 import { RichText, docToText, parseDoc, serializeDoc } from './RichText';
 import { Avatar, MemberSelect } from './Avatar';
 import { NavIcon } from './NavIcons';
@@ -1165,6 +1165,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
   useEffect(() => { if (initialScope) setScope(initialScope); }, [initialScope]);
   const [mode, setMode] = useState<'day' | 'list' | 'calendar'>('day');
   const [cursor, setCursor] = useState<string>(() => getTodayStr()); // 일별 뷰: 선택한 날짜
+  const [q, setQ] = useState('');
 
   const loadWs = () => fetchWorkspaceTasks(workspace.id).then(rows => setWsTasks(rows.map(rowToTaskItem))).catch(() => setWsTasks([]));
   useEffect(() => {
@@ -1247,8 +1248,9 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
   // ── 스코프(탭) + 하위 필터 적용 ──
   // 탭은 전체 / 내 할일 2가지. '내 할일' = 나에게 배정 + (미배정이면서 내가 만든 것)
   const isMine = (t: TaskItem) => t.assigneeId === myId || (!t.assigneeId && t.createdBy === myId);
+  const scoped0 = scope === 'mine' ? wsTasks.filter(isMine) : wsTasks;
   const counts = { all: wsTasks.length, mine: wsTasks.filter(isMine).length };
-  const fTasks = scope === 'mine' ? wsTasks.filter(isMine) : wsTasks;
+  const fTasks = q.trim() ? scoped0.filter(t => (t.title || '').toLowerCase().includes(q.trim().toLowerCase())) : scoped0;
   const open = fTasks.filter(t => t.status !== 'completed');
   const done = fTasks.filter(t => t.status === 'completed');
 
@@ -1280,6 +1282,8 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
 
       {/* 뷰 토글 (일별/전체/캘린더) */}
       <div className="flex items-center gap-1 mb-4">{modeBtn('day', '일별')}{modeBtn('calendar', '캘린더')}{modeBtn('list', '전체')}</div>
+
+      <SearchBar value={q} onChange={setQ} placeholder="할일 검색" />
 
       {showForm && (
         <Card className="p-4 mb-3 space-y-2.5">
@@ -1397,9 +1401,11 @@ export function InsightsView({ workspace, onNavigate }: { workspace: Workspace; 
   const blank = () => ({ title: '', content: parseDoc(''), source: '', link: '', tags: '' });
   const [form, setForm] = useState(blank);
   const [selected, setSelected] = useState<InsightRow | null>(null);
+  const [q, setQ] = useState('');
   const openInsight = (i: InsightRow) => onNavigate ? onNavigate('insights/' + i.id) : setSelected(i);
   const load = () => fetchInsights(workspace.id).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
+  const shown = q.trim() ? list.filter(i => `${i.title} ${docToText(i.content)}`.toLowerCase().includes(q.trim().toLowerCase())) : list;
 
   const save = async () => {
     if (!form.title.trim()) return;
@@ -1438,11 +1444,14 @@ export function InsightsView({ workspace, onNavigate }: { workspace: Workspace; 
         </div>
       </InlineAddCard>
 
+      {list.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="인사이트 검색" />}
       {list.length === 0 ? (
         <EmptyState emoji="💡" title="아직 인사이트가 없어요" sub="직접 추가하거나, AI 직원이 트렌드·소구점을 자동 도출해요" />
+      ) : shown.length === 0 ? (
+        <p className="text-sm text-foreground-faint py-10 text-center">‘{q.trim()}’ 결과가 없어요.</p>
       ) : (
         <ul className="divide-y divide-line border-t border-line">
-          {list.map(i => {
+          {shown.map(i => {
             const preview = docToText(i.content);
             return (
               <li key={i.id}>
@@ -1535,6 +1544,7 @@ export function LogView({ workspace, onNavigate }: { workspace: Workspace; onNav
   const [title, setTitle] = useState('');
   const [body, setBody] = useState<any>(undefined);
   const [selected, setSelected] = useState<RecordRow | null>(null);
+  const [q, setQ] = useState('');
   const editorRef = useRef<TiptapEditorHandle>(null);
   const load = () => fetchRecords(workspace.id, 'memo').then(setMemos).catch(() => setMemos([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
@@ -1580,11 +1590,15 @@ export function LogView({ workspace, onNavigate }: { workspace: Workspace; onNav
           </div>
         </Card>
       )}
-      {memos.length === 0 ? (
+      {memos.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="기록 검색" />}
+      {(() => { const shown = q.trim() ? memos.filter(m => `${m.title} ${docToText(m.memo_body)}`.toLowerCase().includes(q.trim().toLowerCase())) : memos; return (
+        memos.length === 0 ? (
         <EmptyState emoji="📝" title="메모가 없어요" sub="＋ 메모로 자유롭게 기록하세요" />
+      ) : shown.length === 0 ? (
+        <p className="text-sm text-foreground-faint py-10 text-center">‘{q.trim()}’ 결과가 없어요.</p>
       ) : (
         <ul className="divide-y divide-line border-t border-line">
-          {memos.map(m => {
+          {shown.map(m => {
             const preview = docToText(m.memo_body);
             return (
               <li key={m.id} className="group flex items-start gap-2">
@@ -1600,7 +1614,7 @@ export function LogView({ workspace, onNavigate }: { workspace: Workspace; onNav
             );
           })}
         </ul>
-      )}
+      )); })()}
 
       {selected && (
         <RecordDetailView
@@ -1964,6 +1978,7 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
   const [form, setForm] = useState<{ title: string; platform: string; contentType: string }>({ title: '', platform: '', contentType: '' });
   const [selected, setSelected] = useState<ContentItem | null>(null);
   const [filter, setFilter] = useState<ContentStatus | 'all'>('all');
+  const [q, setQ] = useState('');
   const load = () => fetchContentItems(workspace.id).then(setList).catch(() => setList([]));
   useEffect(() => {
     load();
@@ -1981,7 +1996,8 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
     } catch (e) { console.error('[ContentItemsView] 저장 실패:', e); alert('콘텐츠 저장에 실패했어요. 잠시 후 다시 시도해 주세요.'); }
   };
 
-  const shown = filter === 'all' ? list : list.filter(c => c.status === filter);
+  const byStatus = filter === 'all' ? list : list.filter(c => c.status === filter);
+  const shown = q.trim() ? byStatus.filter(c => `${c.title} ${c.hook ?? ''} ${c.platform ?? ''}`.toLowerCase().includes(q.trim().toLowerCase())) : byStatus;
   const openContent = (c: ContentItem) => onNavigate ? onNavigate('contents/' + c.id) : setSelected(c);
   const chip = (id: ContentStatus | 'all', label: string) => (
     <button key={id} onClick={() => setFilter(id)}
@@ -2020,8 +2036,11 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
         </Card>
       )}
 
-      {shown.length === 0 ? (
+      {list.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="콘텐츠 검색" />}
+      {list.length === 0 ? (
         <EmptyState emoji="🎬" title="콘텐츠가 없어요" sub="＋ 콘텐츠로 아이디어를 등록하고 발행까지 관리하세요" />
+      ) : shown.length === 0 ? (
+        <p className="text-sm text-foreground-faint py-10 text-center">결과가 없어요.</p>
       ) : (
         <ul className="divide-y divide-line border-t border-line">
           {shown.map(c => (

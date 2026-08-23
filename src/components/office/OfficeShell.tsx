@@ -17,6 +17,7 @@ import {
 import { StaffView } from './StaffView';
 import { NotificationBell } from './NotificationBell';
 import { NavIcon } from './NavIcons';
+import { GlobalSearch } from './GlobalSearch';
 import { MeetingsView } from './MeetingsView';
 import { CompanySettingsView } from './CompanySettingsView';
 import { MeView } from './MeView';
@@ -153,6 +154,14 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);   // 모바일 더보기 시트
+  const [showSearch, setShowSearch] = useState(false); // 오피스 전체 검색
+
+  // ⌘K / Ctrl+K → 전체 검색
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setShowSearch(true); } };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, []);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 모바일 하단 네비 주요 항목 (나머지는 더보기)
@@ -265,6 +274,10 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
 
           <div className="flex-1" />
           <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button onClick={() => setShowSearch(true)} title="오피스 전체 검색 (⌘K)"
+              className="w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-500 transition-colors active:scale-95">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+            </button>
             <button onClick={() => setShowUsage(true)} title="코인 잔액 — 클릭하면 사용 내역(요금)"
               className={`flex items-center gap-1 text-sm font-bold transition-all duration-300 hover:opacity-70 active:scale-95 ${coinPulse ? 'scale-110 text-amber-500' : 'text-gray-500'}`}>
               <CoinIcon /><span>{credits != null ? credits.toLocaleString() : '—'}</span>
@@ -272,6 +285,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             <NotificationBell workspace={workspace} onNavigate={onNavigate} />
           </div>
         </div>
+        {showSearch && <GlobalSearch workspace={workspace} onNavigate={onNavigate} onClose={() => setShowSearch(false)} />}
 
         {/* PC 메가메뉴 드롭다운 — 클릭한 그룹의 항목 */}
         {openGroup && (

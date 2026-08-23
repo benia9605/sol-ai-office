@@ -105,6 +105,18 @@ export function SaveButton({ onClick, busy, saved, label = '저장', savedText =
   );
 }
 
+/** 목록 검색바 — 각 메뉴 리스트 상단. 제목/내용을 필터. */
+export function SearchBar({ value, onChange, placeholder = '검색' }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div className="relative mb-3">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-faint pointer-events-none"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full pl-9 pr-8 py-2 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors" />
+      {value && <button onClick={() => onChange('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-foreground-faint hover:text-foreground text-sm">✕</button>}
+    </div>
+  );
+}
+
 /** 모노 추가 버튼 — 일정의 "+ 새 일정" 톤(아웃라인 → hover 시 반전). open이면 '취소'로 표시. */
 export function AddButton({ open, onClick, label = '추가', className = '' }: {
   open?: boolean; onClick: () => void; label?: string; className?: string;
