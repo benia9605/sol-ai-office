@@ -65,11 +65,11 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]"
       style={{ animation: 'hsFade .15s ease-out' }} onMouseDown={close}>
       <style>{ANIM}</style>
-      <div className="bg-white rounded-[32px] shadow-2xl w-[520px] max-w-[94vw] max-h-[88vh] overflow-y-auto p-7"
+      <div className="bg-surface rounded-[32px] shadow-2xl w-[520px] max-w-[94vw] max-h-[88vh] overflow-y-auto p-7"
         style={{ animation: 'hsPop .22s cubic-bezier(.2,.9,.25,1)' }} onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-[17px] font-extrabold text-gray-800">{type ? `${type.emoji} ${type.label} 채용` : 'AI 직원 채용'}</h2>
-          <button onClick={close} className="w-9 h-9 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center active:scale-90">✕</button>
+          <h2 className="text-[17px] font-extrabold text-foreground">{type ? `${type.emoji} ${type.label} 채용` : 'AI 직원 채용'}</h2>
+          <button onClick={close} className="w-9 h-9 rounded-full hover:bg-surface-muted text-foreground-faint flex items-center justify-center active:scale-90">✕</button>
         </div>
 
         {/* 1단계: 타입 카탈로그 */}
@@ -77,11 +77,11 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
           <div className="grid grid-cols-2 gap-3">
             {STAFF_TYPES.map(t => (
               <button key={t.key} onClick={() => choose(t)}
-                className="rounded-[22px] border border-gray-100 bg-white hover:bg-surface-muted/50 hover:border-line
+                className="rounded-[22px] border border-line bg-surface hover:bg-surface-muted/50 hover:border-line
                   p-4 text-left transition-all active:scale-[0.97] shadow-sm hover:shadow-md">
                 <span className="w-12 h-12 rounded-2xl bg-surface-muted flex items-center justify-center text-2xl mb-2">{t.emoji}</span>
-                <div className="text-sm font-bold text-gray-800">{t.label}</div>
-                <div className="text-[11px] text-gray-400 mt-0.5">{t.roleLine}</div>
+                <div className="text-sm font-bold text-foreground">{t.label}</div>
+                <div className="text-[11px] text-foreground-faint mt-0.5">{t.roleLine}</div>
               </button>
             ))}
           </div>
@@ -93,41 +93,41 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
             {/* 가이드 — 이 직원이 무슨 일을 하는지 */}
             <div className="rounded-2xl bg-surface-muted/60 border border-line p-3.5 flex items-start gap-2.5">
               <span className="text-base flex-shrink-0">💡</span>
-              <p className="text-[12px] text-gray-600 leading-relaxed">{type.guide}</p>
+              <p className="text-[12px] text-foreground-muted leading-relaxed">{type.guide}</p>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">이름</label>
+              <label className="block text-xs font-semibold text-foreground-muted mb-1.5">이름</label>
               <input value={name} onChange={e => setName(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-line" />
+                className="w-full px-4 py-3 rounded-2xl bg-surface-muted border border-line text-sm focus:outline-none focus:bg-surface focus:border-line" />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">모델 <span className="font-normal text-gray-400">· 직원 타입 추천값 자동 선택 (변경 가능)</span></label>
+              <label className="block text-xs font-semibold text-foreground-muted mb-1.5">모델 <span className="font-normal text-foreground-faint">· 직원 타입 추천값 자동 선택 (변경 가능)</span></label>
               <div className="grid grid-cols-2 gap-2">
                 {MODEL_OPTIONS.map(o => (
                   <button key={o.key} onClick={() => setModel(o.key)}
                     className={`px-3 py-2 rounded-2xl text-left transition-all active:scale-[0.97] border
-                      ${model === o.key ? 'bg-foreground text-white border-foreground' : 'bg-gray-50 text-gray-600 border-gray-100'}`}>
+                      ${model === o.key ? 'bg-foreground text-white border-foreground' : 'bg-surface-muted text-foreground-muted border-line'}`}>
                     <div className="text-[13px] font-semibold">{o.label}</div>
-                    <div className={`text-[10px] ${model === o.key ? 'text-white/80' : 'text-gray-400'}`}>{o.desc}</div>
+                    <div className={`text-[10px] ${model === o.key ? 'text-white/80' : 'text-foreground-faint'}`}>{o.desc}</div>
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">매일 하는 일 <span className="font-normal text-gray-400">· 주기·시간은 채용 후 일과 ✎에서 설정</span></label>
+              <label className="block text-xs font-semibold text-foreground-muted mb-1.5">매일 하는 일 <span className="font-normal text-foreground-faint">· 주기·시간은 채용 후 일과 ✎에서 설정</span></label>
               <div className="space-y-1.5">
                 {type.defaultRoutines.map(r => {
                   const guide = routineGuide(r);
                   return (
                     <button key={r} onClick={() => toggleRoutine(r)}
-                      className="w-full flex items-start gap-2 px-3 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-left transition-colors">
-                      <span className={`w-4 h-4 mt-0.5 rounded-md flex items-center justify-center text-[10px] text-white flex-shrink-0 ${routines.includes(r) ? 'bg-foreground' : 'bg-gray-300'}`}>✓</span>
+                      className="w-full flex items-start gap-2 px-3 py-2.5 rounded-xl bg-surface-muted hover:bg-surface-muted text-left transition-colors">
+                      <span className={`w-4 h-4 mt-0.5 rounded-md flex items-center justify-center text-[10px] text-white flex-shrink-0 ${routines.includes(r) ? 'bg-foreground' : 'bg-line-strong'}`}>✓</span>
                       <span className="min-w-0">
-                        <span className="block text-sm text-gray-700">{r}</span>
-                        {guide && <span className="block text-[11px] text-gray-400 leading-relaxed mt-0.5">{guide}</span>}
+                        <span className="block text-sm text-foreground">{r}</span>
+                        {guide && <span className="block text-[11px] text-foreground-faint leading-relaxed mt-0.5">{guide}</span>}
                       </span>
                     </button>
                   );
@@ -136,14 +136,14 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">프롬프트 <span className="text-gray-300 font-normal">(이 직원의 성격·지시)</span></label>
+              <label className="block text-xs font-semibold text-foreground-muted mb-1.5">프롬프트 <span className="text-foreground-faint font-normal">(이 직원의 성격·지시)</span></label>
               <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
                 placeholder={type.promptPlaceholder}
-                className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:bg-white focus:border-line resize-none" />
+                className="w-full px-4 py-3 rounded-2xl bg-surface-muted border border-line text-sm focus:outline-none focus:bg-surface focus:border-line resize-none" />
             </div>
 
             <div className="flex gap-2.5 pt-1">
-              <button onClick={() => setType(null)} className="px-5 py-3 rounded-2xl text-sm text-gray-500 hover:bg-gray-100 transition-colors active:scale-95">← 뒤로</button>
+              <button onClick={() => setType(null)} className="px-5 py-3 rounded-2xl text-sm text-foreground-muted hover:bg-surface-muted transition-colors active:scale-95">← 뒤로</button>
               <button onClick={submit} disabled={!name.trim() || busy}
                 className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all active:scale-[0.97]">
                 {busy ? '채용 중…' : '채용하기'}

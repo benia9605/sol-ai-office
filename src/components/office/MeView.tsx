@@ -43,7 +43,7 @@ function ChipGroup({ value, options, onChange }: { value: string; options: { v: 
     <div className="flex flex-wrap gap-1.5">
       {options.map(o => (
         <button key={o.v} type="button" onClick={() => onChange(o.v)}
-          className={`px-3.5 py-2 rounded-xl text-sm transition-all active:scale-95 ${value === o.v ? 'bg-foreground text-white' : 'bg-surface-muted text-gray-500 hover:bg-gray-100'}`}>
+          className={`px-3.5 py-2 rounded-xl text-sm transition-all active:scale-95 ${value === o.v ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
           {o.label}
         </button>
       ))}
@@ -116,26 +116,26 @@ function ProfileCard() {
             <input ref={fileRef} type="file" accept="image/*" onChange={onPickImage} className="hidden" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">이름</label>
+            <label className="block text-xs font-semibold text-foreground-muted mb-1.5">이름</label>
             <input value={name} onChange={e => { setName(e.target.value); setSaved(false); }}
               onKeyDown={e => { if (e.key === 'Enter') onSave(); }} placeholder="이름" className={fieldCls} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">소개 <span className="text-gray-300 font-normal">(AI가 나를 이해하는 데 써요)</span></label>
+            <label className="block text-xs font-semibold text-foreground-muted mb-1.5">소개 <span className="text-foreground-faint font-normal">(AI가 나를 이해하는 데 써요)</span></label>
             <textarea value={bio} onChange={e => { setBio(e.target.value); setSaved(false); }} rows={3}
               placeholder="예: 원목 가구 브랜드 운영. 실전적이고 담백한 답변 선호."
               className={`${fieldCls} resize-none leading-relaxed`} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">대화 톤</label>
+            <label className="block text-xs font-semibold text-foreground-muted mb-1.5">대화 톤</label>
             <ChipGroup value={tone} options={TONE} onChange={v => { setTone(v); setSaved(false); }} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">답변 길이</label>
+            <label className="block text-xs font-semibold text-foreground-muted mb-1.5">답변 길이</label>
             <ChipGroup value={length} options={LENGTH} onChange={v => { setLength(v); setSaved(false); }} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">이모지 사용</label>
+            <label className="block text-xs font-semibold text-foreground-muted mb-1.5">이모지 사용</label>
             <ChipGroup value={emoji} options={EMOJI} onChange={v => { setEmoji(v); setSaved(false); }} />
           </div>
         </>
@@ -191,15 +191,15 @@ function MyTasksCard({ workspace, onNavigate }: { workspace: Workspace; onNaviga
               <li key={t.id} className="flex items-center gap-3 py-2.5 px-2 rounded-xl hover:bg-surface-muted transition-colors group">
                 <button onClick={() => complete(t.id)} title="완료 처리"
                   className="w-5 h-5 rounded-full border border-line-strong hover:border-foreground hover:bg-foreground/5 flex items-center justify-center flex-shrink-0 transition-colors">
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="text-transparent group-hover:text-gray-300">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="text-transparent group-hover:text-foreground-faint">
                     <path d="M20 6 9 17l-5-5" />
                   </svg>
                 </button>
                 <button onClick={() => onNavigate('todos', { scope: 'mine' })} className="flex-1 min-w-0 text-left">
-                  <span className="text-sm text-gray-700 truncate block">{t.title}</span>
+                  <span className="text-sm text-foreground truncate block">{t.title}</span>
                 </button>
                 {t.dueDate && (
-                  <span className={`text-[11px] flex-shrink-0 ${overdue ? 'text-rose-500 font-medium' : 'text-gray-400'}`}>{dueLabel(t.dueDate)}</span>
+                  <span className={`text-[11px] flex-shrink-0 ${overdue ? 'text-rose-500 font-medium' : 'text-foreground-faint'}`}>{dueLabel(t.dueDate)}</span>
                 )}
               </li>
             );

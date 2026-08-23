@@ -19,6 +19,30 @@ export const miniFieldCls =
   'min-w-0 px-2.5 py-1.5 rounded-lg bg-surface-muted border border-line text-xs text-foreground ' +
   'focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
+/** 이식 킷 06 — 밑줄만 있는 인풋 (박스 없음, 포커스 시 밑줄만 진해짐). 넓은 폼(회의/상세)용 */
+export const inputClass =
+  'w-full border-b border-line-strong px-0 py-2 text-sm text-foreground bg-transparent ' +
+  'placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors';
+/** 이식 킷 06 — 배지형(아웃라인) 버튼. + 추가류 */
+export const chipBtn =
+  'border border-line-strong px-3 py-1.5 text-xs text-foreground-muted hover:border-foreground hover:text-foreground transition-colors rounded-lg';
+
+/**
+ * 폼 섹션 (이식 킷 06) — 제목 + 얇은 밑줄(border-b) + 선택 부제. 섹션 사이는 space-y-10~12.
+ * 카드 프레임 없는 넓은 폼용. (카드형 설정 섹션은 위의 Section 사용)
+ */
+export function NoteSection({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
+  return (
+    <section>
+      <div className="mb-5 border-b border-line pb-3">
+        <h2 className="text-base text-foreground">{title}</h2>
+        {subtitle && <p className="mt-1 text-xs text-foreground-faint">{subtitle}</p>}
+      </div>
+      <div className="space-y-5">{children}</div>
+    </section>
+  );
+}
+
 /** 스파크라인 — currentColor(=foreground)로 그림 */
 export function Spark({ data, h = 36 }: { data: number[]; h?: number }) {
   const w = 120;

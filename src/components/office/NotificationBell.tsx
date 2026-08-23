@@ -84,31 +84,31 @@ export function NotificationBell({ workspace, onNavigate }: { workspace: Workspa
 
   return (
     <div className="relative flex-shrink-0" ref={ref}>
-      <button onClick={() => { setOpen((o) => !o); if (!open) load(); }} title="알림" className="relative w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-500 transition-colors active:scale-95">
+      <button onClick={() => { setOpen((o) => !o); if (!open) load(); }} title="알림" className="relative w-9 h-9 rounded-lg hover:bg-surface-muted flex items-center justify-center text-foreground-muted transition-colors active:scale-95">
         <BellIcon />
         {unread > 0 && <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">{unread > 9 ? '9+' : unread}</span>}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 w-80 max-w-[86vw] bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-gray-100">
-            <span className="text-sm font-bold text-gray-800">알림 {unread > 0 && <span className="text-rose-500">{unread}</span>}</span>
-            {unread > 0 && <button onClick={readAll} className="text-[11px] text-gray-400 hover:text-foreground">모두 읽음</button>}
+        <div className="absolute right-0 top-11 w-80 max-w-[86vw] bg-white rounded-xl shadow-xl border border-line z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-line">
+            <span className="text-sm font-bold text-foreground">알림 {unread > 0 && <span className="text-rose-500">{unread}</span>}</span>
+            {unread > 0 && <button onClick={readAll} className="text-[11px] text-foreground-faint hover:text-foreground">모두 읽음</button>}
           </div>
           <div className="max-h-[60vh] overflow-y-auto">
             {items.length === 0 ? (
               <div className="py-10 text-center">
-                <BellIcon className="w-6 h-6 mx-auto text-gray-300 mb-1.5" />
-                <p className="text-xs text-gray-400">새 알림이 없어요</p>
+                <BellIcon className="w-6 h-6 mx-auto text-foreground-faint mb-1.5" />
+                <p className="text-xs text-foreground-faint">새 알림이 없어요</p>
               </div>
             ) : items.map((n) => (
-              <button key={n.id} onClick={() => onItem(n)} className={`w-full text-left px-3.5 py-2.5 border-b border-gray-50 hover:bg-gray-50 transition-colors ${n.readAt ? '' : 'bg-surface-muted/40'}`}>
+              <button key={n.id} onClick={() => onItem(n)} className={`w-full text-left px-3.5 py-2.5 border-b border-line hover:bg-surface-muted transition-colors ${n.readAt ? '' : 'bg-surface-muted/40'}`}>
                 <div className="flex items-center gap-1.5">
                   {!n.readAt && <span className="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0" />}
-                  <span className="text-[13px] font-semibold text-gray-800 truncate flex-1">{n.title}</span>
-                  <span className="text-[10px] text-gray-300 flex-shrink-0">{ago(n.createdAt)}</span>
+                  <span className="text-[13px] font-semibold text-foreground truncate flex-1">{n.title}</span>
+                  <span className="text-[10px] text-foreground-faint flex-shrink-0">{ago(n.createdAt)}</span>
                 </div>
-                {n.body && <p className="text-[12px] text-gray-500 mt-0.5 line-clamp-2 pl-3">{n.body}</p>}
+                {n.body && <p className="text-[12px] text-foreground-muted mt-0.5 line-clamp-2 pl-3">{n.body}</p>}
               </button>
             ))}
           </div>

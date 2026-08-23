@@ -94,22 +94,22 @@ function UsageModal({ workspace, credits, onClose }: { workspace: Workspace; cre
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]" onMouseDown={onClose}>
       <div className="bg-white rounded-[28px] shadow-2xl w-[460px] max-w-[92vw] max-h-[80vh] flex flex-col p-6" onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-extrabold text-gray-800">🪙 코인 사용 내역</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center">✕</button>
+          <h2 className="text-base font-extrabold text-foreground">🪙 코인 사용 내역</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-surface-muted text-foreground-faint flex items-center justify-center">✕</button>
         </div>
         <div className="rounded-2xl bg-surface-muted p-3 mb-3 flex items-center justify-between">
-          <div><div className="text-[11px] text-gray-400">남은 코인</div><div className="text-xl font-bold text-foreground">{credits != null ? credits.toLocaleString() : '—'}</div></div>
-          <div className="text-right"><div className="text-[11px] text-gray-400">최근 사용</div><div className="text-sm font-semibold text-gray-600">{totalCoins.toLocaleString()}코인 · {usd(totalCoins)}</div></div>
+          <div><div className="text-[11px] text-foreground-faint">남은 코인</div><div className="text-xl font-bold text-foreground">{credits != null ? credits.toLocaleString() : '—'}</div></div>
+          <div className="text-right"><div className="text-[11px] text-foreground-faint">최근 사용</div><div className="text-sm font-semibold text-foreground-muted">{totalCoins.toLocaleString()}코인 · {usd(totalCoins)}</div></div>
         </div>
         <div className="flex-1 overflow-y-auto space-y-1.5">
           {usage.length === 0 ? (
-            <p className="text-xs text-gray-300 py-8 text-center">아직 사용 내역이 없어요</p>
+            <p className="text-xs text-foreground-faint py-8 text-center">아직 사용 내역이 없어요</p>
           ) : usage.map(u => (
-            <div key={u.id} className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-gray-50">
-              <span className="text-xs font-medium text-gray-700 flex-1 truncate">{u.staffId && staffMap[u.staffId] ? staffMap[u.staffId] : '직원'} <span className="text-gray-400">· {u.model || '—'}</span></span>
-              <span className="text-[10px] text-gray-400 flex-shrink-0">{(u.inputTokens + u.outputTokens).toLocaleString()}t</span>
+            <div key={u.id} className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-surface-muted">
+              <span className="text-xs font-medium text-foreground flex-1 truncate">{u.staffId && staffMap[u.staffId] ? staffMap[u.staffId] : '직원'} <span className="text-foreground-faint">· {u.model || '—'}</span></span>
+              <span className="text-[10px] text-foreground-faint flex-shrink-0">{(u.inputTokens + u.outputTokens).toLocaleString()}t</span>
               <span className="text-xs font-semibold text-amber-500 flex-shrink-0 w-16 text-right">-{u.coins}코인</span>
-              <span className="text-[10px] text-gray-300 flex-shrink-0 w-16 text-right">{u.createdAt?.slice(5, 10)}</span>
+              <span className="text-[10px] text-foreground-faint flex-shrink-0 w-16 text-right">{u.createdAt?.slice(5, 10)}</span>
             </div>
           ))}
         </div>
@@ -193,17 +193,17 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
 
   const Row = ({ ws }: { ws: Workspace }) => (
     <button onClick={() => pick(ws.id)}
-      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-gray-100 transition-colors text-left">
+      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-surface-muted transition-colors text-left">
       {ws.imageUrl ? <img src={ws.imageUrl} alt={ws.name} className="w-5 h-5 rounded object-cover" /> : <span className="text-base">{ws.emoji || '🏢'}</span>}
-      <span className={ws.id === workspace.id ? 'font-semibold text-gray-800' : 'text-gray-600'}>{ws.name}</span>
+      <span className={ws.id === workspace.id ? 'font-semibold text-foreground' : 'text-foreground-muted'}>{ws.name}</span>
       {ws.id === workspace.id && <span className="ml-auto text-foreground text-xs">✓</span>}
     </button>
   );
 
   return (
-    <div className="office-shell h-[100dvh] overflow-hidden flex flex-col bg-[#fcfcfc] text-gray-800">
+    <div className="office-shell h-[100dvh] overflow-hidden flex flex-col bg-[#fcfcfc] text-foreground">
       {/* 상단바 */}
-      <header ref={navRef} className="relative flex-shrink-0 bg-white border-b border-gray-100 z-30 pt-[env(safe-area-inset-top)]">
+      <header ref={navRef} className="relative flex-shrink-0 bg-white border-b border-line z-30 pt-[env(safe-area-inset-top)]">
         <div className="h-14 flex items-center gap-2 px-4 sm:px-6">
           {/* 브랜드 = 워크스페이스 (PC: 전환 드롭다운 / 모바일: 더보기) */}
           <div className="relative flex-shrink-0" ref={menuRef}>
@@ -211,39 +211,39 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
               <span className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center text-lg flex-shrink-0">
                 {workspace.imageUrl ? <img src={workspace.imageUrl} alt={workspace.name} className="w-full h-full object-cover rounded-xl" /> : <span>{workspace.emoji || '🏢'}</span>}
               </span>
-              <span className="text-sm font-bold text-gray-800 truncate max-w-[120px]">{workspace.name}</span>
-              <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
+              <span className="text-sm font-bold text-foreground truncate max-w-[120px]">{workspace.name}</span>
+              <svg className="w-3.5 h-3.5 text-foreground-faint flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
             </button>
             <button onClick={() => setMoreOpen(true)} className="lg:hidden flex items-center gap-1.5 min-w-0 active:scale-95 transition-transform">
               <span className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center text-lg flex-shrink-0">
                 {workspace.imageUrl ? <img src={workspace.imageUrl} alt={workspace.name} className="w-full h-full object-cover rounded-lg" /> : <span>{workspace.emoji || '🏢'}</span>}
               </span>
-              <span className="text-sm font-bold text-gray-800 truncate">{workspace.name}</span>
-              <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
+              <span className="text-sm font-bold text-foreground truncate">{workspace.name}</span>
+              <svg className="w-3.5 h-3.5 text-foreground-faint flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
             </button>
 
             {menuOpen && (
-              <div className="absolute left-0 top-[52px] w-56 bg-white rounded-2xl shadow-lg border border-gray-100 p-1.5 z-50">
+              <div className="absolute left-0 top-[52px] w-56 bg-white rounded-2xl shadow-lg border border-line p-1.5 z-50">
                 {offices.length > 0 && (
                   <>
-                    <p className="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">오피스</p>
+                    <p className="px-2 py-1 text-[10px] font-semibold text-foreground-faint uppercase tracking-wider">오피스</p>
                     {offices.map(o => <Row key={o.id} ws={o} />)}
                   </>
                 )}
                 {personal && (
                   <>
-                    <div className="my-1 border-t border-gray-100" />
-                    <p className="px-2 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">개인 공간</p>
+                    <div className="my-1 border-t border-line" />
+                    <p className="px-2 py-1 text-[10px] font-semibold text-foreground-faint uppercase tracking-wider">개인 공간</p>
                     <Row ws={personal} />
                   </>
                 )}
-                <div className="my-1 border-t border-gray-100" />
+                <div className="my-1 border-t border-line" />
                 <button onClick={() => { setMenuOpen(false); setView('company'); setOpenGroup(null); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-colors text-left">
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-foreground-muted hover:bg-surface-muted transition-colors text-left">
                   <span className="text-base leading-none">⚙️</span> 회사 설정 (정보·브레인·멤버)
                 </button>
                 <button onClick={() => { setMenuOpen(false); setShowCreate(true); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-colors text-left">
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-foreground-muted hover:bg-surface-muted transition-colors text-left">
                   <span className="text-base leading-none">＋</span> 추가하기
                 </button>
               </div>
@@ -257,29 +257,29 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
               const open = openGroup === g.id;
               return (
                 <button key={g.id} type="button" onClick={() => setOpenGroup(open ? null : g.id)} aria-expanded={open}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${active || open ? 'text-gray-800 font-semibold' : 'text-gray-400 hover:text-gray-700'}`}>
+                  className={`px-3 py-1.5 rounded-lg transition-colors ${active || open ? 'text-foreground font-semibold' : 'text-foreground-faint hover:text-foreground'}`}>
                   {g.label}
                 </button>
               );
             })}
             <button type="button" onClick={() => { setView('me'); setOpenGroup(null); }} title="나 — 프로필 · 내 할일"
-              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'me' ? 'text-gray-800' : 'text-gray-400 hover:text-gray-700'}`}>
+              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'me' ? 'text-foreground' : 'text-foreground-faint hover:text-foreground'}`}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="inline-block align-middle">
                 <path d="M20 21a8 8 0 0 0-16 0" /><circle cx="12" cy="7" r="4" />
               </svg>
             </button>
             <button type="button" onClick={() => { setView('company'); setOpenGroup(null); }} title="회사 설정 — 정보 · 브레인 · 멤버"
-              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'company' ? 'text-gray-800' : 'text-gray-400 hover:text-gray-700'}`}>⚙️</button>
+              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'company' ? 'text-foreground' : 'text-foreground-faint hover:text-foreground'}`}>⚙️</button>
           </nav>
 
           <div className="flex-1" />
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <button onClick={() => setShowSearch(true)} title="오피스 전체 검색 (⌘K)"
-              className="w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-500 transition-colors active:scale-95">
+              className="w-9 h-9 rounded-lg hover:bg-surface-muted flex items-center justify-center text-foreground-muted transition-colors active:scale-95">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
             </button>
             <button onClick={() => setShowUsage(true)} title="코인 잔액 — 클릭하면 사용 내역(요금)"
-              className={`flex items-center gap-1 text-sm font-bold transition-all duration-300 hover:opacity-70 active:scale-95 ${coinPulse ? 'scale-110 text-amber-500' : 'text-gray-500'}`}>
+              className={`flex items-center gap-1 text-sm font-bold transition-all duration-300 hover:opacity-70 active:scale-95 ${coinPulse ? 'scale-110 text-amber-500' : 'text-foreground-muted'}`}>
               <CoinIcon /><span>{credits != null ? credits.toLocaleString() : '—'}</span>
             </button>
             <NotificationBell workspace={workspace} onNavigate={onNavigate} />
@@ -289,14 +289,14 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
 
         {/* PC 메가메뉴 드롭다운 — 클릭한 그룹의 항목 */}
         {openGroup && (
-          <div className="hidden lg:block absolute left-0 right-0 top-full bg-white border-b border-gray-100 shadow-sm z-20">
+          <div className="hidden lg:block absolute left-0 right-0 top-full bg-white border-b border-line shadow-sm z-20">
             <div className="px-4 sm:px-6 py-3 flex flex-wrap gap-1">
               {NAV_GROUPS.find(g => g.id === openGroup)!.items.map(it => {
                 const on = view === it.id;
                 return (
                   <button key={it.id} type="button" onClick={() => goNav(it.id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${on ? 'bg-surface-muted text-foreground' : 'text-gray-500 hover:bg-gray-50'}`}>
-                    <NavIcon id={it.id} size={16} className={on ? 'text-foreground' : 'text-gray-400'} />
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${on ? 'bg-surface-muted text-foreground' : 'text-foreground-muted hover:bg-surface-muted'}`}>
+                    <NavIcon id={it.id} size={16} className={on ? 'text-foreground' : 'text-foreground-faint'} />
                     <span>{it.label}</span>
                   </button>
                 );
@@ -339,19 +339,19 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
       </main>
 
       {/* 모바일 하단 네비 */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-100 flex items-stretch min-h-16 pt-1 pb-[max(env(safe-area-inset-bottom),0.25rem)]">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-line flex items-stretch min-h-16 pt-1 pb-[max(env(safe-area-inset-bottom),0.25rem)]">
         {BOTTOM_NAV.map(n => {
           const on = view === n.id;
           return (
             <button key={n.id} onClick={() => goNav(n.id)}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${on ? 'text-foreground' : 'text-gray-400'}`}>
-              <NavIcon id={n.id} size={21} className={on ? 'text-foreground' : 'text-gray-400'} />
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${on ? 'text-foreground' : 'text-foreground-faint'}`}>
+              <NavIcon id={n.id} size={21} className={on ? 'text-foreground' : 'text-foreground-faint'} />
               <span className="text-[10px] font-medium">{n.label}</span>
             </button>
           );
         })}
         <button onClick={() => setMoreOpen(true)}
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 text-gray-400">
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 text-foreground-faint">
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           <span className="text-[10px] font-medium">더보기</span>
         </button>
@@ -366,23 +366,23 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
               <span className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-2xl flex-shrink-0">
                 {workspace.imageUrl ? <img src={workspace.imageUrl} alt={workspace.name} className="w-full h-full object-cover rounded-xl" /> : <span>{workspace.emoji || '🏢'}</span>}
               </span>
-              <span className="text-base font-extrabold text-gray-800 flex-1 truncate">{workspace.name}</span>
+              <span className="text-base font-extrabold text-foreground flex-1 truncate">{workspace.name}</span>
               <button onClick={() => { setMoreOpen(false); setView('company'); }}
-                className="text-xs px-3 py-1.5 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all">⚙️ 회사 설정</button>
+                className="text-xs px-3 py-1.5 rounded-xl bg-surface-muted text-foreground-muted hover:bg-surface-muted active:scale-95 transition-all">⚙️ 회사 설정</button>
             </div>
 
             {/* 전체 메뉴 — 그룹별 */}
             <div className="space-y-4 mb-5">
               {NAV_GROUPS.map(g => (
                 <div key={g.id}>
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">{g.label}</p>
+                  <p className="text-[10px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">{g.label}</p>
                   <div className="grid grid-cols-4 gap-2">
                     {g.items.map(n => {
                       const on = view === n.id;
                       return (
                         <button key={n.id} onClick={() => goNav(n.id)}
-                          className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${on ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                          <NavIcon id={n.id} size={22} className={on ? 'text-foreground' : 'text-gray-500'} />
+                          className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${on ? 'bg-surface-muted text-foreground' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
+                          <NavIcon id={n.id} size={22} className={on ? 'text-foreground' : 'text-foreground-muted'} />
                           <span className="text-[11px] font-medium">{n.label}</span>
                         </button>
                       );
@@ -391,16 +391,16 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                 </div>
               ))}
               <div>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">설정</p>
+                <p className="text-[10px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">설정</p>
                 <div className="grid grid-cols-4 gap-2">
                   <button onClick={() => { setView('me'); setMoreOpen(false); }}
-                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'me' ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                    <NavIcon id="me" size={22} className={view === 'me' ? 'text-foreground' : 'text-gray-500'} />
+                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'me' ? 'bg-surface-muted text-foreground' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
+                    <NavIcon id="me" size={22} className={view === 'me' ? 'text-foreground' : 'text-foreground-muted'} />
                     <span className="text-[11px] font-medium">나</span>
                   </button>
                   <button onClick={() => { setView('company'); setMoreOpen(false); }}
-                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'company' ? 'bg-surface-muted text-foreground' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                    <NavIcon id="company" size={22} className={view === 'company' ? 'text-foreground' : 'text-gray-500'} />
+                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'company' ? 'bg-surface-muted text-foreground' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
+                    <NavIcon id="company" size={22} className={view === 'company' ? 'text-foreground' : 'text-foreground-muted'} />
                     <span className="text-[11px] font-medium">회사 설정</span>
                   </button>
                 </div>
@@ -408,12 +408,12 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             </div>
 
             {/* 워크스페이스 전환 */}
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">워크스페이스 전환</p>
+            <p className="text-[10px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">워크스페이스 전환</p>
             <div className="space-y-1">
               {offices.map(o => <Row key={o.id} ws={o} />)}
               {personal && <Row ws={personal} />}
               <button onClick={() => { setMoreOpen(false); setShowCreate(true); }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-colors text-left">
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-foreground-muted hover:bg-surface-muted transition-colors text-left">
                 <span className="text-base leading-none">＋</span> 추가하기
               </button>
             </div>

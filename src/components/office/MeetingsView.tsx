@@ -6,13 +6,13 @@
  *   각 줄: 내용 · 담당자 · 기한. 「+ 할일 추가」로 빠르게 여러 줄, 「전체 과제」로 전원 일괄 배정.
  * - 회의 등록·회의록 저장 시 멤버 알림, 할일 배정 시 담당자 알림.
  */
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Workspace, WorkspaceMember, Meeting, TaskStatus } from '../../types';
 import { fetchMeetings, addMeeting, updateMeeting, deleteMeeting, notifyMeetingNote, syncMeetingTasks, MeetingTaskDraft } from '../../services/meetings.service';
 import { fetchMembers } from '../../services/workspaces.service';
 import { fetchWorkspaceTasks, fetchTasksByMeeting, updateTaskStatus, fromDbStatus } from '../../services/tasks.service';
 import { recordActivity } from '../../services/activities.service';
-import { ViewHead, EmptyState, TaskProgress, AddButton, InlineAddCard, SearchBar } from './ui';
+import { ViewHead, EmptyState, TaskProgress, AddButton, InlineAddCard, SearchBar, NoteSection as Section, inputClass, chipBtn } from './ui';
 import { TiptapEditor } from '../tiptap/TiptapEditor';
 import { RichText, parseDoc, serializeDoc, docToText, docHasContent } from './RichText';
 import { Avatar } from './Avatar';
@@ -20,23 +20,7 @@ import { LikeCommentBlock } from './LikeCommentBlock';
 import { AttachmentsSection } from './AttachmentsSection';
 import { getTodayStr } from '../../utils/dateCalc';
 
-const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
-// 이식 킷 06 — 밑줄만 있는 인풋 / 배지형 버튼 (박스 없음)
-const inputClass = 'w-full border-b border-line-strong px-0 py-2 text-sm focus:border-foreground focus:outline-none bg-transparent placeholder:text-foreground-faint';
-const chipBtn = 'border border-line-strong px-3 py-1.5 text-xs text-foreground-muted hover:border-foreground hover:text-foreground transition-colors';
-
-/** 폼 섹션 — 제목 + 얇은 밑줄 + (선택) 부제. 섹션 사이는 space-y-12. (이식 킷 06) */
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
-  return (
-    <section>
-      <div className="mb-5 border-b border-line pb-3">
-        <h2 className="text-base text-foreground">{title}</h2>
-        {subtitle && <p className="mt-1 text-xs text-foreground-faint">{subtitle}</p>}
-      </div>
-      <div className="space-y-5">{children}</div>
-    </section>
-  );
-}
+const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
 export function MeetingsView({ workspace, openId }: { workspace: Workspace; openId?: string }) {
   const [list, setList] = useState<Meeting[]>([]);
@@ -102,7 +86,7 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
           <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} className={fieldCls} />
         </div>
         <div className="flex gap-2 justify-end">
-          <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100">취소</button>
+          <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted">취소</button>
           <button onClick={create} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">만들기</button>
         </div>
       </InlineAddCard>

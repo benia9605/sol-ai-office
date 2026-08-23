@@ -9,7 +9,7 @@ import remarkGfm from 'remark-gfm';
 
 export function MarkdownView({ text, className }: { text: string; className?: string }) {
   return (
-    <div className={`text-sm text-gray-700 markdown-body ${className || ''}`}>
+    <div className={`text-sm text-foreground markdown-body ${className || ''}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

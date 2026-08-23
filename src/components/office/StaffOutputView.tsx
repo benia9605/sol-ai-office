@@ -19,7 +19,7 @@ const STAFF_META: Record<string, { emoji: string; label: string }> = {
   ops: { emoji: '🧭', label: '운영' }, landing: { emoji: '📄', label: '랜딩' }, ownerApproval: { emoji: '👤', label: '사장 승인' },
 };
 function SectionLabel({ children }: { children: any }) {
-  return <div className="text-[11px] font-semibold text-gray-400 tracking-wide">{children}</div>;
+  return <div className="text-[11px] font-semibold text-foreground-faint tracking-wide">{children}</div>;
 }
 /** 모든 섹션을 동일한 칸(카드)으로 — 통일된 패딩·간격·제목 */
 function Section({ label, children, className = '' }: { label?: string; children: any; className?: string }) {
@@ -46,8 +46,8 @@ function HandoffPanel({ handoff }: { handoff: any }) {
           const items = Array.isArray(v) ? v : [v];
           return (
             <div key={k} className="flex gap-1.5 text-xs leading-relaxed">
-              <span className="flex-shrink-0 text-gray-500 font-medium">{meta.emoji} {meta.label}</span>
-              <span className="text-gray-400">{items.join(' · ')}</span>
+              <span className="flex-shrink-0 text-foreground-muted font-medium">{meta.emoji} {meta.label}</span>
+              <span className="text-foreground-faint">{items.join(' · ')}</span>
             </div>
           );
         })}
@@ -64,12 +64,12 @@ function SourceList({ sources }: { sources: any[] }) {
     return t ? `${t}${x?.confidence ? ` (${x.confidence})` : ''}` : '';
   }).filter(Boolean).join(' · ');
   if (!txt) return null;
-  return <div className="text-[11px] text-gray-400 break-all">출처: {txt}</div>;
+  return <div className="text-[11px] text-foreground-faint break-all">출처: {txt}</div>;
 }
 /** 다음 액션 큐 — actions 배열({type,title,priority,owner} 또는 문자열) */
 function ActionQueue({ actions, label = '다음 액션', bare = false }: { actions: any[]; label?: string; bare?: boolean }) {
   if (!Array.isArray(actions) || !actions.length) return null;
-  const pColor = (p: string) => p === 'high' ? 'bg-rose-50 text-rose-500' : p === 'low' ? 'bg-gray-100 text-gray-400' : 'bg-amber-50 text-amber-600';
+  const pColor = (p: string) => p === 'high' ? 'bg-rose-50 text-rose-500' : p === 'low' ? 'bg-surface-muted text-foreground-faint' : 'bg-amber-50 text-amber-600';
   const rows = actions.map((a: any) => (typeof a === 'string' ? { title: a } : a)).filter((a: any) => a?.title);
   if (!rows.length) return null;
   const inner = (
@@ -77,9 +77,9 @@ function ActionQueue({ actions, label = '다음 액션', bare = false }: { actio
       {label && <SectionLabel>{label}</SectionLabel>}
       <ul className="space-y-1">
         {rows.map((a: any, i: number) => (
-          <li key={i} className="flex items-center gap-1.5 text-sm text-gray-600">
+          <li key={i} className="flex items-center gap-1.5 text-sm text-foreground-muted">
             <span>□ {a.title}</span>
-            {a.owner && STAFF_META[a.owner] && <span className="text-[10px] text-gray-400">{STAFF_META[a.owner].emoji}</span>}
+            {a.owner && STAFF_META[a.owner] && <span className="text-[10px] text-foreground-faint">{STAFF_META[a.owner].emoji}</span>}
             {a.priority && <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${pColor(a.priority)}`}>{a.priority}</span>}
           </li>
         ))}
@@ -102,9 +102,9 @@ const SOURCING_AXES: [string, string][] = [['trend', '트렌드'], ['entry', '�
 function AxisRow({ label, v, reason }: { label: string; v: number; reason?: string }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="text-[11px] text-gray-500 w-14 flex-shrink-0 pt-0.5">{label}</span>
-      <div className="flex gap-0.5 flex-shrink-0 pt-1">{[0, 1].map(i => <span key={i} className={`w-5 h-1.5 rounded-full ${(v ?? 0) > i ? 'bg-foreground' : 'bg-gray-200'}`} />)}</div>
-      {reason && <span className="text-[11px] text-gray-400 leading-relaxed">{reason}</span>}
+      <span className="text-[11px] text-foreground-muted w-14 flex-shrink-0 pt-0.5">{label}</span>
+      <div className="flex gap-0.5 flex-shrink-0 pt-1">{[0, 1].map(i => <span key={i} className={`w-5 h-1.5 rounded-full ${(v ?? 0) > i ? 'bg-foreground' : 'bg-line'}`} />)}</div>
+      {reason && <span className="text-[11px] text-foreground-faint leading-relaxed">{reason}</span>}
     </div>
   );
 }
@@ -118,16 +118,16 @@ function MarginStack({ m }: { m: any }) {
   const shown = rows.filter(r => r[1] != null);
   return (
     <Card className="p-3">
-      <div className="text-[11px] font-semibold text-gray-400 tracking-wide mb-1.5">예상 순마진</div>
+      <div className="text-[11px] font-semibold text-foreground-faint tracking-wide mb-1.5">예상 순마진</div>
       <div className="space-y-0.5 text-sm">
         {shown.map(([label, val, minus], i) => (
-          <div key={i} className="flex justify-between text-gray-600"><span>{minus ? '− ' : ''}{label}</span><span>{fmt(val)}</span></div>
+          <div key={i} className="flex justify-between text-foreground-muted"><span>{minus ? '− ' : ''}{label}</span><span>{fmt(val)}</span></div>
         ))}
         {m.netProfit != null && (
-          <div className="flex justify-between font-semibold text-gray-800 border-t border-gray-100 pt-1 mt-1"><span>= 순마진</span><span>{fmt(m.netProfit)}{m.netRate ? ` (${m.netRate})` : ''}</span></div>
+          <div className="flex justify-between font-semibold text-foreground border-t border-line pt-1 mt-1"><span>= 순마진</span><span>{fmt(m.netProfit)}{m.netRate ? ` (${m.netRate})` : ''}</span></div>
         )}
       </div>
-      {m.breakEvenMonthlyQty != null && <div className="text-[11px] text-gray-400 mt-1">손익분기 월 {m.breakEvenMonthlyQty}개</div>}
+      {m.breakEvenMonthlyQty != null && <div className="text-[11px] text-foreground-faint mt-1">손익분기 월 {m.breakEvenMonthlyQty}개</div>}
     </Card>
   );
 }
@@ -143,18 +143,18 @@ function SourcingView({ d, onSave }: { d: any; onSave?: (itemType: string, paylo
       <div className="space-y-1">
         <div className="flex items-center gap-2 flex-wrap">
           {v && <span className={`text-sm font-bold px-3 py-1 rounded-full ${vColor}`}>{v}</span>}
-          {d.score != null && <span className="text-sm text-gray-600 font-semibold">{d.score}/10</span>}
-          {d.confidence && <span className="text-[11px] text-gray-400">· 신뢰도 {d.confidence}</span>}
-          {onSave && <button onClick={() => onSave('product', { ...d, title: d.persona || d.verdict })} title="상품 후보 보관" className="ml-auto text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all">⭐</button>}
+          {d.score != null && <span className="text-sm text-foreground-muted font-semibold">{d.score}/10</span>}
+          {d.confidence && <span className="text-[11px] text-foreground-faint">· 신뢰도 {d.confidence}</span>}
+          {onSave && <button onClick={() => onSave('product', { ...d, title: d.persona || d.verdict })} title="상품 후보 보관" className="ml-auto text-xs text-foreground-faint hover:text-amber-400 active:scale-90 transition-all">⭐</button>}
         </div>
-        {d.summary && <p className="text-sm text-gray-600">{d.summary}</p>}
+        {d.summary && <p className="text-sm text-foreground-muted">{d.summary}</p>}
       </div>
       {Array.isArray(d.reasons) && d.reasons.length > 0 && (
-        <ul className="space-y-0.5">{d.reasons.map((r: any, i: number) => <li key={i} className="text-sm text-gray-600">· {String(r)}</li>)}</ul>
+        <ul className="space-y-0.5">{d.reasons.map((r: any, i: number) => <li key={i} className="text-sm text-foreground-muted">· {String(r)}</li>)}</ul>
       )}
       {d.scores && (
-        <Card className="p-3 bg-gray-50/60 space-y-2">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide mb-1">5축 평가</div>
+        <Card className="p-3 bg-surface-muted/60 space-y-2">
+          <div className="text-[11px] font-semibold text-foreground-faint tracking-wide mb-1">5축 평가</div>
           {SOURCING_AXES.map(([k, label]) => <AxisRow key={k} label={label} v={aScore(s[k])} reason={aReason(s[k])} />)}
         </Card>
       )}
@@ -162,7 +162,7 @@ function SourcingView({ d, onSave }: { d: any; onSave?: (itemType: string, paylo
       {(d.persona || (Array.isArray(d.channels) && d.channels.length) || (Array.isArray(d.risks) && d.risks.length)) && (
         <Section>
           <div className="space-y-2.5">
-            {d.persona && <div><SectionLabel>타겟 페르소나</SectionLabel><p className="text-sm text-gray-600 mt-0.5">{d.persona}</p></div>}
+            {d.persona && <div><SectionLabel>타겟 페르소나</SectionLabel><p className="text-sm text-foreground-muted mt-0.5">{d.persona}</p></div>}
             {Array.isArray(d.channels) && d.channels.length > 0 && <div className="space-y-1"><SectionLabel>추천 채널</SectionLabel><Chips items={d.channels} color="bg-surface-muted text-foreground" /></div>}
             {Array.isArray(d.risks) && d.risks.length > 0 && <div className="space-y-1"><SectionLabel>리스크</SectionLabel><Chips items={d.risks} color="bg-rose-50 text-rose-500" /></div>}
           </div>
@@ -209,23 +209,23 @@ function DetailBuilderView({ d, onSave }: { d: any; onSave?: (itemType: string, 
         <div className="flex justify-end items-center gap-2">
           {sections.length > 0 && (
             <button onClick={copyHtml} title="스마트스토어에 붙여넣을 HTML 복사"
-              className="text-[11px] px-2 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all">
+              className="text-[11px] px-2 py-1 rounded-lg bg-surface-muted text-foreground-muted hover:bg-surface-muted active:scale-95 transition-all">
               {htmlCopied ? '복사됨 ✓' : '⧉ HTML 복사'}
             </button>
           )}
           {onSave && (
             <button onClick={() => onSave('page', { ...d, title: brief.productName || '상세페이지' })} title="완성 페이지 보관"
-              className="text-[11px] text-gray-300 hover:text-amber-400 active:scale-95 transition-all">⭐ 페이지 보관</button>
+              className="text-[11px] text-foreground-faint hover:text-amber-400 active:scale-95 transition-all">⭐ 페이지 보관</button>
           )}
         </div>
       )}
       {/* 브리프 */}
       {(brief.productName || brief.target || brief.usp?.length || brief.banned?.length) && (
         <Card className="p-3 space-y-2">
-          {brief.productName && <div className="text-sm font-bold text-gray-800">{brief.productName}</div>}
-          {brief.target && <div className="text-xs text-gray-500">타겟: {brief.target}</div>}
+          {brief.productName && <div className="text-sm font-bold text-foreground">{brief.productName}</div>}
+          {brief.target && <div className="text-xs text-foreground-muted">타겟: {brief.target}</div>}
           {Array.isArray(brief.usp) && brief.usp.length > 0 && <Chips items={brief.usp} color="bg-surface-muted text-foreground" />}
-          {Array.isArray(brief.customerPain) && brief.customerPain.length > 0 && <div className="text-[11px] text-gray-400">고객 불안: {brief.customerPain.join(' · ')}</div>}
+          {Array.isArray(brief.customerPain) && brief.customerPain.length > 0 && <div className="text-[11px] text-foreground-faint">고객 불안: {brief.customerPain.join(' · ')}</div>}
           {Array.isArray(brief.banned) && brief.banned.length > 0 && <div className="text-[11px] text-rose-400">금지표현: {brief.banned.join(', ')}</div>}
         </Card>
       )}
@@ -235,20 +235,20 @@ function DetailBuilderView({ d, onSave }: { d: any; onSave?: (itemType: string, 
           <Card key={i} className="p-3 space-y-2.5">
             <div className="flex items-center gap-1.5">
               <span className="w-5 h-5 rounded-full bg-surface-muted text-foreground text-[11px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
-              <span className="text-sm font-semibold text-gray-800">{s.title || s.key}</span>
-              {s.status && <span className="ml-auto text-[10px] text-gray-400">{s.status}</span>}
+              <span className="text-sm font-semibold text-foreground">{s.title || s.key}</span>
+              {s.status && <span className="ml-auto text-[10px] text-foreground-faint">{s.status}</span>}
             </div>
-            {s.objective && <div className="text-[11px] text-gray-400">🎯 {s.objective}</div>}
+            {s.objective && <div className="text-[11px] text-foreground-faint">🎯 {s.objective}</div>}
             {(s.coreLine || s.subLine || s.bullets?.length || s.cta) && (
-              <div className="relative bg-gray-50 rounded-xl p-3 pr-9 space-y-2">
+              <div className="relative bg-surface-muted rounded-xl p-3 pr-9 space-y-2">
                 <CopyIconButton text={copySection(s)} title="섹션 카피 복사" />
-                {s.coreLine && <div className="text-sm font-bold text-gray-800 leading-relaxed">{s.coreLine}</div>}
-                {s.subLine && <div className="text-xs text-gray-500 leading-relaxed">{s.subLine}</div>}
-                {Array.isArray(s.bullets) && s.bullets.length > 0 && <ul className="space-y-1">{s.bullets.map((b: any, j: number) => <li key={j} className="text-xs text-gray-600 leading-relaxed">· {String(b)}</li>)}</ul>}
+                {s.coreLine && <div className="text-sm font-bold text-foreground leading-relaxed">{s.coreLine}</div>}
+                {s.subLine && <div className="text-xs text-foreground-muted leading-relaxed">{s.subLine}</div>}
+                {Array.isArray(s.bullets) && s.bullets.length > 0 && <ul className="space-y-1">{s.bullets.map((b: any, j: number) => <li key={j} className="text-xs text-foreground-muted leading-relaxed">· {String(b)}</li>)}</ul>}
                 {s.cta && <div className="text-xs text-foreground font-medium">→ {s.cta}</div>}
               </div>
             )}
-            {s.visual && <div className="text-[11px] text-gray-400">🖼 {s.visual}</div>}
+            {s.visual && <div className="text-[11px] text-foreground-faint">🖼 {s.visual}</div>}
           </Card>
         ))}
       </div>
@@ -267,7 +267,7 @@ function RiskChip({ level }: { level: string }) {
   const l = String(level || '');
   if (!l) return null;
   const [cls, txt] = l === 'high' || l.includes('높') ? ['bg-rose-50 text-rose-500', '이탈위험 높음']
-    : l === 'low' || l.includes('낮') ? ['bg-gray-100 text-gray-400', '위험 낮음']
+    : l === 'low' || l.includes('낮') ? ['bg-surface-muted text-foreground-faint', '위험 낮음']
     : ['bg-amber-50 text-amber-600', '위험 중간'];
   return <span className={`text-[11px] px-2 py-0.5 rounded-full ${cls}`}>{txt}</span>;
 }
@@ -279,7 +279,7 @@ function TicketSummaryBar({ s }: { s: any }) {
   if (!shown.length) return null;
   return (
     <Card className="p-2.5 flex flex-wrap gap-x-3 gap-y-1">
-      {shown.map(([label, v], i) => <span key={i} className="text-[11px] text-gray-500">{label} <b className="text-gray-700">{v}</b></span>)}
+      {shown.map(([label, v], i) => <span key={i} className="text-[11px] text-foreground-muted">{label} <b className="text-foreground">{v}</b></span>)}
     </Card>
   );
 }
@@ -297,24 +297,24 @@ function TicketListView({ d, onSave }: { d: any; onSave?: (itemType: string, pay
           <Card key={i} className="p-3 space-y-2.5">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-sm">{urgencyDot(t.urgency)}</span>
-              {t.type && <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{t.type}</span>}
-              {senti && <span className={`text-[11px] px-2 py-0.5 rounded-full ${hot ? 'bg-rose-50 text-rose-500' : 'bg-gray-100 text-gray-500'}`}>{senti}</span>}
+              {t.type && <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground-muted">{t.type}</span>}
+              {senti && <span className={`text-[11px] px-2 py-0.5 rounded-full ${hot ? 'bg-rose-50 text-rose-500' : 'bg-surface-muted text-foreground-muted'}`}>{senti}</span>}
               <RiskChip level={t.riskLevel} />
               {t.needsHumanApproval && <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 ml-auto">⚠️ 승인 후 발송</span>}
-              {onSave && <button onClick={() => onSave('faq', { title: `${t.type || '답변'} 응대`, body: t.draft, question: t.customerMessage, answer: t.faqCandidate?.answer })} title="답변·FAQ 보관" className={`text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all ${t.needsHumanApproval ? '' : 'ml-auto'}`}>⭐</button>}
+              {onSave && <button onClick={() => onSave('faq', { title: `${t.type || '답변'} 응대`, body: t.draft, question: t.customerMessage, answer: t.faqCandidate?.answer })} title="답변·FAQ 보관" className={`text-xs text-foreground-faint hover:text-amber-400 active:scale-90 transition-all ${t.needsHumanApproval ? '' : 'ml-auto'}`}>⭐</button>}
             </div>
-            {t.customerMessage && <div className="text-xs text-gray-400 italic leading-relaxed">"{t.customerMessage}"</div>}
+            {t.customerMessage && <div className="text-xs text-foreground-faint italic leading-relaxed">"{t.customerMessage}"</div>}
             {t.draft && (
-              <div className="relative bg-gray-50 rounded-xl p-2.5 pr-9">
+              <div className="relative bg-surface-muted rounded-xl p-2.5 pr-9">
                 <CopyIconButton text={t.draft} title="답변 복사" />
-                <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{t.draft}</div>
+                <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{t.draft}</div>
               </div>
             )}
-            {confirm && <div className="text-[11px] text-gray-400">확인 필요: {confirm}</div>}
+            {confirm && <div className="text-[11px] text-foreground-faint">확인 필요: {confirm}</div>}
             {t.needsHumanApproval && t.approvalReason && <div className="text-[11px] text-amber-500">승인 사유: {t.approvalReason}</div>}
             {t.faqCandidate?.shouldCreate && <div className="text-[11px] text-foreground">⭐ FAQ 후보: {t.faqCandidate.question}</div>}
             {Array.isArray(t.nextActions) && t.nextActions.length > 0 && (
-              <span className="text-[11px] text-gray-400">→ {t.nextActions.map((a: any) => `${STAFF_META[a.target]?.label || a.target}: ${a.title}`).join(' · ')}</span>
+              <span className="text-[11px] text-foreground-faint">→ {t.nextActions.map((a: any) => `${STAFF_META[a.target]?.label || a.target}: ${a.title}`).join(' · ')}</span>
             )}
           </Card>
         );
@@ -341,16 +341,16 @@ function ContentMixBar({ summary }: { summary: any }) {
   return (
     <Card className="p-3 space-y-2.5">
       {shownCounts.length > 0 && (
-        <div className="flex flex-wrap gap-x-3 gap-y-1">{shownCounts.map(([l, v], i) => <span key={i} className="text-[11px] text-gray-500">{l} <b className="text-gray-700">{v}</b></span>)}</div>
+        <div className="flex flex-wrap gap-x-3 gap-y-1">{shownCounts.map(([l, v], i) => <span key={i} className="text-[11px] text-foreground-muted">{l} <b className="text-foreground">{v}</b></span>)}</div>
       )}
       {mix && typeof mix === 'object' && (
         <div className="space-y-1">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide">콘텐츠 믹스</div>
+          <div className="text-[11px] font-semibold text-foreground-faint tracking-wide">콘텐츠 믹스</div>
           {Object.entries(mix).map(([k, v]) => (
             <div key={k} className="flex items-center gap-2">
-              <span className="text-[11px] text-gray-500 w-12 flex-shrink-0">{MIX_LABELS[k] || k}</span>
-              <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden"><div className="h-full bg-foreground rounded-full" style={{ width: `${Math.min(100, Number(v) || 0)}%` }} /></div>
-              <span className="text-[10px] text-gray-400 w-8 text-right">{String(v)}%</span>
+              <span className="text-[11px] text-foreground-muted w-12 flex-shrink-0">{MIX_LABELS[k] || k}</span>
+              <div className="flex-1 h-2 rounded-full bg-surface-muted overflow-hidden"><div className="h-full bg-foreground rounded-full" style={{ width: `${Math.min(100, Number(v) || 0)}%` }} /></div>
+              <span className="text-[10px] text-foreground-faint w-8 text-right">{String(v)}%</span>
             </div>
           ))}
         </div>
@@ -364,7 +364,7 @@ const hashtagText = (h: any) => h ? [...(h.large || []), ...(h.medium || []), ..
 function CopyIconButton({ text, title = '전체 복사' }: { text: string; title?: string }) {
   return (
     <button onClick={() => navigator.clipboard?.writeText(text)} title={title}
-      className="absolute top-2 right-2 w-6 h-6 rounded-lg bg-white text-gray-400 hover:text-foreground flex items-center justify-center shadow-sm active:scale-90 transition-all">
+      className="absolute top-2 right-2 w-6 h-6 rounded-lg bg-white text-foreground-faint hover:text-foreground flex items-center justify-center shadow-sm active:scale-90 transition-all">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
     </button>
   );
@@ -383,31 +383,31 @@ function SnsQueueView({ d, onSave }: { d: any; onSave?: (itemType: string, paylo
         return (
           <Card key={i} className="p-3 space-y-2.5">
             <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
-              {p.date && <span className="font-semibold text-gray-700">{p.date}{p.time ? ` ${p.time}` : ''}</span>}
-              {p.channel && <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{p.channel}</span>}
-              {p.format && <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{p.format}</span>}
+              {p.date && <span className="font-semibold text-foreground">{p.date}{p.time ? ` ${p.time}` : ''}</span>}
+              {p.channel && <span className="px-2 py-0.5 rounded-full bg-surface-muted text-foreground-muted">{p.channel}</span>}
+              {p.format && <span className="px-2 py-0.5 rounded-full bg-surface-muted text-foreground-muted">{p.format}</span>}
               {p.objective && <span className="px-2 py-0.5 rounded-full bg-surface-muted text-foreground">{p.objective}</span>}
-              {p.status && <span className="ml-auto text-gray-400">{p.status}</span>}
-              {onSave && <button onClick={() => onSave('post', { ...p, title: hookText || (p.body ? String(p.body).slice(0, 30) : '게시물') })} title="콘텐츠 보관" className={`text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all ${p.status ? '' : 'ml-auto'}`}>⭐</button>}
+              {p.status && <span className="ml-auto text-foreground-faint">{p.status}</span>}
+              {onSave && <button onClick={() => onSave('post', { ...p, title: hookText || (p.body ? String(p.body).slice(0, 30) : '게시물') })} title="콘텐츠 보관" className={`text-xs text-foreground-faint hover:text-amber-400 active:scale-90 transition-all ${p.status ? '' : 'ml-auto'}`}>⭐</button>}
             </div>
             {/* 게시물 콘텐츠 — 연회색 박스 + 우상단 전체 복사 */}
-            <div className="relative bg-gray-50 rounded-xl p-3 pr-9 space-y-2.5">
+            <div className="relative bg-surface-muted rounded-xl p-3 pr-9 space-y-2.5">
               <CopyIconButton text={fullText} title="제목·내용·해시태그 전체 복사" />
               {hookText && (
-                <div className="text-sm font-bold text-gray-800 pr-1">
-                  {hookText}{hookScore != null && <span className="ml-1.5 text-[11px] font-normal text-gray-400">훅 {hookScore}/10</span>}
+                <div className="text-sm font-bold text-foreground pr-1">
+                  {hookText}{hookScore != null && <span className="ml-1.5 text-[11px] font-normal text-foreground-faint">훅 {hookScore}/10</span>}
                 </div>
               )}
-              {p.body && <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{p.body}</p>}
+              {p.body && <p className="text-sm text-foreground-muted leading-relaxed whitespace-pre-wrap">{p.body}</p>}
               {ctaText && <div className="text-xs text-foreground font-medium">→ {ctaText}</div>}
               {p.hashtags && <SnsTags h={p.hashtags} />}
             </div>
-            {p.imageBrief && <div className="text-[11px] text-gray-400">🖼 {typeof p.imageBrief === 'string' ? p.imageBrief : JSON.stringify(p.imageBrief)}</div>}
+            {p.imageBrief && <div className="text-[11px] text-foreground-faint">🖼 {typeof p.imageBrief === 'string' ? p.imageBrief : JSON.stringify(p.imageBrief)}</div>}
             {Array.isArray(p.variants) && p.variants.length > 0 && (
-              <div className="flex gap-1 flex-wrap">{p.variants.map((v: any, j: number) => <span key={j} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-400">{typeof v === 'string' ? v : (v?.label || v?.angle || 'A/B')}</span>)}</div>
+              <div className="flex gap-1 flex-wrap">{p.variants.map((v: any, j: number) => <span key={j} className="text-[10px] px-1.5 py-0.5 rounded bg-surface-muted text-foreground-faint">{typeof v === 'string' ? v : (v?.label || v?.angle || 'A/B')}</span>)}</div>
             )}
             {Array.isArray(p.nextActions) && p.nextActions.length > 0 && (
-              <span className="text-[11px] text-gray-400">→ {p.nextActions.map((a: any) => `${STAFF_META[a.target]?.label || a.target}: ${a.title}`).join(' · ')}</span>
+              <span className="text-[11px] text-foreground-faint">→ {p.nextActions.map((a: any) => `${STAFF_META[a.target]?.label || a.target}: ${a.title}`).join(' · ')}</span>
             )}
           </Card>
         );
@@ -448,11 +448,11 @@ function CopyVariantsView({ d, onSave }: { d: any; onSave?: (itemType: string, p
       {/* 상품/목표 바 */}
       {(pr.name || pr.goal || pr.angle) && (
         <Card className="p-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
-          {pr.name && <span className="font-semibold text-gray-700">{pr.name}</span>}
-          {pr.price != null && <span className="text-gray-400">{typeof pr.price === 'number' ? pr.price.toLocaleString() : pr.price}원</span>}
+          {pr.name && <span className="font-semibold text-foreground">{pr.name}</span>}
+          {pr.price != null && <span className="text-foreground-faint">{typeof pr.price === 'number' ? pr.price.toLocaleString() : pr.price}원</span>}
           {pr.goal && <span className="px-2 py-0.5 rounded-full bg-surface-muted text-foreground">{pr.goal}</span>}
-          {pr.angle && <span className="text-gray-500">· {pr.angle}</span>}
-          {Array.isArray(pr.channels) && pr.channels.length > 0 && <span className="text-gray-400">· {pr.channels.join('/')}</span>}
+          {pr.angle && <span className="text-foreground-muted">· {pr.angle}</span>}
+          {Array.isArray(pr.channels) && pr.channels.length > 0 && <span className="text-foreground-faint">· {pr.channels.join('/')}</span>}
         </Card>
       )}
       {/* 3세트 비교 (데스크톱 나란히 / 모바일 세로 누적) */}
@@ -463,24 +463,24 @@ function CopyVariantsView({ d, onSave }: { d: any; onSave?: (itemType: string, p
               <div className="flex items-center justify-between">
                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground">{s.type || '카피'}</span>
                 <div className="flex items-center gap-1.5">
-                  {s.status && <span className="text-[10px] text-gray-400">{s.status}</span>}
-                  {onSave && <button onClick={() => onSave('copy', s)} title="보관함에 저장" className="text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all">⭐</button>}
+                  {s.status && <span className="text-[10px] text-foreground-faint">{s.status}</span>}
+                  {onSave && <button onClick={() => onSave('copy', s)} title="보관함에 저장" className="text-xs text-foreground-faint hover:text-amber-400 active:scale-90 transition-all">⭐</button>}
                 </div>
               </div>
               {(s.headline || s.sub || s.detail || s.cta) && (
-                <div className="relative bg-gray-50 rounded-xl p-2.5 pr-9 space-y-1">
+                <div className="relative bg-surface-muted rounded-xl p-2.5 pr-9 space-y-1">
                   <CopyIconButton text={copyText(s)} title="카피 복사" />
-                  {s.headline && <div className="text-sm font-bold text-gray-800 leading-relaxed">{s.headline}</div>}
-                  {s.sub && <div className="text-xs text-gray-500 leading-relaxed">{s.sub}</div>}
-                  {s.detail && <div className="text-xs text-gray-400 leading-relaxed">{s.detail}</div>}
+                  {s.headline && <div className="text-sm font-bold text-foreground leading-relaxed">{s.headline}</div>}
+                  {s.sub && <div className="text-xs text-foreground-muted leading-relaxed">{s.sub}</div>}
+                  {s.detail && <div className="text-xs text-foreground-faint leading-relaxed">{s.detail}</div>}
                   {s.cta && <div className="text-xs text-foreground font-medium">→ {s.cta}</div>}
                 </div>
               )}
-              {s.imageDirection && <div className="text-[11px] text-gray-400">🖼 {s.imageDirection}</div>}
-              {Array.isArray(s.recommendedChannels) && s.recommendedChannels.length > 0 && <div className="text-[11px] text-gray-400">📍 {s.recommendedChannels.join(', ')}</div>}
-              {Array.isArray(s.expectedMetric) && s.expectedMetric.length > 0 && <div className="text-[11px] text-gray-400">📊 {s.expectedMetric.join(', ')}</div>}
+              {s.imageDirection && <div className="text-[11px] text-foreground-faint">🖼 {s.imageDirection}</div>}
+              {Array.isArray(s.recommendedChannels) && s.recommendedChannels.length > 0 && <div className="text-[11px] text-foreground-faint">📍 {s.recommendedChannels.join(', ')}</div>}
+              {Array.isArray(s.expectedMetric) && s.expectedMetric.length > 0 && <div className="text-[11px] text-foreground-faint">📊 {s.expectedMetric.join(', ')}</div>}
               {s.caution && <div className="text-[11px] text-amber-500">⚠ {s.caution}</div>}
-              {s.variantId && <div className="text-[10px] text-gray-300 text-right">{s.variantId}</div>}
+              {s.variantId && <div className="text-[10px] text-foreground-faint text-right">{s.variantId}</div>}
             </Card>
           ))}
         </div>
@@ -488,17 +488,17 @@ function CopyVariantsView({ d, onSave }: { d: any; onSave?: (itemType: string, p
       {/* 타겟팅 */}
       {(tg.keywords?.length || aud.core?.length || tg.budgetSplit) && (
         <Card className="p-3 space-y-2">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide">타겟팅</div>
-          {Array.isArray(tg.keywords) && tg.keywords.length > 0 && <div className="text-xs text-gray-600">키워드 {tg.keywords.length}개: {tg.keywords.slice(0, 8).join(', ')}{tg.keywords.length > 8 ? '…' : ''}</div>}
-          {audLine.filter(([, v]) => Array.isArray(v) && v.length).map(([l, v]) => <div key={l} className="text-xs text-gray-500">{l}: {v.join(', ')}</div>)}
-          {tg.budgetSplit && <div className="text-xs text-gray-500">예산: 테스트 균등 → 승자 집중(70/20/10)</div>}
+          <div className="text-[11px] font-semibold text-foreground-faint tracking-wide">타겟팅</div>
+          {Array.isArray(tg.keywords) && tg.keywords.length > 0 && <div className="text-xs text-foreground-muted">키워드 {tg.keywords.length}개: {tg.keywords.slice(0, 8).join(', ')}{tg.keywords.length > 8 ? '…' : ''}</div>}
+          {audLine.filter(([, v]) => Array.isArray(v) && v.length).map(([l, v]) => <div key={l} className="text-xs text-foreground-muted">{l}: {v.join(', ')}</div>)}
+          {tg.budgetSplit && <div className="text-xs text-foreground-muted">예산: 테스트 균등 → 승자 집중(70/20/10)</div>}
         </Card>
       )}
       {/* 채널 가이드 */}
       {Object.keys(cg).length > 0 && (
         <Card className="p-3 space-y-1">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide mb-0.5">채널 가이드</div>
-          {Object.entries(cg).map(([k, v]) => <div key={k} className="text-xs text-gray-500"><b className="text-gray-600">{k}</b> {String(v)}</div>)}
+          <div className="text-[11px] font-semibold text-foreground-faint tracking-wide mb-0.5">채널 가이드</div>
+          {Object.entries(cg).map(([k, v]) => <div key={k} className="text-xs text-foreground-muted"><b className="text-foreground-muted">{k}</b> {String(v)}</div>)}
         </Card>
       )}
       <AdCompliance cc={d.complianceCheck} />
@@ -516,20 +516,20 @@ function CompareTable({ rows }: { rows: any[] }) {
   const show = rows.slice(0, 4); // 우리 + 주요 경쟁사 3
   return (
     <Card className="p-3 overflow-x-auto">
-      <div className="text-[11px] font-semibold text-gray-400 tracking-wide mb-1.5">경쟁사 비교</div>
+      <div className="text-[11px] font-semibold text-foreground-faint tracking-wide mb-1.5">경쟁사 비교</div>
       <table className="w-full text-xs">
         <tbody>
           {show.map((r: any, i: number) => (
-            <tr key={i} className="border-b border-gray-50 last:border-0">
-              <td className="py-1 pr-2 font-medium text-gray-700 whitespace-nowrap">{r.name}</td>
-              <td className="py-1 pr-2 text-gray-500 whitespace-nowrap">{typeof r.price === 'number' ? r.price.toLocaleString() : r.price}</td>
-              {r.composition && <td className="py-1 pr-2 text-gray-500">{r.composition}</td>}
-              <td className="py-1 text-gray-400">{r.recommendedResponse || r.difference || ''}</td>
+            <tr key={i} className="border-b border-line last:border-0">
+              <td className="py-1 pr-2 font-medium text-foreground whitespace-nowrap">{r.name}</td>
+              <td className="py-1 pr-2 text-foreground-muted whitespace-nowrap">{typeof r.price === 'number' ? r.price.toLocaleString() : r.price}</td>
+              {r.composition && <td className="py-1 pr-2 text-foreground-muted">{r.composition}</td>}
+              <td className="py-1 text-foreground-faint">{r.recommendedResponse || r.difference || ''}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      {rows.length > 4 && <div className="text-[11px] text-gray-400 mt-1">+ {rows.length - 4}개 더</div>}
+      {rows.length > 4 && <div className="text-[11px] text-foreground-faint mt-1">+ {rows.length - 4}개 더</div>}
     </Card>
   );
 }
@@ -543,18 +543,18 @@ function MonitorDigestView({ d }: { d: any }) {
   return (
     <div className="space-y-3">
       {Array.isArray(d.summary) && d.summary.length > 0 && (
-        <ul className="space-y-0.5">{d.summary.map((s: any, i: number) => <li key={i} className="text-sm text-gray-600">· {String(s)}</li>)}</ul>
+        <ul className="space-y-0.5">{d.summary.map((s: any, i: number) => <li key={i} className="text-sm text-foreground-muted">· {String(s)}</li>)}</ul>
       )}
       {/* 대응 필요 알림 (상단) */}
       {alerts.map((a: any, i: number) => (
         <Card key={i} className="p-3 space-y-2">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span>{levelDot(a.level)}</span>
-            {a.title && <span className="text-sm font-semibold text-gray-800">{a.title}</span>}
+            {a.title && <span className="text-sm font-semibold text-foreground">{a.title}</span>}
             {a.status && <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-500">{a.status === 'action_required' ? '대응 필요' : a.status}</span>}
           </div>
-          {a.change && <div className="text-xs text-gray-600">변화: {a.change}</div>}
-          {a.impact && <div className="text-xs text-gray-500">영향: {a.impact}</div>}
+          {a.change && <div className="text-xs text-foreground-muted">변화: {a.change}</div>}
+          {a.impact && <div className="text-xs text-foreground-muted">영향: {a.impact}</div>}
           {a.recommendation && <div className="text-xs text-foreground">→ {a.recommendation}</div>}
           {a.source && <SourceList sources={[a.source]} />}
         </Card>
@@ -562,11 +562,11 @@ function MonitorDigestView({ d }: { d: any }) {
       {table.length > 0 && <CompareTable rows={table} />}
       {changeLog.length > 0 && (
         <Card className="p-3 space-y-1">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide mb-0.5">변화 로그</div>
+          <div className="text-[11px] font-semibold text-foreground-faint tracking-wide mb-0.5">변화 로그</div>
           {changeLog.map((c: any, i: number) => (
-            <div key={i} className="flex items-center gap-1.5 text-xs text-gray-600 flex-wrap">
+            <div key={i} className="flex items-center gap-1.5 text-xs text-foreground-muted flex-wrap">
               <span>{levelDot(c.level)}</span><span className="font-medium">{c.item}</span>
-              <span className="text-gray-400">{c.before} → {c.after}</span>
+              <span className="text-foreground-faint">{c.before} → {c.after}</span>
               {c.delta && <span className="text-rose-400">{c.delta}</span>}
             </div>
           ))}
@@ -576,21 +576,21 @@ function MonitorDigestView({ d }: { d: any }) {
         <div className="space-y-2">
           {trends.map((t: any, i: number) => (
             <Card key={i} className="p-2.5">
-              <div className="text-xs"><b className="text-gray-700">{t.keyword}</b> <span className="text-gray-400">{t.delta}</span></div>
-              {t.meaning && <div className="text-[11px] text-gray-500 mt-0.5">{t.meaning}</div>}
+              <div className="text-xs"><b className="text-foreground">{t.keyword}</b> <span className="text-foreground-faint">{t.delta}</span></div>
+              {t.meaning && <div className="text-[11px] text-foreground-muted mt-0.5">{t.meaning}</div>}
             </Card>
           ))}
         </div>
       )}
       {strategy && (typeof strategy === 'string'
-        ? <Section label="대응 전략"><div className="text-sm text-gray-600">{strategy}</div></Section>
+        ? <Section label="대응 전략"><div className="text-sm text-foreground-muted">{strategy}</div></Section>
         : (
           <Section label="대응 전략">
-            {strategy.summary && <div className="text-sm text-gray-600">{strategy.summary}</div>}
+            {strategy.summary && <div className="text-sm text-foreground-muted">{strategy.summary}</div>}
             <ActionQueue actions={strategy.actions} label="" bare />
           </Section>
         ))}
-      {limits.length > 0 && <div className="text-[11px] text-gray-400">ⓘ {limits.join(' · ')}</div>}
+      {limits.length > 0 && <div className="text-[11px] text-foreground-faint">ⓘ {limits.join(' · ')}</div>}
       <HandoffPanel handoff={d.handoff} />
     </div>
   );
@@ -600,9 +600,9 @@ function MonitorDigestView({ d }: { d: any }) {
 function KpiCard({ k }: { k: any }) {
   return (
     <Card className="p-2.5 space-y-0.5">
-      <div className="text-[11px] text-gray-400 truncate">{k.label || k.name}</div>
-      <div className="text-base font-bold text-gray-800">{k.displayValue || (typeof k.value === 'number' ? k.value.toLocaleString() : k.value)}</div>
-      <div className="flex items-center gap-1 text-[11px]"><span>{levelDot(k.signal)}</span>{k.delta && <span className="text-gray-500">{k.delta}</span>}</div>
+      <div className="text-[11px] text-foreground-faint truncate">{k.label || k.name}</div>
+      <div className="text-base font-bold text-foreground">{k.displayValue || (typeof k.value === 'number' ? k.value.toLocaleString() : k.value)}</div>
+      <div className="flex items-center gap-1 text-[11px]"><span>{levelDot(k.signal)}</span>{k.delta && <span className="text-foreground-muted">{k.delta}</span>}</div>
     </Card>
   );
 }
@@ -616,25 +616,25 @@ function MetricDigestView({ d }: { d: any }) {
     <div className="space-y-3">
       {/* 5초 요약 */}
       {Array.isArray(d.summary) && d.summary.length > 0 && (
-        <ul className="space-y-0.5">{d.summary.map((s: any, i: number) => <li key={i} className="text-sm text-gray-600">· {String(s)}</li>)}</ul>
+        <ul className="space-y-0.5">{d.summary.map((s: any, i: number) => <li key={i} className="text-sm text-foreground-muted">· {String(s)}</li>)}</ul>
       )}
       {/* KPI 카드 그리드 */}
       {kpis.length > 0 && <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">{kpis.map((k: any, i: number) => <KpiCard key={i} k={k} />)}</div>}
       {/* 이상치 */}
       {anomalies.length > 0 && (
         <div className="space-y-2.5">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide">이상치</div>
+          <div className="text-[11px] font-semibold text-foreground-faint tracking-wide">이상치</div>
           {anomalies.map((a: any, i: number) => (
             <Card key={i} className="p-3 space-y-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span>{levelDot(a.level)}</span>
-                <span className="text-sm font-semibold text-gray-800">{a.title || a.metric}</span>
-                {a.confidence && <span className="ml-auto text-[10px] text-gray-400">신뢰도 {a.confidence}</span>}
+                <span className="text-sm font-semibold text-foreground">{a.title || a.metric}</span>
+                {a.confidence && <span className="ml-auto text-[10px] text-foreground-faint">신뢰도 {a.confidence}</span>}
               </div>
-              {(a.previous || a.current || a.delta) && <div className="text-xs text-gray-500">{a.previous}{a.previous && a.current ? ' → ' : ''}{a.current}{a.delta ? ` (${a.delta})` : ''}</div>}
-              {a.meaning && <div className="text-xs text-gray-600">{a.meaning}</div>}
-              {a.hypothesis && <div className="text-xs text-gray-500">가설: {a.hypothesis}</div>}
-              {Array.isArray(a.evidence) && a.evidence.length > 0 && <div className="text-[11px] text-gray-400">근거: {a.evidence.join(' · ')}</div>}
+              {(a.previous || a.current || a.delta) && <div className="text-xs text-foreground-muted">{a.previous}{a.previous && a.current ? ' → ' : ''}{a.current}{a.delta ? ` (${a.delta})` : ''}</div>}
+              {a.meaning && <div className="text-xs text-foreground-muted">{a.meaning}</div>}
+              {a.hypothesis && <div className="text-xs text-foreground-muted">가설: {a.hypothesis}</div>}
+              {Array.isArray(a.evidence) && a.evidence.length > 0 && <div className="text-[11px] text-foreground-faint">근거: {a.evidence.join(' · ')}</div>}
               {a.nextAction && <div className="text-xs text-foreground">→ {a.nextAction}</div>}
             </Card>
           ))}
@@ -643,17 +643,17 @@ function MetricDigestView({ d }: { d: any }) {
       {/* 추천 액션 큐 */}
       {actions.length > 0 && (
         <div>
-          <span className="text-[11px] font-semibold text-gray-400 tracking-wide block mb-1">추천 액션</span>
+          <span className="text-[11px] font-semibold text-foreground-faint tracking-wide block mb-1">추천 액션</span>
           <div className="space-y-2">
             {actions.map((a: any, i: number) => (
               <Card key={i} className="p-2.5 space-y-0.5">
-                <div className="flex items-center gap-1.5 text-sm text-gray-700 flex-wrap">
+                <div className="flex items-center gap-1.5 text-sm text-foreground flex-wrap">
                   {a.priority != null && <span className="w-4 h-4 rounded-full bg-surface-muted text-foreground text-[10px] font-bold flex items-center justify-center flex-shrink-0">{a.priority}</span>}
                   <span className="font-medium">{a.title}</span>
-                  {a.owner && STAFF_META[a.owner] && <span className="text-[11px] text-gray-400">{STAFF_META[a.owner].emoji}</span>}
+                  {a.owner && STAFF_META[a.owner] && <span className="text-[11px] text-foreground-faint">{STAFF_META[a.owner].emoji}</span>}
                   {a.approvalRequired && <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600">승인 필요</span>}
                 </div>
-                {(a.reason || a.metricsToCheck?.length) && <div className="text-[11px] text-gray-400">{a.reason}{Array.isArray(a.metricsToCheck) && a.metricsToCheck.length ? ` · ${a.metricsToCheck.join('/')}` : ''}</div>}
+                {(a.reason || a.metricsToCheck?.length) && <div className="text-[11px] text-foreground-faint">{a.reason}{Array.isArray(a.metricsToCheck) && a.metricsToCheck.length ? ` · ${a.metricsToCheck.join('/')}` : ''}</div>}
               </Card>
             ))}
           </div>
@@ -661,9 +661,9 @@ function MetricDigestView({ d }: { d: any }) {
       )}
       {/* 데이터 출처 · 신뢰도 */}
       {dataSource.length > 0 && (
-        <div className="text-[11px] text-gray-400">데이터: {dataSource.map((s: any) => `${s.source}${s.period ? ` (${s.period})` : ''}`).join(' · ')}{d.confidence ? ` · 신뢰도 ${d.confidence}` : ''}</div>
+        <div className="text-[11px] text-foreground-faint">데이터: {dataSource.map((s: any) => `${s.source}${s.period ? ` (${s.period})` : ''}`).join(' · ')}{d.confidence ? ` · 신뢰도 ${d.confidence}` : ''}</div>
       )}
-      {limits.length > 0 && <div className="text-[11px] text-gray-400">ⓘ {limits.join(' · ')}</div>}
+      {limits.length > 0 && <div className="text-[11px] text-foreground-faint">ⓘ {limits.join(' · ')}</div>}
     </div>
   );
 }
@@ -673,14 +673,14 @@ const RATIO_LABELS: Record<string, string> = { '4:5': '상세/피드', '1:1': '�
 function RatioBadge({ ratio }: { ratio: string }) {
   if (!ratio) return null;
   const desc = RATIO_LABELS[ratio];
-  return <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{ratio}{desc ? ` ${desc}` : ''}</span>;
+  return <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-muted text-foreground-muted">{ratio}{desc ? ` ${desc}` : ''}</span>;
 }
 function ShotRow({ s, grade }: { s: any; grade: string }) {
   return (
     <div className="flex items-center gap-1.5 text-xs flex-wrap">
-      <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${grade === 'MUST' ? 'bg-surface-muted text-foreground' : 'bg-gray-100 text-gray-400'}`}>{grade}</span>
-      <span className="text-gray-700">{s.label || s.type}</span>
-      {s.purpose && <span className="text-gray-400">· {s.purpose}</span>}
+      <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${grade === 'MUST' ? 'bg-surface-muted text-foreground' : 'bg-surface-muted text-foreground-faint'}`}>{grade}</span>
+      <span className="text-foreground">{s.label || s.type}</span>
+      {s.purpose && <span className="text-foreground-faint">· {s.purpose}</span>}
       <RatioBadge ratio={s.ratio} />
     </div>
   );
@@ -718,17 +718,17 @@ function ImageBriefView({ d, onSave, workspaceId, staffId, onCredits }: { d: any
       {/* 비주얼 방향 */}
       {(vd.mood?.length || vd.colors?.length || vd.props?.length || vd.avoid?.length) && (
         <Card className="p-3 space-y-2">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide">비주얼 방향</div>
-          {Array.isArray(vd.mood) && vd.mood.length > 0 && <div className="text-xs text-gray-600">무드: {vd.mood.join(' · ')}</div>}
-          {Array.isArray(vd.colors) && vd.colors.length > 0 && <div className="text-xs text-gray-500">컬러: {vd.colors.join(' · ')}</div>}
-          {Array.isArray(vd.props) && vd.props.length > 0 && <div className="text-xs text-gray-500">소품: {vd.props.join(' · ')}</div>}
+          <div className="text-[11px] font-semibold text-foreground-faint tracking-wide">비주얼 방향</div>
+          {Array.isArray(vd.mood) && vd.mood.length > 0 && <div className="text-xs text-foreground-muted">무드: {vd.mood.join(' · ')}</div>}
+          {Array.isArray(vd.colors) && vd.colors.length > 0 && <div className="text-xs text-foreground-muted">컬러: {vd.colors.join(' · ')}</div>}
+          {Array.isArray(vd.props) && vd.props.length > 0 && <div className="text-xs text-foreground-muted">소품: {vd.props.join(' · ')}</div>}
           {Array.isArray(vd.avoid) && vd.avoid.length > 0 && <div className="text-[11px] text-rose-400">금지: {vd.avoid.join(' · ')}</div>}
         </Card>
       )}
       {/* 촬영컷 리스트 (MUST/NICE) */}
       {shots.length > 0 && (
         <Card className="p-3 space-y-2">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide">필수 촬영컷</div>
+          <div className="text-[11px] font-semibold text-foreground-faint tracking-wide">필수 촬영컷</div>
           {must.map((s: any, i: number) => <ShotRow key={`m${i}`} s={s} grade="MUST" />)}
           {nice.map((s: any, i: number) => <ShotRow key={`n${i}`} s={s} grade="NICE" />)}
         </Card>
@@ -739,40 +739,40 @@ function ImageBriefView({ d, onSave, workspaceId, staffId, onCredits }: { d: any
           <div className="flex items-center gap-1.5 flex-wrap">
             <RatioBadge ratio={p.ratio} />
             {p.engine && <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-muted text-foreground">{p.engine}</span>}
-            {Array.isArray(p.useCase) && p.useCase.length > 0 && <span className="text-[10px] text-gray-400">{p.useCase.join(', ')}</span>}
-            {p.status && <span className="ml-auto text-[10px] text-gray-400">{p.status}</span>}
-            {onSave && <button onClick={() => onSave('prompt', { ...p, title: (p.text ? String(p.text).slice(0, 30) : '프롬프트') })} title="프롬프트 보관" className={`text-xs text-gray-300 hover:text-amber-400 active:scale-90 transition-all ${p.status ? '' : 'ml-auto'}`}>⭐</button>}
+            {Array.isArray(p.useCase) && p.useCase.length > 0 && <span className="text-[10px] text-foreground-faint">{p.useCase.join(', ')}</span>}
+            {p.status && <span className="ml-auto text-[10px] text-foreground-faint">{p.status}</span>}
+            {onSave && <button onClick={() => onSave('prompt', { ...p, title: (p.text ? String(p.text).slice(0, 30) : '프롬프트') })} title="프롬프트 보관" className={`text-xs text-foreground-faint hover:text-amber-400 active:scale-90 transition-all ${p.status ? '' : 'ml-auto'}`}>⭐</button>}
           </div>
-          {p.text && <div className="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg p-2 break-all">{p.text}</div>}
+          {p.text && <div className="text-xs text-foreground-muted leading-relaxed bg-surface-muted rounded-lg p-2 break-all">{p.text}</div>}
           <div className="flex items-center gap-1.5">
             <button onClick={() => navigator.clipboard?.writeText(String(p.text || ''))}
-              className="text-[11px] px-2 py-0.5 rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 active:scale-95 transition-all">복사</button>
+              className="text-[11px] px-2 py-0.5 rounded-lg bg-surface-muted text-foreground-muted hover:bg-surface-muted active:scale-95 transition-all">복사</button>
             <button onClick={() => gen(p, i)} disabled={busy === i}
               className="text-[11px] px-2 py-0.5 rounded-lg bg-surface-muted text-foreground hover:bg-surface-muted disabled:opacity-50 active:scale-95 transition-all">{busy === i ? '생성 중…' : '🎨 이미지 생성'}</button>
           </div>
           {imgs[i] && (
             <div className="space-y-1">
-              <img src={imgs[i]} alt="생성 이미지" className="w-full rounded-xl border border-gray-100" />
+              <img src={imgs[i]} alt="생성 이미지" className="w-full rounded-xl border border-line" />
               {onSave && <button onClick={() => onSave('image', { title: '생성 이미지', thumbnailUrl: imgs[i], prompt: p.text })}
-                className="text-[11px] text-gray-300 hover:text-amber-400 active:scale-90 transition-all">⭐ 이미지 보관</button>}
+                className="text-[11px] text-foreground-faint hover:text-amber-400 active:scale-90 transition-all">⭐ 이미지 보관</button>}
             </div>
           )}
         </Card>
       ))}
       {/* 네거티브 */}
-      {negatives.length > 0 && <Section label="네거티브 프롬프트"><div className="text-[11px] text-gray-400 break-all">{negatives.join(', ')}</div></Section>}
+      {negatives.length > 0 && <Section label="네거티브 프롬프트"><div className="text-[11px] text-foreground-faint break-all">{negatives.join(', ')}</div></Section>}
       {/* 후보 갤러리 (이미지 생성 API 연동 시 썸네일·채택) */}
       {candidates.length > 0 && (
         <Section label="후보 갤러리">
           <div className="grid grid-cols-3 gap-2">
             {candidates.map((c: any, i: number) => (
               <div key={i} className="space-y-1">
-                <div className="aspect-square rounded-xl bg-gray-100 overflow-hidden flex items-center justify-center">
-                  {c.thumbnailUrl ? <img src={c.thumbnailUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-2xl text-gray-300">🖼</span>}
+                <div className="aspect-square rounded-xl bg-surface-muted overflow-hidden flex items-center justify-center">
+                  {c.thumbnailUrl ? <img src={c.thumbnailUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-2xl text-foreground-faint">🖼</span>}
                 </div>
                 {c.status === 'selected'
                   ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600">채택</span>
-                  : <span className="text-[10px] text-gray-400">{c.status || '후보'}</span>}
+                  : <span className="text-[10px] text-foreground-faint">{c.status || '후보'}</span>}
               </div>
             ))}
           </div>
@@ -801,21 +801,21 @@ function OpsDigestView({ d }: { d: any }) {
       {/* Top3 (펼침) */}
       {top3.length > 0 && (
         <div className="space-y-2.5">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide">오늘 꼭 볼 것 Top 3</div>
+          <div className="text-[11px] font-semibold text-foreground-faint tracking-wide">오늘 꼭 볼 것 Top 3</div>
           {top3.map((t: any, i: number) => (
             <Card key={i} className="p-3 space-y-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span>{levelDot(t.level)}</span>
-                {t.area && <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{t.area}</span>}
-                <span className="text-sm font-semibold text-gray-800">{t.title}</span>
+                {t.area && <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground-muted">{t.area}</span>}
+                <span className="text-sm font-semibold text-foreground">{t.title}</span>
                 {t.status && <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-500">{t.status === 'action_required' ? '대응 필요' : t.status}</span>}
               </div>
-              {t.whyNow && <div className="text-xs text-gray-500">왜 지금: {t.whyNow}</div>}
-              {(t.decisionNeeded || t.decision) && <div className="text-xs text-gray-700">{t.decisionNeeded || t.decision}</div>}
+              {t.whyNow && <div className="text-xs text-foreground-muted">왜 지금: {t.whyNow}</div>}
+              {(t.decisionNeeded || t.decision) && <div className="text-xs text-foreground">{t.decisionNeeded || t.decision}</div>}
               {t.recommendation && <div className="text-xs text-foreground">→ {t.recommendation}</div>}
               <div className="flex items-center gap-1.5 flex-wrap">
-                {Array.isArray(t.owners) && t.owners.map((o: string, j: number) => STAFF_META[o] && <span key={j} className="text-[11px] text-gray-400">{STAFF_META[o].emoji} {STAFF_META[o].label}</span>)}
-                {t.sourceStaff && <span className="text-[10px] text-gray-300 ml-auto">출처: {STAFF_META[t.sourceStaff]?.label || t.sourceStaff}</span>}
+                {Array.isArray(t.owners) && t.owners.map((o: string, j: number) => STAFF_META[o] && <span key={j} className="text-[11px] text-foreground-faint">{STAFF_META[o].emoji} {STAFF_META[o].label}</span>)}
+                {t.sourceStaff && <span className="text-[10px] text-foreground-faint ml-auto">출처: {STAFF_META[t.sourceStaff]?.label || t.sourceStaff}</span>}
               </div>
             </Card>
           ))}
@@ -824,31 +824,31 @@ function OpsDigestView({ d }: { d: any }) {
       {/* 승인 대기 큐 요약 */}
       {aqCounts.length > 0 && (
         <Card className="p-2.5 flex flex-wrap gap-x-3 gap-y-1 items-center">
-          <span className="text-[11px] text-gray-400">승인 대기</span>
-          {aqCounts.map(([k, n], i) => <span key={i} className="text-[11px] text-gray-600">{AQ_LABELS[k] || k} <b className="text-gray-700">{n}</b></span>)}
+          <span className="text-[11px] text-foreground-faint">승인 대기</span>
+          {aqCounts.map(([k, n], i) => <span key={i} className="text-[11px] text-foreground-muted">{AQ_LABELS[k] || k} <b className="text-foreground">{n}</b></span>)}
         </Card>
       )}
       {/* 누락·병목 */}
       {missed.length > 0 && (
         <Card className="p-3 space-y-1">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide mb-0.5">누락·병목</div>
+          <div className="text-[11px] font-semibold text-foreground-faint tracking-wide mb-0.5">누락·병목</div>
           {missed.map((m: any, i: number) => (
-            <div key={i} className="text-xs text-gray-600 flex items-start gap-1.5"><span>{levelDot(m.level)}</span><span>{m.issue}{m.recommendation ? ` → ${m.recommendation}` : ''}</span></div>
+            <div key={i} className="text-xs text-foreground-muted flex items-start gap-1.5"><span>{levelDot(m.level)}</span><span>{m.issue}{m.recommendation ? ` → ${m.recommendation}` : ''}</span></div>
           ))}
         </Card>
       )}
       {/* 직원 Health */}
       {health.length > 0 && (
         <Card className="p-3 space-y-1">
-          <div className="text-[11px] font-semibold text-gray-400 tracking-wide mb-0.5">직원 Health</div>
+          <div className="text-[11px] font-semibold text-foreground-faint tracking-wide mb-0.5">직원 Health</div>
           <div className="flex flex-wrap gap-x-3 gap-y-1">
-            {health.map((h: any, i: number) => <span key={i} className="text-[11px] text-gray-600">{healthDot(h.status)} {STAFF_META[h.staff]?.label || h.staff}{h.failed ? `(실패 ${h.failed})` : ''}</span>)}
+            {health.map((h: any, i: number) => <span key={i} className="text-[11px] text-foreground-muted">{healthDot(h.status)} {STAFF_META[h.staff]?.label || h.staff}{h.failed ? `(실패 ${h.failed})` : ''}</span>)}
           </div>
         </Card>
       )}
       {/* 추천 할일 */}
       {suggested.length > 0 && <ActionQueue actions={suggested} label="오늘 생성 추천 할일" />}
-      {Array.isArray(d.limitations) && d.limitations.length > 0 && <div className="text-[11px] text-gray-400">ⓘ {d.limitations.join(' · ')}</div>}
+      {Array.isArray(d.limitations) && d.limitations.length > 0 && <div className="text-[11px] text-foreground-faint">ⓘ {d.limitations.join(' · ')}</div>}
     </div>
   );
 }
@@ -859,7 +859,7 @@ const PLAN_TYPE: Record<string, { emoji: string; cls: string }> = {
   work: { emoji: '💼', cls: 'bg-blue-50 text-blue-600' },
   meeting: { emoji: '👥', cls: 'bg-amber-50 text-amber-600' },
   personal: { emoji: '🌿', cls: 'bg-emerald-50 text-emerald-600' },
-  break: { emoji: '☕', cls: 'bg-gray-100 text-gray-400' },
+  break: { emoji: '☕', cls: 'bg-surface-muted text-foreground-faint' },
   todo: { emoji: '✅', cls: 'bg-surface-muted text-foreground' },
   errand: { emoji: '🚶', cls: 'bg-orange-50 text-orange-500' },
 };
@@ -874,24 +874,24 @@ function SchedulePlanView({ d }: { d: any }) {
       {(d.date || d.summary) && (
         <Section>
           {d.date && <div className="text-[11px] font-semibold text-foreground mb-0.5">{String(d.date)}{d.period === 'week' ? ' · 주간' : ''}</div>}
-          {d.summary && <p className="text-sm text-gray-700 leading-relaxed">{d.summary}</p>}
+          {d.summary && <p className="text-sm text-foreground leading-relaxed">{d.summary}</p>}
         </Section>
       )}
       {plan.length > 0 && (
         <Section label="일정 계획 (승인하면 캘린더에 등록돼요)">
           <div className="space-y-1">
             {plan.map((b, i) => {
-              const t = PLAN_TYPE[b.type] || { emoji: '•', cls: 'bg-gray-50 text-gray-500' };
+              const t = PLAN_TYPE[b.type] || { emoji: '•', cls: 'bg-surface-muted text-foreground-muted' };
               return (
-                <div key={i} className="flex items-start gap-2 py-1.5 border-b border-gray-50 last:border-0">
-                  <div className="text-[11px] font-semibold text-gray-500 tabular-nums w-[88px] flex-shrink-0 pt-0.5">
-                    {b.date ? <span className="text-gray-300 block text-[10px]">{String(b.date).slice(5)}</span> : null}
+                <div key={i} className="flex items-start gap-2 py-1.5 border-b border-line last:border-0">
+                  <div className="text-[11px] font-semibold text-foreground-muted tabular-nums w-[88px] flex-shrink-0 pt-0.5">
+                    {b.date ? <span className="text-foreground-faint block text-[10px]">{String(b.date).slice(5)}</span> : null}
                     {b.time || '—'}{b.endTime ? `~${b.endTime}` : ''}
                   </div>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${t.cls}`}>{t.emoji}</span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm text-gray-700 leading-snug">{dot(b.priority)} {b.title}</div>
-                    {b.note && <div className="text-[11px] text-gray-400 mt-0.5">{b.note}</div>}
+                    <div className="text-sm text-foreground leading-snug">{dot(b.priority)} {b.title}</div>
+                    {b.note && <div className="text-[11px] text-foreground-faint mt-0.5">{b.note}</div>}
                   </div>
                 </div>
               );
@@ -903,8 +903,8 @@ function SchedulePlanView({ d }: { d: any }) {
         <Section label="미배치 — 오늘 못 넣은 일">
           <div className="space-y-1">
             {unscheduled.map((u, i) => (
-              <div key={i} className="text-xs text-gray-600 flex items-start gap-1.5">
-                <span className="text-gray-300">·</span><span>{u.title}{u.reason ? <span className="text-gray-400"> — {u.reason}</span> : null}</span>
+              <div key={i} className="text-xs text-foreground-muted flex items-start gap-1.5">
+                <span className="text-foreground-faint">·</span><span>{u.title}{u.reason ? <span className="text-foreground-faint"> — {u.reason}</span> : null}</span>
               </div>
             ))}
           </div>
@@ -915,7 +915,7 @@ function SchedulePlanView({ d }: { d: any }) {
           {warnings.map((w, i) => <div key={i} className="text-xs text-amber-700 flex items-start gap-1.5"><span>⚠️</span><span>{String(w)}</span></div>)}
         </Card>
       )}
-      {tips.length > 0 && <div className="text-[11px] text-gray-400">💡 {tips.join(' · ')}</div>}
+      {tips.length > 0 && <div className="text-[11px] text-foreground-faint">💡 {tips.join(' · ')}</div>}
     </div>
   );
 }

@@ -74,11 +74,11 @@ function CompanyInfoCard({ workspace, onSaved }: { workspace: Workspace; onSaved
       {/* 이미지 + 이모지 */}
       <div className="flex items-center gap-4">
         <button onClick={() => fileRef.current?.click()}
-          className="w-16 h-16 rounded-2xl bg-surface-muted border border-line hover:border-foreground overflow-hidden flex items-center justify-center text-2xl text-gray-300 transition-all active:scale-95 flex-shrink-0">
+          className="w-16 h-16 rounded-2xl bg-surface-muted border border-line hover:border-foreground overflow-hidden flex items-center justify-center text-2xl text-foreground-faint transition-all active:scale-95 flex-shrink-0">
           {image ? <img src={image} alt="회사" className="w-full h-full object-cover" /> : <span>{emoji}</span>}
         </button>
         <div className="flex flex-col gap-1">
-          <span className="text-[11px] text-gray-400">{image ? '이미지 변경 · 클릭' : '이미지 (선택) · 클릭'}</span>
+          <span className="text-[11px] text-foreground-faint">{image ? '이미지 변경 · 클릭' : '이미지 (선택) · 클릭'}</span>
           {image && <button onClick={() => { setImage(null); setImageFile(null); setSaved(false); }} className="text-[11px] text-rose-400 hover:text-rose-600 text-left">이미지 제거</button>}
         </div>
         <input ref={fileRef} type="file" accept="image/*" onChange={onFile} className="hidden" />
@@ -87,11 +87,11 @@ function CompanyInfoCard({ workspace, onSaved }: { workspace: Workspace; onSaved
       {/* 이모지 선택 (이미지 없을 때) */}
       {!image && (
         <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-1.5">이모지</label>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">이모지</label>
           <div className="flex flex-wrap gap-1.5">
             {EMOJIS.map((e) => (
               <button key={e} onClick={() => { setEmoji(e); setSaved(false); }}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-all active:scale-90 ${emoji === e ? 'bg-foreground text-white' : 'bg-surface-muted hover:bg-gray-100'}`}>
+                className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-all active:scale-90 ${emoji === e ? 'bg-foreground text-white' : 'bg-surface-muted hover:bg-surface-muted'}`}>
                 {e}
               </button>
             ))}
@@ -101,7 +101,7 @@ function CompanyInfoCard({ workspace, onSaved }: { workspace: Workspace; onSaved
 
       {/* 이름 */}
       <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-1.5">이름</label>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">이름</label>
         <input value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }}
           onKeyDown={(e) => { if (e.key === 'Enter') save(); }}
           placeholder={isOffice ? '예: 시목' : '예: 내 공간'} className={fieldCls} />
@@ -110,7 +110,7 @@ function CompanyInfoCard({ workspace, onSaved }: { workspace: Workspace; onSaved
       {/* 사업 정보 (오피스만) */}
       {isOffice && (
         <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-1.5">사업 정보 <span className="text-gray-300 font-normal">(헤더에 표시)</span></label>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">사업 정보 <span className="text-foreground-faint font-normal">(헤더에 표시)</span></label>
           <input value={bizInfo} onChange={(e) => { setBizInfo(e.target.value); setSaved(false); }}
             onKeyDown={(e) => { if (e.key === 'Enter') save(); }}
             placeholder="예: 원목 가구/소품 · 스마트스토어·자사몰" className={fieldCls} />

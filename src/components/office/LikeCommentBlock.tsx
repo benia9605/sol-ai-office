@@ -61,11 +61,11 @@ export function LikeCommentBlock({ resource, resId, members }: {
   const renderComment = (c: SocialComment, isReply = false): React.ReactNode => (
     <div key={c.id} className={`${isReply ? 'ml-6 border-l-2 border-line pl-3' : ''} py-1.5`}>
       <div className="flex items-baseline gap-2">
-        <span className="text-[12px] font-semibold text-gray-700">{isReply ? '↳ ' : ''}{nameOf(c.userId)}</span>
-        <span className="text-[10px] text-gray-300">{fmt(c.createdAt)}</span>
-        {c.userId === currentUserId && <button onClick={() => remove(c.id)} className="ml-auto text-[10px] text-gray-300 hover:text-rose-500">삭제</button>}
+        <span className="text-[12px] font-semibold text-foreground">{isReply ? '↳ ' : ''}{nameOf(c.userId)}</span>
+        <span className="text-[10px] text-foreground-faint">{fmt(c.createdAt)}</span>
+        {c.userId === currentUserId && <button onClick={() => remove(c.id)} className="ml-auto text-[10px] text-foreground-faint hover:text-rose-500">삭제</button>}
       </div>
-      <p className="text-[13px] text-gray-700 whitespace-pre-wrap leading-relaxed mt-0.5">{c.content}</p>
+      <p className="text-[13px] text-foreground whitespace-pre-wrap leading-relaxed mt-0.5">{c.content}</p>
       {!isReply && (
         <button onClick={() => { setReplyTo(replyTo === c.id ? null : c.id); setReplyDraft(''); }} className="text-[10px] text-foreground hover:underline mt-0.5">
           {replyTo === c.id ? '취소' : '답글'}
@@ -75,7 +75,7 @@ export function LikeCommentBlock({ resource, resId, members }: {
         <div className="flex gap-1.5 mt-1.5">
           <input autoFocus value={replyDraft} onChange={(e) => setReplyDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { submit(replyDraft, c.id).then(() => { setReplyDraft(''); setReplyTo(null); }); } }}
-            placeholder="답글…" className="flex-1 rounded-lg border border-gray-200 px-2.5 py-1 text-[13px] focus:outline-none focus:border-foreground" />
+            placeholder="답글…" className="flex-1 rounded-lg border border-line px-2.5 py-1 text-[13px] focus:outline-none focus:border-foreground" />
           <button onClick={() => submit(replyDraft, c.id).then(() => { setReplyDraft(''); setReplyTo(null); })} disabled={busy || !replyDraft.trim()}
             className="text-[11px] px-2 py-1 rounded-lg bg-foreground text-white disabled:opacity-40">등록</button>
         </div>
@@ -85,21 +85,21 @@ export function LikeCommentBlock({ resource, resId, members }: {
   );
 
   return (
-    <div className="border-t border-gray-100 pt-3 mt-3 space-y-2">
+    <div className="border-t border-line pt-3 mt-3 space-y-2">
       <div className="flex items-center gap-2">
-        <button onClick={onLike} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-sm transition-colors ${liked ? 'border-rose-300 text-rose-500 bg-rose-50' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+        <button onClick={onLike} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-sm transition-colors ${liked ? 'border-rose-300 text-rose-500 bg-rose-50' : 'border-line text-foreground-muted hover:border-line-strong'}`}>
           <span>{liked ? '♥' : '♡'}</span><span className="tabular-nums">{count}</span>
         </button>
-        <span className="text-[11px] text-gray-400">댓글 {comments.length}</span>
+        <span className="text-[11px] text-foreground-faint">댓글 {comments.length}</span>
       </div>
 
-      {top.length > 0 && <div className="divide-y divide-gray-50">{top.map((c) => renderComment(c))}</div>}
+      {top.length > 0 && <div className="divide-y divide-line">{top.map((c) => renderComment(c))}</div>}
 
       <div className="flex gap-1.5">
         <input value={draft} onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') submit(draft).then(() => setDraft('')); }}
           placeholder={top.length === 0 ? '첫 댓글을 남겨보세요' : '댓글 남기기…'}
-          className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:border-foreground" />
+          className="flex-1 rounded-lg border border-line px-3 py-1.5 text-sm focus:outline-none focus:border-foreground" />
         <button onClick={() => submit(draft).then(() => setDraft(''))} disabled={busy || !draft.trim()}
           className="px-3 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">등록</button>
       </div>

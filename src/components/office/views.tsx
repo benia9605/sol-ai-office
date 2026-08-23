@@ -37,7 +37,7 @@ import { fetchWorkspaceAnalytics, WorkspaceAnalytics } from '../../services/anal
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
-import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, SearchBar, fieldCls as monoField } from './ui';
+import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, NoteSection, SearchBar, fieldCls as monoField } from './ui';
 import { RichText, docToText, docHasContent, parseDoc, serializeDoc } from './RichText';
 import { Avatar, MemberSelect } from './Avatar';
 import { NavIcon } from './NavIcons';
@@ -59,11 +59,11 @@ function ClaudeQuickButtons({ onClaude, onQA }: { onClaude: () => void; onQA: ()
   return (
     <div className="flex items-center gap-1">
       <button type="button" onClick={onClaude} title="Claude 대화 세트 (나 / Claude)"
-        className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors inline-flex items-center">
+        className="px-2.5 py-2 text-foreground-muted hover:bg-surface-muted rounded-xl transition-colors inline-flex items-center">
         <img src="/images/claude.png" alt="Claude" className="w-4 h-4" />
       </button>
       <button type="button" onClick={onQA} title="질문 + 답변"
-        className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors inline-flex items-center">
+        className="px-2.5 py-2 text-foreground-muted hover:bg-surface-muted rounded-xl transition-colors inline-flex items-center">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
@@ -241,7 +241,7 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
               <span className={`w-1.5 h-1.5 rounded-full ${STATUS_UI[brief.headline.status].dot}`} />
               <span className="text-[11px] font-semibold text-foreground-muted uppercase tracking-wider">{STATUS_UI[brief.headline.status].label}</span>
             </div>
-            <p className="text-sm text-gray-800 font-medium leading-relaxed">{brief.headline.text}</p>
+            <p className="text-sm text-foreground font-medium leading-relaxed">{brief.headline.text}</p>
           </div>
 
           {/* ② 대표가 볼 것 TOP3 */}
@@ -271,9 +271,9 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
             <div className="rounded-lg bg-surface-muted px-3.5 py-3">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`w-2 h-2 rounded-full ${STATUS_UI[brief.sales.status].dot}`} />
-                <span className="text-[11px] font-semibold text-gray-500">매출</span>
+                <span className="text-[11px] font-semibold text-foreground-muted">매출</span>
                 {brief.sales.month_target != null
-                  ? <span className="ml-auto text-[10px] text-gray-400">목표 {man(brief.sales.month_target)}</span>
+                  ? <span className="ml-auto text-[10px] text-foreground-faint">목표 {man(brief.sales.month_target)}</span>
                   : (!editTarget && <button onClick={() => { setEditTarget(true); setTargetInput(target ? String(Math.round(target / 10000)) : ''); }} className="ml-auto text-[10px] text-foreground hover:underline">월 목표 설정</button>)}
               </div>
               {editTarget ? (
@@ -281,36 +281,36 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
                   <input autoFocus type="number" value={targetInput} onChange={e => setTargetInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') saveTarget(); if (e.key === 'Escape') setEditTarget(false); }}
                     placeholder="예: 3000" className="w-24 px-2 py-1 rounded-lg border border-line text-sm focus:outline-none" />
-                  <span className="text-[11px] text-gray-400">만원</span>
+                  <span className="text-[11px] text-foreground-faint">만원</span>
                   <button onClick={saveTarget} className="text-[11px] px-2 py-1 rounded-lg bg-foreground text-white">저장</button>
                 </div>
               ) : (
-                <p className="text-[12px] text-gray-600 leading-relaxed">{brief.sales.one_line}</p>
+                <p className="text-[12px] text-foreground-muted leading-relaxed">{brief.sales.one_line}</p>
               )}
             </div>
             <div className="rounded-lg bg-surface-muted px-3.5 py-3">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`w-2 h-2 rounded-full ${STATUS_UI[brief.content.status].dot}`} />
-                <span className="text-[11px] font-semibold text-gray-500">콘텐츠</span>
+                <span className="text-[11px] font-semibold text-foreground-muted">콘텐츠</span>
               </div>
-              <p className="text-[12px] text-gray-600 leading-relaxed">{brief.content.one_line}</p>
+              <p className="text-[12px] text-foreground-muted leading-relaxed">{brief.content.one_line}</p>
             </div>
           </div>
 
           {/* CS 문의 한 줄 (있을 때만) */}
           {brief.cs?.hasData && (
-            <button onClick={() => onNavigate('staff')} className="w-full flex items-center gap-2 rounded-lg bg-gray-50 hover:bg-gray-100 px-3.5 py-2.5 text-left transition-colors">
-              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${brief.cs.urgent > 0 ? 'bg-rose-400' : 'bg-gray-300'}`} />
-              <span className="text-[11px] font-semibold text-gray-500 flex-shrink-0">💬 문의</span>
-              <span className="text-[12px] text-gray-600 truncate">{brief.cs.one_line}</span>
+            <button onClick={() => onNavigate('staff')} className="w-full flex items-center gap-2 rounded-lg bg-surface-muted hover:bg-surface-muted px-3.5 py-2.5 text-left transition-colors">
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${brief.cs.urgent > 0 ? 'bg-rose-400' : 'bg-line-strong'}`} />
+              <span className="text-[11px] font-semibold text-foreground-muted flex-shrink-0">💬 문의</span>
+              <span className="text-[12px] text-foreground-muted truncate">{brief.cs.one_line}</span>
             </button>
           )}
           {/* 모니터링 한 줄 (있을 때만) */}
           {brief.monitoring?.hasData && (
-            <button onClick={() => onNavigate('staff')} className="w-full flex items-center gap-2 rounded-lg bg-gray-50 hover:bg-gray-100 px-3.5 py-2.5 text-left transition-colors">
-              <span className="w-2 h-2 rounded-full flex-shrink-0 bg-gray-300" />
-              <span className="text-[11px] font-semibold text-gray-500 flex-shrink-0">📡 트렌드</span>
-              <span className="text-[12px] text-gray-600 truncate">{brief.monitoring.one_line}</span>
+            <button onClick={() => onNavigate('staff')} className="w-full flex items-center gap-2 rounded-lg bg-surface-muted hover:bg-surface-muted px-3.5 py-2.5 text-left transition-colors">
+              <span className="w-2 h-2 rounded-full flex-shrink-0 bg-line-strong" />
+              <span className="text-[11px] font-semibold text-foreground-muted flex-shrink-0">📡 트렌드</span>
+              <span className="text-[12px] text-foreground-muted truncate">{brief.monitoring.one_line}</span>
             </button>
           )}
 
@@ -322,9 +322,9 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
               { k: '미배정', v: brief.operations.tasks_unassigned, to: 'todos' as const },
               { k: '승인대기', v: brief.operations.approvals_pending, to: 'staff' as const, warn: brief.operations.approvals_pending > 0 },
             ].map(o => (
-              <button key={o.k} onClick={() => onNavigate(o.to)} className="rounded-lg bg-gray-50 hover:bg-gray-100 px-2 py-2.5 text-center transition-colors">
-                <div className={`text-lg font-bold tabular-nums ${o.warn ? 'text-rose-500' : 'text-gray-800'}`}>{o.v}</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">{o.k}</div>
+              <button key={o.k} onClick={() => onNavigate(o.to)} className="rounded-lg bg-surface-muted hover:bg-surface-muted px-2 py-2.5 text-center transition-colors">
+                <div className={`text-lg font-bold tabular-nums ${o.warn ? 'text-rose-500' : 'text-foreground'}`}>{o.v}</div>
+                <div className="text-[10px] text-foreground-faint mt-0.5">{o.k}</div>
               </button>
             ))}
           </div>
@@ -332,13 +332,13 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
           {/* ⑤ 오늘 할 일 / 승인대기 */}
           {brief.due_today.length > 0 && (
             <div>
-              <div className="text-[11px] font-semibold text-gray-400 mb-1.5">오늘 할 일</div>
+              <div className="text-[11px] font-semibold text-foreground-faint mb-1.5">오늘 할 일</div>
               <div className="space-y-1">
                 {brief.due_today.slice(0, 6).map(d => (
                   <div key={d.id} className="flex items-center gap-2 text-[12px]">
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 flex-shrink-0">{d.type === 'task' ? '할일' : d.type === 'schedule' ? '일정' : '콘텐츠'}</span>
-                    {d.time && <span className="text-gray-400 flex-shrink-0">{d.time}</span>}
-                    <span className="text-gray-700 truncate">{d.title}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-muted text-foreground-faint flex-shrink-0">{d.type === 'task' ? '할일' : d.type === 'schedule' ? '일정' : '콘텐츠'}</span>
+                    {d.time && <span className="text-foreground-faint flex-shrink-0">{d.time}</span>}
+                    <span className="text-foreground truncate">{d.title}</span>
                   </div>
                 ))}
               </div>
@@ -346,8 +346,8 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
           )}
 
           {/* ⑥ 조언 */}
-          <div className="border-t border-gray-100 pt-3">
-            <p className="text-[12px] text-gray-500 leading-relaxed">💡 {brief.one_line_advice}</p>
+          <div className="border-t border-line pt-3">
+            <p className="text-[12px] text-foreground-muted leading-relaxed">💡 {brief.one_line_advice}</p>
           </div>
         </div>
       )}
@@ -359,9 +359,9 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
 const BUCKET_META: { key: DateBucket; label: string; tone: string }[] = [
   { key: 'overdue', label: '지연', tone: 'text-rose-500' },
   { key: 'today', label: '오늘', tone: 'text-foreground' },
-  { key: 'this_week', label: '이번 주', tone: 'text-gray-700' },
-  { key: 'later', label: '나중', tone: 'text-gray-400' },
-  { key: 'no_date', label: '기한 없음', tone: 'text-gray-300' },
+  { key: 'this_week', label: '이번 주', tone: 'text-foreground' },
+  { key: 'later', label: '나중', tone: 'text-foreground-faint' },
+  { key: 'no_date', label: '기한 없음', tone: 'text-foreground-faint' },
 ];
 function MyTaskFocus({ tasks, onNavigate }: { tasks: TaskItem[]; onNavigate: Nav }) {
   if (tasks.length === 0) return null;
@@ -378,38 +378,38 @@ function MyTaskFocus({ tasks, onNavigate }: { tasks: TaskItem[]; onNavigate: Nav
     <div className="grid sm:grid-cols-2 gap-4">
       <Card className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">확인이 필요한 일 <span className="text-gray-300 tabular-nums">{tasks.length}</span></span>
-          <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-foreground transition-colors">전체 ›</button>
+          <span className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">확인이 필요한 일 <span className="text-foreground-faint tabular-nums">{tasks.length}</span></span>
+          <button onClick={() => onNavigate('todos')} className="text-[11px] text-foreground-faint hover:text-foreground transition-colors">전체 ›</button>
         </div>
         {pending.map(t => {
           const overdue = t.date ? (daysUntil(t.date) ?? 0) < 0 : false;
           return (
             <button key={t.id} onClick={() => onNavigate('todos')} className="w-full flex items-center gap-2 py-1.5 text-left">
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${overdue ? 'bg-rose-400' : 'bg-emerald-400'}`} />
-              <span className="text-sm text-gray-600 truncate flex-1">{t.title}</span>
-              <span className={`text-[10px] flex-shrink-0 ${overdue ? 'text-rose-500' : 'text-gray-400'}`}>{dueLabel(t.date)}</span>
+              <span className="text-sm text-foreground-muted truncate flex-1">{t.title}</span>
+              <span className={`text-[10px] flex-shrink-0 ${overdue ? 'text-rose-500' : 'text-foreground-faint'}`}>{dueLabel(t.date)}</span>
             </button>
           );
         })}
       </Card>
       <Card className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">내 할일</span>
-          <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-foreground transition-colors">전체 ›</button>
+          <span className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">내 할일</span>
+          <button onClick={() => onNavigate('todos')} className="text-[11px] text-foreground-faint hover:text-foreground transition-colors">전체 ›</button>
         </div>
         {BUCKET_META.filter(b => (grouped.get(b.key)?.length ?? 0) > 0).map(b => {
           const items = grouped.get(b.key)!;
           return (
             <div key={b.key} className="py-1.5">
-              <p className={`text-[11px] font-medium ${b.tone} mb-1`}>{b.label} <span className="text-gray-300 tabular-nums">{items.length}</span></p>
+              <p className={`text-[11px] font-medium ${b.tone} mb-1`}>{b.label} <span className="text-foreground-faint tabular-nums">{items.length}</span></p>
               <div className="space-y-0.5">
                 {items.slice(0, 4).map(t => (
                   <button key={t.id} onClick={() => onNavigate('todos')} className="w-full flex items-center gap-2 text-left">
-                    <span className="text-sm text-gray-600 truncate flex-1">{t.title}</span>
-                    {t.date && <span className="text-[10px] text-gray-300 flex-shrink-0">{t.date.slice(5)}</span>}
+                    <span className="text-sm text-foreground-muted truncate flex-1">{t.title}</span>
+                    {t.date && <span className="text-[10px] text-foreground-faint flex-shrink-0">{t.date.slice(5)}</span>}
                   </button>
                 ))}
-                {items.length > 4 && <button onClick={() => onNavigate('todos')} className="text-[11px] text-gray-400 hover:text-foreground">그 외 {items.length - 4}건 →</button>}
+                {items.length > 4 && <button onClick={() => onNavigate('todos')} className="text-[11px] text-foreground-faint hover:text-foreground">그 외 {items.length - 4}건 →</button>}
               </div>
             </div>
           );
@@ -450,19 +450,19 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
 
   const SecHead = ({ title, to }: { title: string; to?: string }) => (
     <div className="flex items-center justify-between mb-2">
-      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{title}</span>
-      {to && <button onClick={() => onNavigate(to)} className="text-[11px] text-gray-400 hover:text-foreground transition-colors">전체 ›</button>}
+      <span className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">{title}</span>
+      {to && <button onClick={() => onNavigate(to)} className="text-[11px] text-foreground-faint hover:text-foreground transition-colors">전체 ›</button>}
     </div>
   );
-  const Empty = ({ t }: { t: string }) => <p className="text-xs text-gray-300 py-3 text-center">{t}</p>;
+  const Empty = ({ t }: { t: string }) => <p className="text-xs text-foreground-faint py-3 text-center">{t}</p>;
 
   return (
     <div className="space-y-5">
       {/* 인사말 히어로 — 무지 모던톤 (라이트 대형 헤드라인) */}
       <div className="mb-10">
         <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground mb-3">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}</div>
-        <h1 className="text-3xl sm:text-4xl font-light leading-[1.2] text-gray-800">{greeting} 👋</h1>
-        <p className="text-sm text-gray-400 mt-3">{workspace.name} · 진행 중 할일 {open.length}건 · 멤버 {members.length}명</p>
+        <h1 className="text-3xl sm:text-4xl font-light leading-[1.2] text-foreground">{greeting} 👋</h1>
+        <p className="text-sm text-foreground-faint mt-3">{workspace.name} · 진행 중 할일 {open.length}건 · 멤버 {members.length}명</p>
       </div>
 
       {/* 하루 운영 흐름 가이드 */}
@@ -477,13 +477,13 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
           {kpis.map((kpi, i) => (
             <Card key={i} className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-500">{kpi.k}</span>
+                <span className="text-xs font-medium text-foreground-muted">{kpi.k}</span>
                 {kpi.delta === null
-                  ? <span className="text-xs font-semibold text-gray-300">—</span>
+                  ? <span className="text-xs font-semibold text-foreground-faint">—</span>
                   : <span className={`text-xs font-semibold ${kpi.delta >= 0 ? 'text-emerald-500' : 'text-rose-400'}`}>{kpi.delta >= 0 ? '▲' : '▼'} {Math.abs(kpi.delta)}%</span>}
               </div>
-              <div className="text-2xl font-light mt-1.5 text-gray-800 tabular-nums">
-                {kpi.value.toLocaleString()}<span className="text-sm text-gray-400 ml-0.5">{kpi.unit}</span>
+              <div className="text-2xl font-light mt-1.5 text-foreground tabular-nums">
+                {kpi.value.toLocaleString()}<span className="text-sm text-foreground-faint ml-0.5">{kpi.unit}</span>
               </div>
               <div className="mt-1.5"><Spark data={kpi.spark} /></div>
             </Card>
@@ -521,9 +521,9 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
           <SecHead title="다가오는 일정" to="schedule" />
           {upcoming.length ? upcoming.map(s => (
             <div key={s.id} className="flex items-center gap-2 py-1.5">
-              <span className="text-[11px] font-bold text-gray-700 w-14 flex-shrink-0">{s.date.slice(5)}{s.time ? ' ' + s.time : ''}</span>
+              <span className="text-[11px] font-bold text-foreground w-14 flex-shrink-0">{s.date.slice(5)}{s.time ? ' ' + s.time : ''}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-foreground flex-shrink-0" />
-              <span className="text-sm text-gray-600 truncate">{s.title}</span>
+              <span className="text-sm text-foreground-muted truncate">{s.title}</span>
             </div>
           )) : <Empty t="예정된 일정이 없어요" />}
         </Card>
@@ -532,7 +532,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
           {open.length ? open.slice(0, 5).map(t => (
             <div key={t.id} className="flex items-center gap-2 py-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-              <span className="text-sm text-gray-600 truncate flex-1">{t.title}</span>
+              <span className="text-sm text-foreground-muted truncate flex-1">{t.title}</span>
               {t.priority === 'high' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-500 flex-shrink-0">긴급</span>}
             </div>
           )) : <Empty t="할일이 없어요" />}
@@ -545,7 +545,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
           <SecHead title="최근 인사이트" to="insights" />
           {insights.length ? insights.slice(0, 4).map(i => (
             <div key={i.id} className="flex items-center gap-2 py-1.5">
-              <span className="text-sm">💡</span><span className="text-sm text-gray-600 truncate">{i.title}</span>
+              <span className="text-sm">💡</span><span className="text-sm text-foreground-muted truncate">{i.title}</span>
             </div>
           )) : <Empty t="인사이트가 없어요" />}
         </Card>
@@ -553,8 +553,8 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
           <SecHead title="최근 메모" to="log" />
           {memos.length ? memos.slice(0, 4).map(m => (
             <div key={m.id} className="flex items-center gap-2 py-1.5">
-              <span className="text-sm">📝</span><span className="text-sm text-gray-600 truncate flex-1">{m.title}</span>
-              <span className="text-[10px] text-gray-300 flex-shrink-0">{m.date?.slice(5)}</span>
+              <span className="text-sm">📝</span><span className="text-sm text-foreground-muted truncate flex-1">{m.title}</span>
+              <span className="text-[10px] text-foreground-faint flex-shrink-0">{m.date?.slice(5)}</span>
             </div>
           )) : <Empty t="메모가 없어요" />}
         </Card>
@@ -566,8 +566,8 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
         {reports.length ? reports.slice(0, 5).map(r => (
           <div key={r.id} className="flex items-center gap-2 py-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-foreground flex-shrink-0" />
-            <span className="text-sm text-gray-600 truncate flex-1">🤖 {r.title}</span>
-            <span className="text-[10px] text-gray-300 flex-shrink-0">{r.date?.slice(5)}</span>
+            <span className="text-sm text-foreground-muted truncate flex-1">🤖 {r.title}</span>
+            <span className="text-[10px] text-foreground-faint flex-shrink-0">{r.date?.slice(5)}</span>
           </div>
         )) : <Empty t="아직 활동이 없어요 — AI 직원을 채용하고 ‘지금 한 번’을 눌러보세요" />}
       </Card>
@@ -578,7 +578,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
         {members.length ? (
           <div className="flex flex-wrap gap-2">
             {members.map(m => (
-              <span key={m.userId} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 border border-gray-200 text-xs text-gray-600">
+              <span key={m.userId} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-muted border border-line text-xs text-foreground-muted">
                 <span className="w-5 h-5 rounded-md bg-foreground text-white flex items-center justify-center text-[10px] font-bold">{(m.nickname || m.userId).slice(0, 1).toUpperCase()}</span>
                 {m.nickname || '멤버'}{m.role === 'owner' && ' 👑'}
               </span>
@@ -613,7 +613,7 @@ export function BriefingView({ workspace }: { workspace: Workspace }) {
 
 /* ───────── 할일 (실데이터) ───────── */
 function PriorityDot({ p }: { p: TaskItem['priority'] }) {
-  const c = p === 'high' ? 'bg-rose-400' : p === 'medium' ? 'bg-amber-400' : 'bg-gray-300';
+  const c = p === 'high' ? 'bg-rose-400' : p === 'medium' ? 'bg-amber-400' : 'bg-line-strong';
   return <span className={`w-2 h-2 rounded-full ${c} flex-shrink-0`} />;
 }
 
@@ -683,13 +683,13 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
     fetchMeetings(task.workspaceId).then(setMeetings).catch(() => {});
   }, [task.workspaceId]);
   const memberName = (m: WorkspaceMember) => m.nickname || m.name || m.email || '멤버';
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-[440px] max-w-[92vw] max-h-[88dvh] overflow-y-auto p-6 space-y-3 my-auto" onMouseDown={e => e.stopPropagation()}>
+      <div className="bg-surface rounded-2xl border border-line shadow-lg w-[440px] max-w-[92vw] max-h-[88dvh] overflow-y-auto p-6 space-y-3 my-auto" onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-extrabold text-gray-800">할일 수정</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center">✕</button>
+          <h2 className="text-base font-extrabold text-foreground">할일 수정</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-surface-muted text-foreground-faint flex items-center justify-center">✕</button>
         </div>
         <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="제목" className={fieldCls} />
         <div className="grid grid-cols-2 gap-2">
@@ -725,15 +725,15 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
         )}
         {/* 작성자(배정한 사람) — 읽기 전용 */}
         {task.workspaceId && task.createdBy && (
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-400 px-1">
+          <div className="flex items-center gap-1.5 text-[11px] text-foreground-faint px-1">
             <span>✍️ 작성자</span>
-            <span className="text-gray-600">{(() => { const c = members.find(x => x.userId === task.createdBy); return c ? (c.nickname || c.name || '멤버') : '나'; })()}</span>
+            <span className="text-foreground-muted">{(() => { const c = members.find(x => x.userId === task.createdBy); return c ? (c.nickname || c.name || '멤버') : '나'; })()}</span>
           </div>
         )}
         <div className="flex items-center justify-between pt-1">
           <button onClick={onDelete} className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={() => onSave({ title: title.trim() || task.title, priority, status, date: date || undefined, assigneeId: assigneeId || undefined, category: category || undefined, meetingId: meetingId || undefined })}
               className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
           </div>
@@ -915,27 +915,24 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
           )}
 
           {/* 본문 에디터 */}
-          <div>
-            <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">내용</div>
+          <NoteSection title="내용">
             {mode === 'edit' ? (
-              <div>
-                <TiptapEditor content={note} onChange={setNote} placeholder="자료·조사 내용, 진행 메모 등을 자유롭게 적어요… (마크다운 붙여넣기 지원)" />
-              </div>
+              <TiptapEditor content={note} onChange={setNote} placeholder="자료·조사 내용, 진행 메모 등을 자유롭게 적어요… (마크다운 붙여넣기 지원)" />
             ) : docHasContent(task.notes) ? (
               <RichText value={task.notes} />
             ) : (
               <p className="text-sm text-foreground-faint">내용이 없어요. <button onClick={() => setMode('edit')} className="underline">추가하기</button></p>
             )}
-          </div>
+          </NoteSection>
 
           {/* 첨부파일 — 뷰 모드는 읽기전용(canManage=false), 편집 모드에서만 추가/삭제 */}
-          <div className="pt-4">
+          <NoteSection title="첨부파일">
             <AttachmentsSection workspaceId={workspace.id} refType="task" refId={taskId} canManage={mode === 'edit'} />
-          </div>
+          </NoteSection>
 
           {/* 좋아요·댓글 — 뷰 모드에서만 (편집 중엔 감춤) */}
           {mode === 'view' && (
-            <div className="pt-4">
+            <div className="pt-2">
               <LikeCommentBlock resource="task" resId={taskId} members={members} />
             </div>
           )}
@@ -1028,24 +1025,21 @@ export function InsightDetailView({ workspace, insightId, onBack }: { workspace:
             )
           )}
 
-          <div>
-            <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">내용</div>
+          <NoteSection title="내용">
             {mode === 'edit' ? (
-              <div>
-                <TiptapEditor content={content} onChange={setContent} placeholder="인사이트 내용을 작성하세요… (마크다운 붙여넣기 지원)" />
-              </div>
+              <TiptapEditor content={content} onChange={setContent} placeholder="인사이트 내용을 작성하세요… (마크다운 붙여넣기 지원)" />
             ) : docHasContent(row.content) ? (
               <RichText value={row.content} />
             ) : (
               <p className="text-sm text-foreground-faint">내용이 없어요. <button onClick={() => setMode('edit')} className="underline">추가하기</button></p>
             )}
-          </div>
+          </NoteSection>
 
-          <div className="pt-4">
+          <NoteSection title="첨부파일">
             <AttachmentsSection workspaceId={workspace.id} refType="insight" refId={insightId} canManage={mode === 'edit'} />
-          </div>
+          </NoteSection>
           {mode === 'view' && (
-            <div className="pt-4">
+            <div className="pt-2">
               <LikeCommentBlock resource="insight" resId={insightId} members={members} />
             </div>
           )}
@@ -1122,24 +1116,21 @@ export function RecordDetailPage({ workspace, recordId, onBack }: { workspace: W
             </div>
           </div>
 
-          <div>
-            <div className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">내용</div>
+          <NoteSection title="내용">
             {mode === 'edit' ? (
-              <div>
-                <TiptapEditor content={body} onChange={setBody} placeholder="기록을 작성하세요… (마크다운 붙여넣기 지원)" />
-              </div>
+              <TiptapEditor content={body} onChange={setBody} placeholder="기록을 작성하세요… (마크다운 붙여넣기 지원)" />
             ) : docHasContent(row.memo_body) ? (
               <RichText value={row.memo_body} />
             ) : (
               <p className="text-sm text-foreground-faint">내용이 없어요. <button onClick={() => setMode('edit')} className="underline">추가하기</button></p>
             )}
-          </div>
+          </NoteSection>
 
-          <div className="pt-4">
+          <NoteSection title="첨부파일">
             <AttachmentsSection workspaceId={workspace.id} refType="record" refId={recordId} canManage={mode === 'edit'} />
-          </div>
+          </NoteSection>
           {mode === 'view' && (
-            <div className="pt-4">
+            <div className="pt-2">
               <LikeCommentBlock resource="record" resId={recordId} members={members} />
             </div>
           )}
@@ -1181,7 +1172,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
     return m ? (m.nickname || m.name || m.email || '멤버') : '담당';
   };
   const memberAvatar = (uid?: string) => members.find(x => x.userId === uid)?.avatarUrl;
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
   const save = async () => {
     if (!form.title.trim()) return;
@@ -1265,7 +1256,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
 
   const modeBtn = (m: typeof mode, label: string) => (
     <button key={m} onClick={() => setMode(m)}
-      className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${mode === m ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+      className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${mode === m ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
   );
   // 좌우 탭 (밑줄형) — 전체 / 내 할일
   const TabBtn = ({ id, label, count }: { id: 'all' | 'mine'; label: string; count: number }) => (
@@ -1309,7 +1300,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setShowForm(false); setForm(blankForm()); }}
-              className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+              className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={save} disabled={!form.title.trim()}
               className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
@@ -1320,13 +1311,13 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
       {mode === 'day' && (
         <>
           <div className="flex items-center justify-center gap-3 mb-4">
-            <button onClick={() => setCursor(c => addDays(c, -1))} className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all">‹</button>
+            <button onClick={() => setCursor(c => addDays(c, -1))} className="w-8 h-8 rounded-lg bg-surface-muted text-foreground-muted hover:bg-surface-muted active:scale-95 transition-all">‹</button>
             <div className="text-center min-w-[9rem]">
-              <div className="text-base font-bold text-gray-800">{fmtDay(cursor)}</div>
+              <div className="text-base font-bold text-foreground">{fmtDay(cursor)}</div>
               {cursor !== today && <button onClick={() => setCursor(today)} className="text-[11px] text-foreground hover:underline">오늘로</button>}
-              {cursor === today && <div className="text-[11px] text-gray-400">오늘</div>}
+              {cursor === today && <div className="text-[11px] text-foreground-faint">오늘</div>}
             </div>
-            <button onClick={() => setCursor(c => addDays(c, 1))} className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 active:scale-95 transition-all">›</button>
+            <button onClick={() => setCursor(c => addDays(c, 1))} className="w-8 h-8 rounded-lg bg-surface-muted text-foreground-muted hover:bg-surface-muted active:scale-95 transition-all">›</button>
           </div>
           <div className="flex items-center gap-6 border-b border-line mb-5">
             <TabBtn id="all" label="전체" count={counts.all} />
@@ -1362,7 +1353,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
 
       {/* 캘린더 뷰 (개인 공간과 동일 컴포넌트 재사용) */}
       {mode === 'calendar' && (
-        <div className="rounded-xl border border-gray-200 p-2 sm:p-3">
+        <div className="rounded-xl border border-line p-2 sm:p-3">
           <CalendarView
             mode="tasks"
             tasks={fTasks}
@@ -1501,7 +1492,7 @@ function InsightDetailPopup({ insight, onSaved, onDeleted, onClose }: {
   const doDelete = async () => { if (!confirm('삭제할까요?')) return; await deleteInsight(insight.id).catch(() => {}); onDeleted(); };
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-foreground/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
-      <div className="bg-surface rounded-2xl shadow-xl w-[520px] max-w-[94vw] max-h-[88dvh] overflow-y-auto p-6 space-y-3 my-auto" onMouseDown={e => e.stopPropagation()}>
+      <div className="bg-surface rounded-2xl border border-line shadow-lg w-[520px] max-w-[94vw] max-h-[88dvh] overflow-y-auto p-6 space-y-3 my-auto" onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-foreground">인사이트</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-surface-muted text-foreground-faint flex items-center justify-center">✕</button>
@@ -1576,18 +1567,18 @@ export function LogView({ workspace, onNavigate }: { workspace: Workspace; onNav
       {writing && (
         <Card className="p-4 mb-3 space-y-2.5">
           <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="제목"
-            className="w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors" />
+            className="w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors" />
           <div className="flex justify-end">
             <ClaudeQuickButtons
               onClaude={() => editorRef.current?.insertClaudeBlock()}
               onQA={() => editorRef.current?.insertQABlock()}
             />
           </div>
-          <div className="border border-gray-100 rounded-xl px-2 py-1 max-h-[55vh] overflow-y-auto">
+          <div className="border border-line rounded-xl px-2 py-1 max-h-[55vh] overflow-y-auto">
             <TiptapEditor ref={editorRef} content={body} onChange={setBody} placeholder="메모를 작성하세요..." />
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setWriting(false); setTitle(''); setBody(undefined); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={() => { setWriting(false); setTitle(''); setBody(undefined); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={save} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
           </div>
         </Card>
@@ -1666,9 +1657,9 @@ const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
   idea: '아이디어', approved: '승인', scripted: '대본', shooting: '촬영', editing: '편집', scheduled: '예약', published: '발행', archived: '보관',
 };
 const CONTENT_STATUS_CLS: Record<ContentStatus, string> = {
-  idea: 'bg-gray-100 text-gray-500', approved: 'bg-blue-50 text-blue-600', scripted: 'bg-indigo-50 text-indigo-600',
+  idea: 'bg-surface-muted text-foreground-muted', approved: 'bg-blue-50 text-blue-600', scripted: 'bg-indigo-50 text-indigo-600',
   shooting: 'bg-amber-50 text-amber-600', editing: 'bg-orange-50 text-orange-600', scheduled: 'bg-violet-50 text-violet-600',
-  published: 'bg-emerald-50 text-emerald-600', archived: 'bg-gray-100 text-gray-400',
+  published: 'bg-emerald-50 text-emerald-600', archived: 'bg-surface-muted text-foreground-faint',
 };
 const nextContentStatus = (s: ContentStatus): ContentStatus | null => {
   const i = CONTENT_STATUS_ORDER.indexOf(s);
@@ -1693,7 +1684,7 @@ function ContentMetricsEditor({ item, workspaceId }: { item: ContentItem; worksp
 
   const setN = (k: keyof ContentMetric, v: string) => setF(prev => ({ ...prev, [k]: v === '' ? undefined : Number(v) }));
   const rate = (n?: number) => (f.views && f.views > 0 && n != null ? `${((n / f.views) * 100).toFixed(1)}%` : '—');
-  const inputCls = 'w-full px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-line';
+  const inputCls = 'w-full px-2.5 py-1.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground focus:outline-none focus:bg-surface focus:border-foreground';
   const save = async () => {
     setSaving(true);
     try { await saveMetric(workspaceId, item.id, cp, f); await load(); }
@@ -1703,19 +1694,19 @@ function ContentMetricsEditor({ item, workspaceId }: { item: ContentItem; worksp
   // 컴포넌트(<NumIn/>)로 만들면 매 렌더 리마운트되어 포커스가 튐 → 함수 호출형으로 인라인 렌더.
   const numIn = (k: keyof ContentMetric, label: string) => (
     <label key={k} className="block">
-      <span className="text-[10px] text-gray-400">{label}</span>
+      <span className="text-[10px] text-foreground-faint">{label}</span>
       <input type="number" value={f[k] == null ? '' : String(f[k])} onChange={e => setN(k, e.target.value)} className={inputCls} />
     </label>
   );
 
   return (
-    <div className="border-t border-gray-100 pt-3 mt-1 space-y-2">
+    <div className="border-t border-line pt-3 mt-1 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold text-gray-500">📊 성과 <span className="text-gray-300">(저장률·공유율 중심)</span></span>
+        <span className="text-[11px] font-bold text-foreground-muted">📊 성과 <span className="text-foreground-faint">(저장률·공유율 중심)</span></span>
         <div className="flex gap-1">
           {(['h24', 'h72', 'd7'] as ContentCheckpoint[]).map(c => (
             <button key={c} onClick={() => setCp(c)}
-              className={`px-2 py-1 rounded-lg text-[11px] ${cp === c ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+              className={`px-2 py-1 rounded-lg text-[11px] ${cp === c ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
               {CHECKPOINT_LABEL[c]}{metrics[c] ? ' ●' : ''}
             </button>
           ))}
@@ -1723,11 +1714,11 @@ function ContentMetricsEditor({ item, workspaceId }: { item: ContentItem; worksp
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-xl bg-surface-muted p-2 text-center">
-          <div className="text-[10px] text-gray-400">저장률 (saves/views)</div>
+          <div className="text-[10px] text-foreground-faint">저장률 (saves/views)</div>
           <div className="text-lg font-extrabold text-foreground">{rate(f.saves)}</div>
         </div>
         <div className="rounded-xl bg-emerald-50 p-2 text-center">
-          <div className="text-[10px] text-gray-400">공유율 (shares/views)</div>
+          <div className="text-[10px] text-foreground-faint">공유율 (shares/views)</div>
           <div className="text-lg font-extrabold text-emerald-600">{rate(f.shares)}</div>
         </div>
       </div>
@@ -1742,7 +1733,7 @@ function ContentMetricsEditor({ item, workspaceId }: { item: ContentItem; worksp
         {numIn('completionRate', '완주율(%)')}
       </div>
       <button onClick={save} disabled={saving}
-        className="w-full py-1.5 rounded-xl text-xs font-bold bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-40 transition-all">
+        className="w-full py-1.5 rounded-xl text-xs font-bold bg-foreground text-surface hover:opacity-85 disabled:opacity-40 transition-all">
         {saving ? '저장 중…' : `${CHECKPOINT_LABEL[cp]} 성과 저장`}
       </button>
     </div>
@@ -1755,7 +1746,7 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
 }) {
   const [f, setF] = useState<Partial<ContentItem>>({ ...item });
   const set = (patch: Partial<ContentItem>) => setF(prev => ({ ...prev, ...patch }));
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
   const next = f.status ? nextContentStatus(f.status) : null;
 
   // 발행 연동: published로 전환 시 published_at 자동, URL 없으면 경고(저장은 허용)
@@ -1771,10 +1762,10 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-[520px] max-w-[94vw] max-h-[88vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
+      <div className="bg-surface rounded-2xl border border-line shadow-lg w-[520px] max-w-[94vw] max-h-[88vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-extrabold text-gray-800">콘텐츠</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center">✕</button>
+          <h2 className="text-base font-extrabold text-foreground">콘텐츠</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-surface-muted text-foreground-faint flex items-center justify-center">✕</button>
         </div>
         <input autoFocus value={f.title ?? ''} onChange={e => set({ title: e.target.value })} placeholder="제목" className={fieldCls} />
         <div className="grid grid-cols-2 gap-2">
@@ -1813,7 +1804,7 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
           {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <label className="block">
-          <span className="text-[10px] text-gray-400">발행 예정일</span>
+          <span className="text-[10px] text-foreground-faint">발행 예정일</span>
           <input type="datetime-local" value={f.scheduledFor ? f.scheduledFor.slice(0, 16) : ''}
             onChange={e => set({ scheduledFor: e.target.value || undefined })} className={fieldCls} />
         </label>
@@ -1821,7 +1812,7 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
         <textarea value={f.script ?? ''} onChange={e => set({ script: e.target.value })} placeholder="대본" rows={3} className={fieldCls} />
         <textarea value={f.shotList ?? ''} onChange={e => set({ shotList: e.target.value })} placeholder="촬영 컷 (줄 단위)" rows={2} className={fieldCls} />
         <input value={f.url ?? ''} onChange={e => set({ url: e.target.value })} placeholder="발행 URL" className={fieldCls} />
-        {item.publishedAt && <p className="text-[11px] text-gray-400">발행: {item.publishedAt.slice(0, 10)}</p>}
+        {item.publishedAt && <p className="text-[11px] text-foreground-faint">발행: {item.publishedAt.slice(0, 10)}</p>}
 
         <ContentMetricsEditor item={item} workspaceId={workspaceId} />
         <LikeCommentBlock resource="content" resId={item.id} members={members} />
@@ -1829,7 +1820,7 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
           <button onClick={() => { if (confirm(`'${item.title}' 콘텐츠를 삭제할까요?`)) onDelete(); }}
             className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={doSave} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
           </div>
         </div>
@@ -1987,7 +1978,7 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
     fetchProducts(workspace.id, workspaceErpSource(workspace)).then(setProducts).catch(() => setProducts([]));
     /* eslint-disable-next-line */
   }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
   const save = async () => {
     if (!form.title.trim()) return;
@@ -2002,7 +1993,7 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
   const openContent = (c: ContentItem) => onNavigate ? onNavigate('contents/' + c.id) : setSelected(c);
   const chip = (id: ContentStatus | 'all', label: string) => (
     <button key={id} onClick={() => setFilter(id)}
-      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
   );
 
   return (
@@ -2032,7 +2023,7 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
             </select>
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setShowForm(false); setForm({ title: '', platform: '', contentType: '' }); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={() => { setShowForm(false); setForm({ title: '', platform: '', contentType: '' }); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={save} disabled={!form.title.trim()}
               className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
@@ -2081,7 +2072,7 @@ function ErpSourceBanner({ what, compat }: { what: string; compat: boolean }) {
     );
   }
   return (
-    <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-500 flex items-start gap-2">
+    <div className="mb-4 rounded-lg border border-line bg-surface-muted px-4 py-3 text-xs text-foreground-muted flex items-start gap-2">
       <span className="text-sm leading-none">🔗</span>
       <span>시목 앱 연동 — {what} 데이터는 시목 앱(System of Record)에서 조회합니다. AI Office는 분석·판단만 하고 여기서 직접 수정하지 않아요.</span>
     </div>
@@ -2092,7 +2083,7 @@ function ErpSourceBanner({ what, compat }: { what: string; compat: boolean }) {
 const PRODUCT_STATUS: Record<Product['status'], { label: string; cls: string }> = {
   active: { label: '판매중', cls: 'bg-emerald-50 text-emerald-600' },
   draft: { label: '준비중', cls: 'bg-amber-50 text-amber-600' },
-  discontinued: { label: '단종', cls: 'bg-gray-100 text-gray-400' },
+  discontinued: { label: '단종', cls: 'bg-surface-muted text-foreground-faint' },
 };
 const won = (n?: number) => (n == null ? '—' : `${n.toLocaleString()}원`);
 const marginPct = (price?: number, cost?: number) =>
@@ -2115,13 +2106,13 @@ function ProductEditPopup({ product, onSave, onDelete, onClose }: {
     cost: product.cost?.toString() ?? '', stock: product.stock?.toString() ?? '', sku: product.sku ?? '',
     status: product.status, description: product.description ?? '',
   });
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-[460px] max-w-[92vw] max-h-[86vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
+      <div className="bg-surface rounded-2xl border border-line shadow-lg w-[460px] max-w-[92vw] max-h-[86vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-extrabold text-gray-800">제품 수정</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center">✕</button>
+          <h2 className="text-base font-extrabold text-foreground">제품 수정</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-surface-muted text-foreground-faint flex items-center justify-center">✕</button>
         </div>
         <input autoFocus value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="제품명" className={fieldCls} />
         <div className="grid grid-cols-2 gap-2">
@@ -2143,7 +2134,7 @@ function ProductEditPopup({ product, onSave, onDelete, onClose }: {
           <button onClick={() => { if (confirm(`'${product.name}' 제품을 삭제할까요? 되돌릴 수 없어요.`)) onDelete(); }}
             className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={() => onSave(formToFields(f))} disabled={!f.name.trim()}
               className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">저장</button>
           </div>
@@ -2162,7 +2153,7 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
   const [selected, setSelected] = useState<Product | null>(null);
   const load = () => fetchProducts(workspace.id, erp).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
   const save = async () => {
     if (!form.name.trim()) return;
@@ -2195,7 +2186,7 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
             <input type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} placeholder="재고" className={fieldCls} />
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setShowForm(false); setForm(emptyProductForm); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={() => { setShowForm(false); setForm(emptyProductForm); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={save} disabled={!form.name.trim()}
               className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
@@ -2209,12 +2200,12 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
           {list.map(p => (
             <Card key={p.id} className="group p-4 flex items-center gap-3">
               <button onClick={() => { if (compat) setSelected(p); }} className={`flex items-center gap-3 flex-1 min-w-0 text-left ${compat ? '' : 'cursor-default'}`}>
-                <span className="text-sm font-semibold text-gray-800 truncate">{p.name}</span>
-                {p.category && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{p.category}</span>}
+                <span className="text-sm font-semibold text-foreground truncate">{p.name}</span>
+                {p.category && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground-muted flex-shrink-0">{p.category}</span>}
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${PRODUCT_STATUS[p.status].cls}`}>{PRODUCT_STATUS[p.status].label}</span>
-                <span className="ml-auto text-xs text-gray-600 flex-shrink-0">{won(p.price)}</span>
-                <span className="text-[11px] text-gray-400 flex-shrink-0 w-14 text-right">마진 {marginPct(p.price, p.cost)}</span>
-                <span className="text-[11px] text-gray-400 flex-shrink-0 w-14 text-right">재고 {p.stock ?? '—'}</span>
+                <span className="ml-auto text-xs text-foreground-muted flex-shrink-0">{won(p.price)}</span>
+                <span className="text-[11px] text-foreground-faint flex-shrink-0 w-14 text-right">마진 {marginPct(p.price, p.cost)}</span>
+                <span className="text-[11px] text-foreground-faint flex-shrink-0 w-14 text-right">재고 {p.stock ?? '—'}</span>
               </button>
             </Card>
           ))}
@@ -2265,7 +2256,7 @@ export function SalesDailyView({ workspace }: { workspace: Workspace }) {
   const [editing, setEditing] = useState<SalesDaily | null>(null);
   const load = () => fetchSalesDaily(workspace.id, 90, erp).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
   const save = async (f: SalesForm) => {
     if (!f.date) return;
@@ -2302,11 +2293,11 @@ export function SalesDailyView({ workspace }: { workspace: Workspace }) {
       <div className="flex items-center justify-between">
         {editMode && editing ? <button onClick={() => del(editing.id)} className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button> : <span />}
         <div className="flex gap-2">
-          <button onClick={onCancel} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+          <button onClick={onCancel} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
           <button onClick={onSubmit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">{editMode ? '저장' : '추가'}</button>
         </div>
       </div>
-      {editMode && <p className="text-[10px] text-gray-300">※ 날짜·채널은 키라서 수정 불가 — 바꾸려면 삭제 후 새로 추가.</p>}
+      {editMode && <p className="text-[10px] text-foreground-faint">※ 날짜·채널은 키라서 수정 불가 — 바꾸려면 삭제 후 새로 추가.</p>}
     </Card>
   );
 
@@ -2329,8 +2320,8 @@ export function SalesDailyView({ workspace }: { workspace: Workspace }) {
           {byDate.map(g => (
             <div key={g.date}>
               <div className="flex items-center justify-between px-1 mb-1.5">
-                <span className="text-xs font-bold text-gray-500">{g.date}</span>
-                <span className="text-xs font-semibold text-gray-700">합계 {wonShort(g.total)}</span>
+                <span className="text-xs font-bold text-foreground-muted">{g.date}</span>
+                <span className="text-xs font-semibold text-foreground">합계 {wonShort(g.total)}</span>
               </div>
               <div className="space-y-2">
                 {g.rows.map(r => (
@@ -2338,11 +2329,11 @@ export function SalesDailyView({ workspace }: { workspace: Workspace }) {
                     <Card className="p-3.5">
                       <button onClick={() => { if (!compat) return; setEditing(r); setForm({ date: r.date, source: r.source, revenue: r.revenue?.toString() ?? '', orders: r.orders?.toString() ?? '', visitors: r.visitors?.toString() ?? '', memo: r.memo ?? '' }); }}
                         className="w-full flex items-center gap-3 text-left">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{r.sourceLabel ?? salesSourceLabel(r.source)}</span>
-                        <span className="text-sm font-semibold text-gray-800 flex-shrink-0">{wonShort(r.revenue)}</span>
-                        <span className="text-[11px] text-gray-400 flex-shrink-0">주문 {r.orders ?? '—'}</span>
-                        <span className="text-[11px] text-gray-400 flex-shrink-0">객단가 {r.ordersBasis === 'voucher' ? '—' : (aov(r.revenue, r.orders) != null ? `${aov(r.revenue, r.orders)!.toLocaleString()}원` : '—')}</span>
-                        <span className="ml-auto text-[11px] text-gray-400 flex-shrink-0">전환 {convRate(r.orders, r.visitors)}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground-muted flex-shrink-0">{r.sourceLabel ?? salesSourceLabel(r.source)}</span>
+                        <span className="text-sm font-semibold text-foreground flex-shrink-0">{wonShort(r.revenue)}</span>
+                        <span className="text-[11px] text-foreground-faint flex-shrink-0">주문 {r.orders ?? '—'}</span>
+                        <span className="text-[11px] text-foreground-faint flex-shrink-0">객단가 {r.ordersBasis === 'voucher' ? '—' : (aov(r.revenue, r.orders) != null ? `${aov(r.revenue, r.orders)!.toLocaleString()}원` : '—')}</span>
+                        <span className="ml-auto text-[11px] text-foreground-faint flex-shrink-0">전환 {convRate(r.orders, r.visitors)}</span>
                       </button>
                     </Card>
                     {editing?.id === r.id && compat && formCard(form, setForm, () => save(form), () => { setEditing(null); setForm(emptyForm()); }, true)}
@@ -2374,17 +2365,17 @@ function MemoryDetailPopup({ item, onSave, onArchive, onDelete, onClose }: {
     title: item.title, body: item.body ?? '', kind: (item.kind ?? 'ceo_memo') as MemoryKind,
     tags: (item.tags ?? []).join(', '), salience: item.salience ?? 50, pinned: item.pinned ?? false,
   });
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
   const submit = () => onSave({
     title: f.title.trim() || item.title, body: f.body.trim() || undefined, kind: f.kind,
     tags: f.tags ? f.tags.split(',').map(t => t.trim()).filter(Boolean) : [], salience: f.salience, pinned: f.pinned,
   });
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-[480px] max-w-[94vw] max-h-[88vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
+      <div className="bg-surface rounded-2xl border border-line shadow-lg w-[480px] max-w-[94vw] max-h-[88vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-extrabold text-gray-800">회사 기억</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center">✕</button>
+          <h2 className="text-base font-extrabold text-foreground">회사 기억</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-surface-muted text-foreground-faint flex items-center justify-center">✕</button>
         </div>
         <input autoFocus value={f.title} onChange={e => setF({ ...f, title: e.target.value })} placeholder="제목" className={fieldCls} />
         <textarea value={f.body} onChange={e => setF({ ...f, body: e.target.value })} placeholder="내용" rows={5} className={fieldCls} />
@@ -2397,16 +2388,16 @@ function MemoryDetailPopup({ item, onSave, onArchive, onDelete, onClose }: {
           </select>
         </div>
         <input value={f.tags} onChange={e => setF({ ...f, tags: e.target.value })} placeholder="태그 (쉼표로)" className={fieldCls} />
-        <label className="flex items-center gap-2 text-sm text-gray-600 px-1">
+        <label className="flex items-center gap-2 text-sm text-foreground-muted px-1">
           <input type="checkbox" checked={f.pinned} onChange={e => setF({ ...f, pinned: e.target.checked })} /> 📌 고정(항상 상단)
         </label>
         <div className="flex items-center justify-between pt-1">
           <div className="flex gap-2">
             <button onClick={() => { if (confirm('이 기억을 삭제할까요?')) onDelete(); }} className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
-            <button onClick={onArchive} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5">{item.status === 'archived' ? '복원' : '보관'}</button>
+            <button onClick={onArchive} className="text-xs text-foreground-faint hover:text-foreground-muted px-2 py-1.5">{item.status === 'archived' ? '복원' : '보관'}</button>
           </div>
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={submit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
           </div>
         </div>
@@ -2425,7 +2416,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
   const [showArchived, setShowArchived] = useState(false);
   const load = () => fetchMemories(workspace.id).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:bg-white focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
   const save = async () => {
     if (!form.title.trim()) return;
@@ -2445,7 +2436,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
 
   const chip = (id: MemoryKind | 'all', label: string) => (
     <button key={id} onClick={() => setKindFilter(id)}
-      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${kindFilter === id ? 'bg-foreground text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{label}</button>
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${kindFilter === id ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
   );
 
   return (
@@ -2460,7 +2451,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
         {chip('all', '전체')}
         {MEMORY_KINDS.map(k => chip(k.v, k.label))}
         <button onClick={() => setShowArchived(v => !v)}
-          className={`ml-auto px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${showArchived ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>보관함</button>
+          className={`ml-auto px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${showArchived ? 'bg-foreground text-surface' : 'bg-surface-muted text-foreground-faint hover:bg-surface-muted'}`}>보관함</button>
       </div>
 
       {showForm && (
@@ -2476,11 +2467,11 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
             </select>
           </div>
           <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="태그 (쉼표로, 선택)" className={fieldCls} />
-          <label className="flex items-center gap-2 text-sm text-gray-600 px-1">
+          <label className="flex items-center gap-2 text-sm text-foreground-muted px-1">
             <input type="checkbox" checked={form.pinned} onChange={e => setForm({ ...form, pinned: e.target.checked })} /> 📌 고정
           </label>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setShowForm(false); setForm({ title: '', body: '', kind: 'ceo_memo', tags: '', salience: 50, pinned: false }); }} className="px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors">취소</button>
+            <button onClick={() => { setShowForm(false); setForm({ title: '', body: '', kind: 'ceo_memo', tags: '', salience: 50, pinned: false }); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={save} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
         </Card>
@@ -2495,11 +2486,11 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
               <button onClick={() => setSelected(m)} className="w-full text-left">
                 <div className="flex items-center gap-2 mb-1">
                   {m.pinned && <span className="text-[11px]">📌</span>}
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{memoryKindLabel(m.kind)}</span>
-                  <span className="text-sm font-semibold text-gray-800 truncate">{m.title}</span>
-                  <span className="ml-auto text-[10px] text-gray-400 flex-shrink-0">중요도 {salienceLabel(m.salience)}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground-muted flex-shrink-0">{memoryKindLabel(m.kind)}</span>
+                  <span className="text-sm font-semibold text-foreground truncate">{m.title}</span>
+                  <span className="ml-auto text-[10px] text-foreground-faint flex-shrink-0">중요도 {salienceLabel(m.salience)}</span>
                 </div>
-                {(m.summary || m.body) && <p className="text-xs text-gray-500 line-clamp-2">{m.summary || m.body}</p>}
+                {(m.summary || m.body) && <p className="text-xs text-foreground-muted line-clamp-2">{m.summary || m.body}</p>}
                 {m.tags && m.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
                     {m.tags.map(t => <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground">#{t}</span>)}
@@ -2540,11 +2531,11 @@ function TeamProgressBoard({ tasks, members, memberLabel, onOpen }: {
     .sort((a, b) => (a.p.done / a.p.total) - (b.p.done / b.p.total) || (b.p.overdue - a.p.overdue));
   return (
     <Card className="p-4 mb-3 space-y-3">
-      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">팀 진행률</span>
+      <span className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">팀 진행률</span>
       <TaskProgress label="전체" done={overall.done} total={overall.total} overdue={overall.overdue} />
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-line">
         {rows.map(({ m, p }) => (
-          <button key={m.userId} onClick={() => onOpen(m)} className="w-full text-left py-2 hover:bg-gray-50 -mx-1 px-1 rounded-lg transition-colors">
+          <button key={m.userId} onClick={() => onOpen(m)} className="w-full text-left py-2 hover:bg-surface-muted -mx-1 px-1 rounded-lg transition-colors">
             <TaskProgress compact label={memberLabel(m)} done={p.done} total={p.total} overdue={p.overdue} />
           </button>
         ))}
@@ -2566,22 +2557,22 @@ function MemberDetailView({ member, label, tasks, onBack }: {
   const p = progressOf(mine, today);
   return (
     <>
-      <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-3">← 멤버</button>
+      <button onClick={onBack} className="text-sm text-foreground-faint hover:text-foreground-muted mb-3">← 멤버</button>
       <div className="rounded-[20px] bg-surface-muted/50 border border-line p-5 mb-4">
-        <div className="text-lg font-extrabold text-gray-800">{label}</div>
-        <div className="text-sm text-gray-500 mt-0.5">담당 할일 {open.length}건 진행 중</div>
+        <div className="text-lg font-extrabold text-foreground">{label}</div>
+        <div className="text-sm text-foreground-muted mt-0.5">담당 할일 {open.length}건 진행 중</div>
         {p.total > 0 && <div className="mt-3"><TaskProgress done={p.done} total={p.total} overdue={p.overdue} /></div>}
       </div>
       <Card className="p-3">
-        {open.length === 0 ? <p className="text-xs text-gray-300 py-4 text-center">진행 중인 담당 할일이 없어요</p> : (
+        {open.length === 0 ? <p className="text-xs text-foreground-faint py-4 text-center">진행 중인 담당 할일이 없어요</p> : (
           <div className="space-y-1.5">
             {open.map(t => {
               const overdue = t.date ? (daysUntil(t.date) ?? 0) < 0 : false;
               return (
-                <div key={t.id} className="flex items-center gap-2 p-2.5 rounded-xl bg-gray-50">
+                <div key={t.id} className="flex items-center gap-2 p-2.5 rounded-xl bg-surface-muted">
                   <PriorityDot p={t.priority} />
-                  <span className="text-sm text-gray-700 flex-1 truncate">{t.title}</span>
-                  <span className={`text-[10px] flex-shrink-0 ${overdue ? 'text-rose-500' : 'text-gray-400'}`}>{dueLabel(t.date)}</span>
+                  <span className="text-sm text-foreground flex-1 truncate">{t.title}</span>
+                  <span className={`text-[10px] flex-shrink-0 ${overdue ? 'text-rose-500' : 'text-foreground-faint'}`}>{dueLabel(t.date)}</span>
                 </div>
               );
             })}

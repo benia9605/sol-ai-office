@@ -69,7 +69,7 @@ type FieldProps = {
 function Field({ label, value, onChange, hint, textarea, warn }: FieldProps) {
   return (
     <div>
-      <label className={`block text-xs font-semibold mb-1 ${warn ? 'text-rose-500' : 'text-gray-600'}`}>{label}</label>
+      <label className={`block text-xs font-semibold mb-1 ${warn ? 'text-rose-500' : 'text-foreground-muted'}`}>{label}</label>
       {textarea ? (
         <textarea
           value={value} onChange={onChange} rows={3}
