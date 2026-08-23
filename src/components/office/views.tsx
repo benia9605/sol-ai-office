@@ -40,6 +40,7 @@ import { defaultTaskCategories, officeScheduleCategories } from '../../data';
 import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, fieldCls as monoField } from './ui';
 import { RichText, docToText, parseDoc, serializeDoc } from './RichText';
 import { Avatar, MemberSelect } from './Avatar';
+import { NavIcon } from './NavIcons';
 
 /** TaskRow(DB) → TaskItem(프론트). 워크스페이스 팀 화면에서 남이 만든 할일도 다루기 위해 로컬 매핑. */
 function rowToTaskItem(r: TaskRow): TaskItem {
@@ -110,53 +111,57 @@ function OfficeDailyGuide() {
   });
   const toggle = () => { const n = !open; setOpen(n); try { localStorage.setItem('office_guide_open', n ? '1' : '0'); } catch { /* noop */ } };
   const steps = [
-    { n: '1', emoji: '☀️', title: '아침 — 브리핑 & 대시보드', desc: '오늘의 브리핑에서 AI 직원이 만든 것 확인 → 대시보드에서 오늘 할일·일정·승인 대기 파악.' },
-    { n: '2', emoji: '🎬', title: '콘텐츠 운영', desc: '콘텐츠에서 오늘 촬영·편집·발행을 관리(아이디어→발행). 올린 뒤 24h/72h/7일 성과 입력.' },
-    { n: '3', emoji: '💰', title: '판매·제품 확인', desc: '매출·제품에서 채널별 매출·재고 확인. (시목 앱 연동 시 자동 조회)' },
-    { n: '4', emoji: '✅', title: '실행 관리', desc: '할일·일정으로 오늘 업무를 배치하고 담당자를 지정.' },
-    { n: '5', emoji: '🧠', title: '기억 남기기', desc: '회사 기억·인사이트에 배운 것·실패·아이디어를 기록 → AI가 나중에 활용.' },
+    { icon: 'briefing', title: '아침 — 브리핑 & 대시보드', desc: '오늘의 브리핑에서 AI 직원이 만든 것 확인 → 대시보드에서 오늘 할일·일정·승인 대기 파악.' },
+    { icon: 'contents', title: '콘텐츠 운영', desc: '콘텐츠에서 오늘 촬영·편집·발행을 관리(아이디어→발행). 올린 뒤 24h/72h/7일 성과 입력.' },
+    { icon: 'sales', title: '판매·제품 확인', desc: '매출·제품에서 채널별 매출·재고 확인. (시목 앱 연동 시 자동 조회)' },
+    { icon: 'todos', title: '실행 관리', desc: '할일·일정으로 오늘 업무를 배치하고 담당자를 지정.' },
+    { icon: 'memory', title: '기억 남기기', desc: '회사 기억·인사이트에 배운 것·실패·아이디어를 기록 → AI가 나중에 활용.' },
   ];
   return (
     <Card className="p-5">
       <button onClick={toggle} className="w-full flex items-center justify-between">
-        <span className="text-sm font-bold text-gray-700">🗺️ 하루 운영 흐름</span>
-        <span className="text-[11px] text-gray-400">{open ? '접기 ▲' : '펼치기 ▼'}</span>
+        <span className="text-sm font-bold text-foreground">하루 운영 흐름</span>
+        <span className="text-[11px] text-foreground-faint">{open ? '접기 ▲' : '펼치기 ▼'}</span>
       </button>
       {open && (
-        <div className="mt-4 space-y-3">
-          {steps.map(s => (
-            <div key={s.n} className="flex items-start gap-3">
-              <span className="w-6 h-6 rounded-md bg-surface-muted text-foreground text-xs font-bold flex items-center justify-center flex-shrink-0">{s.n}</span>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-gray-800">{s.emoji} {s.title}</div>
-                <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">{s.desc}</div>
+        <div className="mt-4 space-y-3.5">
+          {steps.map((s, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <span className="w-8 h-8 rounded-lg bg-surface-muted flex items-center justify-center flex-shrink-0">
+                <NavIcon id={s.icon} size={16} className="text-foreground-muted" />
+              </span>
+              <div className="min-w-0 pt-0.5">
+                <div className="text-sm font-semibold text-foreground">{s.title}</div>
+                <div className="text-xs text-foreground-muted mt-0.5 leading-relaxed">{s.desc}</div>
               </div>
             </div>
           ))}
           {/* AI 직원 활용법 */}
-          <div className="pt-3 mt-1 border-t border-gray-100">
-            <div className="text-sm font-semibold text-gray-800 mb-2">🤖 AI 직원 이렇게 쓰세요</div>
-            <div className="space-y-1.5">
+          <div className="pt-3.5 mt-1 border-t border-line">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2.5">
+              <NavIcon id="staff" size={15} className="text-foreground-muted" /> AI 직원 이렇게 쓰세요
+            </div>
+            <div className="space-y-2">
               {[
-                { e: '🧭', n: '운영매니저', d: '아침에 \'브리핑 생성\' → 대시보드에 "오늘 볼 것 3개"' },
-                { e: '📊', n: '분석가', d: '매출·콘텐츠 성과를 해석 (기간 7/30/90 · 시목 공식 · 이상치)' },
-                { e: '🗓', n: '일정비서', d: '촬영·편집·발행·마감을 하루/주간으로 정리' },
-                { e: '💬', n: 'CS', d: '문의 붙여넣기 → 자동 분류·답변초안 · FAQ' },
-                { e: '📡', n: '모니터링', d: '경쟁사·키워드 추적, 🎬로 콘텐츠 아이디어 전환' },
+                { n: '운영매니저', d: '아침에 \'브리핑 생성\' → 대시보드에 "오늘 볼 것 3개"' },
+                { n: '분석가', d: '매출·콘텐츠 성과를 해석 (기간 7/30/90 · 시목 공식 · 이상치)' },
+                { n: '일정비서', d: '촬영·편집·발행·마감을 하루/주간으로 정리' },
+                { n: 'CS', d: '문의 붙여넣기 → 자동 분류·답변초안 · FAQ' },
+                { n: '모니터링', d: '경쟁사·키워드 추적, 콘텐츠 아이디어로 전환' },
               ].map(s => (
                 <div key={s.n} className="flex items-start gap-2 text-[12px]">
-                  <span className="flex-shrink-0">{s.e}</span>
-                  <span className="text-gray-700 font-medium flex-shrink-0 w-16">{s.n}</span>
-                  <span className="text-gray-500 leading-relaxed">{s.d}</span>
+                  <span className="w-1 h-1 rounded-full bg-foreground-faint mt-1.5 flex-shrink-0" />
+                  <span className="text-foreground font-medium flex-shrink-0 w-16">{s.n}</span>
+                  <span className="text-foreground-muted leading-relaxed">{s.d}</span>
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-gray-400 mt-2">각 직원 카드를 누르면 <b className="text-gray-500">상단에 상세 가이드 + 실데이터 화면</b>이 있어요. 상세페이지·SNS·광고·비주얼은 GPT 프로젝트에서(앱은 유지만).</p>
+            <p className="text-[11px] text-foreground-faint mt-2.5 leading-relaxed">각 직원 카드를 누르면 <b className="text-foreground-muted">상단에 상세 가이드 + 실데이터 화면</b>이 있어요. 상세페이지·SNS·광고·비주얼은 GPT 프로젝트에서(앱은 유지만).</p>
           </div>
 
-          <div className="pt-3 mt-1 border-t border-gray-100 text-[11px] text-gray-400 leading-relaxed space-y-1">
-            <p>💡 <b className="text-gray-500">원칙:</b> AI 직원은 <b>제안</b>하고, 대표가 <b>승인</b>하면 실제 업무로 반영돼요. 제품·매출은 시목 앱이 원본, AI Office는 <b>분석·판단</b>만 합니다.</p>
-            <p>🤖 <b className="text-gray-500">AI 직원 현황:</b> 채용·수동 실행('지금 실행')은 되지만 <b>24시간 자동 운영은 준비 중</b>이에요.</p>
+          <div className="pt-3.5 mt-1 border-t border-line text-[11px] text-foreground-faint leading-relaxed space-y-1.5">
+            <p><b className="text-foreground-muted">원칙:</b> AI 직원은 <b>제안</b>하고, 대표가 <b>승인</b>하면 실제 업무로 반영돼요. 제품·매출은 시목 앱이 원본, AI Office는 <b>분석·판단</b>만 합니다.</p>
+            <p><b className="text-foreground-muted">AI 직원 현황:</b> 채용·수동 실행('지금 실행')은 되지만 <b>24시간 자동 운영은 준비 중</b>이에요.</p>
           </div>
         </div>
       )}
@@ -167,9 +172,9 @@ function OfficeDailyGuide() {
 /* ───────── CEO 브리핑 패널 (운영매니저 산출물 = 대시보드가 렌더) ─────────
    GPT 설계 v2: ① 오늘 한 줄 → ② TOP3 → ③ 매출/콘텐츠 → ④ 오늘 할 일 → ⑤ 승인대기 → ⑥ 조언 */
 const STATUS_UI: Record<BriefStatus, { dot: string; bar: string; label: string }> = {
-  good: { dot: 'bg-emerald-400', bar: 'border-emerald-200 bg-emerald-50/60', label: '🟢 정상' },
-  attention: { dot: 'bg-amber-400', bar: 'border-amber-200 bg-amber-50/60', label: '🟡 주의' },
-  critical: { dot: 'bg-rose-400', bar: 'border-rose-200 bg-rose-50/60', label: '🔴 확인 필요' },
+  good: { dot: 'bg-emerald-500', bar: 'border-emerald-200 bg-emerald-50/60', label: '정상' },
+  attention: { dot: 'bg-amber-500', bar: 'border-amber-200 bg-amber-50/60', label: '주의' },
+  critical: { dot: 'bg-rose-500', bar: 'border-rose-200 bg-rose-50/60', label: '확인 필요' },
 };
 const SEV_UI: Record<Severity, string> = {
   critical: 'border-l-rose-400', warning: 'border-l-amber-400', info: 'border-l-foreground', positive: 'border-l-emerald-400',
@@ -210,12 +215,13 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
   return (
     <div className="rounded-2xl border border-line bg-surface overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-line">
-        <div className="flex items-baseline gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-1.5 h-4 rounded-full bg-[#1b4332] flex-shrink-0" />
           <span className="text-sm font-bold text-foreground">CEO 브리핑</span>
           {brief && <span className="text-[11px] text-foreground-faint truncate">{brief.briefing_date} · 운영매니저</span>}
         </div>
         <button onClick={generate} disabled={gen}
-          className="text-[11px] px-3 py-1.5 rounded-lg bg-foreground text-surface font-medium hover:opacity-85 disabled:opacity-50 transition-all active:scale-95 flex-shrink-0">
+          className="text-[11px] px-3 py-1.5 rounded-lg bg-[#1b4332] text-white font-medium hover:bg-[#153528] disabled:opacity-50 transition-all active:scale-95 flex-shrink-0">
           {gen ? '생성 중…' : brief ? '새로고침' : '브리핑 생성'}
         </button>
       </div>
@@ -230,9 +236,10 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
       ) : (
         <div className="p-5 space-y-4">
           {/* ① 오늘 한 줄 */}
-          <div className={`rounded-lg border px-4 py-3 ${STATUS_UI[brief.headline.status].bar}`}>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-semibold text-gray-500">{STATUS_UI[brief.headline.status].label}</span>
+          <div className={`rounded-xl border px-4 py-3 ${STATUS_UI[brief.headline.status].bar}`}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className={`w-1.5 h-1.5 rounded-full ${STATUS_UI[brief.headline.status].dot}`} />
+              <span className="text-[11px] font-semibold text-foreground-muted uppercase tracking-wider">{STATUS_UI[brief.headline.status].label}</span>
             </div>
             <p className="text-sm text-gray-800 font-medium leading-relaxed">{brief.headline.text}</p>
           </div>
@@ -484,10 +491,12 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
         </div>
       )}
 
-      {/* 브리핑 배너 — 네모·라인 (무지톤) */}
+      {/* 브리핑 배너 — 진초록 */}
       <button onClick={() => onNavigate('briefing')}
-        className="w-full flex items-center gap-3 p-5 rounded-lg bg-foreground text-white transition-colors hover:opacity-85 text-left">
-        <span className="text-xl">☀️</span>
+        className="w-full flex items-center gap-3 p-5 rounded-2xl bg-[#1b4332] text-white transition-all hover:bg-[#153528] active:scale-[0.99] text-left">
+        <span className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center flex-shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+        </span>
         <span className="flex-1">
           <span className="block text-sm font-semibold">오늘의 브리핑 읽기</span>
           <span className="block text-xs text-white/70 mt-0.5">어제 AI 직원들이 한 일을 한 장으로</span>
