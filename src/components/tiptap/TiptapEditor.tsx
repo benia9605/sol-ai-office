@@ -210,13 +210,30 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
     },
   });
 
+  // URL 입력 팝오버 (링크/유튜브 공용) — 버튼 아래 말풍선으로 입력
+  const [urlMode, setUrlMode] = useState<null | 'link' | 'youtube'>(null);
+  const [urlVal, setUrlVal] = useState('');
+
   const addLink = useCallback(() => {
     if (!editor) return;
-    const url = window.prompt('URL을 입력하세요');
-    if (url) {
-      editor.chain().focus().setLink({ href: url }).run();
-    }
+    setUrlVal(editor.getAttributes('link').href || '');  // 기존 링크면 프리필
+    setUrlMode('link');
   }, [editor]);
+
+  const applyUrl = useCallback(() => {
+    if (!editor) return;
+    const v = urlVal.trim();
+    if (urlMode === 'link') {
+      // 드래그한 선택영역(또는 커서가 놓인 링크 범위)에 정확히 적용
+      const chain = editor.chain().focus().extendMarkRange('link');
+      if (v) chain.setLink({ href: v }).run(); else chain.unsetLink().run();
+    } else if (urlMode === 'youtube') {
+      const embed = toYoutubeEmbed(v);
+      if (!embed) { alert('유튜브 링크를 인식하지 못했어요. (예: youtube.com/watch?v=… 또는 youtu.be/…)'); return; }
+      editor.chain().focus().insertContent({ type: 'youtube', attrs: { src: embed } }).run();
+    }
+    setUrlMode(null); setUrlVal('');
+  }, [editor, urlMode, urlVal]);
 
   // handlePaste에서 쓸 수 있도록 editor 인스턴스를 ref에 동기화
   useEffect(() => { editorRef.current = editor; }, [editor]);
@@ -288,11 +305,7 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
 
   const addYoutube = useCallback(() => {
     if (!editor) return;
-    const url = window.prompt('유튜브 링크를 붙여넣으세요 (커서 위치에 영상이 들어가요)');
-    if (!url) return;
-    const embed = toYoutubeEmbed(url);
-    if (!embed) { alert('유튜브 링크를 인식하지 못했어요. (예: youtube.com/watch?v=… 또는 youtu.be/…)'); return; }
-    editor.chain().focus().insertContent({ type: 'youtube', attrs: { src: embed } }).run();
+    setUrlVal(''); setUrlMode('youtube');
   }, [editor]);
 
   const handleImageFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -468,12 +481,12 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
 
         {/* 삽입 */}
         <button onClick={addLink} className={editor.isActive('link') ? 'is-active' : ''} data-tip="링크">
-          <span className="text-xs">🔗</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5" /><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5" /></svg>
         </button>
         <button onClick={addImage} disabled={imageUploading} data-tip="이미지 업로드">
           {imageUploading
             ? <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block" />
-            : <span className="text-xs">🖼</span>}
+            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-4.5-4.5L4 21" /></svg>}
         </button>
         <input ref={imageFileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={handleImageFile} />
         <button onClick={addYoutube} data-tip="유튜브 영상 삽입">
@@ -495,6 +508,19 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
           <span className="text-xs">↪</span>
         </button>
       </div>
+
+      {/* URL 입력 말풍선 (링크/유튜브) — 툴바 아래 */}
+      {urlMode && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50">
+          <span className="text-[11px] font-semibold text-gray-500 flex-shrink-0">{urlMode === 'link' ? '링크' : '유튜브'}</span>
+          <input autoFocus value={urlVal} onChange={e => setUrlVal(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyUrl(); } if (e.key === 'Escape') { setUrlMode(null); setUrlVal(''); } }}
+            placeholder={urlMode === 'link' ? 'https://…  (비우고 적용하면 링크 해제)' : '유튜브 링크 붙여넣기 (커서 위치에 삽입)'}
+            className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:border-foreground" />
+          <button onMouseDown={e => e.preventDefault()} onClick={applyUrl} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 flex-shrink-0">적용</button>
+          <button onMouseDown={e => e.preventDefault()} onClick={() => { setUrlMode(null); setUrlVal(''); }} className="text-xs text-gray-400 hover:text-gray-600 flex-shrink-0">취소</button>
+        </div>
+      )}
 
       {/* 드래그 선택 시 표시되는 인라인 팝업 (볼드/이탤릭/취소선/하이라이트/색) */}
       <BubbleMenu
