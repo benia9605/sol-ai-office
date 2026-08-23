@@ -926,9 +926,7 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
           </NoteSection>
 
           {/* 첨부파일 — 뷰 모드는 읽기전용(canManage=false), 편집 모드에서만 추가/삭제 */}
-          <NoteSection title="첨부파일">
-            <AttachmentsSection workspaceId={workspace.id} refType="task" refId={taskId} canManage={mode === 'edit'} />
-          </NoteSection>
+          <AttachmentsSection workspaceId={workspace.id} refType="task" refId={taskId} canManage={mode === 'edit'} />
 
           {/* 좋아요·댓글 — 뷰 모드에서만 (편집 중엔 감춤) */}
           {mode === 'view' && (
@@ -1035,9 +1033,7 @@ export function InsightDetailView({ workspace, insightId, onBack }: { workspace:
             )}
           </NoteSection>
 
-          <NoteSection title="첨부파일">
-            <AttachmentsSection workspaceId={workspace.id} refType="insight" refId={insightId} canManage={mode === 'edit'} />
-          </NoteSection>
+          <AttachmentsSection workspaceId={workspace.id} refType="insight" refId={insightId} canManage={mode === 'edit'} />
           {mode === 'view' && (
             <div className="pt-2">
               <LikeCommentBlock resource="insight" resId={insightId} members={members} />
@@ -1126,9 +1122,7 @@ export function RecordDetailPage({ workspace, recordId, onBack }: { workspace: W
             )}
           </NoteSection>
 
-          <NoteSection title="첨부파일">
-            <AttachmentsSection workspaceId={workspace.id} refType="record" refId={recordId} canManage={mode === 'edit'} />
-          </NoteSection>
+          <AttachmentsSection workspaceId={workspace.id} refType="record" refId={recordId} canManage={mode === 'edit'} />
           {mode === 'view' && (
             <div className="pt-2">
               <LikeCommentBlock resource="record" resId={recordId} members={members} />

@@ -126,9 +126,9 @@ export function AttachmentsSection({
   if (!canManage && !loading && items.length === 0) return null;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">첨부파일 {items.length > 0 && <span className="text-foreground-muted">{items.length}</span>}</span>
+    <div>
+      <div className="flex items-center justify-between border-b border-line pb-3 mb-4">
+        <h2 className="text-base text-foreground">첨부파일{items.length > 0 && <span className="ml-1.5 text-sm text-foreground-faint">{items.length}</span>}</h2>
         {canManage && (
           <label className={`text-xs px-3 py-1.5 rounded-lg border border-line text-foreground-muted hover:border-foreground hover:text-foreground transition-colors cursor-pointer ${busy ? 'opacity-50 pointer-events-none' : ''}`}>
             {busy ? '올리는 중…' : '＋ 파일 추가'}

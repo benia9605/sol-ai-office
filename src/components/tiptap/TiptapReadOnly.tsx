@@ -6,6 +6,7 @@
  * - 테이블, H1 지원
  */
 import { useEditor, EditorContent } from '@tiptap/react';
+import { useEffect } from 'react';
 import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
 import Color from '@tiptap/extension-color';
@@ -47,6 +48,15 @@ export function TiptapReadOnly({ content }: TiptapReadOnlyProps) {
     content,
     editable: false,
   });
+
+  // useEditor는 content prop 변경 시 자동 갱신을 안 함 — 재사용 인스턴스가 옛 내용을
+  // 계속 보여주는 버그(저장 후 이미지·HTML 안 보임) 방지. 내용이 바뀌면 다시 주입.
+  useEffect(() => {
+    if (!editor) return;
+    const next = JSON.stringify(content ?? {});
+    const cur = JSON.stringify(editor.getJSON());
+    if (next !== cur) editor.commands.setContent(content, { emitUpdate: false });
+  }, [editor, content]);
 
   if (!editor) return null;
 

@@ -138,7 +138,8 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
   useEffect(() => { fetchWorkspaceTasks(workspace.id).then(setWsTasks).catch(() => setWsTasks([])); }, [workspace.id]);
   const parseAgenda = (a?: string) => { const arr = (a || '').split('\n').map(s => s.trim()).filter(Boolean); return arr.length ? arr : ['']; };
   const [agenda, setAgenda] = useState<string[]>(() => parseAgenda(meeting.agenda));
-  const agendaView = (meeting.agenda || '').split('\n').map(s => s.trim()).filter(Boolean);
+  // 뷰 모드용 아젠다 — 저장 직후 stale prop 대신 로컬 state를 정리해서 렌더
+  const viewAgenda = agenda.map(s => s.trim()).filter(Boolean);
   const updateAgenda = (i: number, v: string) => setAgenda(prev => prev.map((x, idx) => idx === i ? v : x));
   const addAgenda = () => setAgenda(prev => [...prev, '']);
   const removeAgenda = (i: number) => setAgenda(prev => prev.length === 1 ? [''] : prev.filter((_, idx) => idx !== i));
@@ -317,19 +318,17 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
             )}
           </Section>
 
-          {/* 첨부파일 */}
-          <Section title="첨부파일">
-            <AttachmentsSection workspaceId={workspace.id} refType="meeting" refId={meeting.id} canManage />
-          </Section>
+          {/* 첨부파일 — AttachmentsSection이 자체 헤더(border-b) 렌더 */}
+          <AttachmentsSection workspaceId={workspace.id} refType="meeting" refId={meeting.id} canManage />
         </div>
       ) : (
         /* ═══════════ 뷰 모드 ═══════════ */
         <div className="space-y-12">
-          {/* ── 아젠다 ── */}
-          {agendaView.length > 0 && (
+          {/* ── 아젠다 ── (저장 직후 stale prop 대신 로컬 state로 렌더) */}
+          {viewAgenda.length > 0 && (
             <Section title="아젠다">
               <ol className="space-y-2">
-                {agendaView.map((item, i) => (
+                {viewAgenda.map((item, i) => (
                   <li key={i} className="flex gap-2 text-sm text-foreground">
                     <span className="text-foreground-faint w-6 shrink-0 text-right tabular-nums">{i + 1}.</span>
                     <span className="flex-1">{item}</span>
@@ -341,8 +340,8 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
 
           {/* ── 회의 내용 ── */}
           <Section title="회의 내용">
-            {docHasContent(meeting.content)
-              ? <RichText value={meeting.content} />
+            {docHasContent(note)
+              ? <RichText value={note} />
               : <p className="text-sm text-foreground-faint">작성된 회의록이 없어요. <button onClick={() => setMode('edit')} className="underline">작성하기</button></p>}
           </Section>
 
@@ -351,7 +350,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
             {savedActions.length === 0 ? (
               <p className="text-sm text-foreground-faint">액션 아이템이 없어요.</p>
             ) : (
-              <ul className="divide-y divide-line border-t border-line">
+              <ul className="divide-y divide-line">
                 {actions.map((a, i) => a.id && a.title.trim() ? (
                   <li key={a.id} className="flex items-center gap-3 py-3">
                     <button onClick={() => toggleStatus(i)} title="완료 토글"
@@ -367,10 +366,8 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
             )}
           </Section>
 
-          {/* 첨부파일 (읽기전용) */}
-          <Section title="첨부파일">
-            <AttachmentsSection workspaceId={workspace.id} refType="meeting" refId={meeting.id} canManage={false} />
-          </Section>
+          {/* 첨부파일 (읽기전용) — 자체 헤더 렌더 */}
+          <AttachmentsSection workspaceId={workspace.id} refType="meeting" refId={meeting.id} canManage={false} />
 
           {/* 좋아요·댓글 */}
           <div className="pb-6">
