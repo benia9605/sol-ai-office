@@ -237,13 +237,13 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
 
   // 버튼 바로 아래 작은 팝오버 (함수 호출로 렌더 — 컴포넌트로 두면 입력 시 리마운트로 포커스 유실)
   const urlPopover = () => (
-    <div className="absolute top-full left-0 mt-1.5 z-[100] w-60 max-w-[70vw] bg-white rounded-xl border border-gray-200 shadow-lg p-2 flex items-center gap-1.5"
+    <div className="absolute top-full left-0 mt-1.5 z-[100] w-80 max-w-[86vw] bg-white rounded-xl border border-gray-200 shadow-lg p-2 flex flex-nowrap items-center gap-1.5"
       onMouseDown={e => e.stopPropagation()}>
       <input autoFocus value={urlVal} onChange={e => setUrlVal(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyUrl(); } if (e.key === 'Escape') { setUrlMode(null); setUrlVal(''); } }}
         placeholder={urlMode === 'link' ? 'https://…' : '유튜브 링크'}
         className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:border-foreground" />
-      <button onMouseDown={e => e.preventDefault()} onClick={applyUrl} className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 flex-shrink-0">적용</button>
+      <button onMouseDown={e => e.preventDefault()} onClick={applyUrl} className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 flex-shrink-0 whitespace-nowrap">적용</button>
     </div>
   );
 
