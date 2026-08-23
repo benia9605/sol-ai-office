@@ -616,8 +616,8 @@ const isAiTask = (t: TaskItem) => t.category === '🤖 AI' || t.source === 'ai';
  * 그림자·둥근카드 없이 얇은 divide-y 선, 사각 체크박스. (레퍼런스 screens/01)
  * 비어 있으면 섹션 자체를 숨긴다.
  */
-function TaskCol({ title, items, onOpen, onCycle, memberName, memberAvatar, onMeeting, danger, noTopBorder }: {
-  title: string; items: TaskItem[]; onOpen: (t: TaskItem) => void; onCycle: (id: string) => void; memberName: (uid?: string) => string;
+function TaskCol({ title, items, onOpen, onToggle, memberName, memberAvatar, onMeeting, danger, noTopBorder }: {
+  title: string; items: TaskItem[]; onOpen: (t: TaskItem) => void; onToggle: (t: TaskItem) => void; memberName: (uid?: string) => string;
   memberAvatar?: (uid?: string) => string | undefined;
   onMeeting?: () => void; danger?: boolean; noTopBorder?: boolean;
 }) {
@@ -633,9 +633,9 @@ function TaskCol({ title, items, onOpen, onCycle, memberName, memberAvatar, onMe
           const done = t.status === 'completed';
           return (
             <li key={t.id} className="flex items-center gap-3 py-3">
-              <button onClick={() => onCycle(t.id)} aria-label="상태 변경" title="상태 변경"
+              <button onClick={() => onToggle(t)} aria-label={done ? '완료 취소' : '완료'} title={done ? '완료 (클릭해 취소)' : '완료로 표시'}
                 className={`size-5 shrink-0 border flex items-center justify-center transition-colors ${done ? 'border-foreground bg-foreground text-surface' : 'border-line-strong hover:border-foreground'}`}>
-                {done && <span className="text-[11px] leading-none">✓</span>}
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={done ? '' : 'opacity-0'}><path d="M20 6 9 17l-5-5" /></svg>
               </button>
               <button onClick={() => onOpen(t)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
                 {!done && t.priority === 'high' && <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />}
@@ -1227,6 +1227,13 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
   const openMeeting = onNavigate ? () => onNavigate('meetings') : undefined;
   // 할일 클릭 → 팝업 대신 전용 페이지(/todos/:id)로 이동 (이식 킷: 팝업이 아니라 페이지)
   const openTask = (t: TaskItem) => onNavigate?.('todos/' + t.id);
+  // 체크박스 = 한 번 클릭으로 완료 토글 (완료 ↔ 할일). 진행중 단계는 상세에서 선택.
+  // 낙관적: 클릭 즉시 화면 반영 후 저장(네트워크 왕복 기다리지 않게).
+  const toggleDone = (t: TaskItem) => {
+    const nextStatus: TaskItem['status'] = t.status === 'completed' ? 'pending' : 'completed';
+    setWsTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: nextStatus } : x));
+    saveTask(t.id, { status: nextStatus });
+  };
 
   // ── 스코프(탭) + 하위 필터 적용 ──
   // 탭은 전체 / 내 할일 2가지. '내 할일' = 나에게 배정 + (미배정이면서 내가 만든 것)
@@ -1314,11 +1321,11 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
           <div className="space-y-7">
             {overdue.length > 0 && (
               <div className="rounded-xl border border-rose-200 bg-rose-50/60 px-4 py-3">
-                <TaskCol title="지연" items={overdue} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} danger noTopBorder />
+                <TaskCol title="지연" items={overdue} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} danger noTopBorder />
               </div>
             )}
-            <TaskCol title="할 일" items={dayOpen} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
-            <TaskCol title="완료" items={dayDone} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
+            <TaskCol title="할 일" items={dayOpen} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
+            <TaskCol title="완료" items={dayDone} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
             {overdue.length + dayOpen.length + dayDone.length === 0 && <p className="text-sm text-foreground-faint py-10 text-center">이 날짜에 할일이 없어요.</p>}
           </div>
         </>
@@ -1332,8 +1339,8 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
             <TabBtn id="mine" label="내 할일" count={counts.mine} />
           </div>
           <div className="space-y-7">
-            <TaskCol title="할 일" items={open} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
-            <TaskCol title="완료" items={done} onOpen={openTask} onCycle={cycleStatus} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
+            <TaskCol title="할 일" items={open} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
+            <TaskCol title="완료" items={done} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
             {open.length + done.length === 0 && <p className="text-sm text-foreground-faint py-10 text-center">할일이 없어요.</p>}
           </div>
         </>
