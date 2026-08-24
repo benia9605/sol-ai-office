@@ -350,7 +350,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
             {savedActions.length === 0 ? (
               <p className="text-sm text-foreground-faint">액션 아이템이 없어요.</p>
             ) : (
-              <ul className="divide-y divide-line">
+              <ul className="divide-y divide-line -mt-2">
                 {actions.map((a, i) => a.id && a.title.trim() ? (
                   <li key={a.id} className="flex items-center gap-3 py-3">
                     <button onClick={() => toggleStatus(i)} title="완료 토글"
