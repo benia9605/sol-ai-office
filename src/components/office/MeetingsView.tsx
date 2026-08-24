@@ -19,11 +19,12 @@ import { Avatar } from './Avatar';
 import { LikeCommentBlock } from './LikeCommentBlock';
 import { AttachmentsSection } from './AttachmentsSection';
 import { getTodayStr } from '../../utils/dateCalc';
+import { cacheGet } from '../../services/cache';
 
 const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
 export function MeetingsView({ workspace, openId }: { workspace: Workspace; openId?: string }) {
-  const [list, setList] = useState<Meeting[]>([]);
+  const [list, setList] = useState<Meeting[]>(() => cacheGet<Meeting[]>('meetings', workspace.id) ?? []);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [progress, setProgress] = useState<Map<string, { done: number; total: number }>>(new Map());
   const [selected, setSelected] = useState<Meeting | null>(null);

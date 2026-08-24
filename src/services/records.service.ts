@@ -7,6 +7,7 @@
  *   weekly_data (JSONB), memo_body (JSONB), created_at
  */
 import { supabase } from './supabase';
+import { cacheSet } from './cache';
 import { getCurrentUserId } from './auth';
 import { recordActivity } from './activities.service';
 import { notify, getActorName } from './notify.service';
@@ -40,7 +41,7 @@ export async function fetchRecords(workspaceId?: string, recordType?: string): P
   if (recordType) q = q.eq('record_type', recordType);
   const { data, error } = await q.order('created_at', { ascending: false }).limit(200);
   if (error) throw error;
-  return data ?? [];
+  return cacheSet(`records-${recordType ?? 'all'}`, workspaceId ?? '_', data ?? []);
 }
 
 /** 단일 기록 조회 (상세 페이지용). 없으면 null. */

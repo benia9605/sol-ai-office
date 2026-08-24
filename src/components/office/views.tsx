@@ -38,6 +38,7 @@ import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
 import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, NoteSection, SearchBar, fieldCls as monoField } from './ui';
+import { cacheGet } from '../../services/cache';
 import { RichText, docToText, docHasContent, parseDoc, serializeDoc } from './RichText';
 import { Avatar, MemberSelect } from './Avatar';
 import { NavIcon } from './NavIcons';
@@ -421,12 +422,13 @@ function MyTaskFocus({ tasks, onNavigate }: { tasks: TaskItem[]; onNavigate: Nav
 
 export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; workspace: Workspace }) {
   const kpis = useDashboardKpis(workspace);
-  const [wsTasks, setWsTasks] = useState<TaskItem[]>([]);
+  // 프리페치 캐시로 즉시 그리기(스피너 없이) — 각 useEffect fetch가 뒤이어 최신값으로 갱신
+  const [wsTasks, setWsTasks] = useState<TaskItem[]>(() => (cacheGet<any[]>('ws-tasks', workspace.id) ?? []).map(rowToTaskItem));
   const [myId, setMyId] = useState<string | null>(null);
   const open = wsTasks.filter(t => t.status !== 'completed');
-  const [schedules, setSchedules] = useState<ScheduleRow[]>([]);
-  const [insights, setInsights] = useState<InsightRow[]>([]);
-  const [memos, setMemos] = useState<RecordRow[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleRow[]>(() => cacheGet<ScheduleRow[]>('schedules', workspace.id) ?? []);
+  const [insights, setInsights] = useState<InsightRow[]>(() => cacheGet<InsightRow[]>('insights', workspace.id) ?? []);
+  const [memos, setMemos] = useState<RecordRow[]>(() => cacheGet<RecordRow[]>('records-memo', workspace.id) ?? []);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -1136,7 +1138,8 @@ export function RecordDetailPage({ workspace, recordId, onBack }: { workspace: W
 
 export function TodosView({ workspace, onNavigate, initialScope }: { workspace: Workspace; onNavigate?: Nav; initialScope?: 'all' | 'mine' | 'assigned' }) {
   const { add } = useTasks({ autoLoad: false });  // 목록은 fetchWorkspaceTasks로 로드 — 개인 할일 전체 조회 불필요
-  const [wsTasks, setWsTasks] = useState<TaskItem[]>([]);
+  // 프리페치 캐시가 있으면 즉시 그려서 메뉴 전환 시 스피너 없이 표시(뒤이어 재검증)
+  const [wsTasks, setWsTasks] = useState<TaskItem[]>(() => (cacheGet<any[]>('ws-tasks', workspace.id) ?? []).map(rowToTaskItem));
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [myId, setMyId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -1382,7 +1385,7 @@ export function ScheduleView({ workspace }: { workspace: Workspace }) {
 
 /* ───────── 인사이트 (실데이터 · 직원 AI 제안 포함) ───────── */
 export function InsightsView({ workspace, onNavigate }: { workspace: Workspace; onNavigate?: Nav }) {
-  const [list, setList] = useState<InsightRow[]>([]);
+  const [list, setList] = useState<InsightRow[]>(() => cacheGet<InsightRow[]>('insights', workspace.id) ?? []);
   const [showForm, setShowForm] = useState(false);
   const blank = () => ({ title: '', content: parseDoc(''), source: '', link: '', tags: '' });
   const [form, setForm] = useState(blank);

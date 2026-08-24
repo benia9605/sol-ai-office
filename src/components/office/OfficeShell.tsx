@@ -26,6 +26,13 @@ import { fetchCredits, fetchUsage } from '../../services/credits.service';
 import { fetchStaff } from '../../services/staff.service';
 import { StaffUsage } from '../../types';
 import { createPortal } from 'react-dom';
+import { warm } from '../../services/cache';
+import { fetchWorkspaceTasks } from '../../services/tasks.service';
+import { fetchMeetings } from '../../services/meetings.service';
+import { fetchSchedules } from '../../services/schedules.service';
+import { fetchInsights } from '../../services/insights.service';
+import { fetchRecords } from '../../services/records.service';
+import { fetchMembers } from '../../services/workspaces.service';
 
 type ViewId = 'dashboard' | 'briefing' | 'staff' | 'todos' | 'schedule' | 'meetings' | 'insights' | 'contents' | 'content' | 'products' | 'sales' | 'memory' | 'log' | 'activity' | 'teamlog' | 'members' | 'brand' | 'company' | 'me';
 
@@ -145,6 +152,19 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
   const [coinPulse, setCoinPulse] = useState(false);
   const [showUsage, setShowUsage] = useState(false);
   useEffect(() => { fetchCredits(workspace.id).then(setCredits).catch(() => {}); }, [workspace.id]);
+
+  // ── 프리페치: 오피스 진입/워크스페이스 전환 시 메뉴 공통 데이터를 백그라운드로 데워둔다.
+  //    각 뷰는 재마운트될 때 이 캐시를 useState 초깃값으로 즉시 그려서(스피너 없이) 전환이 빨라진다.
+  //    (뷰는 여전히 자기 fetch로 재검증하므로 최신값이 뒤따라 반영됨 — stale-while-revalidate)
+  useEffect(() => {
+    const id = workspace.id;
+    warm(() => fetchWorkspaceTasks(id));
+    warm(() => fetchMeetings(id));
+    warm(() => fetchSchedules(id));
+    warm(() => fetchInsights(id));
+    warm(() => fetchRecords(id, 'memo'));
+    warm(() => fetchMembers(id));
+  }, [workspace.id]);
   const refreshCredits = async () => {
     const c = await fetchCredits(workspace.id).catch(() => null);
     if (c != null) { setCredits(c); setCoinPulse(true); setTimeout(() => setCoinPulse(false), 900); }

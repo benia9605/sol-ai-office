@@ -63,7 +63,12 @@ export function renderRawHtmlInto(
 ) {
   host.textContent = '';
   const iframe = document.createElement('iframe');
-  iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+  // ★ 보안: allow-same-origin 을 절대 함께 주지 않는다. srcdoc iframe은 부모 origin을
+  //   물려받으므로 same-origin을 허용하면 붙여넣은 스크립트가 부모 localStorage(Supabase
+  //   세션 토큰)·쿠키·DOM에 접근 → 다른 멤버 계정 탈취(저장형 XSS)가 된다.
+  //   allow-scripts만 주면 iframe은 불투명(opaque) origin이라 스크립트는 자체 인터랙션만
+  //   돌고 부모엔 접근 못 한다. 높이는 아래 postMessage 리포터로만 받는다.
+  iframe.setAttribute('sandbox', 'allow-scripts');
   iframe.setAttribute('title', 'HTML 미리보기');
   iframe.setAttribute('scrolling', 'no');
   iframe.style.width = '100%';

@@ -9,6 +9,7 @@
  */
 import { supabase } from './supabase';
 import { getCurrentUserId } from './auth';
+import { cacheSet } from './cache';
 import { RepeatType } from '../types';
 
 export interface TaskRow {
@@ -95,7 +96,7 @@ export async function fetchWorkspaceTasks(workspaceId: string): Promise<TaskRow[
     .order('created_at', { ascending: false })
     .limit(500);
   if (error) throw error;
-  return data ?? [];
+  return cacheSet('ws-tasks', workspaceId, data ?? []);
 }
 
 /** 특정 회의에 연결된 할일만 조회 (전체 할일 스캔 방지) */

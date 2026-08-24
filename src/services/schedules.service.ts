@@ -5,6 +5,7 @@
  * - DB 컬럼: id, title, date, time, project, color, category, repeat, reminder, notes, tags, created_at
  */
 import { supabase } from './supabase';
+import { cacheSet } from './cache';
 import { getCurrentUserId } from './auth';
 import { RepeatType } from '../types';
 
@@ -42,7 +43,7 @@ export async function fetchSchedules(workspaceId?: string): Promise<ScheduleRow[
   q = workspaceId ? q.eq('workspace_id', workspaceId) : q.is('workspace_id', null);
   const { data, error } = await q.order('date', { ascending: true }).limit(500);
   if (error) throw error;
-  return data ?? [];
+  return cacheSet('schedules', workspaceId ?? '_', data ?? []);
 }
 
 export async function addSchedule(schedule: Omit<ScheduleRow, 'id' | 'created_at'>): Promise<ScheduleRow> {

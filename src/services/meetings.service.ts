@@ -6,6 +6,7 @@
  * - (AI 회의실 채팅용 meeting.service.ts와는 별개)
  */
 import { supabase } from './supabase';
+import { cacheSet } from './cache';
 import { getCurrentUserId } from './auth';
 import { Meeting } from '../types';
 import { notify, getActorName } from './notify.service';
@@ -24,7 +25,7 @@ export async function fetchMeetings(workspaceId: string): Promise<Meeting[]> {
     .order('meeting_date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false })
     .limit(200);
   if (error) throw error;
-  return (data ?? []).map(toMeeting);
+  return cacheSet('meetings', workspaceId, (data ?? []).map(toMeeting));
 }
 
 export async function addMeeting(workspaceId: string, fields: { title: string; meetingDate?: string; meetingTime?: string }): Promise<Meeting> {

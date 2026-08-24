@@ -5,6 +5,7 @@
  * - DB 컬럼: id, title, content, source, link, tags, project, priority, created_at
  */
 import { supabase } from './supabase';
+import { cacheSet } from './cache';
 import { getCurrentUserId } from './auth';
 import { recordActivity } from './activities.service';
 import { notify, getActorName } from './notify.service';
@@ -32,7 +33,7 @@ export async function fetchInsights(workspaceId?: string): Promise<InsightRow[]>
   q = workspaceId ? q.eq('workspace_id', workspaceId) : q.eq('user_id', userId).is('workspace_id', null);
   const { data, error } = await q.order('created_at', { ascending: false }).limit(200);
   if (error) throw error;
-  return data ?? [];
+  return cacheSet('insights', workspaceId ?? '_', data ?? []);
 }
 
 /** 단일 인사이트 조회 (상세 페이지용). 없으면 null. */

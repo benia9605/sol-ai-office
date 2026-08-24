@@ -27,9 +27,10 @@ const SB_ANON = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_
 
 // 로그인한 유저만 AI 프록시를 쓰게 (오픈 프록시 남용 방지).
 // 브라우저는 헤더 x-sb-auth 로 Supabase 액세스 토큰을 보낸다.
-// Supabase 환경변수가 없으면(오설정) 막지 않고 통과시키되 경고만 남긴다.
+// ★ 보안: Supabase 환경변수가 없으면(오설정) fail-OPEN 하면 AI 프록시가 무인증
+//   오픈 프록시가 되어 크레딧이 털린다. 반드시 fail-CLOSED(차단).
 async function requireAuth(req, res, next) {
-  if (!SB_URL || !SB_ANON) { console.warn('[proxy] Supabase env 미설정 — AI 프록시 인증 비활성'); return next(); }
+  if (!SB_URL || !SB_ANON) { console.error('[proxy] Supabase env 미설정 — AI 프록시 차단(fail-closed)'); return res.status(503).json({ error: 'auth_unavailable' }); }
   const token = req.headers['x-sb-auth'];
   if (!token) return res.status(401).json({ error: 'unauthorized' });
   try {
