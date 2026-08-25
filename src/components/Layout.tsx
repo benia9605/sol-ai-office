@@ -120,7 +120,7 @@ export function Layout() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-white">
       <Header
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         userName={profile.name || user?.user_metadata?.name || user?.email?.split('@')[0]}

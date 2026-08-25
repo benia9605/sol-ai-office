@@ -620,7 +620,7 @@ function PriorityDot({ p }: { p: TaskItem['priority'] }) {
   return <span className={`w-2 h-2 rounded-full ${c} flex-shrink-0`} />;
 }
 
-const TASK_CATEGORIES = ['콘텐츠', '제품', '쇼룸', '촬영', '회의', '운영', '마케팅', 'CS', 'AI'];
+const TASK_CATEGORIES = ['콘텐츠', '제품', '쇼룸', '운영', '마케팅', 'CS', '기타'];
 const isAiTask = (t: TaskItem) => t.category === '🤖 AI' || t.source === 'ai';
 
 /**
@@ -628,10 +628,12 @@ const isAiTask = (t: TaskItem) => t.category === '🤖 AI' || t.source === 'ai';
  * 그림자·둥근카드 없이 얇은 divide-y 선, 사각 체크박스. (레퍼런스 screens/01)
  * 비어 있으면 섹션 자체를 숨긴다.
  */
-function TaskCol({ title, items, onOpen, onToggle, memberName, memberAvatar, onMeeting, danger, noTopBorder }: {
+function TaskCol({ title, items, onOpen, onToggle, memberName, memberAvatar, onMeeting, danger, noTopBorder, selectable, selectedIds, onToggleSelect }: {
   title: string; items: TaskItem[]; onOpen: (t: TaskItem) => void; onToggle: (t: TaskItem) => void; memberName: (uid?: string) => string;
   memberAvatar?: (uid?: string) => string | undefined;
   onMeeting?: () => void; danger?: boolean; noTopBorder?: boolean;
+  /** 일괄편집 모드 — 선택 체크박스 표시, 행 클릭 시 선택 토글 */
+  selectable?: boolean; selectedIds?: Set<string>; onToggleSelect?: (t: TaskItem) => void;
 }) {
   if (items.length === 0) return null;
   return (
@@ -643,13 +645,21 @@ function TaskCol({ title, items, onOpen, onToggle, memberName, memberAvatar, onM
       <ul className={`divide-y ${danger ? 'divide-rose-200/70' : 'divide-line'} ${noTopBorder ? '' : `border-t ${danger ? 'border-rose-200/70' : 'border-line'}`}`}>
         {items.map(t => {
           const done = t.status === 'completed';
+          const checked = selectable && selectedIds?.has(t.id);
           return (
-            <li key={t.id} className="flex items-center gap-3 py-3">
-              <button onClick={() => onToggle(t)} aria-label={done ? '완료 취소' : '완료'} title={done ? '완료 (클릭해 취소)' : '완료로 표시'}
-                className={`size-5 shrink-0 border flex items-center justify-center transition-colors ${done ? 'border-foreground bg-foreground text-surface' : 'border-line-strong hover:border-foreground'}`}>
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={done ? '' : 'opacity-0'}><path d="M20 6 9 17l-5-5" /></svg>
-              </button>
-              <button onClick={() => onOpen(t)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
+            <li key={t.id} className={`flex items-center gap-3 py-3 ${checked ? 'bg-surface-muted' : ''}`}>
+              {selectable ? (
+                <button onClick={() => onToggleSelect?.(t)} aria-label={checked ? '선택 해제' : '선택'}
+                  className={`size-5 shrink-0 rounded border flex items-center justify-center transition-colors ${checked ? 'border-foreground bg-foreground text-surface' : 'border-line-strong hover:border-foreground'}`}>
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={checked ? '' : 'opacity-0'}><path d="M20 6 9 17l-5-5" /></svg>
+                </button>
+              ) : (
+                <button onClick={() => onToggle(t)} aria-label={done ? '완료 취소' : '완료'} title={done ? '완료 (클릭해 취소)' : '완료로 표시'}
+                  className={`size-5 shrink-0 border flex items-center justify-center transition-colors ${done ? 'border-foreground bg-foreground text-surface' : 'border-line-strong hover:border-foreground'}`}>
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={done ? '' : 'opacity-0'}><path d="M20 6 9 17l-5-5" /></svg>
+                </button>
+              )}
+              <button onClick={() => selectable ? onToggleSelect?.(t) : onOpen(t)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
                 {!done && t.priority === 'high' && <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />}
                 <span className={`text-sm flex-1 truncate ${done ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{t.title}</span>
                 {t.category && t.category !== '🤖 AI' && <span className="hidden sm:inline text-[11px] text-foreground-faint shrink-0">{t.category}</span>}
@@ -657,7 +667,7 @@ function TaskCol({ title, items, onOpen, onToggle, memberName, memberAvatar, onM
                 {t.assigneeId && <span className="flex items-center gap-1 shrink-0"><Avatar name={memberName(t.assigneeId)} url={memberAvatar?.(t.assigneeId)} size="xs" /><span className="text-xs text-foreground-muted truncate max-w-[5rem]">{memberName(t.assigneeId)}</span></span>}
                 {t.date && <span className={`text-xs shrink-0 tabular-nums ${danger ? 'text-rose-500' : 'text-foreground-faint'}`}>{t.date.slice(5)}</span>}
               </button>
-              {t.meetingId && onMeeting && (
+              {!selectable && t.meetingId && onMeeting && (
                 <button onClick={onMeeting} title="회의로 이동" className="text-xs text-foreground-faint hover:text-foreground shrink-0">↗</button>
               )}
             </li>
@@ -1155,6 +1165,11 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
   const [mode, setMode] = useState<'day' | 'list' | 'calendar'>('day');
   const [cursor, setCursor] = useState<string>(() => getTodayStr()); // 일별 뷰: 선택한 날짜
   const [q, setQ] = useState('');
+  // ── 일괄편집(멀티 선택) ──
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const toggleSelect = (t: TaskItem) => setSelectedIds(prev => { const n = new Set(prev); n.has(t.id) ? n.delete(t.id) : n.add(t.id); return n; });
+  const exitSelect = () => { setSelectMode(false); setSelectedIds(new Set()); };
 
   const loadWs = () => fetchWorkspaceTasks(workspace.id).then(rows => setWsTasks(rows.map(rowToTaskItem))).catch(() => setWsTasks([]));
   useEffect(() => {
@@ -1223,6 +1238,24 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
     await loadWs();
   };
   const removeTask = async (id: string) => { await deleteTask(id).catch(() => {}); await loadWs(); };
+  // 선택한 여러 할일 일괄 수정(카테고리·담당자·상태) / 삭제
+  const bulkUpdate = async (patch: { category?: string; assigneeId?: string; status?: TaskItem['status'] }) => {
+    const ids = [...selectedIds]; if (!ids.length) return;
+    await Promise.all(ids.map(id => {
+      const db: Record<string, unknown> = {};
+      if (patch.category !== undefined) db.category = patch.category || null;
+      if (patch.assigneeId !== undefined) db.assignee_id = patch.assigneeId || null;
+      if (patch.status !== undefined) { db.status = toDbStatus(patch.status); db.completed_at = patch.status === 'completed' ? new Date().toISOString() : null; }
+      return updateTaskFields(id, db).catch(() => {});
+    }));
+    exitSelect(); await loadWs();
+  };
+  const bulkDelete = async () => {
+    const ids = [...selectedIds]; if (!ids.length) return;
+    if (!confirm(`${ids.length}개 할일을 삭제할까요?`)) return;
+    await Promise.all(ids.map(id => deleteTask(id).catch(() => {})));
+    exitSelect(); await loadWs();
+  };
   const openMeeting = onNavigate ? () => onNavigate('meetings') : undefined;
   // 할일 클릭 → 팝업 대신 전용 페이지(/todos/:id)로 이동 (이식 킷: 팝업이 아니라 페이지)
   const openTask = (t: TaskItem) => onNavigate?.('todos/' + t.id);
@@ -1248,9 +1281,12 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
   const addDays = (iso: string, d: number) => addDaysStr(iso, d);  // 타임존 안전(로컬)
   const fmtDay = (iso: string) => { const [y, m, dd] = iso.split('-').map(Number); const dt = new Date(y, m - 1, dd); const w = ['일', '월', '화', '수', '목', '금', '토'][dt.getDay()]; return `${m}월 ${dd}일 (${w})`; };
   const overdue = fTasks.filter(t => t.status !== 'completed' && t.date && t.date < today);
-  const noDate = cursor === today ? fTasks.filter(t => t.status !== 'completed' && !t.date) : [];
-  const dayOpen = [...fTasks.filter(t => t.status !== 'completed' && t.date === cursor), ...noDate];
+  const noDate = fTasks.filter(t => t.status !== 'completed' && !t.date);   // 날짜 미정 — 따로 구분해서 표시
+  const dayOpen = fTasks.filter(t => t.status !== 'completed' && t.date === cursor);
   const dayDone = fTasks.filter(t => t.status === 'completed' && t.date === cursor);
+  // 전체(list) 뷰: 미완료를 '날짜 있음 / 날짜 없음'으로 분리
+  const openDated = open.filter(t => t.date);
+  const openNoDate = open.filter(t => !t.date);
 
   const modeBtn = (m: typeof mode, label: string) => (
     <button key={m} onClick={() => setMode(m)}
@@ -1272,8 +1308,42 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
       {/* 검색 — +할일 아래 · 필터(뷰토글·탭) 위 */}
       <SearchBar value={q} onChange={setQ} placeholder="할일 검색" />
 
-      {/* 뷰 토글 (일별/전체/캘린더) */}
-      <div className="flex items-center gap-1 mb-4">{modeBtn('day', '일별')}{modeBtn('calendar', '캘린더')}{modeBtn('list', '전체')}</div>
+      {/* 뷰 토글 (일별/캘린더/전체) + 일괄편집 */}
+      <div className="flex items-center gap-1 mb-4">
+        {modeBtn('day', '일별')}{modeBtn('calendar', '캘린더')}{modeBtn('list', '전체')}
+        {mode !== 'calendar' && (
+          <button onClick={() => selectMode ? exitSelect() : setSelectMode(true)}
+            className={`ml-auto px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${selectMode ? 'bg-foreground text-white' : 'border border-line text-foreground-muted hover:border-foreground hover:text-foreground'}`}>
+            {selectMode ? '완료' : '일괄편집'}
+          </button>
+        )}
+      </div>
+
+      {/* 일괄편집 액션바 — 선택 모드일 때 */}
+      {selectMode && (
+        <div className="sticky top-0 z-20 mb-3 rounded-xl border border-line bg-surface shadow-sm p-3 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-foreground mr-1">{selectedIds.size}개 선택</span>
+          <select disabled={!selectedIds.size} defaultValue="" onChange={e => { const v = e.target.value; e.target.value = ''; if (v) bulkUpdate({ category: v === '__none' ? '' : v }); }}
+            className="px-2.5 py-1.5 rounded-lg bg-surface-muted border border-line text-xs text-foreground focus:outline-none focus:border-foreground disabled:opacity-40">
+            <option value="">카테고리 지정…</option>
+            <option value="__none">카테고리 없음</option>
+            {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          {members.length > 1 && (
+            <select disabled={!selectedIds.size} defaultValue="" onChange={e => { const v = e.target.value; e.target.value = ''; if (v) bulkUpdate({ assigneeId: v === '__none' ? '' : v }); }}
+              className="px-2.5 py-1.5 rounded-lg bg-surface-muted border border-line text-xs text-foreground focus:outline-none focus:border-foreground disabled:opacity-40">
+              <option value="">담당자 지정…</option>
+              <option value="__none">담당 없음</option>
+              {members.map(m => <option key={m.userId} value={m.userId}>{memberName(m.userId)}</option>)}
+            </select>
+          )}
+          <button disabled={!selectedIds.size} onClick={() => bulkUpdate({ status: 'completed' })}
+            className="px-2.5 py-1.5 rounded-lg border border-line text-xs text-foreground-muted hover:border-foreground hover:text-foreground disabled:opacity-40 transition-colors">완료 처리</button>
+          <button disabled={!selectedIds.size} onClick={bulkDelete}
+            className="px-2.5 py-1.5 rounded-lg border border-line text-xs text-rose-500 hover:border-rose-400 disabled:opacity-40 transition-colors">삭제</button>
+          <button onClick={exitSelect} className="ml-auto px-2.5 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
+        </div>
+      )}
 
       {showForm && (
         <Card className="p-4 mb-3 space-y-2.5">
@@ -1324,12 +1394,14 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
           <div className="space-y-7">
             {overdue.length > 0 && (
               <div className="rounded-xl border border-rose-200 bg-rose-50/60 px-4 py-3">
-                <TaskCol title="지연" items={overdue} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} danger noTopBorder />
+                <TaskCol title="지연" items={overdue} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} danger noTopBorder selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
               </div>
             )}
-            <TaskCol title="할 일" items={dayOpen} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
-            <TaskCol title="완료" items={dayDone} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
-            {overdue.length + dayOpen.length + dayDone.length === 0 && <p className="text-sm text-foreground-faint py-10 text-center">이 날짜에 할일이 없어요.</p>}
+            <TaskCol title="할 일" items={dayOpen} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+            {/* 날짜 미정 — 오늘 화면에서만, 따로 구분해 표시 */}
+            {cursor === today && <TaskCol title="날짜 없음" items={noDate} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />}
+            <TaskCol title="완료" items={dayDone} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+            {overdue.length + dayOpen.length + dayDone.length + (cursor === today ? noDate.length : 0) === 0 && <p className="text-sm text-foreground-faint py-10 text-center">이 날짜에 할일이 없어요.</p>}
           </div>
         </>
       )}
@@ -1342,8 +1414,9 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
             <TabBtn id="mine" label="내 할일" count={counts.mine} />
           </div>
           <div className="space-y-7">
-            <TaskCol title="할 일" items={open} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
-            <TaskCol title="완료" items={done} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} />
+            <TaskCol title="할 일" items={openDated} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+            <TaskCol title="날짜 없음" items={openNoDate} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+            <TaskCol title="완료" items={done} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
             {open.length + done.length === 0 && <p className="text-sm text-foreground-faint py-10 text-center">할일이 없어요.</p>}
           </div>
         </>

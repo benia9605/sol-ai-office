@@ -109,7 +109,7 @@ function TaskPreviewRow({ task, category, onClick, onStatusCycle }: {
 }) {
   return (
     <DraggableItem dragId={`task-${task.id}`}>
-      <div onClick={onClick} className="flex items-start gap-2 px-1 py-2 cursor-pointer active:bg-gray-50 rounded-lg transition-colors">
+      <div onClick={onClick} className="flex items-start gap-2 px-1 py-2 cursor-pointer active:bg-surface-muted rounded-lg transition-colors">
         <button onClick={(e) => { e.stopPropagation(); onStatusCycle?.(); }}
           className="flex-shrink-0 w-5 h-5 mt-[2px] flex items-center justify-center transition-colors">
           {task.status === 'completed' && (
@@ -131,7 +131,7 @@ function TaskPreviewRow({ task, category, onClick, onStatusCycle }: {
           )}
         </button>
         <div className="w-[3px] h-4 rounded-full flex-shrink-0 mt-[3px]" style={{ backgroundColor: category?.color || '#d1d5db' }} />
-        <span className={`text-[13px] leading-5 flex-1 min-w-0 ${task.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-800'}`}>{task.title}</span>
+        <span className={`text-[13px] leading-5 flex-1 min-w-0 ${task.status === 'completed' ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{task.title}</span>
         {category && (() => { const cc = getBadgeColors(category.color); return <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: cc.bg, color: cc.text }}><span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: cc.dot }} />{category.label}</span>; })()}
       </div>
     </DraggableItem>
@@ -146,10 +146,10 @@ function SchedulePreviewRow({ schedule, category, onClick }: {
   const fmt = (ds: string) => { const d = new Date(ds + 'T00:00:00'); return `${d.getMonth() + 1}/${d.getDate()}`; };
   return (
     <DraggableItem dragId={`schedule-${schedule.id}`}>
-      <div onClick={onClick} className="flex items-center gap-3 px-1 py-2 cursor-pointer active:bg-gray-50 rounded-lg transition-colors">
+      <div onClick={onClick} className="flex items-center gap-3 px-1 py-2 cursor-pointer active:bg-surface-muted rounded-lg transition-colors">
         <div className="w-[3px] h-5 rounded-full flex-shrink-0" style={{ backgroundColor: barColor }} />
-        <span className="text-[11px] text-gray-400 flex-shrink-0 tabular-nums">{hasRange ? `${fmt(schedule.date)}~${fmt(schedule.endDate!)}` : schedule.time || '종일'}</span>
-        <span className="text-[13px] text-gray-800 flex-1 min-w-0 truncate">{schedule.title}</span>
+        <span className="text-[11px] text-foreground-faint flex-shrink-0 tabular-nums">{hasRange ? `${fmt(schedule.date)}~${fmt(schedule.endDate!)}` : schedule.time || '종일'}</span>
+        <span className="text-[13px] text-foreground flex-1 min-w-0 truncate">{schedule.title}</span>
         {category && (() => { const cc = getBadgeColors(category.color); return <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: cc.bg, color: cc.text }}><span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: cc.dot }} />{category.label}</span>; })()}
       </div>
     </DraggableItem>
@@ -248,22 +248,22 @@ function WeeklyTaskView({
     <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
       {/* ── 주 네비게이션 ── */}
       <div className="flex items-center justify-between px-4 pt-3 pb-1">
-        <button onClick={prevWeek} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 active:bg-gray-200 transition-colors">
+        <button onClick={prevWeek} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-muted text-foreground-faint active:bg-surface-muted transition-colors">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 6l-6 6 6 6" /></svg>
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-[14px] sm:text-[15px] font-semibold text-gray-900">{weekLabel}</span>
+          <span className="text-[14px] sm:text-[15px] font-semibold text-foreground">{weekLabel}</span>
           {!isThisWeek && (
             <button onClick={goToday} className="text-[11px] px-2 py-0.5 text-red-500 hover:bg-red-50 rounded-full font-medium transition-colors">이번 주</button>
           )}
         </div>
-        <button onClick={nextWeek} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 active:bg-gray-200 transition-colors">
+        <button onClick={nextWeek} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-muted text-foreground-faint active:bg-surface-muted transition-colors">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M9 6l6 6-6 6" /></svg>
         </button>
       </div>
 
       {/* ── 7일 컬럼 그리드 ── */}
-      <div className="grid grid-cols-7 border-t border-gray-100">
+      <div className="grid grid-cols-7 border-t border-line">
         {weekDays.map((date) => {
           const dateStr = toYMD(date);
           const isToday = dateStr === today;
@@ -291,11 +291,11 @@ function WeeklyTaskView({
       </div>
 
       {/* ── 데스크탑: 인라인 디테일 패널 ── */}
-      <div className="hidden sm:block border-t border-gray-100">
+      <div className="hidden sm:block border-t border-line">
         <div className="px-4 py-2.5 flex items-center justify-between">
-          <span className="text-[13px] font-semibold text-gray-900">{selectedDateLabel}</span>
+          <span className="text-[13px] font-semibold text-foreground">{selectedDateLabel}</span>
           {selectedTasks.length > 0 && (
-            <span className="text-[11px] text-gray-400">할일 {selectedTasks.length}건</span>
+            <span className="text-[11px] text-foreground-faint">할일 {selectedTasks.length}건</span>
           )}
         </div>
         <div className="px-3 pb-2 max-h-[300px] overflow-y-auto">
@@ -304,7 +304,7 @@ function WeeklyTaskView({
           ) : (
             <div>
               {selectedTasks.length > 0 && (
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-line">
                   {selectedTasks.map((t) => (
                     <TaskPreviewRow key={t.id} task={t}
                       category={taskCategories.find((c) => c.id === t.category)}
@@ -352,10 +352,10 @@ function MobileBottomSheet({ dateLabel, tasks, schedules, taskCategories, schedu
       <div className="relative bg-white rounded-t-2xl shadow-xl max-h-[55vh] flex flex-col">
         {/* 핸들 + 헤더 */}
         <div className="pt-2 pb-1 px-4">
-          <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-2" />
+          <div className="w-10 h-1 bg-line rounded-full mx-auto mb-2" />
           <div className="flex items-center justify-between">
-            <span className="text-[14px] font-semibold text-gray-900">{dateLabel}</span>
-            <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+            <span className="text-[14px] font-semibold text-foreground">{dateLabel}</span>
+            <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-surface-muted text-foreground-faint">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
             </button>
           </div>
@@ -363,7 +363,7 @@ function MobileBottomSheet({ dateLabel, tasks, schedules, taskCategories, schedu
         {/* 콘텐츠 */}
         <div className="overflow-y-auto px-3 pb-6">
           {tasks.length > 0 && (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-line">
               {tasks.map((t) => (
                 <TaskPreviewRow key={t.id} task={t}
                   category={taskCategories.find((c) => c.id === t.category)}
@@ -373,8 +373,8 @@ function MobileBottomSheet({ dateLabel, tasks, schedules, taskCategories, schedu
             </div>
           )}
           {schedules.length > 0 && (
-            <div className={tasks.length > 0 ? 'mt-2 pt-1 border-t border-gray-100' : ''}>
-              <div className="text-[11px] text-gray-400 px-1 py-1 font-medium">일정 ({schedules.length})</div>
+            <div className={tasks.length > 0 ? 'mt-2 pt-1 border-t border-line' : ''}>
+              <div className="text-[11px] text-foreground-faint px-1 py-1 font-medium">일정 ({schedules.length})</div>
               {schedules.map((s) => {
                 const cat = scheduleCategories.find((c) => c.id === s.category);
                 return (
@@ -401,20 +401,20 @@ function WeekDayColumn({ dateStr, date, dayNum, isToday, isSelected, tasks, sche
     <div
       ref={setNodeRef}
       onClick={onClick}
-      className={`flex flex-col border-r last:border-r-0 border-gray-100 cursor-pointer transition-colors
+      className={`flex flex-col border-r last:border-r-0 border-line cursor-pointer transition-colors
         ${isOver ? 'bg-green-50' : ''}
-        ${isSelected ? 'bg-green-50/50' : 'hover:bg-gray-50/30'}
+        ${isSelected ? 'bg-green-50/50' : 'hover:bg-surface-muted/30'}
       `}
     >
       {/* 요일 + 날짜 헤더 */}
       <div className="text-center pt-2 pb-1">
-        <div className={`text-[10px] font-medium mb-0.5 ${dayNum === 0 ? 'text-red-300' : dayNum === 6 ? 'text-blue-300' : 'text-gray-400'}`}>
+        <div className={`text-[10px] font-medium mb-0.5 ${dayNum === 0 ? 'text-red-300' : dayNum === 6 ? 'text-blue-300' : 'text-foreground-faint'}`}>
           {DAY_NAMES[dayNum]}
         </div>
         <span className={`inline-flex w-7 h-7 items-center justify-center rounded-full text-[13px] leading-none
           ${isToday ? 'bg-red-500 text-white font-bold' : ''}
           ${isSelected && !isToday ? 'bg-green-500 text-white font-semibold' : ''}
-          ${!isSelected && !isToday ? `font-semibold ${dayNum === 0 ? 'text-red-400' : dayNum === 6 ? 'text-blue-400' : 'text-gray-700'}` : ''}
+          ${!isSelected && !isToday ? `font-semibold ${dayNum === 0 ? 'text-red-400' : dayNum === 6 ? 'text-blue-400' : 'text-foreground'}` : ''}
         `}>
           {date.getDate()}
         </span>
@@ -440,7 +440,7 @@ function WeekDayColumn({ dateStr, date, dayNum, isToday, isSelected, tasks, sche
                   backgroundColor: t.status === 'completed' ? statusColor.completed : t.status === 'in_progress' ? '#dbeafe' : 'white',
                 }} />
             ))}
-            {tasks.length > 6 && <span className="text-[7px] text-gray-400 leading-none">+{tasks.length - 6}</span>}
+            {tasks.length > 6 && <span className="text-[7px] text-foreground-faint leading-none">+{tasks.length - 6}</span>}
           </div>
         )}
       </div>
@@ -461,7 +461,7 @@ function WeekDayColumn({ dateStr, date, dayNum, isToday, isSelected, tasks, sche
               {t.status === 'in_progress' && <div className="w-[4px] h-[4px] rounded-full bg-blue-500" />}
             </button>
             <span className={`text-[10px] leading-[14px] break-words ${
-              t.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-700'
+              t.status === 'completed' ? 'text-foreground-faint line-through' : 'text-foreground'
             }`}>
               {t.title}
             </span>
@@ -483,9 +483,9 @@ function ScheduleRefSection({ schedules, scheduleCategories, onScheduleClick }: 
   const [open, setOpen] = useState(false);
   if (schedules.length === 0) return null;
   return (
-    <div className="mt-2 pt-1 border-t border-gray-100">
+    <div className="mt-2 pt-1 border-t border-line">
       <button onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 px-1 py-1 text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
+        className="flex items-center gap-1 px-1 py-1 text-[11px] text-foreground-faint hover:text-foreground-muted transition-colors">
         <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
           className={`transition-transform ${open ? 'rotate-90' : ''}`}><path d="M6 4l4 4-4 4" /></svg>
         일정 ({schedules.length})
@@ -497,10 +497,10 @@ function ScheduleRefSection({ schedules, scheduleCategories, onScheduleClick }: 
             const color = cat?.color || '#fb923c';
             return (
               <div key={s.id} onClick={() => onScheduleClick(s)}
-                className="flex items-center gap-2 px-1 py-1.5 cursor-pointer hover:bg-gray-50 rounded transition-colors">
+                className="flex items-center gap-2 px-1 py-1.5 cursor-pointer hover:bg-surface-muted rounded transition-colors">
                 <div className="w-[3px] h-4 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                <span className="text-[11px] text-gray-400 flex-shrink-0 tabular-nums">{s.time || '종일'}</span>
-                <span className="text-[12px] text-gray-600 truncate">{s.title}</span>
+                <span className="text-[11px] text-foreground-faint flex-shrink-0 tabular-nums">{s.time || '종일'}</span>
+                <span className="text-[12px] text-foreground-muted truncate">{s.title}</span>
               </div>
             );
           })}
@@ -597,20 +597,20 @@ function MonthlyScheduleView({
     <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
       {/* 월 네비게이션 */}
       <div className="flex items-center justify-between px-4 pt-3 pb-1">
-        <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 6l-6 6 6 6" /></svg></button>
+        <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-muted text-foreground-faint"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 6l-6 6 6 6" /></svg></button>
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold text-gray-900">{year}년 {month + 1}월</span>
+          <span className="text-[15px] font-semibold text-foreground">{year}년 {month + 1}월</span>
           {!(year === new Date().getFullYear() && month === new Date().getMonth()) && (
             <button onClick={goToday} className="text-[11px] px-2 py-0.5 text-red-500 hover:bg-red-50 rounded-full font-medium transition-colors">오늘</button>
           )}
         </div>
-        <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M9 6l6 6-6 6" /></svg></button>
+        <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-muted text-foreground-faint"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M9 6l6 6-6 6" /></svg></button>
       </div>
 
       {/* 요일 헤더 */}
-      <div className="grid grid-cols-7 border-b border-gray-100">
+      <div className="grid grid-cols-7 border-b border-line">
         {DAY_NAMES.map((day, i) => (
-          <div key={day} className={`text-center py-1.5 text-[11px] font-medium ${i === 0 ? 'text-red-300' : i === 6 ? 'text-blue-300' : 'text-gray-400'}`}>{day}</div>
+          <div key={day} className={`text-center py-1.5 text-[11px] font-medium ${i === 0 ? 'text-red-300' : i === 6 ? 'text-blue-300' : 'text-foreground-faint'}`}>{day}</div>
         ))}
       </div>
 
@@ -628,7 +628,7 @@ function MonthlyScheduleView({
                       style={{ left: `${(seg.startCol / 7) * 100}%`, width: `${((seg.endCol - seg.startCol + 1) / 7) * 100}%`, top: seg.lane * BAR_HEIGHT, height: BAR_HEIGHT - 2, backgroundColor: getBadgeColors(seg.color).bg }}
                       onClick={(e) => { e.stopPropagation(); const s = schedules.find((s) => s.id === seg.scheduleId); if (s) onScheduleClick(s); }}>
                       {seg.isRangeStart && <div className="w-[3px] h-[10px] rounded-full flex-shrink-0 ml-1" style={{ backgroundColor: seg.color }} />}
-                      <span className="text-[8px] sm:text-[10px] text-gray-700 truncate px-1 leading-none font-medium">{seg.isRangeStart ? seg.title : ''}</span>
+                      <span className="text-[8px] sm:text-[10px] text-foreground truncate px-1 leading-none font-medium">{seg.isRangeStart ? seg.title : ''}</span>
                     </div>
                   ))}
                 </div>
@@ -658,15 +658,15 @@ function MonthlyScheduleView({
       </div>
 
       {/* 선택 날짜 미리보기 */}
-      <div className="border-t border-gray-100">
+      <div className="border-t border-line">
         <div className="px-4 py-2.5 flex items-center justify-between">
-          <span className="text-[13px] font-semibold text-gray-900">{selectedDateLabel}</span>
-          {hasItems && <span className="text-[11px] text-gray-400">일정 {selectedSchedules.length}건</span>}
+          <span className="text-[13px] font-semibold text-foreground">{selectedDateLabel}</span>
+          {hasItems && <span className="text-[11px] text-foreground-faint">일정 {selectedSchedules.length}건</span>}
         </div>
         <div className="px-3 pb-3 max-h-[280px] overflow-y-auto">
           {!hasItems ? null : (
             <div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-line">
                 {selectedSchedules.map((s) => (
                   <SchedulePreviewRow key={s.id} schedule={s} category={scheduleCategories.find((c) => c.id === s.category)} onClick={() => onScheduleClick(s)} />
                 ))}
@@ -694,14 +694,14 @@ function MonthlyCell({ date, month, isToday, isSelected, singleSchedules: daySin
 
   return (
     <div ref={setNodeRef} onClick={onClick}
-      className={`flex flex-col p-0.5 sm:p-1 cursor-pointer border-b border-r border-gray-100 transition-colors
-        ${isOver ? 'bg-orange-50' : ''} ${isSelected ? 'bg-orange-50/40' : 'hover:bg-gray-50/50'} ${date.getMonth() !== month ? 'opacity-30' : ''}`}
+      className={`flex flex-col p-0.5 sm:p-1 cursor-pointer border-b border-r border-line transition-colors
+        ${isOver ? 'bg-orange-50' : ''} ${isSelected ? 'bg-orange-50/40' : 'hover:bg-surface-muted/50'} ${date.getMonth() !== month ? 'opacity-30' : ''}`}
       style={{ minHeight: 54 + maxLanes * BAR_HEIGHT }}>
       <div className="flex justify-center mb-0.5">
         <span className={`w-6 h-6 flex items-center justify-center rounded-full text-[11px] sm:text-xs leading-none
           ${isToday && isSelected ? 'bg-red-500 text-white font-bold' : ''} ${isToday && !isSelected ? 'text-red-500 font-bold' : ''}
-          ${isSelected && !isToday ? 'bg-gray-800 text-white font-semibold' : ''}
-          ${!isSelected && !isToday ? `font-medium ${dayNum === 0 ? 'text-red-400' : dayNum === 6 ? 'text-blue-400' : 'text-gray-600'}` : ''}`}>
+          ${isSelected && !isToday ? 'bg-foreground text-surface font-semibold' : ''}
+          ${!isSelected && !isToday ? `font-medium ${dayNum === 0 ? 'text-red-400' : dayNum === 6 ? 'text-blue-400' : 'text-foreground-muted'}` : ''}`}>
           {date.getDate()}
         </span>
       </div>
@@ -713,15 +713,15 @@ function MonthlyCell({ date, month, isToday, isSelected, singleSchedules: daySin
           return (
             <div key={s.id} className="flex items-center gap-[2px] px-[2px] rounded-sm overflow-hidden" style={{ backgroundColor: getBadgeColors(color).bg }}>
               <div className="w-[3px] h-[12px] sm:h-[14px] rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-              <span className="text-[8px] sm:text-[10px] text-gray-700 truncate leading-[12px] sm:leading-[14px]">{s.title}</span>
+              <span className="text-[8px] sm:text-[10px] text-foreground truncate leading-[12px] sm:leading-[14px]">{s.title}</span>
             </div>
           );
         })}
-        {daySingleSchedules.length > 3 && <span className="text-[8px] text-gray-400 pl-1">+{daySingleSchedules.length - 3}</span>}
+        {daySingleSchedules.length > 3 && <span className="text-[8px] text-foreground-faint pl-1">+{daySingleSchedules.length - 3}</span>}
       </div>
       {taskCount > 0 && (
         <div className="flex justify-end mt-auto">
-          <span className="text-[7px] sm:text-[8px] text-gray-400 bg-gray-100 rounded px-1 leading-[14px]">마감 {taskCount}</span>
+          <span className="text-[7px] sm:text-[8px] text-foreground-faint bg-surface-muted rounded px-1 leading-[14px]">마감 {taskCount}</span>
         </div>
       )}
     </div>
@@ -735,15 +735,15 @@ function TaskRefSectionForSchedule({ tasks, taskCategories, onTaskClick, onTaskS
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="mt-2 pt-1 border-t border-gray-100">
+    <div className="mt-2 pt-1 border-t border-line">
       <button onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 px-1 py-1 text-[11px] text-gray-400 hover:text-gray-600 transition-colors">
+        className="flex items-center gap-1 px-1 py-1 text-[11px] text-foreground-faint hover:text-foreground-muted transition-colors">
         <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
           className={`transition-transform ${open ? 'rotate-90' : ''}`}><path d="M6 4l4 4-4 4" /></svg>
         마감 할일 ({tasks.length})
       </button>
       {open && (
-        <div className="divide-y divide-gray-50 pl-1">
+        <div className="divide-y divide-line pl-1">
           {tasks.map((t) => (
             <TaskPreviewRow key={t.id} task={t} category={taskCategories.find((c) => c.id === t.category)}
               onClick={() => onTaskClick(t)} onStatusCycle={onTaskStatusCycle ? () => onTaskStatusCycle(t.id) : undefined} />
@@ -805,15 +805,15 @@ export function CalendarView(props: CalendarViewProps) {
 
       <DragOverlay>
         {dragItem?.type === 'task' && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl shadow-lg border border-gray-200 max-w-[260px]">
+          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl shadow-lg border border-line max-w-[260px]">
             <div className="w-[3px] h-4 rounded-full" style={{ backgroundColor: props.taskCategories.find(c => c.id === dragItem.item.category)?.color || '#d1d5db' }} />
-            <span className="text-[13px] text-gray-800 truncate">{dragItem.item.title}</span>
+            <span className="text-[13px] text-foreground truncate">{dragItem.item.title}</span>
           </div>
         )}
         {dragItem?.type === 'schedule' && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl shadow-lg border border-gray-200 max-w-[260px]">
+          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl shadow-lg border border-line max-w-[260px]">
             <div className="w-[3px] h-4 rounded-full bg-orange-400" />
-            <span className="text-[13px] text-gray-800 truncate">{dragItem.item.title}</span>
+            <span className="text-[13px] text-foreground truncate">{dragItem.item.title}</span>
           </div>
         )}
       </DragOverlay>

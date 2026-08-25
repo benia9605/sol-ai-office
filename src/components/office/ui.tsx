@@ -90,7 +90,7 @@ export function Section({ title, desc, action, children, footer }: {
   title: string; desc?: string; action?: ReactNode; children: ReactNode; footer?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl bg-surface border border-line">
+    <section className={`rounded-2xl bg-surface border border-line ${cardShadow}`}>
       <div className="flex items-start justify-between gap-3 px-5 sm:px-6 pt-5 pb-4 border-b border-line">
         <div className="min-w-0">
           <h3 className="text-base font-bold text-foreground">{title}</h3>
@@ -161,14 +161,17 @@ export function AddButton({ open, onClick, label = '추가', className = '' }: {
 export function InlineAddCard({ open, children, className = '' }: { open: boolean; children: ReactNode; className?: string }) {
   if (!open) return null;
   return (
-    <div className={`rounded-xl bg-surface border border-line p-4 sm:p-5 mb-3 space-y-3 ${className}`}>{children}</div>
+    <div className={`rounded-xl bg-surface border border-line ${cardShadow} p-4 sm:p-5 mb-3 space-y-3 ${className}`}>{children}</div>
   );
 }
 
-/** 카드 — 모던 모노: 라운드·얇은 라인·무그림자 */
+/** 흰 배경에서 카드가 떠 보이도록 하는 공용 소프트 그림자 (토스st 몽글) */
+export const cardShadow = 'shadow-[0_1px_2px_rgba(0,0,0,0.04),0_6px_20px_-8px_rgba(0,0,0,0.12)]';
+
+/** 카드 — 흰 배경에서 그림자로 구분 (라운드·얇은 라인 + 소프트 그림자) */
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-xl bg-surface border border-line ${className}`}>{children}</div>
+    <div className={`rounded-xl bg-surface border border-line ${cardShadow} ${className}`}>{children}</div>
   );
 }
 
