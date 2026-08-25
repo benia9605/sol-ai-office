@@ -11,6 +11,7 @@
  * - 추가 폼 / ItemDetailPopup (모디 톤 그대로 호출)
  */
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { AutoTextarea } from "../components/AutoTextarea";
 import { TaskItem, TaskStatus, RepeatType, ScheduleCategory } from '../types';
 import { useTasks } from '../hooks/useTasks';
 import { defaultTaskCategories } from '../data';
@@ -1315,7 +1316,7 @@ function AddForm({ form, setForm, categories, onCancel, onSubmit }: AddFormProps
       {/* 비고 */}
       <label className="block space-y-2">
         <span className="label">비고</span>
-        <textarea
+        <AutoTextarea
           value={form.notes}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
           rows={3}

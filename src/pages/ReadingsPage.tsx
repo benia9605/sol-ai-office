@@ -7,6 +7,7 @@
  * - 종류(카테고리) 커스텀 관리
  */
 import { useState, useMemo, useRef } from 'react';
+import { AutoTextarea } from "../components/AutoTextarea";
 import { ReadingItem, ReadingCategory, StudyNote } from '../types';
 import { defaultReadingCategories } from '../data';
 import { useReadings } from '../hooks/useReadings';
@@ -422,7 +423,7 @@ function ReadingsPageModi() {
                     ) : 'AI 목차 생성'}
                   </button>
                 </div>
-                <textarea
+                <AutoTextarea
                   placeholder="한 줄에 한 챕터씩 입력&#10;예:&#10;0-1 프롤로그&#10;1-1 첫 번째 소제목&#10;1-2 두 번째 소제목"
                   value={form.chapters.join('\n')}
                   onChange={(e) => setForm({ ...form, chapters: e.target.value.split('\n').filter((line) => line.trim()) })}

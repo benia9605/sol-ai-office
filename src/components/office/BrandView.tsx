@@ -5,6 +5,7 @@
  * - 설계: docs/guides/ai오피스구축/_직원별_실행스펙_시목.md §0
  */
 import { useEffect, useState } from 'react';
+import { AutoTextarea } from "../AutoTextarea";
 import { Workspace, BrandContext } from '../../types';
 import { fetchBrandContext, saveBrandContext } from '../../services/brandContexts.service';
 import { Section, SectionGroup, SaveButton } from './ui';
@@ -71,7 +72,7 @@ function Field({ label, value, onChange, hint, textarea, warn }: FieldProps) {
     <div>
       <label className={`block text-xs font-semibold mb-1 ${warn ? 'text-rose-500' : 'text-foreground-muted'}`}>{label}</label>
       {textarea ? (
-        <textarea
+        <AutoTextarea
           value={value} onChange={onChange} rows={3}
           placeholder={hint}
           className="w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors resize-none leading-relaxed"

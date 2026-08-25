@@ -10,6 +10,7 @@
  * - 페이지네이션
  */
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { AutoTextarea } from "../components/AutoTextarea";
 import { ReadingItem, ReadingCategory, StudyNote } from '../types';
 import { defaultReadingCategories } from '../data';
 import { useReadings } from '../hooks/useReadings';
@@ -807,7 +808,7 @@ function AddForm({
               {tocLoading ? '생성 중…' : 'AI 목차 생성'}
             </button>
           </div>
-          <textarea
+          <AutoTextarea
             placeholder={'한 줄에 한 챕터씩\n0-1 프롤로그\n1-1 첫 소제목\n1-2 두 번째 소제목'}
             value={form.chapters.join('\n')}
             onChange={(e) => setForm({ ...form, chapters: e.target.value.split('\n').filter((line) => line.trim()) })}

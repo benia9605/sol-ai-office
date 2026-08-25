@@ -5,6 +5,7 @@
  * - 기분(이모지) + 에너지(게이지바) 각각 독립 행
  */
 import { useRef, useState } from 'react';
+import { AutoTextarea } from "../AutoTextarea";
 import { RecordItem, RecordType, MorningTemplate, EveningTemplate, WeeklyTemplate } from '../../types';
 import {
   recordTypeConfig, moods,
@@ -200,13 +201,13 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
               onChange={(f) => setEveningData({ ...eveningData, greatThings: f })} placeholder="굉장한 일..." accentColor={cfg.accent} />
           </FormSection>
           <FormSection icon={<ImproveIcon size={14} className={cfg.iconText} />} label="더 좋은 날이 되려면" {...sp}>
-            <textarea value={eveningData.improvement}
+            <AutoTextarea value={eveningData.improvement}
               onChange={(e) => setEveningData({ ...eveningData, improvement: e.target.value })}
               rows={2} placeholder="개선할 점..."
               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-pink-200" />
           </FormSection>
           <FormSection icon={<BookIcon size={14} className={cfg.iconText} />} label="추가 / 오늘의 배움" {...sp}>
-            <textarea value={eveningData.extra}
+            <AutoTextarea value={eveningData.extra}
               onChange={(e) => setEveningData({ ...eveningData, extra: e.target.value })}
               rows={2} placeholder="오늘 배운 것..."
               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-pink-200" />
@@ -274,7 +275,7 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
               onChange={(f) => setWeeklyData({ ...weeklyData, nextGoals: f })} placeholder="다음 주..." accentColor={cfg.accent} />
           </FormSection>
           <FormSection icon={<BookIcon size={14} className={cfg.iconText} />} label="배운 것" {...sp}>
-            <textarea value={weeklyData.lessons}
+            <AutoTextarea value={weeklyData.lessons}
               onChange={(e) => setWeeklyData({ ...weeklyData, lessons: e.target.value })}
               rows={2} placeholder="이번 주 배운 것..."
               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-pink-200" />

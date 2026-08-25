@@ -5,6 +5,7 @@
  * - 2단계: 이름·모델·일과·프롬프트 입력 → 채용
  */
 import { useState } from 'react';
+import { AutoTextarea } from "../AutoTextarea";
 import { createPortal } from 'react-dom';
 import { STAFF_TYPES, routineGuide } from '../../data/staffCatalog';
 import { hireStaff } from '../../services/staff.service';
@@ -137,7 +138,7 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
 
             <div>
               <label className="block text-xs font-semibold text-foreground-muted mb-1.5">프롬프트 <span className="text-foreground-faint font-normal">(이 직원의 성격·지시)</span></label>
-              <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
+              <AutoTextarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3}
                 placeholder={type.promptPlaceholder}
                 className="w-full px-4 py-3 rounded-2xl bg-surface-muted border border-line text-sm focus:outline-none focus:bg-surface focus:border-line resize-none" />
             </div>

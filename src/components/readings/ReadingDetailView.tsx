@@ -5,6 +5,7 @@
  * - 하단: 스터디 노트 타임라인 + 노트 추가/수정
  */
 import { useState, useRef, useMemo } from 'react';
+import { AutoTextarea } from "../AutoTextarea";
 import { ReadingItem, ReadingCategory, StudyNote } from '../../types';
 import type { NoteEditorSaveData } from './StudyNoteEditor';
 import { calcReadingProgress, progressLabel } from '../../utils/readingProgress';
@@ -458,7 +459,7 @@ export function ReadingDetailView({
                       </button>
                     )}
                   </div>
-                  <textarea
+                  <AutoTextarea
                     placeholder={form.category === 'rcat-book' ? '한 줄에 한 챕터씩 입력' : '한 줄에 한 강/섹션씩 입력 (예: 1강 - React 기초)'}
                     value={(form.chapters || []).join('\n')}
                     onChange={(e) => setForm({ ...form, chapters: e.target.value.split('\n').filter((line) => line.trim()) })}

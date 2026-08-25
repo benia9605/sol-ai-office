@@ -6,6 +6,7 @@
  * - AI 대화 내용 프리필 + 참고 대화 토글
  */
 import { useState } from 'react';
+import { AutoTextarea } from "./AutoTextarea";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { SaveModalConfig, SaveData, ScheduleCategory, RepeatType, InsightSource } from '../types';
@@ -163,7 +164,7 @@ export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
                 </div>
               ) : (
-                <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={3}
+                <AutoTextarea value={content} onChange={(e) => setContent(e.target.value)} rows={3}
                   placeholder="인사이트 내용"
                   className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 ${tc.ring}`} />
               )}
@@ -319,7 +320,7 @@ export function SaveModal({ config, onSave, onClose }: SaveModalProps) {
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{taskNotes}</ReactMarkdown>
                       </div>
                     ) : (
-                      <textarea value={taskNotes} onChange={(e) => setTaskNotes(e.target.value)} rows={3}
+                      <AutoTextarea value={taskNotes} onChange={(e) => setTaskNotes(e.target.value)} rows={3}
                         placeholder="메모를 입력하세요"
                         className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 ${tc.ring}`} />
                     )}

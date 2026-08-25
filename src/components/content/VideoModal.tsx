@@ -3,6 +3,7 @@
  * @description 영상 상세 모달 — 유튜브 임베드 플레이어 + 해당 영상의 댓글/답글
  */
 import { useState } from 'react';
+import { AutoTextarea } from "../AutoTextarea";
 import { YoutubeVideo, YoutubeComment } from '../../types';
 import { CommentReplyCard } from './CommentReplyCard';
 import { EyeIcon, LikeIcon, CommentIcon, DocIcon } from './icons';
@@ -89,7 +90,7 @@ export function VideoModal({
                 <p className="text-[11px] text-gray-400 leading-relaxed">
                   💡 유튜브는 남의 영상 자막을 자동으로 못 가져와요. <b>영상 더보기 → 스크립트 표시 → 전체 복사</b> 후 아래에 붙여넣고 저장하세요. 이 스크립트는 이 영상 댓글의 AI 답글 생성에 활용돼요.
                 </p>
-                <textarea
+                <AutoTextarea
                   value={scriptText}
                   onChange={(e) => setScriptText(e.target.value)}
                   placeholder="유튜브에서 복사한 자막/스크립트를 여기에 붙여넣기"

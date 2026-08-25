@@ -9,6 +9,7 @@
  * - 10개씩 페이지네이션
  */
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { AutoTextarea } from "../components/AutoTextarea";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { InsightItem, InsightSource } from '../types';
@@ -675,7 +676,7 @@ function InsightAddForm({ form, setForm, sources, onAddTag, onCancel, onSubmit }
 
       <label className="block space-y-2">
         <span className="label">본문</span>
-        <textarea
+        <AutoTextarea
           value={form.content}
           onChange={(e) => setForm({ ...form, content: e.target.value })}
           rows={4}

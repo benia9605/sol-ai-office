@@ -10,6 +10,7 @@
  * - 검색/필터/선택 모드 (일괄 삭제)
  */
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import { AutoTextarea } from "../components/AutoTextarea";
 import { ScheduleItem, TaskItem, ScheduleCategory, RepeatType } from '../types';
 import { defaultScheduleCategories, defaultTaskCategories, categoryColorPresets } from '../data';
 import { getBadgeColors } from '../utils/colorUtils';
@@ -446,7 +447,7 @@ function SchedulesPageModi() {
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">비고</label>
-                  <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2}
+                  <AutoTextarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2}
                     placeholder="메모를 입력하세요"
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-200" />
                 </div>

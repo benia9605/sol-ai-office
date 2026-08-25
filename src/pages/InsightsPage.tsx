@@ -8,6 +8,7 @@
  * - 아이템 클릭 시 ItemDetailPopup 오픈
  */
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { AutoTextarea } from "../components/AutoTextarea";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { InsightItem, InsightSource } from '../types';
@@ -386,7 +387,7 @@ function InsightsPageModi() {
             {/* 내용 */}
             <div>
               <label className="text-sm font-medium text-gray-600 block mb-1.5">내용</label>
-              <textarea
+              <AutoTextarea
                 placeholder="내용을 입력하세요" value={form.content} rows={3}
                 onChange={(e) => setForm({ ...form, content: e.target.value })}
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-200"

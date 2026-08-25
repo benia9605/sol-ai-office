@@ -6,6 +6,7 @@
  * - 색/모서리/그림자는 테마 글로벌 오버라이드로 모디·모던 자동 대응
  */
 import { useState } from 'react';
+import { AutoTextarea } from "../AutoTextarea";
 import { YoutubeComment, YoutubeVideo } from '../../types';
 import { generateReplyDraft } from '../../services/youtube.service';
 import { VideoIcon, DocIcon, LikeIcon, SparkleIcon, SearchIcon, CommentIcon } from './icons';
@@ -189,7 +190,7 @@ export function CommentReplyCard({
             )}
           </div>
 
-          <textarea
+          <AutoTextarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             readOnly={published}

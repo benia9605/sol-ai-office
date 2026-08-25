@@ -8,6 +8,7 @@
  * - 목표에 할일 연결 추가
  */
 import { useState, useEffect, useCallback } from 'react';
+import { AutoTextarea } from "../components/AutoTextarea";
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProjects } from '../hooks/useProjects';
 import { useGoals } from '../hooks/useGoals';
@@ -1054,7 +1055,7 @@ export function ProjectDetailPage() {
                                 <div className="space-y-4">
                                   <div>
                                     <label className="text-xs text-gray-500 mb-1 block">메모</label>
-                                    <textarea value={taskForm.notes} onChange={(e) => setTaskForm((f) => ({ ...f, notes: e.target.value }))} rows={2}
+                                    <AutoTextarea value={taskForm.notes} onChange={(e) => setTaskForm((f) => ({ ...f, notes: e.target.value }))} rows={2}
                                       placeholder="메모를 입력하세요"
                                       className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-gray-300" />
                                   </div>

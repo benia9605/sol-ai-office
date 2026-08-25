@@ -5,6 +5,7 @@
  * - 프로필은 user_profiles(useUserProfile), 할일은 workspace_tasks(assignee 필터).
  */
 import { useEffect, useRef, useState } from 'react';
+import { AutoTextarea } from "../AutoTextarea";
 import { Workspace, WorkspaceMember, ActivityItem } from '../../types';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { getCurrentUserId } from '../../services/auth';
@@ -122,7 +123,7 @@ function ProfileCard() {
           </div>
           <div>
             <label className="block text-xs font-semibold text-foreground-muted mb-1.5">소개 <span className="text-foreground-faint font-normal">(AI가 나를 이해하는 데 써요)</span></label>
-            <textarea value={bio} onChange={e => { setBio(e.target.value); setSaved(false); }} rows={3}
+            <AutoTextarea value={bio} onChange={e => { setBio(e.target.value); setSaved(false); }} rows={3}
               placeholder="예: 원목 가구 브랜드 운영. 실전적이고 담백한 답변 선호."
               className={`${fieldCls} resize-none leading-relaxed`} />
           </div>

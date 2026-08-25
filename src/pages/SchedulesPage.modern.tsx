@@ -8,6 +8,7 @@
  * - 추가/편집은 모디 톤 폼/팝업 그대로 호출
  */
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { AutoTextarea } from "../components/AutoTextarea";
 import { useSchedules } from '../hooks/useSchedules';
 import { useTasks } from '../hooks/useTasks';
 import { defaultScheduleCategories, officeScheduleCategories, defaultTaskCategories } from '../data';
@@ -1076,7 +1077,7 @@ function AddForm({ form, setForm, categories, embedded, showAdvanced, setShowAdv
           </div>
           <label className="block space-y-2">
             <span className="label">비고</span>
-            <textarea
+            <AutoTextarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={3}

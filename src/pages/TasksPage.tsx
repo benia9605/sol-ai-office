@@ -6,6 +6,7 @@
  * - 추가 폼, ItemDetailPopup
  */
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import { AutoTextarea } from "../components/AutoTextarea";
 import { useOutletContext } from 'react-router-dom';
 import { TaskItem, ScheduleItem, TaskStatus, RepeatType, ScheduleCategory } from '../types';
 import { useTasks } from '../hooks/useTasks';
@@ -547,7 +548,7 @@ function TasksPageModi() {
               <div className="space-y-5">
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">메모</label>
-                  <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2}
+                  <AutoTextarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2}
                     placeholder="메모를 입력하세요"
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-200" />
                 </div>

@@ -7,6 +7,7 @@
  * - 프로젝트 관리 (간단 추가/편집/삭제)
  */
 import { useState, useEffect, useRef } from 'react';
+import { AutoTextarea } from "../components/AutoTextarea";
 import { useUserProfile, UserProfile } from '../hooks/useUserProfile';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
@@ -193,7 +194,7 @@ export function SettingsPageModern() {
 
               <label className="block space-y-2">
                 <span className="label">소개</span>
-                <textarea
+                <AutoTextarea
                   value={profileForm.bio}
                   onChange={(e) => setProfileForm((f) => ({ ...f, bio: e.target.value }))}
                   rows={3}
@@ -333,7 +334,7 @@ export function SettingsPageModern() {
                       </label>
                       <label className="block space-y-1.5">
                         <span className="label">설명</span>
-                        <textarea
+                        <AutoTextarea
                           value={form.description}
                           onChange={(e) => setForm({ ...form, description: e.target.value })}
                           rows={2}

@@ -6,6 +6,7 @@
  * - 나머지 설정은 "준비 중" placeholder
  */
 import { useState, useRef, useEffect } from 'react';
+import { AutoTextarea } from "../components/AutoTextarea";
 import { useProjects } from '../hooks/useProjects';
 import { useUserProfile, UserProfile } from '../hooks/useUserProfile';
 import { useAuth } from '../hooks/useAuth';
@@ -251,7 +252,7 @@ function SettingsPageModi() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600 block mb-1.5">나에 대해 <span className="text-gray-400 font-normal">(AI가 참고할 내용)</span></label>
-                <textarea
+                <AutoTextarea
                   value={profileForm.bio}
                   onChange={(e) => setProfileForm((f) => ({ ...f, bio: e.target.value }))}
                   rows={3}

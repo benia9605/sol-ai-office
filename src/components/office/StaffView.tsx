@@ -4,6 +4,7 @@
  * - 상세: 이름 수정 · 산출물 영역(타입별) · 일일 리포트(실행/아카이브) · 일과 · 프롬프트 편집
  */
 import { useEffect, useState } from 'react';
+import { AutoTextarea } from "../AutoTextarea";
 import { createPortal } from 'react-dom';
 import { Staff, StaffRoutine, DailyReport, Workspace, StaffOutputAction, ReportComment, StaffModel, StaffSavedItem } from '../../types';
 import { saveItem, fetchSavedItems, deleteSavedItem } from '../../services/staffSavedItems.service';
@@ -352,7 +353,7 @@ function CSDataPanel({ workspace }: { workspace: Workspace }) {
             </div>
             {/* 입력 (붙여넣기 → 자동 분류) */}
             <div className="space-y-2">
-              <textarea value={text} onChange={e => setText(e.target.value)} rows={2} placeholder="고객 문의를 붙여넣으면 유형·긴급도·감정을 자동 분류해요…"
+              <AutoTextarea value={text} onChange={e => setText(e.target.value)} rows={2} placeholder="고객 문의를 붙여넣으면 유형·긴급도·감정을 자동 분류해요…"
                 className="w-full rounded-xl border border-line px-3 py-2 text-sm focus:outline-none focus:border-foreground resize-none" />
               <div className="flex gap-2">
                 <select value={channel} onChange={e => setChannel(e.target.value as TicketChannel)} className="rounded-lg border border-line px-2 py-1.5 text-xs bg-white">
@@ -797,7 +798,7 @@ function ManualRunModal({ staff, workspace, fields, presetMode, emoji, onClose, 
                 <div key={f.name}>
                   <label className="block text-xs font-medium text-foreground-muted mb-1">{f.label}{f.required && <span className="text-rose-400"> *</span>}</label>
                   {f.type === 'textarea' ? (
-                    <textarea value={input[f.name] || ''} onChange={e => setField(f.name, e.target.value)} rows={3} placeholder={f.placeholder}
+                    <AutoTextarea value={input[f.name] || ''} onChange={e => setField(f.name, e.target.value)} rows={3} placeholder={f.placeholder}
                       className="w-full rounded-2xl border border-line px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none resize-none" />
                   ) : f.type === 'select' ? (
                     <select value={input[f.name] || ''} onChange={e => setField(f.name, e.target.value)}
@@ -891,7 +892,7 @@ function PromptModal({ staff, onClose, onSaved }: { staff: Staff; onClose: () =>
           <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-surface-muted text-foreground-faint flex items-center justify-center active:scale-90">✕</button>
         </div>
         <p className="text-[11px] text-foreground-faint mb-3">실제 실행 = 타입 베이스 SOP + 브랜드 정보 + <b className="text-foreground-muted">이 프롬프트</b> 결합</p>
-        <textarea autoFocus value={val} onChange={e => setVal(e.target.value)} rows={7}
+        <AutoTextarea autoFocus value={val} onChange={e => setVal(e.target.value)} rows={7}
           placeholder="이 직원의 성격·톤·세부 지시를 자세히…"
           className="w-full px-4 py-3 rounded-2xl bg-surface-muted border border-line text-sm leading-relaxed focus:outline-none focus:bg-surface focus:border-line resize-none" />
         <div className="flex gap-2.5 pt-3">

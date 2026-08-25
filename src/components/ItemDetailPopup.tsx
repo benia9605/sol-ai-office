@@ -8,6 +8,7 @@
  * - 카테고리 관리: 더블클릭 → 컬러 피커, + 버튼으로도 커스텀 컬러
  */
 import { useState, useRef, useEffect } from 'react';
+import { AutoTextarea } from "./AutoTextarea";
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -311,7 +312,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
         {/* 비고 */}
         <div>
           <label className="text-sm font-medium text-gray-600 block mb-1.5">비고</label>
-          <textarea value={s.notes || ''} onChange={(e) => update({ notes: e.target.value })} rows={2}
+          <AutoTextarea value={s.notes || ''} onChange={(e) => update({ notes: e.target.value })} rows={2}
             placeholder="메모를 입력하세요"
             className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-200" />
         </div>
@@ -456,7 +457,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
         {/* 메모 */}
         <div>
           <label className="text-sm font-medium text-gray-600 block mb-1.5">메모</label>
-          <textarea value={t.notes || ''} onChange={(e) => update({ notes: e.target.value })} rows={2}
+          <AutoTextarea value={t.notes || ''} onChange={(e) => update({ notes: e.target.value })} rows={2}
             placeholder="메모를 입력하세요"
             className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-200" />
         </div>
@@ -689,7 +690,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
         {/* 내용 */}
         <div>
           <label className="text-sm font-medium text-gray-600 block mb-1.5">내용</label>
-          <textarea value={i.content} onChange={(e) => update({ content: e.target.value })} rows={3}
+          <AutoTextarea value={i.content} onChange={(e) => update({ content: e.target.value })} rows={3}
             className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-200" />
         </div>
 

@@ -5,6 +5,7 @@
  * - 강좌(course): 구조화된 섹션형 에디터 (원본텍스트, 요약섹션, 액션아이템)
  */
 import { useState, useRef, useEffect } from 'react';
+import { AutoTextarea } from "../AutoTextarea";
 import { StudyNote, NoteSection, NoteActionItem } from '../../types';
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { useUserProfile } from '../../hooks/useUserProfile';
@@ -315,7 +316,7 @@ export function StudyNoteEditor({ readingId, readingCategory, chapters, preselec
               </div>
             </div>
             {rawTextOpen && (
-              <textarea
+              <AutoTextarea
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
                 placeholder="녹음 텍스트나 원본 내용을 붙여넣기 하세요..."

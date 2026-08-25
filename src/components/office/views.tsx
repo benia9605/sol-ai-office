@@ -5,6 +5,7 @@
  * - 샘플/빈 상태: 대시보드 KPI·브리핑·일정·인사이트·기록 (실연동은 Phase 4~5)
  */
 import { useEffect, useRef, useState } from 'react';
+import { AutoTextarea } from "../AutoTextarea";
 import { Workspace, WorkspaceMember, TaskItem, DailyReport, RecordItem, Product, ContentItem, ContentType, ContentStatus, ContentMetric, ContentCheckpoint, SalesDaily, CompanyMemory, MemoryKind } from '../../types';
 import { useTasks } from '../../hooks/useTasks';
 import { fetchMembers, removeMember, changeMemberRole, updateWorkspace } from '../../services/workspaces.service';
@@ -1806,8 +1807,8 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
             onChange={e => set({ scheduledFor: e.target.value || undefined })} className={fieldCls} />
         </label>
         <input value={f.hook ?? ''} onChange={e => set({ hook: e.target.value })} placeholder="훅 (첫 문장)" className={fieldCls} />
-        <textarea value={f.script ?? ''} onChange={e => set({ script: e.target.value })} placeholder="대본" rows={3} className={fieldCls} />
-        <textarea value={f.shotList ?? ''} onChange={e => set({ shotList: e.target.value })} placeholder="촬영 컷 (줄 단위)" rows={2} className={fieldCls} />
+        <AutoTextarea value={f.script ?? ''} onChange={e => set({ script: e.target.value })} placeholder="대본" rows={3} className={fieldCls} />
+        <AutoTextarea value={f.shotList ?? ''} onChange={e => set({ shotList: e.target.value })} placeholder="촬영 컷 (줄 단위)" rows={2} className={fieldCls} />
         <input value={f.url ?? ''} onChange={e => set({ url: e.target.value })} placeholder="발행 URL" className={fieldCls} />
         {item.publishedAt && <p className="text-[11px] text-foreground-faint">발행: {item.publishedAt.slice(0, 10)}</p>}
 
@@ -1922,8 +1923,8 @@ export function ContentDetailView({ workspace, contentId, onBack }: { workspace:
               <label className="block"><span className="text-[10px] text-foreground-faint">발행 예정일</span>
                 <input type="datetime-local" value={f.scheduledFor ? f.scheduledFor.slice(0, 16) : ''} onChange={e => set({ scheduledFor: e.target.value || undefined })} className={fieldCls} /></label>
               <input value={f.hook ?? ''} onChange={e => set({ hook: e.target.value })} placeholder="훅 (첫 문장)" className={fieldCls} />
-              <textarea value={f.script ?? ''} onChange={e => set({ script: e.target.value })} placeholder="대본" rows={4} className={`${fieldCls} resize-none`} />
-              <textarea value={f.shotList ?? ''} onChange={e => set({ shotList: e.target.value })} placeholder="촬영 컷 (줄 단위)" rows={2} className={`${fieldCls} resize-none`} />
+              <AutoTextarea value={f.script ?? ''} onChange={e => set({ script: e.target.value })} placeholder="대본" rows={4} className={`${fieldCls} resize-none`} />
+              <AutoTextarea value={f.shotList ?? ''} onChange={e => set({ shotList: e.target.value })} placeholder="촬영 컷 (줄 단위)" rows={2} className={`${fieldCls} resize-none`} />
               <input value={f.url ?? ''} onChange={e => set({ url: e.target.value })} placeholder="발행 URL" className={fieldCls} />
             </div>
           ) : (
@@ -2126,7 +2127,7 @@ function ProductEditPopup({ product, onSave, onDelete, onClose }: {
           <option value="draft">준비중</option>
           <option value="discontinued">단종</option>
         </select>
-        <textarea value={f.description} onChange={e => setF({ ...f, description: e.target.value })} placeholder="설명(선택)" rows={2} className={fieldCls} />
+        <AutoTextarea value={f.description} onChange={e => setF({ ...f, description: e.target.value })} placeholder="설명(선택)" rows={2} className={fieldCls} />
         <div className="flex items-center justify-between pt-1">
           <button onClick={() => { if (confirm(`'${product.name}' 제품을 삭제할까요? 되돌릴 수 없어요.`)) onDelete(); }}
             className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
@@ -2375,7 +2376,7 @@ function MemoryDetailPopup({ item, onSave, onArchive, onDelete, onClose }: {
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-surface-muted text-foreground-faint flex items-center justify-center">✕</button>
         </div>
         <input autoFocus value={f.title} onChange={e => setF({ ...f, title: e.target.value })} placeholder="제목" className={fieldCls} />
-        <textarea value={f.body} onChange={e => setF({ ...f, body: e.target.value })} placeholder="내용" rows={5} className={fieldCls} />
+        <AutoTextarea value={f.body} onChange={e => setF({ ...f, body: e.target.value })} placeholder="내용" rows={5} className={fieldCls} />
         <div className="grid grid-cols-2 gap-2">
           <select value={f.kind} onChange={e => setF({ ...f, kind: e.target.value as MemoryKind })} className={fieldCls}>
             {MEMORY_KINDS.map(k => <option key={k.v} value={k.v}>{k.label}</option>)}
@@ -2454,7 +2455,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
       {showForm && (
         <Card className="p-4 mb-3 space-y-2.5">
           <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="무엇을 기억할까요? (제목)" className={fieldCls} />
-          <textarea value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} placeholder="내용 (선택)" rows={3} className={fieldCls} />
+          <AutoTextarea value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} placeholder="내용 (선택)" rows={3} className={fieldCls} />
           <div className="grid grid-cols-2 gap-2">
             <select value={form.kind} onChange={e => setForm({ ...form, kind: e.target.value as MemoryKind })} className={fieldCls}>
               {MEMORY_KINDS.map(k => <option key={k.v} value={k.v}>{k.label}</option>)}
