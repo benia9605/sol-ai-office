@@ -15,8 +15,9 @@ import { CategorySelect } from '../CategorySelect';
 import { CategoryBadge } from '../CategoryBadge';
 import { ViewHead, EmptyState } from './ui';
 import { ChannelIcon, CHANNELS, CHANNEL_META, channelName } from './ChannelIcon';
-import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
+import { TiptapEditor } from '../tiptap/TiptapEditor';
 import { TiptapReadOnly } from '../tiptap/TiptapReadOnly';
+import { ContentPage } from '../../pages/ContentPage';
 
 const fmt = (n?: number) => (n ?? 0).toLocaleString();
 const PRIMARY: Record<string, string> = { youtube: 'likes', instagram: 'saves', threads: 'likes', daangn: 'chats', blog: 'likes', tiktok: 'likes', etc: 'likes' };
@@ -180,8 +181,9 @@ export function ContentHubView({ workspace }: { workspace: Workspace; onNavigate
         )) : <EmptyState emoji="💡" title="아직 아이디어가 없어요" sub="＋ 아이디어로 시작하고, 채널별 발행물을 연결하세요" />
       )}
 
-      {/* 채널 탭 */}
-      {tab !== 'idea' && channelPanel(tab)}
+      {/* 채널 탭 — 유튜브는 라이브(ContentPage) 편입, 나머지는 수기 통계 패널 */}
+      {tab === 'youtube' && <ContentPage embedded workspaceId={wsId} />}
+      {tab !== 'idea' && tab !== 'youtube' && channelPanel(tab)}
 
       {modal && createPortal(
         <ModalHost

@@ -53,7 +53,6 @@ const NAV_GROUPS: NavGroup[] = [
   { id: 'content', label: '콘텐츠', items: [
     { id: 'insights', label: '인사이트', emoji: '📈' },
     { id: 'contents', label: '콘텐츠', emoji: '🎬' },
-    { id: 'content', label: '유튜브', emoji: '▶️' },
     { id: 'memory', label: '기억', emoji: '🧠' },
     { id: 'log', label: '기록', emoji: '📝' },
   ] },
@@ -314,7 +313,8 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             ? <InsightDetailView workspace={workspace} insightId={detailId} onBack={() => setView('insights')} />
             : <InsightsView workspace={workspace} onNavigate={onNavigate} />)}
           {view === 'contents' && <ContentHubView workspace={workspace} onNavigate={onNavigate} />}
-          {view === 'content' && <ContentPage embedded workspaceId={workspace.id} />}
+          {/* 유튜브(content)는 콘텐츠 허브의 유튜브 탭으로 편입 — 별도 라우트 백업만 유지 */}
+          {view === 'content' && <ContentHubView workspace={workspace} onNavigate={onNavigate} />}
           {view === 'products' && <ProductsView workspace={workspace} />}
           {view === 'sales' && <SalesDailyView workspace={workspace} />}
           {view === 'memory' && <CompanyMemoryView workspace={workspace} />}
