@@ -526,7 +526,7 @@ export function TasksPageModern() {
             />
           </div>
 
-          {/* 상태 · 카테고리 · 정렬 — 디자인 드롭다운 한 줄 (항상 3열) */}
+          {/* 상태 · 정렬 · 카테고리 — 디자인 드롭다운 한 줄 (항상 3열) */}
           <div className="grid grid-cols-3 gap-2">
             <FilterDropdown
               label="상태"
@@ -535,16 +535,16 @@ export function TasksPageModern() {
               onChange={(k) => setStatusFilter(k as StatusFilter)}
             />
             <FilterDropdown
-              label="분류"
-              value={categoryFilter}
-              options={[{ key: 'all', label: '모든 카테고리' }, ...categories.map((c) => ({ key: c.id, label: c.label, dotColor: c.color }))]}
-              onChange={setCategoryFilter}
-            />
-            <FilterDropdown
               label="정렬"
               value={sortMode}
               options={sortOptions.map((o) => ({ key: o.key, label: o.label }))}
               onChange={(k) => setSortMode(k as SortMode)}
+            />
+            <FilterDropdown
+              label="카테고리"
+              value={categoryFilter}
+              options={[{ key: 'all', label: '전체' }, ...categories.map((c) => ({ key: c.id, label: c.label, dotColor: c.color }))]}
+              onChange={setCategoryFilter}
             />
           </div>
 
