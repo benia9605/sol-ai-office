@@ -93,6 +93,7 @@ export function useInsights() {
         title: data.title,
         content: data.content,
         source: data.source,
+        category: data.category ?? null,
         link: data.link,
         tags: data.tags,
         project: data.project,

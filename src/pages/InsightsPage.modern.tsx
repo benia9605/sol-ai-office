@@ -13,6 +13,7 @@ import { AutoTextarea } from "../components/AutoTextarea";
 import { FilterDropdown } from '../components/FilterDropdown';
 import { CategoryBadge } from '../components/CategoryBadge';
 import { defaultTaskCategories } from '../data';
+import { FEATURES } from '../config/features';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { InsightItem, InsightSource } from '../types';
@@ -92,7 +93,7 @@ export function InsightsPageModern() {
   const quickRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
-    title: '', content: '', source: '',
+    title: '', content: '', source: '', category: '',
     link: '', project: '', priority: 'medium' as InsightItem['priority'],
     date: new Date().toISOString().slice(0, 10),
     time: new Date().toTimeString().slice(0, 5),
@@ -186,6 +187,7 @@ export function InsightsPageModern() {
       title: form.title,
       content: form.content,
       source: form.source || 'thought',
+      category: form.category || undefined,
       link: form.link || undefined,
       tags: form.tags,
       createdAt: form.date,
@@ -194,7 +196,7 @@ export function InsightsPageModern() {
       priority: form.priority,
     });
     setForm({
-      title: '', content: '', source: '', link: '', project: '',
+      title: '', content: '', source: '', category: '', link: '', project: '',
       priority: 'medium', date: new Date().toISOString().slice(0, 10),
       time: new Date().toTimeString().slice(0, 5),
       tagInput: '', tags: [],
@@ -286,7 +288,7 @@ export function InsightsPageModern() {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="제목·본문·태그 검색"
+              placeholder="제목·본문 검색"
               className="w-full pl-10 pr-4 py-2.5 bg-surface border border-line text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
             />
           </div>
@@ -537,16 +539,10 @@ function InsightRow({
             </p>
           )}
 
-          {(item.category || item.tags.length > 0) && (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              {(() => { const c = insightCategories.find((x) => x.id === item.category); return c ? <CategoryBadge color={c.color} label={c.label} size="sm" /> : null; })()}
-              {item.tags.map((tag) => (
-                <span key={tag} className="text-[10px] text-foreground-faint">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
+          {item.category && (() => {
+            const c = insightCategories.find((x) => x.id === item.category);
+            return c ? <div className="mt-2"><CategoryBadge color={c.color} label={c.label} size="sm" /></div> : null;
+          })()}
         </button>
 
         {/* 우측: 날짜 + 우선순위 */}
@@ -639,33 +635,33 @@ function InsightAddForm({ form, setForm, sources, onAddTag, onCancel, onSubmit }
         />
       </label>
 
-      {/* 출처 */}
+      {/* 카테고리 (할일과 동일 세트) */}
       <div className="space-y-2">
-        <p className="label">출처</p>
+        <p className="label">카테고리</p>
         <div className="flex flex-wrap gap-2">
-          {sources.map((s) => {
-            const active = form.source === s.id;
+          {insightCategories.map((c) => {
+            const active = form.category === c.id;
             return (
               <button
-                key={s.id}
+                key={c.id}
                 type="button"
-                onClick={() => setForm({ ...form, source: active ? '' : s.id })}
-                className={`inline-flex items-center gap-2 pl-1.5 pr-3 py-1 text-xs border transition-colors ${
+                onClick={() => setForm({ ...form, category: active ? '' : c.id })}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border transition-colors ${
                   active
                     ? 'bg-foreground text-surface border-foreground'
                     : 'bg-surface text-foreground-muted border-line hover:border-foreground hover:text-foreground'
                 }`}
               >
-                <SourceImg image={s.image} label={s.label} size={18} />
-                {s.label}
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.color }} aria-hidden />
+                {c.label}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* 링크 + 프로젝트 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* 링크 (+ 프로젝트는 슬림다운으로 숨김) */}
+      <div className={`grid grid-cols-1 ${FEATURES.projects ? 'sm:grid-cols-2' : ''} gap-4`}>
         <label className="block space-y-2">
           <span className="label">링크</span>
           <input
@@ -676,10 +672,12 @@ function InsightAddForm({ form, setForm, sources, onAddTag, onCancel, onSubmit }
             className="w-full border border-line bg-surface px-3 py-2.5 text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
           />
         </label>
-        <label className="block space-y-2">
-          <span className="label">프로젝트</span>
-          <ProjectSelect value={form.project} onChange={(v) => setForm({ ...form, project: v })} />
-        </label>
+        {FEATURES.projects && (
+          <label className="block space-y-2">
+            <span className="label">프로젝트</span>
+            <ProjectSelect value={form.project} onChange={(v) => setForm({ ...form, project: v })} />
+          </label>
+        )}
       </div>
 
       {/* 날짜 + 시간 + 중요도 */}
@@ -716,37 +714,6 @@ function InsightAddForm({ form, setForm, sources, onAddTag, onCancel, onSubmit }
         </label>
       </div>
 
-      {/* 태그 */}
-      <div className="space-y-2">
-        <p className="label">태그</p>
-        {form.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {form.tags.map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-1.5 text-xs border border-line px-2.5 py-1">
-                #{tag}
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, tags: form.tags.filter((t) => t !== tag) })}
-                  className="text-foreground-faint hover:text-foreground"
-                >×</button>
-              </span>
-            ))}
-          </div>
-        )}
-        <input
-          type="text"
-          placeholder="태그 입력 후 Enter"
-          value={form.tagInput}
-          onChange={(e) => setForm({ ...form, tagInput: e.target.value })}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-              e.preventDefault();
-              onAddTag();
-            }
-          }}
-          className="w-full border border-line bg-surface px-4 py-2.5 text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
-        />
-      </div>
 
       <div className="flex justify-end gap-2 pt-2 border-t border-line">
         <button
