@@ -44,7 +44,6 @@ type NavGroup = { id: string; label: string; items: NavItem[] };
 const NAV_GROUPS: NavGroup[] = [
   { id: 'home', label: '홈', items: [
     { id: 'dashboard', label: '대시보드', emoji: '📊' },
-    { id: 'briefing', label: '오늘의 브리핑', emoji: '☀️' },
   ] },
   { id: 'ops', label: '운영', items: [
     { id: 'todos', label: '할일', emoji: '✅' },
@@ -304,7 +303,6 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
       <main className="flex-1 overflow-y-auto px-5 sm:px-10 py-8 sm:py-12 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12">
         <div className="max-w-5xl mx-auto">
           {view === 'dashboard' && <DashboardView onNavigate={onNavigate} workspace={workspace} />}
-          {view === 'briefing' && <BriefingView workspace={workspace} />}
           {view === 'staff' && <StaffView key={staffKey} workspace={workspace} onRan={refreshCredits} />}
           {view === 'todos' && (detailId
             ? <TaskDetailView workspace={workspace} taskId={detailId} onBack={() => setView('todos')} />

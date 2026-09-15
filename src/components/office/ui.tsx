@@ -161,17 +161,17 @@ export function AddButton({ open, onClick, label = '추가', className = '' }: {
 export function InlineAddCard({ open, children, className = '' }: { open: boolean; children: ReactNode; className?: string }) {
   if (!open) return null;
   return (
-    <div className={`rounded-xl bg-surface border border-line ${cardShadow} p-4 sm:p-5 mb-3 space-y-3 ${className}`}>{children}</div>
+    <div className={`rounded-2xl bg-surface border border-line ${cardShadow} p-4 sm:p-5 mb-3 space-y-3 ${className}`}>{children}</div>
   );
 }
 
-/** 흰 배경에서 카드가 떠 보이도록 하는 공용 소프트 그림자 (토스st 몽글) */
-export const cardShadow = 'shadow-[0_1px_2px_rgba(0,0,0,0.04),0_6px_20px_-8px_rgba(0,0,0,0.12)]';
+/** 오피스 개편: 개인 공간처럼 깔끔하게 — 그림자 대신 얇은 선(border-line)만. */
+export const cardShadow = '';
 
-/** 카드 — 흰 배경에서 그림자로 구분 (라운드·얇은 라인 + 소프트 그림자) */
+/** 카드 — 흰 배경 · 살짝 라운딩(rounded-2xl) · 얇은 선. 그림자 없음(flat). */
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-xl bg-surface border border-line ${cardShadow} ${className}`}>{children}</div>
+    <div className={`rounded-2xl bg-surface border border-line ${cardShadow} ${className}`}>{children}</div>
   );
 }
 
@@ -215,7 +215,7 @@ export function TaskProgress({ done, total, label, overdue = 0, compact = false 
         <span className={complete ? 'text-foreground font-semibold' : 'text-foreground-muted'}>{p}%</span>
       </div>
       <div className="h-1 rounded-full bg-surface-muted overflow-hidden">
-        <div className="h-full bg-foreground transition-all" style={{ width: `${p}%` }} />
+        <div className="h-full bg-primary-500 transition-all" style={{ width: `${p}%` }} />
       </div>
     </div>
   );

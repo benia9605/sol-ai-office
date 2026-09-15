@@ -494,19 +494,6 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
         </div>
       )}
 
-      {/* 브리핑 배너 — 진초록 포인트 (팝업 톤) */}
-      <button onClick={() => onNavigate('briefing')}
-        className="w-full flex items-center gap-3 p-5 rounded-2xl bg-primary-500 text-white transition-all hover:bg-primary-600 active:scale-[0.99] text-left">
-        <span className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center flex-shrink-0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
-        </span>
-        <span className="flex-1">
-          <span className="block text-sm font-semibold">오늘의 브리핑 읽기</span>
-          <span className="block text-xs text-white/70 mt-0.5">어제 AI 직원들이 한 일을 한 장으로</span>
-        </span>
-        <span className="text-white/50">›</span>
-      </button>
-
       {/* 확인이 필요한 일 + 내 할일 버킷 */}
       <MyTaskFocus tasks={myTasks} onNavigate={onNavigate} />
 
