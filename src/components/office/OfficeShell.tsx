@@ -10,6 +10,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Workspace, ActiveWorkspace } from '../../types';
 import { useWorkspaceContext } from '../../contexts/WorkspaceContext';
 import { WorkspaceCreateModal } from '../WorkspaceCreateModal';
+import { WorkspaceLauncher } from '../WorkspaceLauncher';
 import {
   DashboardView, BriefingView, TodosView, ScheduleView,
   InsightsView, LogView, ActivityView, ActivityFeedView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView, TaskDetailView, InsightDetailView, RecordDetailPage, ContentDetailView,
@@ -173,6 +174,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
   const { personal, offices, setActiveWorkspace, reload } = useWorkspaceContext();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [launcherOpen, setLauncherOpen] = useState(false);  // 워크스페이스 전환 런처(A안)
   const [moreOpen, setMoreOpen] = useState(false);   // 모바일 더보기 시트
   const [showSearch, setShowSearch] = useState(false); // 오피스 전체 검색
 
@@ -227,14 +229,14 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
         <div className="h-14 flex items-center gap-2 px-4 sm:px-6">
           {/* 브랜드 = 워크스페이스 (PC: 전환 드롭다운 / 모바일: 더보기) */}
           <div className="relative flex-shrink-0" ref={menuRef}>
-            <button onClick={() => setMenuOpen(o => !o)} className="hidden lg:flex items-center gap-2 pr-2 active:scale-95 transition-transform" title="워크스페이스 전환">
+            <button onClick={() => setLauncherOpen(true)} className="hidden lg:flex items-center gap-2 pr-2 active:scale-95 transition-transform" title="워크스페이스 전환">
               <span className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center text-lg flex-shrink-0">
                 {workspace.imageUrl ? <img src={workspace.imageUrl} alt={workspace.name} className="w-full h-full object-cover rounded-xl" /> : <span>{workspace.emoji || '🏢'}</span>}
               </span>
               <span className="text-sm font-bold text-foreground truncate max-w-[120px]">{workspace.name}</span>
               <svg className="w-3.5 h-3.5 text-foreground-faint flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
             </button>
-            <button onClick={() => setMoreOpen(true)} className="lg:hidden flex items-center gap-1.5 min-w-0 active:scale-95 transition-transform">
+            <button onClick={() => setLauncherOpen(true)} className="lg:hidden flex items-center gap-1.5 min-w-0 active:scale-95 transition-transform">
               <span className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center text-lg flex-shrink-0">
                 {workspace.imageUrl ? <img src={workspace.imageUrl} alt={workspace.name} className="w-full h-full object-cover rounded-lg" /> : <span>{workspace.emoji || '🏢'}</span>}
               </span>
@@ -242,32 +244,6 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
               <svg className="w-3.5 h-3.5 text-foreground-faint flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
             </button>
 
-            {menuOpen && (
-              <div className="absolute left-0 top-[52px] w-56 bg-white rounded-2xl shadow-lg border border-line p-1.5 z-50">
-                {offices.length > 0 && (
-                  <>
-                    <p className="px-2 py-1 text-[10px] font-semibold text-foreground-faint uppercase tracking-wider">오피스</p>
-                    {offices.map(o => <Row key={o.id} ws={o} />)}
-                  </>
-                )}
-                {personal && (
-                  <>
-                    <div className="my-1 border-t border-line" />
-                    <p className="px-2 py-1 text-[10px] font-semibold text-foreground-faint uppercase tracking-wider">개인 공간</p>
-                    <Row ws={personal} />
-                  </>
-                )}
-                <div className="my-1 border-t border-line" />
-                <button onClick={() => { setMenuOpen(false); setView('company'); setOpenGroup(null); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-foreground-muted hover:bg-surface-muted transition-colors text-left">
-                  <span className="text-base leading-none">⚙️</span> 회사 설정 (정보·브레인·멤버)
-                </button>
-                <button onClick={() => { setMenuOpen(false); setShowCreate(true); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-foreground-muted hover:bg-surface-muted transition-colors text-left">
-                  <span className="text-base leading-none">＋</span> 추가하기
-                </button>
-              </div>
-            )}
           </div>
 
           {/* PC 그룹 네비 */}
@@ -441,6 +417,10 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
         </div>
       )}
 
+      <WorkspaceLauncher open={launcherOpen} onClose={() => setLauncherOpen(false)}
+        personal={personal} offices={offices} activeId={workspace.id}
+        onPick={(id) => { navigate('/'); setActiveWorkspace(id); }}
+        onCreate={() => setShowCreate(true)} />
       <WorkspaceCreateModal open={showCreate} onClose={() => setShowCreate(false)}
         onCreated={async (ws) => { await reload(); setActiveWorkspace(ws.id); }} />
       {showUsage && <UsageModal workspace={workspace} credits={credits} onClose={() => setShowUsage(false)} />}
