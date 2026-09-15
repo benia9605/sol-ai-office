@@ -22,6 +22,7 @@ interface ContentMetricRow {
   completion_rate?: number;
   follower_delta?: number;
   measured_at?: string;
+  metrics?: Record<string, number>;
   created_at?: string;
 }
 
@@ -30,7 +31,7 @@ function toMetric(r: ContentMetricRow): ContentMetric {
     id: r.id, workspaceId: r.workspace_id, contentItemId: r.content_item_id, checkpoint: r.checkpoint,
     views: r.views, likes: r.likes, comments: r.comments, saves: r.saves, shares: r.shares,
     watchTime: r.watch_time, completionRate: r.completion_rate, followerDelta: r.follower_delta,
-    measuredAt: r.measured_at, createdAt: r.created_at,
+    measuredAt: r.measured_at, metrics: r.metrics ?? undefined, createdAt: r.created_at,
   };
 }
 
@@ -45,7 +46,24 @@ function toRow(f: Partial<ContentMetric>): Record<string, unknown> {
   if (f.completionRate !== undefined) p.completion_rate = f.completionRate ?? null;
   if (f.followerDelta !== undefined) p.follower_delta = f.followerDelta ?? null;
   if (f.measuredAt !== undefined) p.measured_at = f.measuredAt || null;
+  if (f.metrics !== undefined) p.metrics = f.metrics ?? null;
   return p;
+}
+
+/**
+ * 콘텐츠 허브: 기록시점 스냅샷 추가 (채널별 지표 JSON). 유튜브 자동수집 외 수기 입력용.
+ * measuredAt(날짜·시간) + metrics{채널별 필드} 로 한 행 insert (다중 스냅샷 허용).
+ */
+export async function addMetricSnapshot(
+  workspaceId: string, contentItemId: string, measuredAt: string, metrics: Record<string, number>,
+): Promise<ContentMetric | null> {
+  const { data, error } = await supabase
+    .from('content_metrics')
+    .insert({ workspace_id: workspaceId, content_item_id: contentItemId, measured_at: measuredAt, metrics })
+    .select()
+    .single();
+  if (error) throw error;
+  return data ? toMetric(data) : null;
 }
 
 /** 워크스페이스의 모든 성과 스냅샷 (분석 집계용) */

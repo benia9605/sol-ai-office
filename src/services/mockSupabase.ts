@@ -66,7 +66,10 @@ const mockData: Record<string, any[]> = {
     { id: 'ci-1', workspace_id: 'ws-simok', created_by: 'dev', title: '도마 고르는 3가지 기준 (릴스)', platform: 'Instagram', content_type: 'info', status: 'published', hook: '도마 하나 바꿨을 뿐인데', script: null, shot_list: null, url: 'https://instagram.com/reel/abc', published_at: new Date().toISOString(), primary_product_id: 'prod-1', content_purpose: 'save', owner: '쏠닝', scheduled_for: null, idea_id: 'ci-idea1', category: 'ccat-edu', channel: 'instagram', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
     { id: 'ci-2', workspace_id: 'ws-simok', created_by: 'dev', title: '나무를 오래 팔며 집에서 없앤 것들', platform: 'YouTube Shorts', content_type: 'worldview', status: 'scripted', hook: '20년 나무를 보면서 깨달은 것', script: '1) 오프닝 훅\n2) 없앤 것 3가지\n3) 시목 철학 연결', shot_list: '주방 와이드 / 손 클로즈업 / 제품 컷', url: null, published_at: null, primary_product_id: null, content_purpose: 'brand', owner: '홍대표', scheduled_for: null, idea_id: null, category: 'ccat-brand', channel: 'youtube', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
   ],
-  content_metrics: [],
+  content_metrics: [
+    { id: 'cmet-1', workspace_id: 'ws-simok', content_item_id: 'ci-1', checkpoint: null, measured_at: '2026-09-12 21:00', metrics: { views: 5200, reach: 4100, likes: 420, comments: 15, shares: 33, saves: 88, profile: 120, follows: 14 }, created_at: new Date().toISOString() },
+    { id: 'cmet-2', workspace_id: 'ws-simok', content_item_id: 'ci-1', checkpoint: null, measured_at: '2026-09-15 22:00', metrics: { views: 12400, reach: 9600, likes: 890, comments: 41, shares: 77, saves: 210, profile: 260, follows: 31 }, created_at: new Date().toISOString() },
+  ],
   company_memory: [
     { id: 'cm-1', workspace_id: 'ws-simok', created_by: 'dev', kind: 'philosophy', title: '좋은 것은 시간을 담는다', body: '시목의 모든 판단 기준. 오래 두고 쓸 가치가 있는 물건을 선별한다.', summary: '브랜드 핵심 문장', tags: ['브랜드', '철학'], salience: 90, pinned: true, status: 'active', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
     { id: 'cm-2', workspace_id: 'ws-simok', created_by: 'dev', kind: 'failure', title: '부부 창업 콘텐츠는 전환이 낮았다', body: '사업 관심자만 모이고 실제 고객(30~50대 여성)은 안 모임. 집·살림 콘텐츠로 전환.', summary: null, tags: ['콘텐츠', '실패'], salience: 70, pinned: false, status: 'active', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
@@ -251,7 +254,7 @@ const mockData: Record<string, any[]> = {
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v6';
+const _LS_KEY = 'mock-db-v7';
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {

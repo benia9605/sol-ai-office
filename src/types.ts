@@ -547,18 +547,31 @@ export interface ContentMetric {
   id: string;
   workspaceId: string;
   contentItemId: string;
-  checkpoint: ContentCheckpoint;
+  measuredAt?: string;                 // 기록 시점(스냅샷 키) · 마이그 053
+  metrics?: Record<string, number>;    // 채널별 실측 지표 {views,likes,...} · 마이그 053
+  checkpoint?: ContentCheckpoint;      // 레거시(h24/h72/d7) — 선택
+  // 레거시 타입 컬럼(하위호환)
   views?: number;
   likes?: number;
   comments?: number;
   saves?: number;
   shares?: number;
-  watchTime?: number;       // 평균 시청 시간(초)
-  completionRate?: number;  // 완주율(%)
+  watchTime?: number;
+  completionRate?: number;
   followerDelta?: number;
-  measuredAt?: string;
   createdAt?: string;
 }
+
+/** 채널별 실측 지표 필드 정의 (실제 각 플랫폼 제공 지표 기준) */
+export const CHANNEL_METRIC_FIELDS: Record<string, { key: string; label: string; auto?: boolean }[]> = {
+  youtube:   [{ key: 'views', label: '조회수' }, { key: 'likes', label: '좋아요' }, { key: 'comments', label: '댓글' }],
+  instagram: [{ key: 'views', label: '조회수' }, { key: 'reach', label: '도달' }, { key: 'likes', label: '좋아요' }, { key: 'comments', label: '댓글' }, { key: 'shares', label: '공유' }, { key: 'saves', label: '저장' }, { key: 'profile', label: '프로필 방문' }, { key: 'follows', label: '팔로우' }],
+  threads:   [{ key: 'views', label: '조회수' }, { key: 'likes', label: '좋아요' }, { key: 'replies', label: '답글' }, { key: 'reposts', label: '리포스트' }, { key: 'quotes', label: '인용' }],
+  daangn:    [{ key: 'views', label: '조회수' }, { key: 'likes', label: '좋아요' }, { key: 'comments', label: '댓글' }, { key: 'chats', label: '채팅' }],
+  blog:      [{ key: 'views', label: '조회수' }, { key: 'likes', label: '공감' }, { key: 'comments', label: '댓글' }],
+  tiktok:    [{ key: 'views', label: '조회수' }, { key: 'likes', label: '좋아요' }, { key: 'comments', label: '댓글' }, { key: 'shares', label: '공유' }],
+  etc:       [{ key: 'views', label: '조회수' }, { key: 'likes', label: '좋아요' }, { key: 'comments', label: '댓글' }],
+};
 
 /** 회사 기억 — 비정형 지식 (MVP) */
 export type MemoryKind = 'idea' | 'insight' | 'philosophy' | 'failure' | 'experiment' | 'reference' | 'competitor' | 'ceo_memo';
