@@ -762,12 +762,13 @@ function ListPaginated({
         </p>
       </div>
 
-      {/* 페이지된 dated 그룹 */}
-      {pagedDated.map(([date, items]) => (
+      {/* 페이지된 dated 그룹 — 월은 바뀌는 첫 날짜에만 표시 */}
+      {pagedDated.map(([date, items], i) => (
         <DateGroupBlock
           key={date}
           date={date}
           items={items}
+          showMonth={i === 0 || new Date(date).getMonth() !== new Date(pagedDated[i - 1][0]).getMonth()}
           categories={categories}
           selectMode={selectMode}
           selectedIds={selectedIds}
@@ -834,6 +835,8 @@ function ListPaginated({
 interface DateGroupBlockProps {
   date: string;
   items: TaskItem[];
+  /** 월(MAR 등)을 표시할지 — 월이 바뀌는 첫 날짜에만 true */
+  showMonth?: boolean;
   categories: ScheduleCategory[];
   selectMode: boolean;
   selectedIds: Set<string>;
@@ -843,7 +846,7 @@ interface DateGroupBlockProps {
 }
 
 function DateGroupBlock({
-  date, items, categories,
+  date, items, showMonth = true, categories,
   selectMode, selectedIds, onItemClick, onCycleStatus, onToggleSelect,
 }: DateGroupBlockProps) {
   const d = new Date(date);
@@ -852,11 +855,13 @@ function DateGroupBlock({
 
   return (
     <div className="grid grid-cols-[104px_1fr] sm:grid-cols-[128px_1fr] gap-4 sm:gap-6 py-3 border-b border-line items-center">
-      {/* 좌측: 월 / (일 · 요일·건수) — 2줄, 왼쪽 정렬 */}
+      {/* 좌측: (월 — 바뀔 때만) / 일 · 요일·건수 — 왼쪽 정렬 */}
       <div>
-        <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">
-          {MONTHS_EN[d.getMonth()]}
-        </p>
+        {showMonth && (
+          <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">
+            {MONTHS_EN[d.getMonth()]}
+          </p>
+        )}
         <div className="mt-0.5 flex items-baseline gap-1.5">
           <span className={`text-xl font-light leading-none tabular-nums ${
             isOverdue ? 'text-primary-500' : 'text-foreground-muted'
