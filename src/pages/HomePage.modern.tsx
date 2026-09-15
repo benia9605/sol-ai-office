@@ -60,7 +60,7 @@ export function HomePageModern() {
   const { user } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
   const { briefing } = useBriefing();
-  const { tasks } = useTasks();
+  const { tasks, cycleStatus } = useTasks();
   const { schedules } = useSchedules();
   const { insights } = useInsights();
   const { readings } = useReadings();
@@ -153,7 +153,22 @@ export function HomePageModern() {
                     }`}>
                       {daysLabel(u.daysLeft)}
                     </span>
-                    <span className="text-sm flex-1 truncate">{u.title}</span>
+                    <span className={`text-sm flex-1 truncate ${u.status === 'completed' ? 'line-through text-foreground-faint' : ''}`}>{u.title}</span>
+                    {/* 상태 체크 — 할일(빈칸)·진행중(점)·완료(체크). 클릭 시 순환 */}
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); cycleStatus(u.id); }}
+                      title={u.status === 'completed' ? '완료' : u.status === 'in_progress' ? '진행 중' : '할 일'}
+                      className={`size-4 shrink-0 rounded-[5px] border flex items-center justify-center transition-colors ${
+                        u.status === 'completed' ? 'bg-primary-500 border-primary-500 text-white'
+                          : u.status === 'in_progress' ? 'border-primary-500'
+                          : 'border-line-strong hover:border-foreground'}`}
+                    >
+                      {u.status === 'completed'
+                        ? <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                        : u.status === 'in_progress'
+                          ? <span className="size-1.5 rounded-full bg-primary-500" />
+                          : null}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -191,16 +206,24 @@ export function HomePageModern() {
                 {readingBooks.map((r) => {
                   const progress = calcReadingProgress(r);
                   return (
-                    <li key={r.id} className="py-2">
-                      <p className="text-sm truncate">{r.title}</p>
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <div className="flex-1 h-px bg-line relative">
-                          <div
-                            className="absolute inset-y-0 left-0 bg-primary-500"
-                            style={{ width: `${progress}%`, height: '1px', top: '-0.5px' }}
-                          />
+                    <li key={r.id} className="py-2 flex items-center gap-3">
+                      {/* 표지 썸네일 — 이미지 있으면 표지, 없으면 이모지 */}
+                      <span className="w-8 h-11 rounded overflow-hidden bg-surface-muted border border-line flex items-center justify-center shrink-0">
+                        {r.coverImage
+                          ? <img src={r.coverImage} alt={r.title} className="w-full h-full object-cover" />
+                          : <span className="text-lg leading-none">{r.coverEmoji}</span>}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm truncate">{r.title}</p>
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <div className="flex-1 h-px bg-line relative">
+                            <div
+                              className="absolute inset-y-0 left-0 bg-primary-500"
+                              style={{ width: `${progress}%`, height: '1px', top: '-0.5px' }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-foreground-faint tabular-nums">{progress}%</span>
                         </div>
-                        <span className="text-[10px] text-foreground-faint tabular-nums">{progress}%</span>
                       </div>
                     </li>
                   );
