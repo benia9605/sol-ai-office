@@ -526,8 +526,8 @@ export function TasksPageModern() {
             />
           </div>
 
-          {/* 상태 · 카테고리 · 정렬 — 디자인 드롭다운 한 줄 */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {/* 상태 · 카테고리 · 정렬 — 디자인 드롭다운 한 줄 (항상 3열) */}
+          <div className="grid grid-cols-3 gap-2">
             <FilterDropdown
               label="상태"
               value={statusFilter}
@@ -545,7 +545,6 @@ export function TasksPageModern() {
               value={sortMode}
               options={sortOptions.map((o) => ({ key: o.key, label: o.label }))}
               onChange={(k) => setSortMode(k as SortMode)}
-              className="col-span-2 sm:col-span-1"
             />
           </div>
 
