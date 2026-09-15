@@ -61,8 +61,10 @@ const mockData: Record<string, any[]> = {
   ],
   // AI 액션 승인 큐 (suggested→approved→dismissed)
   content_items: [
-    { id: 'ci-1', workspace_id: 'ws-simok', created_by: 'dev', title: '10년 쓸 도마를 고르는 법', platform: 'Instagram', content_type: 'info', status: 'idea', hook: '도마 하나 바꿨을 뿐인데', script: null, shot_list: null, url: null, published_at: null, primary_product_id: 'prod-1', content_purpose: 'save', owner: '쏠닝', scheduled_for: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'ci-2', workspace_id: 'ws-simok', created_by: 'dev', title: '나무를 오래 팔며 집에서 없앤 것들', platform: 'YouTube Shorts', content_type: 'worldview', status: 'scripted', hook: '20년 나무를 보면서 깨달은 것', script: '1) 오프닝 훅\n2) 없앤 것 3가지\n3) 시목 철학 연결', shot_list: '주방 와이드 / 손 클로즈업 / 제품 컷', url: null, published_at: null, primary_product_id: null, content_purpose: 'brand', owner: '홍대표', scheduled_for: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    // 아이디어 루트(idea_id=null) + 채널별 발행물(idea_id=루트)
+    { id: 'ci-idea1', workspace_id: 'ws-simok', created_by: 'dev', title: '10년 쓸 도마 고르는 법', platform: null, content_type: 'info', status: 'idea', hook: '도마 하나 바꿨을 뿐인데', script: '아이디어: 쇼츠·릴스로 확장', shot_list: null, url: null, published_at: null, primary_product_id: 'prod-1', content_purpose: 'save', owner: '쏠닝', scheduled_for: null, idea_id: null, category: 'ccat-edu', channel: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: 'ci-1', workspace_id: 'ws-simok', created_by: 'dev', title: '도마 고르는 3가지 기준 (릴스)', platform: 'Instagram', content_type: 'info', status: 'published', hook: '도마 하나 바꿨을 뿐인데', script: null, shot_list: null, url: 'https://instagram.com/reel/abc', published_at: new Date().toISOString(), primary_product_id: 'prod-1', content_purpose: 'save', owner: '쏠닝', scheduled_for: null, idea_id: 'ci-idea1', category: 'ccat-edu', channel: 'instagram', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: 'ci-2', workspace_id: 'ws-simok', created_by: 'dev', title: '나무를 오래 팔며 집에서 없앤 것들', platform: 'YouTube Shorts', content_type: 'worldview', status: 'scripted', hook: '20년 나무를 보면서 깨달은 것', script: '1) 오프닝 훅\n2) 없앤 것 3가지\n3) 시목 철학 연결', shot_list: '주방 와이드 / 손 클로즈업 / 제품 컷', url: null, published_at: null, primary_product_id: null, content_purpose: 'brand', owner: '홍대표', scheduled_for: null, idea_id: null, category: 'ccat-brand', channel: 'youtube', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
   ],
   content_metrics: [],
   company_memory: [
@@ -249,7 +251,7 @@ const mockData: Record<string, any[]> = {
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v5';
+const _LS_KEY = 'mock-db-v6';
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {

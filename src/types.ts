@@ -530,9 +530,16 @@ export interface ContentItem {
   contentPurpose?: string;     // view|follow|save|sale|brand
   owner?: string;              // 담당자(쏠닝|홍대표|AI|외주 …)
   scheduledFor?: string;       // 발행 예정일시
+  // ── 콘텐츠 허브(2026-09·마이그 052) ──
+  ideaId?: string;             // 부모 아이디어(자기참조). 없으면 아이디어 루트
+  category?: string;           // 공용 카테고리(options scope=content) id
+  channel?: ContentChannel;    // 정규화 채널 키
   createdAt?: string;
   updatedAt?: string;
 }
+
+/** 콘텐츠 채널(정규화 키) */
+export type ContentChannel = 'youtube' | 'instagram' | 'threads' | 'daangn' | 'blog' | 'tiktok' | 'etc';
 
 /** 콘텐츠 성과 스냅샷 — 24h/72h/7d */
 export type ContentCheckpoint = 'h24' | 'h72' | 'd7';

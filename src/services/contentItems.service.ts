@@ -25,6 +25,9 @@ interface ContentItemRow {
   content_purpose?: string;
   owner?: string;
   scheduled_for?: string;
+  idea_id?: string;
+  category?: string;
+  channel?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -36,6 +39,7 @@ function toItem(r: ContentItemRow): ContentItem {
     shotList: r.shot_list, url: r.url, publishedAt: r.published_at,
     primaryProductId: r.primary_product_id, contentPurpose: r.content_purpose,
     owner: r.owner, scheduledFor: r.scheduled_for,
+    ideaId: r.idea_id, category: r.category, channel: r.channel as ContentItem['channel'],
     createdAt: r.created_at, updatedAt: r.updated_at,
   };
 }
@@ -56,6 +60,9 @@ function toRow(fields: Partial<ContentItem>): Record<string, unknown> {
   if (fields.contentPurpose !== undefined) p.content_purpose = fields.contentPurpose || null;
   if (fields.owner !== undefined) p.owner = fields.owner || null;
   if (fields.scheduledFor !== undefined) p.scheduled_for = fields.scheduledFor || null;
+  if (fields.ideaId !== undefined) p.idea_id = fields.ideaId || null;
+  if (fields.category !== undefined) p.category = fields.category || null;
+  if (fields.channel !== undefined) p.channel = fields.channel || null;
   return p;
 }
 
