@@ -25,12 +25,14 @@ interface Props {
   onPick: (id: string) => void;
   /** ＋ 새로 만들기 / 코드로 합류 (WorkspaceCreateModal 열기) */
   onCreate: () => void;
+  /** 열 때 시작 단계 — 'office'면 바로 "어느 오피스로?" 목록(오피스 없으면 choose로 폴백) */
+  initialStep?: 'choose' | 'office';
 }
 
-export function WorkspaceLauncher({ open, onClose, personal, offices, activeId, onPick, onCreate }: Props) {
+export function WorkspaceLauncher({ open, onClose, personal, offices, activeId, onPick, onCreate, initialStep = 'choose' }: Props) {
   const [step, setStep] = useState<'choose' | 'office'>('choose');
-  // 열릴 때마다 1단계로 초기화
-  useEffect(() => { if (open) setStep('choose'); }, [open]);
+  // 열릴 때마다 시작 단계로 초기화 ('office' 요청인데 오피스가 없으면 choose)
+  useEffect(() => { if (open) setStep(initialStep === 'office' && offices.length > 0 ? 'office' : 'choose'); }, [open, initialStep, offices.length]);
   if (!open) return null;
 
   const pick = (id: string) => { onPick(id); onClose(); };
