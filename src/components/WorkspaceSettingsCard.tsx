@@ -13,25 +13,31 @@ export function WorkspaceSettingsCard() {
   if (!personal) return null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-soft p-4 sm:p-5">
-      <h2 className="text-sm font-bold text-gray-700 mb-3">내 공간</h2>
-      <div className="flex items-center gap-3">
-        <span className="w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center text-2xl bg-gray-50 flex-shrink-0">
-          {personal.imageUrl
-            ? <img src={personal.imageUrl} alt={personal.name} className="w-full h-full object-cover rounded-2xl" />
-            : <span>{personal.emoji || '🧸'}</span>}
-        </span>
-        <span className="text-sm font-semibold text-gray-800 flex-1 truncate">{personal.name}</span>
+    <section className="space-y-5">
+      <div className="flex items-baseline justify-between border-b border-line pb-3">
+        <div className="flex items-baseline gap-3">
+          <p className="label">Space</p>
+          <h2 className="text-base font-normal text-foreground-muted">내 공간</h2>
+        </div>
         <button
+          type="button"
           onClick={() => setOpen(true)}
-          className="text-xs font-medium px-3 py-2 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 transition-all flex-shrink-0"
+          className="border border-line-strong px-3 py-1.5 text-xs text-foreground hover:border-foreground transition-colors"
         >
           이름·이미지 수정
         </button>
       </div>
+      <div className="flex items-center gap-3">
+        <span className="w-12 h-12 border border-line bg-surface-muted overflow-hidden flex items-center justify-center text-2xl shrink-0">
+          {personal.imageUrl
+            ? <img src={personal.imageUrl} alt="" className="w-full h-full object-cover" />
+            : <span>🧸</span>}
+        </span>
+        <p className="text-base">개인 공간</p>
+      </div>
       {open && (
         <WorkspaceSettingsModal workspace={personal} onClose={() => setOpen(false)} onSaved={reload} />
       )}
-    </div>
+    </section>
   );
 }

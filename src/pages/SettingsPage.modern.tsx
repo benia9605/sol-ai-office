@@ -421,7 +421,15 @@ export function SettingsPageModern() {
         )}
 
         {/* ── 알림 ── */}
-        {user && <NotificationSettings userId={user.id} />}
+        {user && (
+          <section className="space-y-5">
+            <div className="flex items-baseline gap-3 border-b border-line pb-3">
+              <p className="label">Notifications</p>
+              <h2 className="text-base font-normal text-foreground-muted">알림</h2>
+            </div>
+            <NotificationSettings userId={user.id} embedded />
+          </section>
+        )}
 
         {/* ── 테마 ── */}
         <ThemePicker />

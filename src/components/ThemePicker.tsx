@@ -11,7 +11,7 @@ export function ThemePicker() {
   const isModi = theme === 'modi';
 
   return (
-    <section className={isModi ? 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6' : 'space-y-3'}>
+    <section className={isModi ? 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-soft p-4 sm:p-6' : 'space-y-5'}>
       {isModi ? (
         <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
           <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
