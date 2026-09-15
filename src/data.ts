@@ -208,8 +208,15 @@ export const defaultContentCategories: ScheduleCategory[] = [
   { id: 'ccat-etc',     label: '기타',     color: '#9ca3af' },
 ];
 
-// ── 인사이트 카테고리 (할일 세트 재사용 · 기존 tcat-* 호환) ──
-export const defaultInsightCategories: ScheduleCategory[] = defaultTaskCategories;
+// ── 인사이트 카테고리 (오피스 통합 인사이트 · scope='insight', distinct icat-*) ──
+// 개인 인사이트는 scope='task'(tcat-*) 재사용, 오피스 통합 인사이트만 이 세트를 씀.
+export const defaultInsightCategories: ScheduleCategory[] = [
+  { id: 'icat-trend',      label: '트렌드',   color: '#60a5fa' },
+  { id: 'icat-market',     label: '시장',     color: '#4ade80' },
+  { id: 'icat-idea',       label: '아이디어', color: '#fbbf24' },
+  { id: 'icat-competitor', label: '경쟁사',   color: '#fb7185' },
+  { id: 'icat-etc',        label: '기타',     color: '#9ca3af' },
+];
 
 // ── 기록 카테고리 ──
 export const defaultRecordCategories: ScheduleCategory[] = [

@@ -40,6 +40,8 @@ import { defaultTaskCategories, officeScheduleCategories } from '../../data';
 import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, NoteSection, SearchBar, fieldCls as monoField } from './ui';
 import { cacheGet } from '../../services/cache';
 import { CategoryBadge } from '../CategoryBadge';
+import { CategorySelect } from '../CategorySelect';
+import { useCategories } from '../../hooks/useCategories';
 import { RichText, docToText, docHasContent, parseDoc, serializeDoc } from './RichText';
 import { Avatar, MemberSelect } from './Avatar';
 import { NavIcon } from './NavIcons';
@@ -2449,9 +2451,10 @@ function MemoryDetailPopup({ item, onSave, onArchive, onDelete, onClose }: {
 export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
   const [list, setList] = useState<CompanyMemory[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', body: '', kind: 'ceo_memo' as MemoryKind, tags: '', salience: 50, pinned: false });
+  const [form, setForm] = useState({ title: '', body: '', kind: 'ceo_memo' as MemoryKind, tags: '', salience: 50, pinned: false, category: '' });
   const [selected, setSelected] = useState<CompanyMemory | null>(null);
   const [kindFilter, setKindFilter] = useState<MemoryKind | 'all'>('all');
+  const { colorOf: catColor, labelOf: catLabel } = useCategories('insight', workspace.id);
   const [q, setQ] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const load = () => fetchMemories(workspace.id).then(setList).catch(() => setList([]));
@@ -2462,10 +2465,10 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
     if (!form.title.trim()) return;
     try {
       await addMemory(workspace.id, {
-        title: form.title.trim(), body: form.body.trim() || undefined, kind: form.kind,
+        title: form.title.trim(), body: form.body.trim() || undefined, kind: form.kind, category: form.category || undefined,
         tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [], salience: form.salience, pinned: form.pinned,
       });
-      setForm({ title: '', body: '', kind: 'ceo_memo', tags: '', salience: 50, pinned: false }); setShowForm(false); load();
+      setForm({ title: '', body: '', kind: 'ceo_memo', tags: '', salience: 50, pinned: false, category: '' }); setShowForm(false); load();
     } catch (e) { console.error('[CompanyMemoryView] 저장 실패:', e); alert('기억 저장에 실패했어요. 잠시 후 다시 시도해 주세요.'); }
   };
 
@@ -2481,11 +2484,11 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
 
   return (
     <>
-      <ViewHead eyebrow="MEMORY" title="회사 기억" sub={`${list.filter(m => m.status !== 'archived').length}개`} />
+      <ViewHead eyebrow="INSIGHTS" title="인사이트" sub={`${list.filter(m => m.status !== 'archived').length}개 · 인사이트·아이디어·철학·실패·경쟁사`} />
 
       <div className="flex items-center gap-2 mb-2">
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 제목·내용·태그 검색" className={`${fieldCls} flex-1`} />
-        <AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="기억" className="whitespace-nowrap" />
+        <AddButton open={showForm} onClick={() => setShowForm(v => !v)} label="인사이트" className="whitespace-nowrap" />
       </div>
       <div className="flex flex-wrap items-center gap-1.5 mb-3">
         {chip('all', '전체')}
@@ -2506,12 +2509,13 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
               {SALIENCE_LEVELS.map(s => <option key={s.v} value={s.v}>중요도 · {s.label}</option>)}
             </select>
           </div>
+          <CategorySelect scope="insight" workspaceId={workspace.id} value={form.category} onChange={id => setForm({ ...form, category: id })} allowNone placeholder="카테고리 (선택)" />
           <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="태그 (쉼표로, 선택)" className={fieldCls} />
           <label className="flex items-center gap-2 text-sm text-foreground-muted px-1">
             <input type="checkbox" checked={form.pinned} onChange={e => setForm({ ...form, pinned: e.target.checked })} /> 📌 고정
           </label>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setShowForm(false); setForm({ title: '', body: '', kind: 'ceo_memo', tags: '', salience: 50, pinned: false }); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
+            <button onClick={() => { setShowForm(false); setForm({ title: '', body: '', kind: 'ceo_memo', tags: '', salience: 50, pinned: false, category: '' }); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={save} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
         </Card>
@@ -2527,6 +2531,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
                 <div className="flex items-center gap-2 mb-1">
                   {m.pinned && <span className="text-[11px]">📌</span>}
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground-muted flex-shrink-0">{memoryKindLabel(m.kind)}</span>
+                  {m.category && <CategoryBadge color={catColor(m.category)} label={catLabel(m.category) || '카테고리'} size="sm" />}
                   <span className="text-sm font-semibold text-foreground truncate">{m.title}</span>
                   <span className="ml-auto text-[10px] text-foreground-faint flex-shrink-0">중요도 {salienceLabel(m.salience)}</span>
                 </div>

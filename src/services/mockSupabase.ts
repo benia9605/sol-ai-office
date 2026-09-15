@@ -72,7 +72,8 @@ const mockData: Record<string, any[]> = {
   ],
   company_memory: [
     { id: 'cm-1', workspace_id: 'ws-simok', created_by: 'dev', kind: 'philosophy', title: '좋은 것은 시간을 담는다', body: '시목의 모든 판단 기준. 오래 두고 쓸 가치가 있는 물건을 선별한다.', summary: '브랜드 핵심 문장', tags: ['브랜드', '철학'], salience: 90, pinned: true, status: 'active', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'cm-2', workspace_id: 'ws-simok', created_by: 'dev', kind: 'failure', title: '부부 창업 콘텐츠는 전환이 낮았다', body: '사업 관심자만 모이고 실제 고객(30~50대 여성)은 안 모임. 집·살림 콘텐츠로 전환.', summary: null, tags: ['콘텐츠', '실패'], salience: 70, pinned: false, status: 'active', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: 'cm-2', workspace_id: 'ws-simok', created_by: 'dev', kind: 'failure', title: '부부 창업 콘텐츠는 전환이 낮았다', body: '사업 관심자만 모이고 실제 고객(30~50대 여성)은 안 모임. 집·살림 콘텐츠로 전환.', summary: null, tags: ['콘텐츠', '실패'], salience: 70, pinned: false, status: 'active', source: null, link: null, category: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: 'cm-3', workspace_id: 'ws-simok', created_by: 'dev', kind: 'insight', title: '릴스 저장수가 매출 선행지표', body: '저장 많은 릴스가 2~3주 뒤 스마트스토어 도마 매출로 이어짐. 저장 유도 훅 강화.', summary: null, tags: ['릴스', '매출'], salience: 75, pinned: false, status: 'active', source: '인스타 인사이트', link: null, category: 'icat-market', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
   ],
   sales_daily: [
     { id: 'sd-1', workspace_id: 'ws-simok', created_by: 'dev', date: '2026-08-04', source: 'smartstore', revenue: 320000, orders: 7, visitors: 210, memo: null, extra: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
@@ -254,7 +255,7 @@ const mockData: Record<string, any[]> = {
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v7';
+const _LS_KEY = 'mock-db-v8';
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {

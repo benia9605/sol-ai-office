@@ -586,6 +586,10 @@ export interface CompanyMemory {
   salience?: number;       // 중요도 0~100
   pinned?: boolean;
   status?: 'active' | 'archived';
+  // ── 인사이트 통합(마이그 055) ──
+  source?: string;         // 출처(레거시 insights)
+  link?: string;           // 참고 링크
+  category?: string;       // 공용 카테고리(options scope=insight) id
   createdAt?: string;
   updatedAt?: string;
 }

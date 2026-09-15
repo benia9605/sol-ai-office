@@ -53,7 +53,6 @@ const NAV_GROUPS: NavGroup[] = [
   { id: 'content', label: '콘텐츠', items: [
     { id: 'insights', label: '인사이트', emoji: '📈' },
     { id: 'contents', label: '콘텐츠', emoji: '🎬' },
-    { id: 'memory', label: '기억', emoji: '🧠' },
     { id: 'log', label: '기록', emoji: '📝' },
   ] },
   { id: 'biz', label: '비즈니스', items: [
@@ -309,14 +308,14 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             : <TodosView workspace={workspace} onNavigate={onNavigate} initialScope={todosScope} />)}
           {view === 'schedule' && <ScheduleView workspace={workspace} />}
           {view === 'meetings' && <MeetingsView workspace={workspace} openId={detailId} />}
-          {view === 'insights' && (detailId
-            ? <InsightDetailView workspace={workspace} insightId={detailId} onBack={() => setView('insights')} />
-            : <InsightsView workspace={workspace} onNavigate={onNavigate} />)}
+          {/* 인사이트 = 기억 통합(company_memory). 기존 InsightsView는 백업 코드로 보존(비노출). */}
+          {view === 'insights' && <CompanyMemoryView workspace={workspace} />}
           {view === 'contents' && <ContentHubView workspace={workspace} onNavigate={onNavigate} />}
           {/* 유튜브(content)는 콘텐츠 허브의 유튜브 탭으로 편입 — 별도 라우트 백업만 유지 */}
           {view === 'content' && <ContentHubView workspace={workspace} onNavigate={onNavigate} />}
           {view === 'products' && <ProductsView workspace={workspace} />}
           {view === 'sales' && <SalesDailyView workspace={workspace} />}
+          {/* 기억(memory)은 인사이트로 통합 — 라우트는 백업으로 유지 */}
           {view === 'memory' && <CompanyMemoryView workspace={workspace} />}
           {view === 'log' && (detailId
             ? <RecordDetailPage workspace={workspace} recordId={detailId} onBack={() => setView('log')} />

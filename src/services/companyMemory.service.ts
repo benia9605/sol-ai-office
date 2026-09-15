@@ -20,6 +20,9 @@ interface MemoryRow {
   salience?: number;
   pinned?: boolean;
   status?: 'active' | 'archived';
+  source?: string;
+  link?: string;
+  category?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -28,7 +31,8 @@ function toMemory(r: MemoryRow): CompanyMemory {
   return {
     id: r.id, workspaceId: r.workspace_id, kind: r.kind, title: r.title, body: r.body,
     summary: r.summary, tags: r.tags, salience: r.salience ?? undefined, pinned: r.pinned ?? false,
-    status: r.status ?? 'active', createdAt: r.created_at, updatedAt: r.updated_at,
+    status: r.status ?? 'active', source: r.source, link: r.link, category: r.category,
+    createdAt: r.created_at, updatedAt: r.updated_at,
   };
 }
 
@@ -43,6 +47,9 @@ function toRow(f: Partial<CompanyMemory>): Record<string, unknown> {
   if (f.salience !== undefined) p.salience = f.salience ?? null;
   if (f.pinned !== undefined) p.pinned = f.pinned;
   if (f.status !== undefined) p.status = f.status;
+  if (f.source !== undefined) p.source = f.source || null;
+  if (f.link !== undefined) p.link = f.link || null;
+  if (f.category !== undefined) p.category = f.category || null;
   return p;
 }
 
