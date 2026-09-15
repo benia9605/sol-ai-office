@@ -851,8 +851,8 @@ function DateGroupBlock({
   const isOverdue = dayDiff < 0;
 
   return (
-    <div className="grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line">
-      {/* 좌측: 월/일/요일만 */}
+    <div className="grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line items-center">
+      {/* 좌측: 월 / 일 / 요일·건수 */}
       <div>
         <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">
           {MONTHS_EN[d.getMonth()]}
@@ -862,16 +862,13 @@ function DateGroupBlock({
         }`}>
           {String(d.getDate()).padStart(2, '0')}
         </p>
-        <p className="mt-1 text-[9px] tracking-[0.15em] text-foreground-faint">
-          {DAY_NAMES[d.getDay()]}
+        <p className="mt-1 text-[10px] tracking-[0.05em] text-foreground-faint tabular-nums">
+          {DAY_NAMES[d.getDay()]} · {items.length}건
         </p>
       </div>
 
-      {/* 우측: 상단 N건 + 한 줄 행 divide-y */}
+      {/* 우측: 한 줄 행 divide-y (할일명 수직 가운데) */}
       <div className="min-w-0">
-        <p className="text-right text-[10px] tabular-nums text-foreground-faint mb-0.5">
-          {items.length}건
-        </p>
         <ul className="divide-y divide-line">
           {items.map((t) => (
             <TaskRow
@@ -908,16 +905,14 @@ function NoDateGroupBlock({
   onToggleSelect: (id: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line">
+    <div className="grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line items-center">
       {/* 좌측 */}
       <div>
         <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">No Date</p>
+        <p className="mt-1 text-[10px] tracking-[0.05em] text-foreground-faint tabular-nums">마감없음 · {items.length}건</p>
       </div>
-      {/* 우측 */}
+      {/* 우측 (할일명 수직 가운데) */}
       <div className="min-w-0">
-        <p className="text-right text-[10px] tabular-nums text-foreground-faint mb-0.5">
-          {items.length}건
-        </p>
         <ul className="divide-y divide-line">
           {items.map((t) => (
             <TaskRow
