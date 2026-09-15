@@ -16,6 +16,7 @@ import {
   InsightsView, LogView, ActivityView, ActivityFeedView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView, TaskDetailView, InsightDetailView, RecordDetailPage, ContentDetailView,
 } from './views';
 import { StaffView } from './StaffView';
+import { ContentHubView } from './ContentHubView';
 import { NotificationBell } from './NotificationBell';
 import { NavIcon } from './NavIcons';
 import { GlobalSearch } from './GlobalSearch';
@@ -312,9 +313,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
           {view === 'insights' && (detailId
             ? <InsightDetailView workspace={workspace} insightId={detailId} onBack={() => setView('insights')} />
             : <InsightsView workspace={workspace} onNavigate={onNavigate} />)}
-          {view === 'contents' && (detailId
-            ? <ContentDetailView workspace={workspace} contentId={detailId} onBack={() => setView('contents')} />
-            : <ContentItemsView workspace={workspace} onNavigate={onNavigate} />)}
+          {view === 'contents' && <ContentHubView workspace={workspace} onNavigate={onNavigate} />}
           {view === 'content' && <ContentPage embedded workspaceId={workspace.id} />}
           {view === 'products' && <ProductsView workspace={workspace} />}
           {view === 'sales' && <SalesDailyView workspace={workspace} />}
