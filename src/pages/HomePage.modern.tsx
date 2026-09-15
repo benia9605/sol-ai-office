@@ -18,6 +18,7 @@ import { calcReadingProgress } from '../utils/readingProgress';
 import { getUrgentTasks } from '../utils/urgentTasks';
 import { LayoutContext } from '../components/Layout';
 import { Room } from '../types';
+import { FEATURES } from '../config/features';
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 const MONTHS_EN = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -92,25 +93,29 @@ export function HomePageModern() {
             오늘도 침착하게.
           </h1>
           <p className="mt-6 max-w-lg text-sm leading-[1.85] text-foreground-muted">
-            AI 비서들과 함께 하루를 시작해보세요.
-            모디 아침 브리핑이 아래에 준비되어 있습니다.
+            {FEATURES.aiChat
+              ? 'AI 비서들과 함께 하루를 시작해보세요. 모디 아침 브리핑이 아래에 준비되어 있습니다.'
+              : '오늘 할일을 정리하고, 인사이트와 배움을 기록하며 하루를 채워보세요.'}
           </p>
         </section>
 
-        {/* ── Featured: Morning Briefing ── */}
-        <BriefingFeatured
-          dayParts={t}
-          schedules={briefing?.schedules ?? upcomingSchedules.map((s) => ({ id: s.id, title: s.title, time: s.time, date: s.date }))}
-          urgent={briefing?.urgentTasks ?? urgentTasks.map((u) => ({ id: u.id, title: u.title, daysLeft: u.daysLeft }))}
-          aiComment={briefing?.aiComment}
-          onOpenModi={() => openRoom(modiSecretary)}
-        />
+        {/* ── Featured: Morning Briefing (AI 대화 · FEATURES.aiChat) ── */}
+        {FEATURES.aiChat && (
+          <BriefingFeatured
+            dayParts={t}
+            schedules={briefing?.schedules ?? upcomingSchedules.map((s) => ({ id: s.id, title: s.title, time: s.time, date: s.date }))}
+            urgent={briefing?.urgentTasks ?? urgentTasks.map((u) => ({ id: u.id, title: u.title, daysLeft: u.daysLeft }))}
+            aiComment={briefing?.aiComment}
+            onOpenModi={() => openRoom(modiSecretary)}
+          />
+        )}
 
         {/* ── This Week 4-up grid ── */}
         <section>
           <SectionHeader title="이번 주" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-l border-line">
-            {/* 일정 */}
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${FEATURES.schedules ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} border-l border-line`}>
+            {/* 일정 — 슬림다운으로 백업/숨김 (FEATURES.schedules) */}
+            {FEATURES.schedules && (
             <WidgetBox
               label="Schedule"
               title="다가오는 일정"
@@ -130,6 +135,7 @@ export function HomePageModern() {
                 ))}
               </ul>
             </WidgetBox>
+            )}
 
             {/* 긴급 업무 */}
             <WidgetBox
@@ -204,7 +210,8 @@ export function HomePageModern() {
           </div>
         </section>
 
-        {/* ── Office Rooms ── */}
+        {/* ── Office Rooms (AI 대화 · FEATURES.aiChat) ── */}
+        {FEATURES.aiChat && (
         <section>
           <SectionHeader title="오피스 룸" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border-l border-line">
@@ -214,6 +221,7 @@ export function HomePageModern() {
             <RoomCardModern room={modiSecretary} onClick={() => openRoom(modiSecretary)} />
           </div>
         </section>
+        )}
 
         {/* ── Footer ── */}
         <footer className="border-t border-line pt-8 pb-4 text-center">

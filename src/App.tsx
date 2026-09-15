@@ -22,6 +22,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { SummariesPage } from './pages/SummariesPage';
 import { ContentPage } from './pages/ContentPage';
+import { FEATURES } from './config/features';
 
 /** 인증/워크스페이스 로딩 중 공통 스플래시 */
 function LoadingSplash() {
@@ -102,16 +103,17 @@ function AppShell() {
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
-          <Route path="/schedules" element={<SchedulesPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/insights" element={<InsightsPage />} />
           <Route path="/readings" element={<ReadingsPage />} />
           <Route path="/records" element={<RecordsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/summaries" element={<SummariesPage />} />
-          <Route path="/content" element={<ContentPage />} />
-          <Route path="/project/:projectId" element={<ProjectDetailPage />} />
-          {/* 오피스에서 쓰던 경로(/todos 등)로 들어와도 흰 화면이 안 뜨게 홈으로 폴백 */}
+          {/* 슬림다운으로 백업/숨김 — 플래그 on이면 부활 (docs/PERSONAL_SLIMDOWN_PLAN.md) */}
+          {FEATURES.schedules && <Route path="/schedules" element={<SchedulesPage />} />}
+          {FEATURES.summaries && <Route path="/summaries" element={<SummariesPage />} />}
+          {FEATURES.content && <Route path="/content" element={<ContentPage />} />}
+          {FEATURES.projects && <Route path="/project/:projectId" element={<ProjectDetailPage />} />}
+          {/* 숨긴/미지원 경로(/todos·/schedules 등)로 들어와도 흰 화면 대신 홈으로 폴백 */}
           <Route path="*" element={<HomePage />} />
         </Route>
       </Routes>

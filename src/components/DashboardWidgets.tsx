@@ -10,6 +10,7 @@
  * - 카드 컬러: 일정(주황), 할일(초록), 인사이트(노랑), 독서(파랑) 파스텔톤
  */
 import { Link } from 'react-router-dom';
+import { FEATURES } from '../config/features';
 import { useTasks } from '../hooks/useTasks';
 import { useSchedules } from '../hooks/useSchedules';
 import { useInsights } from '../hooks/useInsights';
@@ -42,8 +43,9 @@ export function DashboardWidgets() {
   const readingBooks = readings.filter((r) => r.status === 'reading').slice(0, 5);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:grid-cols-4">
-      {/* 이번주 일정 — 주황 파스텔 */}
+    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${FEATURES.schedules ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+      {/* 이번주 일정 — 슬림다운으로 백업/숨김 (FEATURES.schedules) */}
+      {FEATURES.schedules && (
       <Link
         to="/schedules"
         className="p-4 rounded-2xl bg-[#fff3e0] border border-orange-100
@@ -67,6 +69,7 @@ export function DashboardWidgets() {
           ))}
         </ul>
       </Link>
+      )}
 
       {/* 긴급 업무 — 초록 파스텔 */}
       <Link

@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { ChatHistory } from '../types';
 import { menuItems, rooms, modiSecretary } from '../data';
+import { FEATURES } from '../config/features';
 import { useProjects } from '../hooks/useProjects';
 import { fetchRecentConversations, RecentConversation } from '../services/conversations.service';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
@@ -118,7 +119,8 @@ export function NewSidebar({ isOpen, onClose, onSelectHistory }: NewSidebarProps
           </ul>
         </nav>
 
-        {/* 프로젝트 섹션 */}
+        {/* 프로젝트 섹션 — 슬림다운으로 숨김(FEATURES.projects) */}
+        {FEATURES.projects && (
         <div className="px-3 mt-6">
           <p className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">프로젝트</p>
           <ul className="space-y-1">
@@ -137,8 +139,10 @@ export function NewSidebar({ isOpen, onClose, onSelectHistory }: NewSidebarProps
             ))}
           </ul>
         </div>
+        )}
 
-        {/* 히스토리 섹션 — 실제 DB 대화 */}
+        {/* 히스토리 섹션 — 실제 DB 대화 (AI 대화 백업 · FEATURES.aiChat) */}
+        {FEATURES.aiChat && (
         <div className="px-3 mt-6 flex-1 overflow-y-auto">
           <p className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">최근 대화</p>
           <ul className="space-y-1">
@@ -180,6 +184,7 @@ export function NewSidebar({ isOpen, onClose, onSelectHistory }: NewSidebarProps
             )}
           </ul>
         </div>
+        )}
 
         {/* 하단 여백 */}
         <div className="p-4" />

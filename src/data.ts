@@ -134,7 +134,9 @@ export const dummyChatHistory: ChatHistory[] = [
 
 // ── 메뉴 & 프로젝트 ──
 
-export const menuItems: MenuItem[] = [
+// 전체 메뉴 원본(백업) — 슬림다운으로 일정·콘텐츠·대화요약은 UI에서 뺐다.
+// 상용화 시 되살리려면 menuItems를 이 배열로 되돌리면 된다. (docs/PERSONAL_SLIMDOWN_PLAN.md)
+export const menuItemsFull: MenuItem[] = [
   { id: 'home',      label: '홈',       emoji: '🏠', image: '/images/home.png',     path: '/' },
   { id: 'schedules', label: '일정',     emoji: '📅', image: '/images/schedule.png', path: '/schedules' },
   { id: 'tasks',     label: '할일',     emoji: '✅', image: '/images/todo.png',     path: '/tasks' },
@@ -143,6 +145,15 @@ export const menuItems: MenuItem[] = [
   { id: 'records',   label: '기록',     emoji: '📝', image: '/images/diary.png',    path: '/records' },
   { id: 'content',   label: '콘텐츠',   emoji: '🎬', image: '/images/content.svg',  path: '/content' },
   { id: 'summaries', label: '대화 요약', emoji: '📋', image: '/images/modi.png',     path: '/summaries' },
+];
+
+// 슬림다운: 개인 공간 핵심 — 홈 · 할일 · 인사이트 · 스터디 · 기록
+export const menuItems: MenuItem[] = [
+  { id: 'home',      label: '홈',       emoji: '🏠', image: '/images/home.png',     path: '/' },
+  { id: 'tasks',     label: '할일',     emoji: '✅', image: '/images/todo.png',     path: '/tasks' },
+  { id: 'insights',  label: '인사이트', emoji: '💡', image: '/images/insight.png',  path: '/insights' },
+  { id: 'readings',  label: '스터디', emoji: '📚', image: '/images/book.png',     path: '/readings' },
+  { id: 'records',   label: '기록',     emoji: '📝', image: '/images/diary.png',    path: '/records' },
 ];
 
 export const projects: Project[] = [

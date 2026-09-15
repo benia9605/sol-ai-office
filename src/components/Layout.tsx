@@ -10,6 +10,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Room, ChatHistory, TaskItem } from '../types';
+import { FEATURES } from '../config/features';
 import { rooms, modiSecretary } from '../data';
 import { Header } from './Header';
 import { useAuth } from '../hooks/useAuth';
@@ -139,8 +140,8 @@ export function Layout() {
           <Outlet context={{ openRoom, startPomodoro, onPomodoroComplete: handlePomodoroComplete } satisfies LayoutContext} />
         </main>
 
-        {/* PC: 채팅 사이드 패널 (리사이즈 가능) / 모바일: 풀스크린 오버레이 */}
-        {selectedRoom && (
+        {/* PC: 채팅 사이드 패널 / 모바일: 풀스크린 (AI 대화 · FEATURES.aiChat) */}
+        {FEATURES.aiChat && selectedRoom && (
           <>
             {/* 드래그 리사이즈 핸들 (PC만) */}
             <div
@@ -179,8 +180,8 @@ export function Layout() {
         onExpandRef={pomodoroExpandRef}
       />
 
-      {/* 모디 FAB — 채팅 패널이 열려있으면 숨김 */}
-      {!selectedRoom && <ModiFAB onClick={handleOpenModi} />}
+      {/* 모디 FAB — AI 대화 백업/숨김(FEATURES.aiChat), 채팅 패널 열리면 숨김 */}
+      {FEATURES.aiChat && !selectedRoom && <ModiFAB onClick={handleOpenModi} />}
 
     </div>
   );
