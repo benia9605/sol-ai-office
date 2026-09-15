@@ -1040,10 +1040,10 @@ function TaskRow({
           {/* 카테고리 (작게) */}
           {cat && cc && (
             <span
-              className="hidden sm:inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded shrink-0"
+              className="hidden sm:inline-flex items-center gap-1 text-[10px] px-2 py-0.5 shrink-0"
               style={{ backgroundColor: cc.bg, color: cc.text }}
             >
-              <span className="w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
+              <span className="w-1 h-1 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
               {cat.label}
             </span>
           )}
@@ -1078,10 +1078,10 @@ function TaskRow({
             </p>
             {cat && cc && (
               <span
-                className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md shrink-0"
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 shrink-0"
                 style={{ backgroundColor: cc.bg, color: cc.text }}
               >
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
+                <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
                 {cat.label}
               </span>
             )}
@@ -1387,10 +1387,10 @@ function TodayFocusSection({
                     <p className="text-base font-normal truncate">{t.title}</p>
                     {cat && cc && (
                       <span
-                        className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md shrink-0"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 shrink-0"
                         style={{ backgroundColor: cc.bg, color: cc.text }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
+                        <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
                         {cat.label}
                       </span>
                     )}
@@ -1533,10 +1533,10 @@ function ResumeSection({
                     <p className="text-base truncate">{t.title}</p>
                     {cat && cc && (
                       <span
-                        className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md shrink-0"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 shrink-0"
                         style={{ backgroundColor: cc.bg, color: cc.text }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
+                        <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
                         {cat.label}
                       </span>
                     )}
