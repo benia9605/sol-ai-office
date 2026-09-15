@@ -18,7 +18,7 @@ import { calcReadingProgress, progressLabel } from '../utils/readingProgress';
 import { ReadingDetailView } from '../components/readings/ReadingDetailView';
 import { searchBooks, getBookDetail, parseCategoryToTags, AladinSearchItem } from '../services/aladinApi';
 import { generateBookToc } from '../services/claudeApi';
-import { getBadgeColors } from '../utils/colorUtils';
+import { CategoryBadge } from '../components/CategoryBadge';
 
 const PAGE_SIZE = 12;
 
@@ -479,7 +479,6 @@ function ReadingCard({
   onClick: () => void;
 }) {
   const cat = categories.find((c) => c.id === item.category);
-  const cc = cat ? getBadgeColors(cat.color) : null;
   const progress = calcReadingProgress(item);
   const pLabel = progressLabel(item);
   const statusLabel = item.status === 'reading' ? '읽는 중' : item.status === 'completed' ? '완독' : '예정';
@@ -510,15 +509,7 @@ function ReadingCard({
           {item.author && (
             <p className="mt-1 text-xs text-foreground-muted truncate">{item.author}</p>
           )}
-          {cat && cc && (
-            <span
-              className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-medium px-1.5 py-0.5 leading-none"
-              style={{ backgroundColor: cc.bg, color: cc.text }}
-            >
-              <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
-              {cat.label}
-            </span>
-          )}
+          {cat && <CategoryBadge color={cat.color} label={cat.label} className="mt-2" />}
         </div>
       </div>
 

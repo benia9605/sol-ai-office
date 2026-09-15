@@ -13,13 +13,13 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { AutoTextarea } from "../components/AutoTextarea";
 import { FilterDropdown } from '../components/FilterDropdown';
+import { CategoryBadge } from '../components/CategoryBadge';
 import { FEATURES } from '../config/features';
 import { TaskItem, TaskStatus, RepeatType, ScheduleCategory } from '../types';
 import { useTasks } from '../hooks/useTasks';
 import { defaultTaskCategories } from '../data';
 import { ItemDetailPopup } from '../components/ItemDetailPopup';
 import { GoalSelect } from '../components/GoalSelect';
-import { getBadgeColors } from '../utils/colorUtils';
 import { getTodayStr } from '../utils/dateCalc';
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
@@ -965,7 +965,6 @@ function TaskRow({
   onItemClick, onCycleStatus, onToggleSelect, hideDate, compact,
 }: TaskRowProps) {
   const cat = categories.find((c) => c.id === task.category);
-  const cc = cat ? getBadgeColors(cat.color) : null;
   const isCompleted = task.status === 'completed';
   const dday = dDayLabel(task.date);
   const overdue = task.date ? diffDays(task.date) < 0 && !isCompleted : false;
@@ -1038,15 +1037,7 @@ function TaskRow({
           </button>
 
           {/* 카테고리 (작게) */}
-          {cat && cc && (
-            <span
-              className="hidden sm:inline-flex items-center gap-1 text-[10px] px-2 py-0.5 shrink-0"
-              style={{ backgroundColor: cc.bg, color: cc.text }}
-            >
-              <span className="w-1 h-1 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
-              {cat.label}
-            </span>
-          )}
+          {cat && <CategoryBadge color={cat.color} label={cat.label} size="sm" className="hidden sm:inline-flex" />}
 
           {/* 프로젝트 (작게) — 슬림다운으로 백업/숨김 */}
           {FEATURES.projects && task.project && (
@@ -1076,15 +1067,7 @@ function TaskRow({
             }`}>
               {task.title}
             </p>
-            {cat && cc && (
-              <span
-                className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 shrink-0"
-                style={{ backgroundColor: cc.bg, color: cc.text }}
-              >
-                <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
-                {cat.label}
-              </span>
-            )}
+            {cat && <CategoryBadge color={cat.color} label={cat.label} />}
           </div>
           <div className="mt-1.5 flex items-center gap-3 text-xs text-foreground-muted">
             <span className="inline-flex items-center gap-1.5">
@@ -1358,7 +1341,6 @@ function TodayFocusSection({
       <ul className="divide-y divide-line">
         {tasks.map((t) => {
           const cat = categories.find((c) => c.id === t.category);
-          const cc = cat ? getBadgeColors(cat.color) : null;
           const priority = priorityMeta[t.priority];
           const statusText = todayStatusLabel(t.date);
           const overdue = t.date ? diffDays(t.date) < 0 : false;
@@ -1385,15 +1367,7 @@ function TodayFocusSection({
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <p className="text-base font-normal truncate">{t.title}</p>
-                    {cat && cc && (
-                      <span
-                        className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 shrink-0"
-                        style={{ backgroundColor: cc.bg, color: cc.text }}
-                      >
-                        <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
-                        {cat.label}
-                      </span>
-                    )}
+                    {cat && <CategoryBadge color={cat.color} label={cat.label} />}
                   </div>
                   <p className={`mt-1.5 text-xs ${overdue ? 'text-primary-500' : 'text-foreground-muted'}`}>
                     {statusText}
@@ -1520,7 +1494,6 @@ function ResumeSection({
       <ul className="divide-y divide-line">
         {tasks.map((t) => {
           const cat = categories.find((c) => c.id === t.category);
-          const cc = cat ? getBadgeColors(cat.color) : null;
           return (
             <li key={t.id}>
               <div className="grid grid-cols-[1fr_auto] items-center gap-4 py-4 pl-5 pr-4 sm:pl-6 hover:bg-surface-muted transition-colors">
@@ -1531,15 +1504,7 @@ function ResumeSection({
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <p className="text-base truncate">{t.title}</p>
-                    {cat && cc && (
-                      <span
-                        className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 shrink-0"
-                        style={{ backgroundColor: cc.bg, color: cc.text }}
-                      >
-                        <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
-                        {cat.label}
-                      </span>
-                    )}
+                    {cat && <CategoryBadge color={cat.color} label={cat.label} />}
                   </div>
                   <p className="mt-1.5 text-xs text-foreground-muted">
                     <span className="text-primary-500">{t.date && staleDaysLabel(t.date)}</span>

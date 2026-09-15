@@ -29,6 +29,7 @@ import {
 } from '@dnd-kit/core';
 import { TaskItem, ScheduleItem, ScheduleCategory } from '../../types';
 import { getBadgeColors } from '../../utils/colorUtils';
+import { CategoryBadge } from '../CategoryBadge';
 
 /* ─────────── types ─────────── */
 
@@ -132,7 +133,7 @@ function TaskPreviewRow({ task, category, onClick, onStatusCycle }: {
         </button>
         <div className="w-[3px] h-4 rounded-full flex-shrink-0 mt-[3px]" style={{ backgroundColor: category?.color || '#d1d5db' }} />
         <span className={`text-[13px] leading-5 flex-1 min-w-0 ${task.status === 'completed' ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{task.title}</span>
-        {category && (() => { const cc = getBadgeColors(category.color); return <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: cc.bg, color: cc.text }}><span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: cc.dot }} />{category.label}</span>; })()}
+        {category && <CategoryBadge color={category.color} label={category.label} size="sm" />}
       </div>
     </DraggableItem>
   );
@@ -150,7 +151,7 @@ function SchedulePreviewRow({ schedule, category, onClick }: {
         <div className="w-[3px] h-5 rounded-full flex-shrink-0" style={{ backgroundColor: barColor }} />
         <span className="text-[11px] text-foreground-faint flex-shrink-0 tabular-nums">{hasRange ? `${fmt(schedule.date)}~${fmt(schedule.endDate!)}` : schedule.time || '종일'}</span>
         <span className="text-[13px] text-foreground flex-1 min-w-0 truncate">{schedule.title}</span>
-        {category && (() => { const cc = getBadgeColors(category.color); return <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: cc.bg, color: cc.text }}><span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: cc.dot }} />{category.label}</span>; })()}
+        {category && <CategoryBadge color={category.color} label={category.label} size="sm" />}
       </div>
     </DraggableItem>
   );
