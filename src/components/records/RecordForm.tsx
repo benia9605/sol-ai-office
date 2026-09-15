@@ -15,6 +15,7 @@ import { ListFieldEditor } from './ListFieldEditor';
 import { EnergySelector } from './EnergySelector';
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { ProjectSelect } from '../ProjectSelect';
+import { FEATURES } from '../../config/features';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import {
@@ -287,37 +288,17 @@ export function RecordForm({ recordType, initialData, onSave, onCancel }: Record
       {recordType === 'memo' && (
         <div>
           <label className="text-sm font-medium text-gray-600 block mb-1.5">본문</label>
-          <TiptapEditor ref={memoEditorRef} content={memoBody} onChange={setMemoBody} userName={userName} />
+          <TiptapEditor ref={memoEditorRef} content={memoBody} onChange={setMemoBody} userName={userName} placeholder="기록을 작성하세요…" />
         </div>
       )}
 
-      {/* 태그 */}
-      {recordType !== 'memo' && (
+      {/* 프로젝트 — 슬림다운으로 백업/숨김 */}
+      {FEATURES.projects && (
         <div>
-          <label className="text-sm font-medium text-gray-600 block mb-1.5">태그</label>
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {tags.map((tag) => (
-              <span key={tag} className={`inline-flex items-center gap-1 px-2.5 py-1 ${cfg.bgColor} ${cfg.textColor} rounded-full text-xs font-medium`}>
-                #{tag}
-                <button onClick={() => setTags(tags.filter((t) => t !== tag))} className="opacity-60 hover:opacity-100 ml-0.5">x</button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input type="text" value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); handleAddTag(); } }}
-              placeholder="태그 입력 후 Enter"
-              className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-pink-200" />
-          </div>
+          <label className="text-sm font-medium text-gray-600 block mb-1.5">프로젝트</label>
+          <ProjectSelect value={project} onChange={setProject} placeholder="선택 안함" />
         </div>
       )}
-
-      {/* 프로젝트 */}
-      <div>
-        <label className="text-sm font-medium text-gray-600 block mb-1.5">프로젝트</label>
-        <ProjectSelect value={project} onChange={setProject} placeholder="선택 안함" />
-      </div>
 
       {/* 버튼 */}
       <div className="flex justify-end items-center gap-2 pt-1">

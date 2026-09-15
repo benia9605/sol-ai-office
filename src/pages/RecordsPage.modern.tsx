@@ -11,6 +11,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { RecordItem, RecordType } from '../types';
 import { useRecords } from '../hooks/useRecords';
 import { RecordForm } from '../components/records/RecordForm';
+import { FilterDropdown } from '../components/FilterDropdown';
 import { RecordDetailView } from '../components/records/RecordDetailView';
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
@@ -172,27 +173,9 @@ export function RecordsPageModern() {
           })}
         </section>
 
-        {/* ── 필터 + 검색 ── */}
+        {/* ── 검색 + 필터 (할일과 동일 개념: 검색 위 · 디자인 드롭다운) ── */}
         <section className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            <FilterChip
-              active={typeFilter === 'all'}
-              onClick={() => setTypeFilter('all')}
-              label={`전체 ${counts.all}`}
-            />
-            {(['morning', 'evening', 'weekly', 'memo'] as RecordType[]).map((t) => {
-              const meta = typeMeta[t];
-              return (
-                <FilterChip
-                  key={t}
-                  active={typeFilter === t}
-                  onClick={() => setTypeFilter(typeFilter === t ? 'all' : t)}
-                  label={`${meta.labelKo} ${counts[t]}`}
-                />
-              );
-            })}
-          </div>
-
+          {/* 검색 — 필터 위 */}
           <div className="relative">
             <svg viewBox="0 0 20 20" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-faint" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="9" cy="9" r="6" />
@@ -201,10 +184,19 @@ export function RecordsPageModern() {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="제목 · 태그 · 프로젝트 검색"
+              placeholder="제목 · 태그 검색"
               className="w-full pl-10 pr-4 py-2.5 bg-surface border border-line text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
             />
           </div>
+
+          {/* 유형 — 디자인 드롭다운 */}
+          <FilterDropdown
+            label="유형"
+            value={typeFilter}
+            options={[{ key: 'all', label: `전체 ${counts.all}` }, ...(['morning', 'evening', 'weekly', 'memo'] as RecordType[]).map((t) => ({ key: t, label: `${typeMeta[t].labelKo} ${counts[t]}` }))]}
+            onChange={(k) => setTypeFilter(k as TypeFilter)}
+            className="sm:max-w-[16rem]"
+          />
         </section>
 
         {/* ── 기록 리스트 (날짜별 그룹) ── */}
