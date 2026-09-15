@@ -851,20 +851,22 @@ function DateGroupBlock({
   const isOverdue = dayDiff < 0;
 
   return (
-    <div className="grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line items-center">
-      {/* 좌측: 월 / 일 / 요일·건수 (오른쪽 정렬) */}
-      <div className="text-right">
+    <div className="grid grid-cols-[104px_1fr] sm:grid-cols-[128px_1fr] gap-4 sm:gap-6 py-3 border-b border-line items-center">
+      {/* 좌측: 월 / (일 · 요일·건수) — 2줄, 왼쪽 정렬 */}
+      <div>
         <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">
           {MONTHS_EN[d.getMonth()]}
         </p>
-        <p className={`mt-0.5 text-xl font-light leading-none tabular-nums ${
-          isOverdue ? 'text-primary-500' : 'text-foreground-muted'
-        }`}>
-          {String(d.getDate()).padStart(2, '0')}
-        </p>
-        <p className="mt-1 text-[10px] tracking-[0.05em] text-foreground-faint tabular-nums">
-          {DAY_NAMES[d.getDay()]} · {items.length}건
-        </p>
+        <div className="mt-0.5 flex items-baseline gap-1.5">
+          <span className={`text-xl font-light leading-none tabular-nums ${
+            isOverdue ? 'text-primary-500' : 'text-foreground-muted'
+          }`}>
+            {String(d.getDate()).padStart(2, '0')}
+          </span>
+          <span className="text-[10px] tracking-[0.05em] text-foreground-faint tabular-nums whitespace-nowrap">
+            {DAY_NAMES[d.getDay()]} · {items.length}건
+          </span>
+        </div>
       </div>
 
       {/* 우측: 한 줄 행 divide-y (할일명 수직 가운데) */}
@@ -905,11 +907,11 @@ function NoDateGroupBlock({
   onToggleSelect: (id: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line items-center">
-      {/* 좌측 (오른쪽 정렬) */}
-      <div className="text-right">
+    <div className="grid grid-cols-[104px_1fr] sm:grid-cols-[128px_1fr] gap-4 sm:gap-6 py-3 border-b border-line items-center">
+      {/* 좌측 (왼쪽 정렬) */}
+      <div>
         <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">No Date</p>
-        <p className="mt-1 text-[10px] tracking-[0.05em] text-foreground-faint tabular-nums">마감없음 · {items.length}건</p>
+        <p className="mt-0.5 text-[10px] tracking-[0.05em] text-foreground-faint tabular-nums whitespace-nowrap">마감없음 · {items.length}건</p>
       </div>
       {/* 우측 (할일명 수직 가운데) */}
       <div className="min-w-0">
