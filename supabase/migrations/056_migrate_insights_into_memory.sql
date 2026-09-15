@@ -14,12 +14,15 @@ begin
     return;
   end if;
 
+  -- ⚠️ 실제 insights 테이블에 priority/starred/source/link/category 등 일부 컬럼이 없을 수 있어
+  --    to_jsonb(i)->>'col' 로 안전 읽기(없는 키는 NULL). 확실한 컬럼(id/workspace_id/user_id/title/content/tags)만 직접 참조.
   insert into public.company_memory
     (id, workspace_id, created_by, kind, title, body, tags, salience, pinned, status, source, link, category, created_at, updated_at)
   select
     i.id, i.workspace_id, i.user_id, 'insight', i.title, i.content, i.tags,
-    case i.priority when 'high' then 80 when 'medium' then 50 when 'low' then 20 else 50 end,
-    coalesce(i.starred, false), 'active', i.source, i.link, i.category,
+    case (to_jsonb(i)->>'priority') when 'high' then 80 when 'medium' then 50 when 'low' then 20 else 50 end,
+    coalesce((to_jsonb(i)->>'starred')::boolean, false), 'active',
+    to_jsonb(i)->>'source', to_jsonb(i)->>'link', to_jsonb(i)->>'category',
     coalesce(i.created_at, now()), now()
   from public.insights i
   where i.workspace_id is not null
