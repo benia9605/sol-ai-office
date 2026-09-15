@@ -12,6 +12,7 @@ import { RecordItem, RecordType } from '../types';
 import { useRecords } from '../hooks/useRecords';
 import { RecordForm } from '../components/records/RecordForm';
 import { FilterDropdown } from '../components/FilterDropdown';
+import { docToText } from '../components/office/RichText';
 import { RecordDetailView } from '../components/records/RecordDetailView';
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
@@ -65,11 +66,20 @@ export function RecordsPageModern() {
     if (typeFilter !== 'all') result = result.filter((r) => r.recordType === typeFilter);
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
-      result = result.filter((r) =>
-        r.title.toLowerCase().includes(q) ||
-        r.tags?.some((t) => t.toLowerCase().includes(q)) ||
-        r.project?.toLowerCase().includes(q),
-      );
+      result = result.filter((r) => {
+        // 본문까지 검색 — 메모(Tiptap 텍스트) + 아침/저녁/주간 템플릿 값
+        const body = [
+          docToText(r.memoBody),
+          JSON.stringify(r.morningData ?? ''),
+          JSON.stringify(r.eveningData ?? ''),
+          JSON.stringify(r.weeklyData ?? ''),
+        ].join(' ').toLowerCase();
+        return (
+          r.title.toLowerCase().includes(q) ||
+          r.tags?.some((t) => t.toLowerCase().includes(q)) ||
+          body.includes(q)
+        );
+      });
     }
     // 최신 날짜 → 시간 내림차순
     result.sort((a, b) => {
@@ -173,9 +183,14 @@ export function RecordsPageModern() {
           })}
         </section>
 
-        {/* ── 검색 + 필터 (할일과 동일 개념: 검색 위 · 디자인 드롭다운) ── */}
-        <section className="space-y-4">
-          {/* 검색 — 필터 위 */}
+        {/* ── 유형 + 검색 (한 줄: 유형 왼쪽 짧게, 검색이 나머지) ── */}
+        <section className="grid grid-cols-[8rem_1fr] sm:grid-cols-[9rem_1fr] gap-2">
+          <FilterDropdown
+            label="유형"
+            value={typeFilter}
+            options={[{ key: 'all', label: '전체' }, ...(['morning', 'evening', 'weekly', 'memo'] as RecordType[]).map((t) => ({ key: t, label: typeMeta[t].labelKo }))]}
+            onChange={(k) => setTypeFilter(k as TypeFilter)}
+          />
           <div className="relative">
             <svg viewBox="0 0 20 20" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-faint" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="9" cy="9" r="6" />
@@ -184,19 +199,10 @@ export function RecordsPageModern() {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="제목 · 태그 검색"
+              placeholder="제목 · 본문 검색"
               className="w-full pl-10 pr-4 py-2.5 bg-surface border border-line text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
             />
           </div>
-
-          {/* 유형 — 디자인 드롭다운 */}
-          <FilterDropdown
-            label="유형"
-            value={typeFilter}
-            options={[{ key: 'all', label: `전체 ${counts.all}` }, ...(['morning', 'evening', 'weekly', 'memo'] as RecordType[]).map((t) => ({ key: t, label: `${typeMeta[t].labelKo} ${counts[t]}` }))]}
-            onChange={(k) => setTypeFilter(k as TypeFilter)}
-            className="sm:max-w-[16rem]"
-          />
         </section>
 
         {/* ── 기록 리스트 (날짜별 그룹) ── */}
