@@ -44,7 +44,7 @@ function ChipGroup({ value, options, onChange }: { value: string; options: { v: 
     <div className="flex flex-wrap gap-1.5">
       {options.map(o => (
         <button key={o.v} type="button" onClick={() => onChange(o.v)}
-          className={`px-3.5 py-2 rounded-xl text-sm transition-all active:scale-95 ${value === o.v ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
+          className={`px-3.5 py-2 rounded-xl text-sm transition-all active:scale-95 ${value === o.v ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
           {o.label}
         </button>
       ))}

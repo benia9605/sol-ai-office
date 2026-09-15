@@ -121,7 +121,7 @@ export function SaveButton({ onClick, busy, saved, label = '저장', savedText =
   return (
     <>
       <button onClick={onClick} disabled={busy}
-        className="px-5 py-2.5 rounded-xl bg-foreground text-surface text-sm font-bold hover:opacity-85 transition-all active:scale-95 disabled:opacity-40">
+        className="px-5 py-2.5 rounded-xl bg-primary-500 text-white text-sm font-bold hover:opacity-85 transition-all active:scale-95 disabled:opacity-40">
         {busy ? '저장 중…' : label}
       </button>
       {saved && <span className="text-sm text-emerald-500 font-medium">{savedText}</span>}
@@ -150,7 +150,7 @@ export function AddButton({ open, onClick, label = '추가', className = '' }: {
       className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors active:scale-95 ${
         open
           ? 'border-line text-foreground-muted hover:border-foreground hover:text-foreground'
-          : 'border-foreground bg-foreground text-surface hover:opacity-85'
+          : 'border-primary-500 bg-primary-500 text-white hover:opacity-85'
       } ${className}`}>
       {open ? '취소' : `＋ ${label}`}
     </button>

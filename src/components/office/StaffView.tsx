@@ -98,7 +98,7 @@ function AnalystDataPanel({ workspace }: { workspace: Workspace }) {
   const man = (n: number) => `${Math.round(n / 10000).toLocaleString()}`;
   const perBtn = (d: number) => (
     <button key={d} onClick={() => setPeriod(d)}
-      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${period === d ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{d}일</button>
+      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${period === d ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{d}일</button>
   );
 
   return (
@@ -338,8 +338,8 @@ function CSDataPanel({ workspace }: { workspace: Workspace }) {
       <div className="flex items-center h-9 mb-2 gap-2">
         <span className="text-xs font-semibold text-foreground-faint uppercase tracking-wider">💬 문의 관리</span>
         <div className="ml-auto flex gap-1">
-          <button onClick={() => setTab('tickets')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'tickets' ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted'}`}>티켓 {tickets.length}</button>
-          <button onClick={() => setTab('faq')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'faq' ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted'}`}>FAQ {faq.length}</button>
+          <button onClick={() => setTab('tickets')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'tickets' ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted'}`}>티켓 {tickets.length}</button>
+          <button onClick={() => setTab('faq')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'faq' ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted'}`}>FAQ {faq.length}</button>
         </div>
       </div>
       <Card className="p-4 space-y-3">
@@ -359,7 +359,7 @@ function CSDataPanel({ workspace }: { workspace: Workspace }) {
                 <select value={channel} onChange={e => setChannel(e.target.value as TicketChannel)} className="rounded-lg border border-line px-2 py-1.5 text-xs bg-white">
                   {Object.entries(CH_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
-                <button onClick={add} disabled={adding || !text.trim()} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">＋ 분류·추가</button>
+                <button onClick={add} disabled={adding || !text.trim()} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40 transition-all">＋ 분류·추가</button>
               </div>
             </div>
             {/* 티켓 리스트 */}
@@ -448,8 +448,8 @@ function MonitorDataPanel({ workspace }: { workspace: Workspace }) {
         <span className="text-xs font-semibold text-foreground-faint uppercase tracking-wider">📡 트렌드 레이더</span>
         {msg && <span className="text-[11px] text-emerald-600">{msg}</span>}
         <div className="ml-auto flex gap-1">
-          <button onClick={() => setTab('competitor')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'competitor' ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted'}`}>경쟁사 {competitors.length}</button>
-          <button onClick={() => setTab('keyword')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'keyword' ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted'}`}>키워드 {keywords.length}</button>
+          <button onClick={() => setTab('competitor')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'competitor' ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted'}`}>경쟁사 {competitors.length}</button>
+          <button onClick={() => setTab('keyword')} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${tab === 'keyword' ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted'}`}>키워드 {keywords.length}</button>
         </div>
       </div>
       <Card className="p-4 space-y-3">
@@ -458,7 +458,7 @@ function MonitorDataPanel({ workspace }: { workspace: Workspace }) {
             <div className="flex gap-2">
               <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') add(); }}
                 placeholder={tab === 'competitor' ? '경쟁사 이름·URL' : '추적할 키워드'} className="flex-1 rounded-lg border border-line px-3 py-1.5 text-sm focus:outline-none focus:border-foreground" />
-              <button onClick={add} disabled={!name.trim()} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">＋ 추가</button>
+              <button onClick={add} disabled={!name.trim()} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40">＋ 추가</button>
               <button onClick={seed} disabled={seeding} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-muted text-foreground hover:bg-surface-muted disabled:opacity-50">{seeding ? '…' : '🌱 시목 시드'}</button>
             </div>
             {tab === 'competitor' ? (
@@ -511,7 +511,7 @@ function OpsDataPanel({ workspace }: { workspace: Workspace }) {
       <div className="flex items-center h-9 mb-2">
         <span className="text-xs font-semibold text-foreground-faint uppercase tracking-wider">🧭 CEO 브리핑 편집장</span>
         <span className="ml-2 text-[11px] text-foreground-faint hidden sm:inline">여기서 생성하면 대시보드에 반영돼요</span>
-        <button onClick={generate} disabled={gen} className="ml-auto text-[11px] px-3 py-1.5 rounded-lg bg-foreground text-white font-medium hover:opacity-85 disabled:opacity-50">{gen ? '생성 중…' : brief ? '↻ 새로고침' : '브리핑 생성'}</button>
+        <button onClick={generate} disabled={gen} className="ml-auto text-[11px] px-3 py-1.5 rounded-lg bg-primary-500 text-white font-medium hover:opacity-85 disabled:opacity-50">{gen ? '생성 중…' : brief ? '↻ 새로고침' : '브리핑 생성'}</button>
       </div>
       <Card className="p-4 space-y-3">
         {loading ? <p className="text-xs text-foreground-faint py-4 text-center">불러오는 중…</p> : !brief ? (
@@ -650,7 +650,7 @@ function ReportComments({ reportId, initial }: { reportId: string; initial?: Rep
           <div className="flex gap-1.5">
             <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') add(); }}
               placeholder="내 의견 남기기…" className="flex-1 rounded-xl border border-line px-3 py-1.5 text-sm focus:border-foreground focus:outline-none" />
-            <button onClick={add} disabled={saving} className="px-3 py-1.5 rounded-xl bg-foreground text-white text-xs font-medium hover:opacity-85 active:scale-95 transition-all disabled:opacity-50">남기기</button>
+            <button onClick={add} disabled={saving} className="px-3 py-1.5 rounded-xl bg-primary-500 text-white text-xs font-medium hover:opacity-85 active:scale-95 transition-all disabled:opacity-50">남기기</button>
           </div>
         </div>
       )}
@@ -811,7 +811,7 @@ function ManualRunModal({ staff, workspace, fields, presetMode, emoji, onClose, 
                       {f.options?.map(o => {
                         const sel = (input[f.name] || '').split(',').filter(Boolean).includes(o);
                         return <button key={o} type="button" onClick={() => toggleMulti(f.name, o)}
-                          className={`text-[11px] px-2.5 py-1 rounded-full transition-all active:scale-95 ${sel ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted'}`}>{o}</button>;
+                          className={`text-[11px] px-2.5 py-1 rounded-full transition-all active:scale-95 ${sel ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted'}`}>{o}</button>;
                       })}
                     </div>
                   ) : f.type === 'duration' ? (() => {
@@ -824,7 +824,7 @@ function ManualRunModal({ staff, workspace, fields, presetMode, emoji, onClose, 
                         <div className="flex gap-1 flex-shrink-0">
                           {['숏폼', '롱폼'].map(o => (
                             <button key={o} type="button" onClick={() => setDur(o, len)}
-                              className={`px-3 py-2 rounded-xl text-sm font-medium transition-all active:scale-95 ${ftype === o ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted'}`}>{o}</button>
+                              className={`px-3 py-2 rounded-xl text-sm font-medium transition-all active:scale-95 ${ftype === o ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted'}`}>{o}</button>
                           ))}
                         </div>
                         <input value={len} onChange={e => setDur(ftype || '숏폼', e.target.value)} placeholder={f.placeholder}
@@ -840,7 +840,7 @@ function ManualRunModal({ staff, workspace, fields, presetMode, emoji, onClose, 
             </div>
             <div className="flex gap-2 mt-5">
               <button onClick={onClose} className="flex-1 py-2.5 rounded-2xl bg-surface-muted text-foreground-muted text-sm font-medium hover:bg-surface-muted transition-all">취소</button>
-              <button onClick={run} disabled={running} className="flex-1 py-2.5 rounded-2xl bg-foreground text-white text-sm font-bold hover:opacity-85 active:scale-95 transition-all disabled:opacity-50">
+              <button onClick={run} disabled={running} className="flex-1 py-2.5 rounded-2xl bg-primary-500 text-white text-sm font-bold hover:opacity-85 active:scale-95 transition-all disabled:opacity-50">
                 {running ? '실행 중…' : '▶ 실행'}
               </button>
             </div>
@@ -855,7 +855,7 @@ function ManualRunModal({ staff, workspace, fields, presetMode, emoji, onClose, 
             </div>
             <div className="flex gap-2 mt-5">
               <button onClick={() => setPreview(null)} className="flex-1 py-2.5 rounded-2xl bg-surface-muted text-foreground-muted text-sm font-medium hover:bg-surface-muted transition-all">↺ 다시</button>
-              <button onClick={save} disabled={saving} className="flex-1 py-2.5 rounded-2xl bg-foreground text-white text-sm font-bold hover:opacity-85 active:scale-95 transition-all disabled:opacity-50">
+              <button onClick={save} disabled={saving} className="flex-1 py-2.5 rounded-2xl bg-primary-500 text-white text-sm font-bold hover:opacity-85 active:scale-95 transition-all disabled:opacity-50">
                 {saving ? '저장 중…' : '💾 일일 리포트에 저장'}
               </button>
             </div>
@@ -898,7 +898,7 @@ function PromptModal({ staff, onClose, onSaved }: { staff: Staff; onClose: () =>
         <div className="flex gap-2.5 pt-3">
           <button onClick={onClose} className="px-5 py-3 rounded-2xl text-sm text-foreground-muted hover:bg-surface-muted transition-colors active:scale-95">취소</button>
           <button onClick={save} disabled={busy}
-            className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all active:scale-[0.97]">
+            className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40 transition-all active:scale-[0.97]">
             {busy ? '저장 중…' : '저장'}
           </button>
         </div>
@@ -961,7 +961,7 @@ function RoutineScheduleModal({
 
   const seg = (v: typeof schedule, t: string) => (
     <button onClick={() => setSchedule(v)}
-      className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all active:scale-95 ${schedule === v ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted'}`}>{t}</button>
+      className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all active:scale-95 ${schedule === v ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted'}`}>{t}</button>
   );
 
   return createPortal(
@@ -1011,7 +1011,7 @@ function RoutineScheduleModal({
             <div className="flex gap-1.5">
               {DOW.map((d, i) => (
                 <button key={i} onClick={() => setDow(i)}
-                  className={`w-9 h-9 rounded-xl text-sm font-medium transition-all active:scale-90 ${dow === i ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted'}`}>{d}</button>
+                  className={`w-9 h-9 rounded-xl text-sm font-medium transition-all active:scale-90 ${dow === i ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted'}`}>{d}</button>
               ))}
             </div>
             <input type="time" value={time} onChange={e => setTime(e.target.value)} className="px-3 py-2 rounded-xl bg-surface-muted border border-line text-sm focus:outline-none focus:border-line" />
@@ -1032,7 +1032,7 @@ function RoutineScheduleModal({
         <div className="flex gap-2.5 pt-1">
           <button onClick={onClose} className="px-5 py-3 rounded-2xl text-sm text-foreground-muted hover:bg-surface-muted transition-colors active:scale-95">취소</button>
           <button onClick={submit} disabled={!label.trim() || busy}
-            className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all active:scale-[0.97]">
+            className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40 transition-all active:scale-[0.97]">
             {busy ? '저장 중…' : (isEdit ? '저장' : '추가')}
           </button>
         </div>
@@ -1181,7 +1181,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
               <input autoFocus value={nameVal} onChange={e => setNameVal(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setEditName(false); setNameVal(staff.name); } }}
                 className="text-lg font-extrabold text-foreground px-2 py-1 rounded-lg border border-line focus:outline-none" />
-              <button onClick={saveName} className="text-xs px-2 py-1 rounded-lg bg-foreground text-white">저장</button>
+              <button onClick={saveName} className="text-xs px-2 py-1 rounded-lg bg-primary-500 text-white">저장</button>
             </div>
           ) : (
             <div className="flex items-center gap-1.5">
@@ -1268,7 +1268,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
           <span className="text-xs font-semibold text-foreground-faint uppercase tracking-wider">매일 하는 일 (자동)</span>
           <div className="flex items-center gap-1.5">
             <button onClick={run} disabled={running || runningRoutineId !== null} title="모든 활성 일과를 한 번에 실행"
-              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-foreground text-white hover:opacity-85 disabled:opacity-50 transition-all active:scale-95">
+              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-500 text-white hover:opacity-85 disabled:opacity-50 transition-all active:scale-95">
               {running ? '실행 중…' : '▶ 전체 실행'}
             </button>
             <button onClick={() => setShowRoutine(true)}
@@ -1344,7 +1344,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
                 <div key={a.id} className="flex items-center gap-2 p-2 rounded-2xl bg-surface-muted">
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground flex-shrink-0">{label}</span>
                   <span className="text-sm text-foreground flex-1 truncate">{title}</span>
-                  <button onClick={() => approve(a)} className="text-[11px] px-2.5 py-1 rounded-lg bg-foreground text-white hover:opacity-85 active:scale-95 transition-all flex-shrink-0">승인</button>
+                  <button onClick={() => approve(a)} className="text-[11px] px-2.5 py-1 rounded-lg bg-primary-500 text-white hover:opacity-85 active:scale-95 transition-all flex-shrink-0">승인</button>
                   <button onClick={() => dismiss(a.id)} className="text-[11px] px-2.5 py-1 rounded-lg bg-surface-muted text-foreground-muted hover:bg-surface-muted active:scale-95 transition-all flex-shrink-0">반려</button>
                 </div>
               );

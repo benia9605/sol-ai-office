@@ -88,7 +88,7 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
         </div>
         <div className="flex gap-2 justify-end">
           <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted">취소</button>
-          <button onClick={create} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">만들기</button>
+          <button onClick={create} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40">만들기</button>
         </div>
       </InlineAddCard>
       {(() => { const shown = q.trim() ? list.filter(m => `${m.title} ${m.content ? docToText(m.content) : ''}`.toLowerCase().includes(q.trim().toLowerCase())) : list; return (

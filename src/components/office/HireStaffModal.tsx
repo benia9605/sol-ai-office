@@ -109,7 +109,7 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
                 {MODEL_OPTIONS.map(o => (
                   <button key={o.key} onClick={() => setModel(o.key)}
                     className={`px-3 py-2 rounded-2xl text-left transition-all active:scale-[0.97] border
-                      ${model === o.key ? 'bg-foreground text-white border-foreground' : 'bg-surface-muted text-foreground-muted border-line'}`}>
+                      ${model === o.key ? 'bg-primary-500 text-white border-foreground' : 'bg-surface-muted text-foreground-muted border-line'}`}>
                     <div className="text-[13px] font-semibold">{o.label}</div>
                     <div className={`text-[10px] ${model === o.key ? 'text-white/80' : 'text-foreground-faint'}`}>{o.desc}</div>
                   </button>
@@ -146,7 +146,7 @@ export function HireStaffModal({ open, workspace, onClose, onHired }: Props) {
             <div className="flex gap-2.5 pt-1">
               <button onClick={() => setType(null)} className="px-5 py-3 rounded-2xl text-sm text-foreground-muted hover:bg-surface-muted transition-colors active:scale-95">← 뒤로</button>
               <button onClick={submit} disabled={!name.trim() || busy}
-                className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all active:scale-[0.97]">
+                className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40 transition-all active:scale-[0.97]">
                 {busy ? '채용 중…' : '채용하기'}
               </button>
             </div>

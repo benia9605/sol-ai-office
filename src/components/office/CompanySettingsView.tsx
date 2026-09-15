@@ -91,7 +91,7 @@ function CompanyInfoCard({ workspace, onSaved }: { workspace: Workspace; onSaved
           <div className="flex flex-wrap gap-1.5">
             {EMOJIS.map((e) => (
               <button key={e} onClick={() => { setEmoji(e); setSaved(false); }}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-all active:scale-90 ${emoji === e ? 'bg-foreground text-white' : 'bg-surface-muted hover:bg-surface-muted'}`}>
+                className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-all active:scale-90 ${emoji === e ? 'bg-primary-500 text-white' : 'bg-surface-muted hover:bg-surface-muted'}`}>
                 {e}
               </button>
             ))}

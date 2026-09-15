@@ -77,7 +77,7 @@ export function LikeCommentBlock({ resource, resId, members }: {
             onKeyDown={(e) => { if (e.key === 'Enter') { submit(replyDraft, c.id).then(() => { setReplyDraft(''); setReplyTo(null); }); } }}
             placeholder="답글…" className="flex-1 rounded-lg border border-line px-2.5 py-1 text-[13px] focus:outline-none focus:border-foreground" />
           <button onClick={() => submit(replyDraft, c.id).then(() => { setReplyDraft(''); setReplyTo(null); })} disabled={busy || !replyDraft.trim()}
-            className="text-[11px] px-2 py-1 rounded-lg bg-foreground text-white disabled:opacity-40">등록</button>
+            className="text-[11px] px-2 py-1 rounded-lg bg-primary-500 text-white disabled:opacity-40">등록</button>
         </div>
       )}
       {repliesOf(c.id).map((r) => renderComment(r, true))}
@@ -101,7 +101,7 @@ export function LikeCommentBlock({ resource, resId, members }: {
           placeholder={top.length === 0 ? '첫 댓글을 남겨보세요' : '댓글 남기기…'}
           className="flex-1 rounded-lg border border-line px-3 py-1.5 text-sm focus:outline-none focus:border-foreground" />
         <button onClick={() => submit(draft).then(() => setDraft(''))} disabled={busy || !draft.trim()}
-          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40">등록</button>
+          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40">등록</button>
       </div>
     </div>
   );

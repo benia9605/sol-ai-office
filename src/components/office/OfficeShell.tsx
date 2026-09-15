@@ -250,19 +250,19 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
               const open = openGroup === g.id;
               return (
                 <button key={g.id} type="button" onClick={() => setOpenGroup(open ? null : g.id)} aria-expanded={open}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${active || open ? 'text-foreground font-semibold' : 'text-foreground-faint hover:text-foreground'}`}>
+                  className={`px-3 py-1.5 rounded-lg transition-colors ${active || open ? 'text-primary-500 font-semibold' : 'text-foreground-faint hover:text-foreground'}`}>
                   {g.label}
                 </button>
               );
             })}
             <button type="button" onClick={() => { setView('me'); setOpenGroup(null); }} title="나 — 프로필 · 내 할일"
-              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'me' ? 'text-foreground' : 'text-foreground-faint hover:text-foreground'}`}>
+              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'me' ? 'text-primary-500' : 'text-foreground-faint hover:text-foreground'}`}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="inline-block align-middle">
                 <path d="M20 21a8 8 0 0 0-16 0" /><circle cx="12" cy="7" r="4" />
               </svg>
             </button>
             <button type="button" onClick={() => { setView('company'); setOpenGroup(null); }} title="회사 설정 — 정보 · 브레인 · 멤버"
-              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'company' ? 'text-foreground' : 'text-foreground-faint hover:text-foreground'}`}>⚙️</button>
+              className={`px-2.5 py-1.5 rounded-lg transition-colors ${view === 'company' ? 'text-primary-500' : 'text-foreground-faint hover:text-foreground'}`}>⚙️</button>
           </nav>
 
           <div className="flex-1" />
@@ -288,8 +288,8 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                 const on = view === it.id;
                 return (
                   <button key={it.id} type="button" onClick={() => goNav(it.id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${on ? 'bg-surface-muted text-foreground' : 'text-foreground-muted hover:bg-surface-muted'}`}>
-                    <NavIcon id={it.id} size={16} className={on ? 'text-foreground' : 'text-foreground-faint'} />
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${on ? 'bg-primary-50 text-primary-500 font-medium' : 'text-foreground-muted hover:bg-surface-muted'}`}>
+                    <NavIcon id={it.id} size={16} className={on ? 'text-primary-500' : 'text-foreground-faint'} />
                     <span>{it.label}</span>
                   </button>
                 );
@@ -336,7 +336,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
           const on = view === n.id;
           return (
             <button key={n.id} onClick={() => goNav(n.id)}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${on ? 'text-foreground' : 'text-foreground-faint'}`}>
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${on ? 'text-primary-500' : 'text-foreground-faint'}`}>
               <NavIcon id={n.id} size={21} className={on ? 'text-foreground' : 'text-foreground-faint'} />
               <span className="text-[10px] font-medium">{n.label}</span>
             </button>
@@ -373,8 +373,8 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                       const on = view === n.id;
                       return (
                         <button key={n.id} onClick={() => goNav(n.id)}
-                          className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${on ? 'bg-surface-muted text-foreground' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
-                          <NavIcon id={n.id} size={22} className={on ? 'text-foreground' : 'text-foreground-muted'} />
+                          className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${on ? 'bg-primary-50 text-primary-500' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
+                          <NavIcon id={n.id} size={22} className={on ? 'text-primary-500' : 'text-foreground-muted'} />
                           <span className="text-[11px] font-medium">{n.label}</span>
                         </button>
                       );
@@ -386,13 +386,13 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                 <p className="text-[10px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">설정</p>
                 <div className="grid grid-cols-4 gap-2">
                   <button onClick={() => { setView('me'); setMoreOpen(false); }}
-                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'me' ? 'bg-surface-muted text-foreground' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
-                    <NavIcon id="me" size={22} className={view === 'me' ? 'text-foreground' : 'text-foreground-muted'} />
+                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'me' ? 'bg-primary-50 text-primary-500' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
+                    <NavIcon id="me" size={22} className={view === 'me' ? 'text-primary-500' : 'text-foreground-muted'} />
                     <span className="text-[11px] font-medium">나</span>
                   </button>
                   <button onClick={() => { setView('company'); setMoreOpen(false); }}
-                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'company' ? 'bg-surface-muted text-foreground' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
-                    <NavIcon id="company" size={22} className={view === 'company' ? 'text-foreground' : 'text-foreground-muted'} />
+                    className={`flex flex-col items-center gap-1 py-3 rounded-2xl transition-colors ${view === 'company' ? 'bg-primary-50 text-primary-500' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
+                    <NavIcon id="company" size={22} className={view === 'company' ? 'text-primary-500' : 'text-foreground-muted'} />
                     <span className="text-[11px] font-medium">회사 설정</span>
                   </button>
                 </div>

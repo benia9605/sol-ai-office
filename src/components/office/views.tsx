@@ -284,7 +284,7 @@ function BriefingPanel({ workspace, onNavigate }: { workspace: Workspace; onNavi
                     onKeyDown={e => { if (e.key === 'Enter') saveTarget(); if (e.key === 'Escape') setEditTarget(false); }}
                     placeholder="예: 3000" className="w-24 px-2 py-1 rounded-lg border border-line text-sm focus:outline-none" />
                   <span className="text-[11px] text-foreground-faint">만원</span>
-                  <button onClick={saveTarget} className="text-[11px] px-2 py-1 rounded-lg bg-foreground text-white">저장</button>
+                  <button onClick={saveTarget} className="text-[11px] px-2 py-1 rounded-lg bg-primary-500 text-white">저장</button>
                 </div>
               ) : (
                 <p className="text-[12px] text-foreground-muted leading-relaxed">{brief.sales.one_line}</p>
@@ -717,7 +717,7 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={() => onSave({ title: title.trim() || task.title, priority, status, date: date || undefined, assigneeId: assigneeId || undefined, category: category || undefined, meetingId: meetingId || undefined })}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 transition-all">저장</button>
           </div>
         </div>
         {/* 좋아요·댓글 (오피스 할일만) */}
@@ -1259,12 +1259,12 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
 
   const modeBtn = (m: typeof mode, label: string) => (
     <button key={m} onClick={() => setMode(m)}
-      className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${mode === m ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
+      className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${mode === m ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
   );
   // 좌우 탭 (밑줄형) — 전체 / 내 할일
   const TabBtn = ({ id, label, count }: { id: 'all' | 'mine'; label: string; count: number }) => (
     <button onClick={() => setScope(id)}
-      className={`pb-2.5 -mb-px border-b-2 text-sm transition-colors ${scope === id ? 'border-foreground text-foreground font-semibold' : 'border-transparent text-foreground-muted hover:text-foreground'}`}>
+      className={`pb-2.5 -mb-px border-b-2 text-sm transition-colors ${scope === id ? 'border-primary-500 text-primary-500 font-semibold' : 'border-transparent text-foreground-muted hover:text-foreground'}`}>
       {label} <span className={`ml-1 text-xs tabular-nums ${scope === id ? 'text-foreground' : 'text-foreground-faint'}`}>{count}</span>
     </button>
   );
@@ -1282,7 +1282,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
         {modeBtn('day', '일별')}{modeBtn('calendar', '캘린더')}{modeBtn('list', '전체')}
         {mode !== 'calendar' && (
           <button onClick={() => selectMode ? exitSelect() : setSelectMode(true)}
-            className={`ml-auto px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${selectMode ? 'bg-foreground text-white' : 'border border-line text-foreground-muted hover:border-foreground hover:text-foreground'}`}>
+            className={`ml-auto px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${selectMode ? 'bg-primary-500 text-white' : 'border border-line text-foreground-muted hover:border-foreground hover:text-foreground'}`}>
             {selectMode ? '완료' : '일괄편집'}
           </button>
         )}
@@ -1339,7 +1339,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
             <button onClick={() => { setShowForm(false); setForm(blankForm()); }}
               className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={save} disabled={!form.title.trim()}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
         </Card>
       )}
@@ -1601,7 +1601,7 @@ export function LogView({ workspace, onNavigate }: { workspace: Workspace; onNav
       <ViewHead eyebrow="MEMO" title="기록" sub={`메모 ${memos.length}개`} />
       <div className="flex justify-end mb-3">
         <button onClick={() => setWriting(v => !v)}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-foreground text-white hover:opacity-85 active:scale-95 transition-all">＋ 메모</button>
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-500 text-white hover:opacity-85 active:scale-95 transition-all">＋ 메모</button>
       </div>
       {memos.length > 0 && <SearchBar value={q} onChange={setQ} placeholder="기록 검색" />}
       {writing && (
@@ -1619,7 +1619,7 @@ export function LogView({ workspace, onNavigate }: { workspace: Workspace; onNav
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setWriting(false); setTitle(''); setBody(undefined); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
-            <button onClick={save} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
+            <button onClick={save} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 transition-all">저장</button>
           </div>
         </Card>
       )}
@@ -1746,7 +1746,7 @@ function ContentMetricsEditor({ item, workspaceId }: { item: ContentItem; worksp
         <div className="flex gap-1">
           {(['h24', 'h72', 'd7'] as ContentCheckpoint[]).map(c => (
             <button key={c} onClick={() => setCp(c)}
-              className={`px-2 py-1 rounded-lg text-[11px] ${cp === c ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
+              className={`px-2 py-1 rounded-lg text-[11px] ${cp === c ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>
               {CHECKPOINT_LABEL[c]}{metrics[c] ? ' ●' : ''}
             </button>
           ))}
@@ -1861,7 +1861,7 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
             className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
-            <button onClick={doSave} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
+            <button onClick={doSave} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 transition-all">저장</button>
           </div>
         </div>
       </div>
@@ -2033,7 +2033,7 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
   const openContent = (c: ContentItem) => onNavigate ? onNavigate('contents/' + c.id) : setSelected(c);
   const chip = (id: ContentStatus | 'all', label: string) => (
     <button key={id} onClick={() => setFilter(id)}
-      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
   );
 
   return (
@@ -2065,7 +2065,7 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setShowForm(false); setForm({ title: '', platform: '', contentType: '' }); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={save} disabled={!form.title.trim()}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
         </Card>
       )}
@@ -2176,7 +2176,7 @@ function ProductEditPopup({ product, onSave, onDelete, onClose }: {
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={() => onSave(formToFields(f))} disabled={!f.name.trim()}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">저장</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40 transition-all">저장</button>
           </div>
         </div>
       </div>
@@ -2228,7 +2228,7 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setShowForm(false); setForm(emptyProductForm); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
             <button onClick={save} disabled={!form.name.trim()}
-              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
         </Card>
       )}
@@ -2334,7 +2334,7 @@ export function SalesDailyView({ workspace }: { workspace: Workspace }) {
         {editMode && editing ? <button onClick={() => del(editing.id)} className="text-xs text-rose-400 hover:text-rose-600 px-2 py-1.5">삭제</button> : <span />}
         <div className="flex gap-2">
           <button onClick={onCancel} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
-          <button onClick={onSubmit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">{editMode ? '저장' : '추가'}</button>
+          <button onClick={onSubmit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 transition-all">{editMode ? '저장' : '추가'}</button>
         </div>
       </div>
       {editMode && <p className="text-[10px] text-foreground-faint">※ 날짜·채널은 키라서 수정 불가 — 바꾸려면 삭제 후 새로 추가.</p>}
@@ -2438,7 +2438,7 @@ function MemoryDetailPopup({ item, onSave, onArchive, onDelete, onClose }: {
           </div>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
-            <button onClick={submit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 transition-all">저장</button>
+            <button onClick={submit} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 transition-all">저장</button>
           </div>
         </div>
       </div>
@@ -2476,7 +2476,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
 
   const chip = (id: MemoryKind | 'all', label: string) => (
     <button key={id} onClick={() => setKindFilter(id)}
-      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${kindFilter === id ? 'bg-foreground text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${kindFilter === id ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
   );
 
   return (
@@ -2512,7 +2512,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
           </label>
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setShowForm(false); setForm({ title: '', body: '', kind: 'ceo_memo', tags: '', salience: 50, pinned: false }); }} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted transition-colors">취소</button>
-            <button onClick={save} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-foreground text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
+            <button onClick={save} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40 transition-all">추가</button>
           </div>
         </Card>
       )}
