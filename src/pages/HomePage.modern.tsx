@@ -154,20 +154,21 @@ export function HomePageModern() {
                       {daysLabel(u.daysLeft)}
                     </span>
                     <span className={`text-sm flex-1 truncate ${u.status === 'completed' ? 'line-through text-foreground-faint' : ''}`}>{u.title}</span>
-                    {/* 상태 체크 — 할일(빈칸)·진행중(점)·완료(체크). 클릭 시 순환 */}
+                    {/* 상태 체크 — 할일 페이지와 동일(각진 사각): 할일=빈칸·진행중=사각·완료=체크. 클릭 시 순환 */}
                     <button
+                      type="button"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); cycleStatus(u.id); }}
+                      aria-label="상태 변경"
                       title={u.status === 'completed' ? '완료' : u.status === 'in_progress' ? '진행 중' : '할 일'}
-                      className={`size-4 shrink-0 rounded-[5px] border flex items-center justify-center transition-colors ${
-                        u.status === 'completed' ? 'bg-primary-500 border-primary-500 text-white'
-                          : u.status === 'in_progress' ? 'border-primary-500'
-                          : 'border-line-strong hover:border-foreground'}`}
+                      className={`w-4 h-4 border flex items-center justify-center shrink-0 transition-colors ${
+                        u.status === 'completed' ? 'bg-primary-500 border-primary-500'
+                          : u.status === 'in_progress' ? 'bg-surface border-foreground'
+                          : 'bg-surface border-line-strong hover:border-foreground'}`}
                     >
-                      {u.status === 'completed'
-                        ? <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                        : u.status === 'in_progress'
-                          ? <span className="size-1.5 rounded-full bg-primary-500" />
-                          : null}
+                      {u.status === 'completed' && (
+                        <svg viewBox="0 0 12 12" className="w-2.5 h-2.5 text-surface" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      )}
+                      {u.status === 'in_progress' && <span className="w-1.5 h-1.5 bg-foreground" aria-hidden />}
                     </button>
                   </li>
                 ))}
@@ -196,10 +197,10 @@ export function HomePageModern() {
 
             {/* 독서 */}
             <WidgetBox
-              label="Reading"
-              title="읽고 있는 책"
+              label="Study"
+              title="진행 중인 스터디"
               href="/readings"
-              emptyText="진행 중인 책 없음"
+              emptyText="진행 중인 스터디 없음"
               empty={readingBooks.length === 0}
             >
               <ul className="divide-y divide-line">
