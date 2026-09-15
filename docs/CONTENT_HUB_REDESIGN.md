@@ -111,10 +111,11 @@
 
 | # | 파일 | 내용 |
 |---|------|------|
-| 051 | `051_content_idea_category_channel.sql` | content_items에 `idea_id`(self-FK)·`category`·`channel` 추가 + platform→channel 백필 + 인덱스(idea_id, channel) |
-| 052 | `052_youtube_video_content_link.sql` | youtube_videos에 `content_item_id` FK 추가 + 인덱스 |
-| 053 | `053_company_memory_source_category.sql` | company_memory에 `source`·`link`·`category` 추가 |
-| 054 | `054_migrate_insights_into_memory.sql` | insights → company_memory 복사(kind='insight', 매핑). **insights 테이블은 드롭하지 않고 보존**(롤백 안전), 앱은 company_memory만 읽음 |
+| 052 | `052_content_idea_category_channel.sql` | content_items에 `idea_id`(self-FK)·`category`·`channel` 추가 + platform→channel 백필 + 인덱스(idea_id, channel) |
+| 053 | `053_youtube_video_content_link.sql` | youtube_videos에 `content_item_id` FK 추가 + 인덱스 |
+| 054 | `054_company_memory_source_category.sql` | company_memory에 `source`·`link`·`category` 추가 |
+| 055 | `055_migrate_insights_into_memory.sql` | insights → company_memory 복사(kind='insight', 매핑). **insights 테이블은 드롭하지 않고 보존**(롤백 안전), 앱은 company_memory만 읽음 |
+| — | 참고 | 051은 Phase 0 카테고리(`051_options_workspace.sql`)가 이미 사용 |
 
 ## 5. Mock 3곳 동기화 (필수)
 각 신규 컬럼마다: `types.ts`(camelCase) / `*.service.ts` Row(snake_case)+변환 / `mockSupabase.ts` 매핑.

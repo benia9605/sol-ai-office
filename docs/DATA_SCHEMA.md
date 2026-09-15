@@ -93,7 +93,7 @@
 | `notification_log` | id, user_id, type, ref_key, created_at |
 | `daily_completions` | id, user_id, date, count |
 | `custom_options` | id, user_id, option_type, value |
-| `options` | id, user_id, **workspace_id**(마이그 055·NULL=개인/값=오피스), category, name, color, emoji, sort_order, created_at · 공용 카테고리 시스템(category='<scope>_category') + 인사이트 출처. docs/CATEGORY_SYSTEM.md |
+| `options` | id, user_id, **workspace_id**(마이그 051·NULL=개인/값=오피스), category, name, color, emoji, sort_order, created_at · 공용 카테고리 시스템(category='<scope>_category') + 인사이트 출처. docs/CATEGORY_SYSTEM.md |
 | `active_theme` 컬럼 | user_profiles에 추가됨 (001) |
 | `insights.starred` | 즐겨찾기 (002) |
 

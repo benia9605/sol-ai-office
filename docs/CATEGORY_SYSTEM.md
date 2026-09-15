@@ -82,7 +82,7 @@ interface Category { id: string; label: string; color: string; order?: number; }
 ## 5. DB 마이그레이션
 | # | 파일 | 내용 |
 |---|------|------|
-| 055 | `055_custom_options_workspace.sql` | `custom_options`에 `workspace_id`(nullable) + 인덱스(option_type, workspace_id). RLS: 개인(user_id) / 오피스(workspace 멤버) 모두 허용. 기존 행은 workspace_id=null(개인) 유지 |
+| 051 | `051_options_workspace.sql` | `options` 테이블에 `workspace_id`(nullable) + 인덱스(category, workspace_id). RLS: 개인(user_id) / 오피스(workspace 멤버) 모두 허용. 기존 행은 workspace_id=null(개인) 유지 |
 | — | 시드 | 각 scope 기본 세트(없으면) 생성: task=개발/디자인/콘텐츠/미팅/행정, content=스타일링/교육/브랜딩/제품/기타 등 |
 
 ## 6. Mock 3곳 동기화
@@ -91,7 +91,7 @@ interface Category { id: string; label: string; color: string; order?: number; }
 - `mockSupabase.ts`: custom_options 시드에 `workspace_id` 추가, scope별 기본 세트(content 등) 추가, `_LS_KEY` bump.
 
 ## 7. 단계 (Phase 0 — 콘텐츠 허브보다 먼저 깔면 재사용됨)
-1. 마이그 055 + `categories.service`/`useCategories` + `CategoryManager` 컴포넌트.
+1. 마이그 051 + `categories.service`/`useCategories` + `CategoryManager` 컴포넌트.
 2. 기존 메뉴를 훅 기반으로 교체(할일·인사이트·독서 먼저 — 이미 배찌 있음).
 3. 미적용 메뉴에 배찌+필터+관리 부착(기록·콘텐츠).
 4. 오피스 워크스페이스 세트 검증(개인↔오피스 분리 확인).
