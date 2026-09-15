@@ -81,7 +81,7 @@
 | 테이블 | 컬럼 |
 |---|---|
 | `youtube_channels` | id, user_id, channel_id, title, thumbnail, subscriber_count, video_count, connected_at |
-| `youtube_videos` | id, user_id, channel_id, video_id, title, thumbnail, published_at, view_count, like_count, comment_count, script |
+| `youtube_videos` | id, user_id, channel_id, video_id, title, thumbnail, published_at, view_count, like_count, comment_count, script, **content_item_id**(→content_items·콘텐츠 발행물 연결·마이그 054) |
 | `youtube_comments` | id, user_id, comment_id, video_id, channel_id, author, author_thumbnail, text, published_at, like_count, reply_status('none'\|'draft'\|'published'), reply_draft, replied_at, replies(JSONB: 내 답글+남의 답글 배열), reply_count |
 
 ## 7. 유저 / 알림 / 기타
