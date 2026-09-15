@@ -40,6 +40,7 @@ import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
 import { Spark, ViewHead, Card, EmptyState, TaskProgress, AddButton, InlineAddCard, Section, NoteSection, SearchBar, fieldCls as monoField } from './ui';
 import { cacheGet } from '../../services/cache';
+import { CategoryBadge } from '../CategoryBadge';
 import { RichText, docToText, docHasContent, parseDoc, serializeDoc } from './RichText';
 import { Avatar, MemberSelect } from './Avatar';
 import { NavIcon } from './NavIcons';
@@ -662,7 +663,7 @@ function TaskCol({ title, items, onOpen, onToggle, memberName, memberAvatar, onM
               <button onClick={() => selectable ? onToggleSelect?.(t) : onOpen(t)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
                 {!done && t.priority === 'high' && <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />}
                 <span className={`text-sm flex-1 truncate ${done ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{t.title}</span>
-                {t.category && t.category !== '🤖 AI' && <span className="hidden sm:inline text-[11px] text-foreground-faint shrink-0">{t.category}</span>}
+                {t.category && t.category !== '🤖 AI' && <CategoryBadge label={t.category} size="sm" className="hidden sm:inline-flex" />}
                 {isAiTask(t) && <span className="text-[11px] text-foreground-faint shrink-0">AI</span>}
                 {t.assigneeId && <span className="flex items-center gap-1 shrink-0"><Avatar name={memberName(t.assigneeId)} url={memberAvatar?.(t.assigneeId)} size="xs" /><span className="text-xs text-foreground-muted truncate max-w-[5rem]">{memberName(t.assigneeId)}</span></span>}
                 {t.date && <span className={`text-xs shrink-0 tabular-nums ${danger ? 'text-rose-500' : 'text-foreground-faint'}`}>{t.date.slice(5)}</span>}
@@ -922,7 +923,7 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
               <span className="inline-flex items-center gap-1.5"><span className="text-foreground-faint">우선순위</span> {priorityLabel}</span>
               {date && <span className="inline-flex items-center gap-1.5"><span className="text-foreground-faint">마감</span> {date}</span>}
               {members.length > 1 && <span className="inline-flex items-center gap-1.5"><span className="text-foreground-faint">담당</span> {memberName(assigneeId || undefined)}</span>}
-              {category && <span className="px-2 py-0.5 rounded-full bg-surface-muted text-foreground">{category}</span>}
+              {category && <CategoryBadge label={category} size="sm" />}
               {linkedMeeting && <span className="inline-flex items-center gap-1.5 text-foreground-faint">📋 {linkedMeeting.title}</span>}
             </div>
           )}

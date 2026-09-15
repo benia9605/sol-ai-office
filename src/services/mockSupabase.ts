@@ -149,10 +149,10 @@ const mockData: Record<string, any[]> = {
   })),
   insights: dummyInsights.map(i => ({
     id: i.id, user_id: 'dev', title: i.title, content: i.content,
-    source: i.source, link: i.link, tags: i.tags, created_at: i.createdAt,
+    source: i.source, category: i.category ?? null, link: i.link, tags: i.tags, created_at: i.createdAt,
     time: i.time, project: i.project, priority: i.priority,
     starred: i.starred ?? false,
-    workspace_id: 'ws-personal', is_shared: true,
+    workspace_id: null, is_shared: false,   // 개인(personal) — fetchInsights()가 workspace_id null로 조회
   })),
   readings: dummyReadings.map(r => ({
     id: r.id, user_id: 'dev', title: r.title, author: r.author,
@@ -236,7 +236,7 @@ const mockData: Record<string, any[]> = {
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v2';
+const _LS_KEY = 'mock-db-v3';
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {

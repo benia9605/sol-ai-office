@@ -26,6 +26,7 @@ function toInsightItem(row: InsightRow): InsightItem {
     title: row.title,
     content: row.content,
     source: row.source,
+    category: row.category ?? undefined,
     link: row.link,
     tags: row.tags ?? [],
     createdAt: dateStr,
@@ -48,6 +49,7 @@ function toDbFields(patch: Partial<InsightItem>): Partial<InsightRow> {
   if (patch.title !== undefined) db.title = patch.title;
   if (patch.content !== undefined) db.content = patch.content;
   if (patch.source !== undefined) db.source = patch.source;
+  if (patch.category !== undefined) db.category = patch.category || undefined;
   if (patch.link !== undefined) db.link = patch.link || undefined;
   if (patch.tags !== undefined) db.tags = patch.tags;
   if (patch.project !== undefined) db.project = patch.project || undefined;

@@ -271,9 +271,13 @@ export const availableSourceImages: string[] = [
 // ── 더미 데이터: 인사이트 ──
 
 export const dummyInsights: InsightItem[] = [
-  { id: 'i1', title: '1인 사업가 AI 도구 트렌드',     content: 'AI 기반 생산성 도구 시장이 2026년 급성장 중. 특히 1인 사업가 대상 맞춤형 솔루션 수요 증가.', source: 'plani',   tags: ['트렌드', 'AI'],         createdAt: '2026-02-19', project: '운명랩',     priority: 'high' },
-  { id: 'i2', title: '인스타그램 릴스 알고리즘 변화',  content: '2026년 릴스 노출 알고리즘이 "시청 완료율"에서 "공유 횟수" 중심으로 변경됨.', source: 'maki',    tags: ['마케팅', '인스타그램'], createdAt: '2026-02-18', project: '운명랩',     priority: 'medium' },
-  { id: 'i3', title: 'Supabase vs Firebase 비교',      content: 'Supabase가 PostgreSQL 기반으로 더 유연한 쿼리 지원. 실시간 기능도 안정적.', source: 'devi',    tags: ['개발', '백엔드'],       createdAt: '2026-02-17', project: '쏠닝포인트', priority: 'medium' },
+  { id: 'i1', title: '1인 사업가 AI 도구 트렌드',     content: 'AI 기반 생산성 도구 시장이 2026년 급성장 중. 특히 1인 사업가 대상 맞춤형 솔루션 수요 증가.', source: 'plani',   category: 'tcat-content', tags: ['트렌드', 'AI'],         createdAt: '2026-02-19', priority: 'high' },
+  { id: 'i2', title: '인스타그램 릴스 알고리즘 변화',  content: '2026년 릴스 노출 알고리즘이 "시청 완료율"에서 "공유 횟수" 중심으로 변경됨.', source: 'maki',    category: 'tcat-content', tags: ['마케팅', '인스타그램'], createdAt: '2026-02-18', priority: 'medium' },
+  { id: 'i3', title: 'Supabase vs Firebase 비교',      content: 'Supabase가 PostgreSQL 기반으로 더 유연한 쿼리 지원. 실시간 기능도 안정적.', source: 'devi',    category: 'tcat-dev',     tags: ['개발', '백엔드'],       createdAt: '2026-02-17', priority: 'medium' },
+  { id: 'i4', title: '경쟁사 가격 정책 리서치',        content: '주요 경쟁 3사 모두 월 구독제로 전환. 무료 체험 7→14일로 확대하는 추세.', source: 'searchi', category: 'tcat-admin',   tags: ['리서치', '가격'],       createdAt: '2026-02-16', priority: 'high' },
+  { id: 'i5', title: '아침 루틴 아이디어',              content: '기상 직후 30분은 알림 끄고 딥워크. 오늘 할 일 3개만 먼저 정하기.', source: 'thought', category: 'tcat-admin',   tags: ['생산성', '루틴'],       createdAt: '2026-02-15', priority: 'low' },
+  { id: 'i6', title: '이번 주 회고 포인트',            content: '콘텐츠 발행 주기를 지키는 게 트래픽에 가장 크게 작용했다. 다음 주도 유지.', source: 'modi',    category: 'tcat-content', tags: ['회고', '콘텐츠'],       createdAt: '2026-02-14', priority: 'medium' },
+  { id: 'i7', title: '뉴스레터 오픈율 개선안',          content: '제목 A/B 테스트 결과 질문형 제목이 오픈율 +12%. 이모지는 효과 미미.', source: 'maki',    category: 'tcat-design',  tags: ['마케팅', '뉴스레터'],   createdAt: '2026-02-13', priority: 'high' },
 ];
 
 // ── 독서 카테고리 ──

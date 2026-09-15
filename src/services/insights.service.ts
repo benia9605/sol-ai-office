@@ -15,6 +15,7 @@ export interface InsightRow {
   title: string;
   content: string;
   source: string;
+  category?: string | null;
   link?: string;
   tags: string[];
   project?: string;

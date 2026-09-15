@@ -665,7 +665,8 @@ export interface InsightItem {
   id: string;
   title: string;
   content: string;
-  source: string;             // 출처 ID (plani, youtube, web 등)
+  source: string;             // 출처 ID (plani, youtube, web 등) — 슬림다운: 필터 미노출
+  category?: string;          // 카테고리 ID (할일과 동일 세트, tcat-*)
   link?: string;              // 참고 URL
   tags: string[];
   createdAt: string;          // 기록일 (YYYY-MM-DD)

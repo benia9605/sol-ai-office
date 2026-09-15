@@ -10,6 +10,9 @@
  */
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { AutoTextarea } from "../components/AutoTextarea";
+import { FilterDropdown } from '../components/FilterDropdown';
+import { CategoryBadge } from '../components/CategoryBadge';
+import { defaultTaskCategories } from '../data';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { InsightItem, InsightSource } from '../types';
@@ -17,6 +20,8 @@ import { useInsights } from '../hooks/useInsights';
 import { useInsightSources } from '../hooks/useInsightSources';
 import { ItemDetailPopup } from '../components/ItemDetailPopup';
 import { ProjectSelect } from '../components/ProjectSelect';
+
+const insightCategories = defaultTaskCategories;
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 const MONTHS_EN = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -94,9 +99,8 @@ export function InsightsPageModern() {
     tagInput: '', tags: [] as string[],
   });
 
-  // 필터/정렬/검색
-  const [activeTag, setActiveTag] = useState<string>('all');
-  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  // 필터/정렬/검색 (할일과 동일 개념: 카테고리·중요도·정렬)
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [sortMode, setSortMode] = useState<'date' | 'name' | 'priority'>('date');
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,7 +108,7 @@ export function InsightsPageModern() {
   // 페이지네이션
   const PAGE_SIZE = 10;
   const [page, setPage] = useState(0);
-  useEffect(() => { setPage(0); }, [activeTag, sourceFilter, priorityFilter, sortMode, searchQuery]);
+  useEffect(() => { setPage(0); }, [categoryFilter, priorityFilter, sortMode, searchQuery]);
 
   // 상세 팝업
   const [selectedItem, setSelectedItem] = useState<InsightItem | null>(null);
@@ -128,9 +132,8 @@ export function InsightsPageModern() {
         i.project?.toLowerCase().includes(q),
       );
     }
-    if (sourceFilter !== 'all') result = result.filter((i) => i.source === sourceFilter);
+    if (categoryFilter !== 'all') result = result.filter((i) => i.category === categoryFilter);
     if (priorityFilter !== 'all') result = result.filter((i) => i.priority === priorityFilter);
-    if (activeTag !== 'all') result = result.filter((i) => i.tags.includes(activeTag));
 
     result.sort((a, b) => {
       // ★ 즐겨찾기는 무조건 상단 고정
@@ -143,7 +146,7 @@ export function InsightsPageModern() {
       return 0;
     });
     return result;
-  }, [insights, searchQuery, sourceFilter, priorityFilter, activeTag, sortMode]);
+  }, [insights, searchQuery, categoryFilter, priorityFilter, sortMode]);
 
   const starredCount = useMemo(() => insights.filter((i) => i.starred).length, [insights]);
 
@@ -212,7 +215,7 @@ export function InsightsPageModern() {
           <p className="mt-4 text-sm text-foreground-muted">
             {insights.length}건의 인사이트
             {starredCount > 0 && <> · 즐겨찾기 <span className="text-primary-500">{starredCount}</span></>}
-            {activeTag !== 'all' && <> · <span className="text-foreground">#{activeTag}</span> 필터</>}
+            {categoryFilter !== 'all' && <> · <span className="text-foreground">{insightCategories.find((c) => c.id === categoryFilter)?.label ?? '카테고리'}</span> 필터</>}
             {searchQuery && <> · 검색 결과 <span className="text-foreground">{filtered.length}건</span></>}
           </p>
         </section>
@@ -225,14 +228,12 @@ export function InsightsPageModern() {
               onClick={() => setInputMode(inputMode === 'quick' ? null : 'quick')}
               labelEn="Quick"
               labelKo="빠른 인사이트"
-              hint="제목만 메모"
             />
             <InputToggleButton
               active={inputMode === 'detail'}
               onClick={() => setInputMode(inputMode === 'detail' ? null : 'detail')}
               labelEn="Detail"
               labelKo="상세 기록"
-              hint="본문·출처·링크·태그"
             />
           </div>
 
@@ -274,51 +275,9 @@ export function InsightsPageModern() {
           )}
         </section>
 
-        {/* ── 출처 + 태그 chip 그룹 (한 섹션으로 묶어 여백 축소) ── */}
-        <section className="space-y-5">
-          {sources.length > 0 && (
-            <div className="space-y-2">
-              <p className="label">Source</p>
-              <div className="flex flex-wrap gap-2">
-                <FilterChip
-                  active={sourceFilter === 'all'}
-                  onClick={() => setSourceFilter('all')}
-                  label="모든 출처"
-                />
-                {sources.map((s) => (
-                  <SourceChip
-                    key={s.id}
-                    active={sourceFilter === s.id}
-                    onClick={() => setSourceFilter(sourceFilter === s.id ? 'all' : s.id)}
-                    source={s}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <p className="label">Tag</p>
-            <div className="flex flex-wrap gap-2">
-              <FilterChip
-                active={activeTag === 'all'}
-                onClick={() => setActiveTag('all')}
-                label="모든 태그"
-              />
-              {allTags.map((tag) => (
-                <FilterChip
-                  key={tag}
-                  active={activeTag === tag}
-                  onClick={() => setActiveTag(activeTag === tag ? 'all' : tag)}
-                  label={`#${tag}`}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── 정렬 + 우선순위 + 검색 ── */}
-        <section className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
+        {/* ── 검색 + 필터 (할일과 같은 개념: 검색 위 · 디자인 드롭다운 한 줄) ── */}
+        <section className="space-y-4">
+          {/* 검색 — 필터 위 */}
           <div className="relative">
             <svg viewBox="0 0 20 20" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-faint" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="9" cy="9" r="6" />
@@ -327,29 +286,32 @@ export function InsightsPageModern() {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="제목·본문·태그·프로젝트 검색"
+              placeholder="제목·본문·태그 검색"
               className="w-full pl-10 pr-4 py-2.5 bg-surface border border-line text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
             />
           </div>
-          <select
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
-            className="border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
-          >
-            <option value="all">모든 중요도</option>
-            <option value="high">중요</option>
-            <option value="medium">보통</option>
-            <option value="low">가벼움</option>
-          </select>
-          <select
-            value={sortMode}
-            onChange={(e) => setSortMode(e.target.value as typeof sortMode)}
-            className="border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
-          >
-            <option value="date">최신순</option>
-            <option value="priority">중요도순</option>
-            <option value="name">이름순</option>
-          </select>
+
+          {/* 카테고리 · 중요도 · 정렬 — 디자인 드롭다운 한 줄 (할일과 동일) */}
+          <div className="grid grid-cols-3 gap-2">
+            <FilterDropdown
+              label="카테고리"
+              value={categoryFilter}
+              options={[{ key: 'all', label: '전체' }, ...insightCategories.map((c) => ({ key: c.id, label: c.label, dotColor: c.color }))]}
+              onChange={setCategoryFilter}
+            />
+            <FilterDropdown
+              label="중요도"
+              value={priorityFilter}
+              options={[{ key: 'all', label: '전체' }, { key: 'high', label: '중요' }, { key: 'medium', label: '보통' }, { key: 'low', label: '가벼움' }]}
+              onChange={setPriorityFilter}
+            />
+            <FilterDropdown
+              label="정렬"
+              value={sortMode}
+              options={[{ key: 'date', label: '최신순' }, { key: 'priority', label: '중요도순' }, { key: 'name', label: '이름순' }]}
+              onChange={(k) => setSortMode(k as typeof sortMode)}
+            />
+          </div>
         </section>
 
         {/* ── 인사이트 리스트 ── */}
@@ -476,13 +438,12 @@ function SourceChip({
 }
 
 function InputToggleButton({
-  active, onClick, labelEn, labelKo, hint,
+  active, onClick, labelEn, labelKo,
 }: {
   active: boolean;
   onClick: () => void;
   labelEn: string;
   labelKo: string;
-  hint: string;
 }) {
   return (
     <button
@@ -498,9 +459,6 @@ function InputToggleButton({
         {labelEn}
       </p>
       <p className="mt-1.5 text-sm leading-tight">{labelKo}</p>
-      <p className={`mt-1 text-[10px] ${active ? 'text-surface/60' : 'text-foreground-faint'}`}>
-        {hint}
-      </p>
     </button>
   );
 }
@@ -579,13 +537,9 @@ function InsightRow({
             </p>
           )}
 
-          {(item.tags.length > 0 || item.project) && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {item.project && (
-                <span className="text-[10px] text-foreground-muted border border-line px-1.5 py-0.5">
-                  {item.project}
-                </span>
-              )}
+          {(item.category || item.tags.length > 0) && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              {(() => { const c = insightCategories.find((x) => x.id === item.category); return c ? <CategoryBadge color={c.color} label={c.label} size="sm" /> : null; })()}
               {item.tags.map((tag) => (
                 <span key={tag} className="text-[10px] text-foreground-faint">
                   #{tag}

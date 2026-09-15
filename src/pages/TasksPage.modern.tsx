@@ -394,21 +394,18 @@ export function TasksPageModern() {
               onClick={() => setInputMode(inputMode === 'inbox' ? null : 'inbox')}
               labelEn="Capture"
               labelKo="떠오르는 생각"
-              hint="분류 없이 인박스에"
             />
             <InputToggleButton
               active={inputMode === 'quick'}
               onClick={() => setInputMode(inputMode === 'quick' ? null : 'quick')}
-              labelEn="Quick"
-              labelKo="빠른 추가"
-              hint="오늘 마감으로"
+              labelEn="Today"
+              labelKo="오늘 추가"
             />
             <InputToggleButton
               active={inputMode === 'detail'}
               onClick={() => setInputMode(inputMode === 'detail' ? null : 'detail')}
               labelEn="Detail"
               labelKo="상세 추가"
-              hint="마감일·카테고리"
             />
           </div>
 
@@ -676,13 +673,11 @@ function InputToggleButton({
   onClick,
   labelEn,
   labelKo,
-  hint,
 }: {
   active: boolean;
   onClick: () => void;
   labelEn: string;
   labelKo: string;
-  hint: string;
 }) {
   return (
     <button
@@ -700,11 +695,6 @@ function InputToggleButton({
         {labelEn}
       </p>
       <p className="mt-1.5 text-sm leading-tight">{labelKo}</p>
-      <p className={`mt-1 text-[10px] ${
-        active ? 'text-surface/60' : 'text-foreground-faint'
-      }`}>
-        {hint}
-      </p>
     </button>
   );
 }
