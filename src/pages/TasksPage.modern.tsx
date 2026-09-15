@@ -852,8 +852,8 @@ function DateGroupBlock({
 
   return (
     <div className="grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line items-center">
-      {/* 좌측: 월 / 일 / 요일·건수 */}
-      <div>
+      {/* 좌측: 월 / 일 / 요일·건수 (오른쪽 정렬) */}
+      <div className="text-right">
         <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">
           {MONTHS_EN[d.getMonth()]}
         </p>
@@ -906,8 +906,8 @@ function NoDateGroupBlock({
 }) {
   return (
     <div className="grid grid-cols-[64px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-5 py-3 border-b border-line items-center">
-      {/* 좌측 */}
-      <div>
+      {/* 좌측 (오른쪽 정렬) */}
+      <div className="text-right">
         <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">No Date</p>
         <p className="mt-1 text-[10px] tracking-[0.05em] text-foreground-faint tabular-nums">마감없음 · {items.length}건</p>
       </div>
