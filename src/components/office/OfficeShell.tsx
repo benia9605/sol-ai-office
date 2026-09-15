@@ -48,7 +48,6 @@ const NAV_GROUPS: NavGroup[] = [
   ] },
   { id: 'ops', label: '운영', items: [
     { id: 'todos', label: '할일', emoji: '✅' },
-    { id: 'schedule', label: '일정', emoji: '📅' },
     { id: 'meetings', label: '회의', emoji: '📋' },
   ] },
   { id: 'content', label: '콘텐츠', items: [
@@ -161,7 +160,6 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
     const id = workspace.id;
     warm(() => fetchWorkspaceTasks(id));
     warm(() => fetchMeetings(id));
-    warm(() => fetchSchedules(id));
     warm(() => fetchInsights(id));
     warm(() => fetchRecords(id, 'memo'));
     warm(() => fetchMembers(id));
@@ -187,7 +185,7 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 모바일 하단 네비 주요 항목 (나머지는 더보기)
-  const BOTTOM_NAV = ['dashboard', 'todos', 'schedule', 'staff']
+  const BOTTOM_NAV = ['dashboard', 'todos', 'meetings', 'staff']
     .map(id => NAV_ITEMS.find(n => n.id === id)!)
     .filter(Boolean);
 

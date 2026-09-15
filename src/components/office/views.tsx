@@ -4,7 +4,7 @@
  * - 실데이터: 할일(useTasks, 워크스페이스 필터됨) · 멤버(fetchMembers)
  * - 샘플/빈 상태: 대시보드 KPI·브리핑·일정·인사이트·기록 (실연동은 Phase 4~5)
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AutoTextarea } from "../AutoTextarea";
 import { Workspace, WorkspaceMember, TaskItem, DailyReport, RecordItem, Product, ContentItem, ContentType, ContentStatus, ContentMetric, ContentCheckpoint, SalesDaily, CompanyMemory, MemoryKind } from '../../types';
 import { useTasks } from '../../hooks/useTasks';
@@ -22,7 +22,6 @@ import { fetchMeetings } from '../../services/meetings.service';
 import { Meeting } from '../../types';
 import { getCurrentUserId } from '../../services/auth';
 import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
-import { fetchSchedules, ScheduleRow } from '../../services/schedules.service';
 import { SchedulesPageModern } from '../../pages/SchedulesPage.modern';
 import { fetchInsights, fetchInsightById, addInsight, updateInsight, deleteInsight, InsightRow } from '../../services/insights.service';
 import { fetchRecords, fetchRecordById, addRecord, deleteRecord, updateRecord, RecordRow } from '../../services/records.service';
@@ -428,7 +427,6 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
   const [wsTasks, setWsTasks] = useState<TaskItem[]>(() => (cacheGet<any[]>('ws-tasks', workspace.id) ?? []).map(rowToTaskItem));
   const [myId, setMyId] = useState<string | null>(null);
   const open = wsTasks.filter(t => t.status !== 'completed');
-  const [schedules, setSchedules] = useState<ScheduleRow[]>(() => cacheGet<ScheduleRow[]>('schedules', workspace.id) ?? []);
   const [insights, setInsights] = useState<InsightRow[]>(() => cacheGet<InsightRow[]>('insights', workspace.id) ?? []);
   const [memos, setMemos] = useState<RecordRow[]>(() => cacheGet<RecordRow[]>('records-memo', workspace.id) ?? []);
   const [reports, setReports] = useState<DailyReport[]>([]);
@@ -437,7 +435,6 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
   useEffect(() => {
     fetchWorkspaceTasks(workspace.id).then(rows => setWsTasks(rows.map(rowToTaskItem))).catch(() => setWsTasks([]));
     getCurrentUserId().then(setMyId).catch(() => setMyId(null));
-    fetchSchedules(workspace.id).then(setSchedules).catch(() => setSchedules([]));
     fetchInsights(workspace.id).then(setInsights).catch(() => setInsights([]));
     fetchRecords(workspace.id, 'memo').then(setMemos).catch(() => setMemos([]));
     fetchReportsByWorkspace(workspace.id, 6).then(setReports).catch(() => setReports([]));
@@ -445,26 +442,28 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
     fetchActivities(workspace.id, 6).then(setActivities).catch(() => setActivities([]));
   }, [workspace.id]);
 
-  const todayStr = getTodayStr();
   // 내 할일 = 나에게 배정된 것 + (미배정이면서 내가 만든 것). 솔로 오너·팀원 모두 커버.
   const myTasks = wsTasks.filter(t => t.status !== 'completed' && (t.assigneeId === myId || (!t.assigneeId && t.createdBy === myId)));
   const hour = new Date().getHours();
   const greeting = hour < 12 ? '좋은 아침이에요' : hour < 18 ? '좋은 오후예요' : '좋은 저녁이에요';
-  const upcoming = schedules.filter(s => s.date >= todayStr).slice(0, 4);
 
-  const SecHead = ({ title, to }: { title: string; to?: string }) => (
-    <div className="flex items-center justify-between mb-2">
-      <span className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">{title}</span>
-      {to && <button onClick={() => onNavigate(to)} className="text-[11px] text-foreground-faint hover:text-foreground transition-colors">전체 ›</button>}
-    </div>
+  // 오피스 이동 팝업 톤 — 흰 배경 · 살짝 라운딩 · 진초록 포인트 · 그림자 대신 얇은 선
+  const Panel = ({ title, to, children, className = '' }: { title: string; to?: string; children: ReactNode; className?: string }) => (
+    <section className={`rounded-2xl border border-line bg-surface p-5 ${className}`}>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[11px] font-semibold text-foreground-faint uppercase tracking-wider">{title}</span>
+        {to && <button onClick={() => onNavigate(to)} className="text-[11px] text-foreground-faint hover:text-primary-500 transition-colors">전체 ›</button>}
+      </div>
+      {children}
+    </section>
   );
   const Empty = ({ t }: { t: string }) => <p className="text-xs text-foreground-faint py-3 text-center">{t}</p>;
 
   return (
-    <div className="space-y-5">
-      {/* 인사말 히어로 — 무지 모던톤 (라이트 대형 헤드라인) */}
-      <div className="mb-10">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground mb-3">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}</div>
+    <div className="space-y-6">
+      {/* 인사말 히어로 — 흰 배경 · 진초록 이브로우 */}
+      <div className="mb-8">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-500 mb-3">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}</div>
         <h1 className="text-3xl sm:text-4xl font-light leading-[1.2] text-foreground">{greeting} 👋</h1>
         <p className="text-sm text-foreground-faint mt-3">{workspace.name} · 진행 중 할일 {open.length}건 · 멤버 {members.length}명</p>
       </div>
@@ -477,27 +476,27 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
 
       {/* KPI 스트립 — 실데이터 있을 때만 표시 (연동 전엔 빈 그래프 숨김) */}
       {kpis.some(k => k.value > 0 || k.delta !== null) && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {kpis.map((kpi, i) => (
-            <Card key={i} className="p-5">
+            <div key={i} className="rounded-2xl border border-line bg-surface p-5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-foreground-muted">{kpi.k}</span>
                 {kpi.delta === null
                   ? <span className="text-xs font-semibold text-foreground-faint">—</span>
-                  : <span className={`text-xs font-semibold ${kpi.delta >= 0 ? 'text-emerald-500' : 'text-rose-400'}`}>{kpi.delta >= 0 ? '▲' : '▼'} {Math.abs(kpi.delta)}%</span>}
+                  : <span className={`text-xs font-semibold ${kpi.delta >= 0 ? 'text-primary-500' : 'text-rose-400'}`}>{kpi.delta >= 0 ? '▲' : '▼'} {Math.abs(kpi.delta)}%</span>}
               </div>
               <div className="text-2xl font-light mt-1.5 text-foreground tabular-nums">
                 {kpi.value.toLocaleString()}<span className="text-sm text-foreground-faint ml-0.5">{kpi.unit}</span>
               </div>
               <div className="mt-1.5"><Spark data={kpi.spark} /></div>
-            </Card>
+            </div>
           ))}
         </div>
       )}
 
-      {/* 브리핑 배너 — 진초록 */}
+      {/* 브리핑 배너 — 진초록 포인트 (팝업 톤) */}
       <button onClick={() => onNavigate('briefing')}
-        className="w-full flex items-center gap-3 p-5 rounded-2xl bg-[#1b4332] text-white transition-all hover:bg-[#153528] active:scale-[0.99] text-left">
+        className="w-full flex items-center gap-3 p-5 rounded-2xl bg-primary-500 text-white transition-all hover:bg-primary-600 active:scale-[0.99] text-left">
         <span className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center flex-shrink-0">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
         </span>
@@ -513,83 +512,65 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
 
       {/* 최근 활동 — 팀이 방금 한 일 (클릭 시 해당 화면으로) */}
       {activities.length > 0 && (
-        <Card className="p-4">
-          <SecHead title="최근 활동" to="teamlog" />
+        <Panel title="최근 활동" to="teamlog">
           <ActivityList items={activities} members={members} onNavigate={onNavigate} />
-        </Card>
+        </Panel>
       )}
 
-      {/* 다가오는 일정 + 내 할일 */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Card className="p-4">
-          <SecHead title="다가오는 일정" to="schedule" />
-          {upcoming.length ? upcoming.map(s => (
-            <div key={s.id} className="flex items-center gap-2 py-1.5">
-              <span className="text-[11px] font-bold text-foreground w-14 flex-shrink-0">{s.date.slice(5)}{s.time ? ' ' + s.time : ''}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-foreground flex-shrink-0" />
-              <span className="text-sm text-foreground-muted truncate">{s.title}</span>
-            </div>
-          )) : <Empty t="예정된 일정이 없어요" />}
-        </Card>
-        <Card className="p-4">
-          <SecHead title="진행 중 할일" to="todos" />
+      {/* 진행 중 할일 + 최근 인사이트 */}
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Panel title="진행 중 할일" to="todos">
           {open.length ? open.slice(0, 5).map(t => (
             <div key={t.id} className="flex items-center gap-2 py-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
               <span className="text-sm text-foreground-muted truncate flex-1">{t.title}</span>
               {t.priority === 'high' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-500 flex-shrink-0">긴급</span>}
             </div>
           )) : <Empty t="할일이 없어요" />}
-        </Card>
-      </div>
-
-      {/* 최근 인사이트 + 최근 메모 */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Card className="p-5">
-          <SecHead title="최근 인사이트" to="insights" />
-          {insights.length ? insights.slice(0, 4).map(i => (
+        </Panel>
+        <Panel title="최근 인사이트" to="insights">
+          {insights.length ? insights.slice(0, 5).map(i => (
             <div key={i.id} className="flex items-center gap-2 py-1.5">
               <span className="text-sm">💡</span><span className="text-sm text-foreground-muted truncate">{i.title}</span>
             </div>
           )) : <Empty t="인사이트가 없어요" />}
-        </Card>
-        <Card className="p-5">
-          <SecHead title="최근 메모" to="log" />
-          {memos.length ? memos.slice(0, 4).map(m => (
+        </Panel>
+      </div>
+
+      {/* 최근 메모 + AI 직원 활동 */}
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Panel title="최근 메모" to="log">
+          {memos.length ? memos.slice(0, 5).map(m => (
             <div key={m.id} className="flex items-center gap-2 py-1.5">
               <span className="text-sm">📝</span><span className="text-sm text-foreground-muted truncate flex-1">{m.title}</span>
               <span className="text-[10px] text-foreground-faint flex-shrink-0">{m.date?.slice(5)}</span>
             </div>
           )) : <Empty t="메모가 없어요" />}
-        </Card>
+        </Panel>
+        <Panel title="AI 직원 활동" to="activity">
+          {reports.length ? reports.slice(0, 5).map(r => (
+            <div key={r.id} className="flex items-center gap-2 py-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0" />
+              <span className="text-sm text-foreground-muted truncate flex-1">🤖 {r.title}</span>
+              <span className="text-[10px] text-foreground-faint flex-shrink-0">{r.date?.slice(5)}</span>
+            </div>
+          )) : <Empty t="아직 활동이 없어요 — AI 직원을 채용하고 ‘지금 한 번’을 눌러보세요" />}
+        </Panel>
       </div>
 
-      {/* 활동 로그 (AI 직원) */}
-      <Card className="p-5">
-        <SecHead title="AI 직원 활동" to="activity" />
-        {reports.length ? reports.slice(0, 5).map(r => (
-          <div key={r.id} className="flex items-center gap-2 py-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-foreground flex-shrink-0" />
-            <span className="text-sm text-foreground-muted truncate flex-1">🤖 {r.title}</span>
-            <span className="text-[10px] text-foreground-faint flex-shrink-0">{r.date?.slice(5)}</span>
-          </div>
-        )) : <Empty t="아직 활동이 없어요 — AI 직원을 채용하고 ‘지금 한 번’을 눌러보세요" />}
-      </Card>
-
       {/* 멤버 */}
-      <Card className="p-5">
-        <SecHead title="멤버" to="members" />
+      <Panel title="멤버" to="members">
         {members.length ? (
           <div className="flex flex-wrap gap-2">
             {members.map(m => (
-              <span key={m.userId} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-muted border border-line text-xs text-foreground-muted">
-                <span className="w-5 h-5 rounded-md bg-foreground text-white flex items-center justify-center text-[10px] font-bold">{(m.nickname || m.userId).slice(0, 1).toUpperCase()}</span>
+              <span key={m.userId} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary-50 border border-line text-xs text-foreground-muted">
+                <span className="w-5 h-5 rounded-md bg-primary-500 text-white flex items-center justify-center text-[10px] font-bold">{(m.nickname || m.userId).slice(0, 1).toUpperCase()}</span>
                 {m.nickname || '멤버'}{m.role === 'owner' && ' 👑'}
               </span>
             ))}
           </div>
         ) : <Empty t="멤버가 없어요" />}
-      </Card>
+      </Panel>
     </div>
   );
 }
