@@ -146,12 +146,15 @@ interface TiptapEditorProps {
   placeholder?: string;
   /** 사용자 이름 (Claude 대화 템플릿에 표시) */
   userName?: string;
+  /** 본문 최대 높이 — 넘으면 툴바 고정 + 본문만 내부 스크롤. false면 무제한(페이지형). 기본 '52vh'. */
+  maxHeight?: string | number | false;
 }
 
 export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function TiptapEditor({
   content, onChange,
   placeholder = '스터디 노트를 작성하세요...',
   userName = '나',
+  maxHeight = '52vh',
 }: TiptapEditorProps, ref) {
   // handlePaste 클로저에서 editor 인스턴스에 안전하게 접근하기 위한 ref
   const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
@@ -648,8 +651,10 @@ export const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(fu
         </div>
       </BubbleMenu>
 
-      {/* 에디터 본문 */}
-      <EditorContent editor={editor} />
+      {/* 에디터 본문 — maxHeight 넘으면 내부 스크롤(툴바는 위에 고정) */}
+      <div className="tiptap-scroll" style={maxHeight === false ? undefined : { maxHeight, overflowY: 'auto' }}>
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 });

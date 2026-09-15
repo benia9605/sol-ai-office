@@ -14,6 +14,8 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { AutoTextarea } from "../components/AutoTextarea";
 import { FilterDropdown } from '../components/FilterDropdown';
 import { CategoryBadge } from '../components/CategoryBadge';
+import { CategorySelect } from '../components/CategorySelect';
+import { useCategories } from '../hooks/useCategories';
 import { FEATURES } from '../config/features';
 import { TaskItem, TaskStatus, RepeatType, ScheduleCategory } from '../types';
 import { useTasks } from '../hooks/useTasks';
@@ -111,7 +113,7 @@ function isResume(t: TaskItem): boolean {
 
 export function TasksPageModern() {
   const { tasks, add, remove, updateTask, cycleStatus } = useTasks();
-  const [categories] = useState<ScheduleCategory[]>(defaultTaskCategories);
+  const { categories } = useCategories('task');
 
   // 필터/정렬/검색
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -1231,29 +1233,10 @@ function AddForm({ form, setForm, categories, onCancel, onSubmit }: AddFormProps
         />
       </label>
 
-      {/* 카테고리 */}
+      {/* 카테고리 — 공용 CategorySelect(디자인 드롭다운 + 관리) */}
       <div className="space-y-2">
         <p className="label">카테고리</p>
-        <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => {
-            const active = form.category === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setForm({ ...form, category: active ? '' : cat.id })}
-                className={`inline-flex items-center gap-2 px-4 py-1.5 text-xs border transition-colors ${
-                  active
-                    ? 'bg-foreground text-surface border-foreground'
-                    : 'bg-surface text-foreground-muted border-line hover:border-foreground hover:text-foreground'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cat.color }} aria-hidden />
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
+        <CategorySelect scope="task" value={form.category} onChange={(id) => setForm({ ...form, category: id })} allowNone />
       </div>
 
       {/* 반복 */}

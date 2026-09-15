@@ -199,6 +199,26 @@ export const defaultTaskCategories: ScheduleCategory[] = [
   { id: 'tcat-admin',    label: '행정',    color: '#9ca3af' },
 ];
 
+// ── 콘텐츠 카테고리 (오피스 콘텐츠 허브) ──
+export const defaultContentCategories: ScheduleCategory[] = [
+  { id: 'ccat-style',   label: '스타일링', color: '#c084fc' },
+  { id: 'ccat-edu',     label: '교육',     color: '#60a5fa' },
+  { id: 'ccat-brand',   label: '브랜딩',   color: '#fb923c' },
+  { id: 'ccat-product', label: '제품',     color: '#4ade80' },
+  { id: 'ccat-etc',     label: '기타',     color: '#9ca3af' },
+];
+
+// ── 인사이트 카테고리 (할일 세트 재사용 · 기존 tcat-* 호환) ──
+export const defaultInsightCategories: ScheduleCategory[] = defaultTaskCategories;
+
+// ── 기록 카테고리 ──
+export const defaultRecordCategories: ScheduleCategory[] = [
+  { id: 'rcat-idea',    label: '아이디어', color: '#fbbf24' },
+  { id: 'rcat-log',     label: '일지',     color: '#60a5fa' },
+  { id: 'rcat-review',  label: '회고',     color: '#c084fc' },
+  { id: 'rcat-etc',     label: '기타',     color: '#9ca3af' },
+];
+
 // ── 더미 데이터: 일정 ──
 
 export const dummySchedules: ScheduleItem[] = [
@@ -288,6 +308,20 @@ export const defaultReadingCategories: ReadingCategory[] = [
   { id: 'rcat-article', label: '아티클',  color: '#fbbf24' },
   { id: 'rcat-podcast', label: '팟캐스트', color: '#c084fc' },
 ];
+
+/**
+ * 카테고리 스코프별 기본 세트 — options 테이블이 비어있을 때 시드로 사용.
+ * ⚠️ 시드 시 기존 id 보존(예: 할일 tcat-*)해야 기존 아이템 category 참조가 유지됨.
+ * (모든 참조 세트가 정의된 뒤에 선언 — TDZ 방지)
+ */
+export const DEFAULT_CATEGORIES: Record<string, ScheduleCategory[]> = {
+  task:     defaultTaskCategories,
+  schedule: defaultScheduleCategories,
+  reading:  defaultReadingCategories as unknown as ScheduleCategory[],
+  insight:  defaultInsightCategories,
+  record:   defaultRecordCategories,
+  content:  defaultContentCategories,
+};
 
 // ── 더미 데이터: 독서 ──
 

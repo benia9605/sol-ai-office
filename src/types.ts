@@ -302,6 +302,13 @@ export interface ScheduleCategory {
   color: string;
 }
 
+/**
+ * 공통 카테고리 — 개인+오피스 전 메뉴 통일 (docs/CATEGORY_SYSTEM.md)
+ * options 테이블(category='<scope>_category')에 영속. ScheduleCategory와 동형.
+ */
+export type Category = ScheduleCategory;
+export type CategoryScope = 'task' | 'schedule' | 'reading' | 'insight' | 'record' | 'content';
+
 /** 반복 유형 */
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 

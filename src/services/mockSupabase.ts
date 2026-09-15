@@ -9,7 +9,7 @@ import {
   dummySchedules, dummyTasks, dummyInsights,
   dummyReadings, dummyStudyNotes, dummyRecords,
   projects, defaultScheduleCategories, defaultTaskCategories,
-  defaultReadingCategories,
+  defaultReadingCategories, defaultRecordCategories,
   dummyYoutubeChannels, dummyYoutubeVideos, dummyYoutubeComments,
 } from '../data';
 
@@ -231,12 +231,25 @@ const mockData: Record<string, any[]> = {
     ...defaultTaskCategories.map(c => ({ id: c.id, user_id: 'dev', option_type: 'task_category', value: JSON.stringify(c) })),
     ...defaultReadingCategories.map(c => ({ id: c.id, user_id: 'dev', option_type: 'reading_category', value: JSON.stringify(c) })),
   ],
+  // 공통 카테고리 시스템(options 테이블). 개인 기본 세트 시드(workspace_id=null).
+  // insight는 task 세트 재사용, content는 오피스 진입 시 온로드 시드.
+  options: [
+    ...[
+      ['task', defaultTaskCategories],
+      ['schedule', defaultScheduleCategories],
+      ['reading', defaultReadingCategories],
+      ['record', defaultRecordCategories],
+    ].flatMap(([scope, list]: any) => list.map((c: any, i: number) => ({
+      id: c.id, user_id: 'dev', workspace_id: null, category: `${scope}_category`,
+      name: c.label, color: c.color, sort_order: i, created_at: new Date().toISOString(),
+    }))),
+  ],
 };
 
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v4';
+const _LS_KEY = 'mock-db-v5';
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {
