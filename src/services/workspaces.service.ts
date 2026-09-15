@@ -80,7 +80,7 @@ export async function ensurePersonalWorkspace(): Promise<Workspace> {
   // 트리거가 없거나 mock 모드일 때 보조 생성
   const { data: created, error } = await supabase
     .from('workspaces')
-    .insert({ name: '내 오피스', emoji: '👤', type: 'personal', created_by: userId })
+    .insert({ name: '개인 공간', emoji: '🧸', type: 'personal', created_by: userId })
     .select()
     .single();
   if (error) throw error;

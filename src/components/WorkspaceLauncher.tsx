@@ -69,7 +69,7 @@ export function WorkspaceLauncher({ open, onClose, personal, offices, activeId, 
               <button onClick={() => personal && pick(personal.id)} disabled={!personal}
                 className="rounded-[26px] border border-gray-100 bg-white hover:bg-primary-50/50 hover:border-primary-200 p-5 flex flex-col items-center gap-3 transition-all active:scale-[0.97] shadow-sm disabled:opacity-40 relative">
                 {personal && activeId === personal.id && <span className="absolute top-3 right-3 text-primary-500 text-sm">✓</span>}
-                <span className="w-16 h-16 rounded-[20px] bg-primary-50 overflow-hidden flex items-center justify-center text-4xl">{personal ? wsAvatar(personal, '🧸') : '🧸'}</span>
+                <span className="w-16 h-16 rounded-[20px] bg-primary-50 overflow-hidden flex items-center justify-center text-4xl">{personal?.imageUrl ? <img src={personal.imageUrl} alt="" className="w-full h-full object-cover" /> : '🧸'}</span>
                 <span className="text-center">
                   <span className="block text-[15px] font-bold text-gray-800">개인 공간</span>
                   <span className="block text-[11px] text-gray-400 mt-1">기록 · 성장</span>

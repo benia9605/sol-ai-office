@@ -21,7 +21,7 @@ const mockData: Record<string, any[]> = {
   ],
   // ── 공유 워크스페이스 (로컬 테스트용: 개인 + 시목 팀) ──
   workspaces: [
-    { id: 'ws-personal', user_id: 'dev', name: '내 오피스', emoji: '👤', color: null, image_url: null, biz_info: null, type: 'personal', invite_code: null, credits: 10000, erp_source: 'manual', created_by: 'dev', created_at: new Date().toISOString() },
+    { id: 'ws-personal', user_id: 'dev', name: '개인 공간', emoji: '🧸', color: null, image_url: null, biz_info: null, type: 'personal', invite_code: null, credits: 10000, erp_source: 'manual', created_by: 'dev', created_at: new Date().toISOString() },
     { id: 'ws-simok', user_id: 'dev', name: '시목', emoji: '🪵', color: '#8d6e63', image_url: null, biz_info: '원목 가구/소품 · 스마트스토어·자사몰', type: 'office', invite_code: 'SIMOK1', credits: 10000, erp_source: 'manual', created_by: 'dev', created_at: new Date().toISOString() },
   ],
   workspace_members: [
@@ -236,7 +236,7 @@ const mockData: Record<string, any[]> = {
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v3';
+const _LS_KEY = 'mock-db-v4';
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {

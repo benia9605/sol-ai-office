@@ -20,7 +20,11 @@ export function WorkspaceSwitcher() {
   if (!personal && offices.length === 0) return null;
 
   const cur = activeWorkspace ?? personal;
-  const current = { emoji: cur?.emoji || '🏢', name: cur?.name || '워크스페이스', img: cur?.imageUrl };
+  // 개인 공간은 런처(팝업)와 동일하게 "개인 공간" + 🧸 로 통일해서 표시
+  const isPersonal = cur?.type === 'personal';
+  const current = isPersonal
+    ? { emoji: '🧸', name: '개인 공간', img: undefined as string | undefined }
+    : { emoji: cur?.emoji || '🏢', name: cur?.name || '워크스페이스', img: cur?.imageUrl };
 
   const onCreated = async (ws: Workspace) => { await reload(); setActiveWorkspace(ws.id); };
 

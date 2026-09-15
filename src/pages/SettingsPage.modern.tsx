@@ -199,52 +199,10 @@ export function SettingsPageModern() {
                   value={profileForm.bio}
                   onChange={(e) => setProfileForm((f) => ({ ...f, bio: e.target.value }))}
                   rows={3}
-                  placeholder="AI가 참고할 내용 (1인 사업가, 운영 중인 프로젝트, 피드백 선호도 등)"
+                  placeholder="간단한 소개 (하는 일, 관심사 등)"
                   className="w-full border border-line bg-surface px-4 py-3 text-sm resize-none placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
                 />
               </label>
-
-              <div className="space-y-3 pt-5 border-t border-line">
-                <p className="label">대화 스타일</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <label className="block space-y-1.5">
-                    <span className="text-[11px] text-foreground-faint">톤</span>
-                    <select
-                      value={profileForm.tone}
-                      onChange={(e) => setProfileForm((f) => ({ ...f, tone: e.target.value }))}
-                      className="w-full border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
-                    >
-                      <option value="friendly">친근하게</option>
-                      <option value="polite">존댓말</option>
-                      <option value="formal">격식있게</option>
-                    </select>
-                  </label>
-                  <label className="block space-y-1.5">
-                    <span className="text-[11px] text-foreground-faint">답변 길이</span>
-                    <select
-                      value={profileForm.responseLength}
-                      onChange={(e) => setProfileForm((f) => ({ ...f, responseLength: e.target.value }))}
-                      className="w-full border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
-                    >
-                      <option value="short">짧게</option>
-                      <option value="medium">적당히</option>
-                      <option value="detailed">자세히</option>
-                    </select>
-                  </label>
-                  <label className="block space-y-1.5">
-                    <span className="text-[11px] text-foreground-faint">이모지</span>
-                    <select
-                      value={profileForm.emojiUsage}
-                      onChange={(e) => setProfileForm((f) => ({ ...f, emojiUsage: e.target.value }))}
-                      className="w-full border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
-                    >
-                      <option value="many">많이</option>
-                      <option value="moderate">적당히</option>
-                      <option value="few">거의 안씀</option>
-                    </select>
-                  </label>
-                </div>
-              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -263,14 +221,6 @@ export function SettingsPageModern() {
                   <BioSection bio={profile.bio} />
                 </div>
               )}
-              <div className="pt-3 border-t border-line">
-                <p className="label mb-2">대화 스타일</p>
-                <div className="flex flex-wrap gap-3 text-xs text-foreground-muted">
-                  <span>톤 · <span className="text-foreground">{ ({ friendly: '친근하게', polite: '존댓말', formal: '격식있게' } as Record<string, string>)[profile.tone] || profile.tone }</span></span>
-                  <span>길이 · <span className="text-foreground">{ ({ short: '짧게', medium: '적당히', detailed: '자세히' } as Record<string, string>)[profile.responseLength] || profile.responseLength }</span></span>
-                  <span>이모지 · <span className="text-foreground">{ ({ many: '많이', moderate: '적당히', few: '거의 안씀' } as Record<string, string>)[profile.emojiUsage] || profile.emojiUsage }</span></span>
-                </div>
-              </div>
             </div>
           )}
         </section>
