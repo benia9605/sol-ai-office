@@ -377,6 +377,7 @@ export function InsightsPageModern() {
         <ItemDetailPopup
           type="insight"
           item={selectedItem}
+          categories={insightCategories}
           onSave={(updated) => { update((updated as InsightItem).id, updated as InsightItem); setSelectedItem(null); }}
           onDelete={(id) => { remove(id); setSelectedItem(null); }}
           onClose={() => setSelectedItem(null)}
@@ -491,7 +492,7 @@ function InsightRow({
 
   return (
     <li className={isStarred ? 'bg-surface-muted/40' : ''}>
-      <div className="w-full grid grid-cols-[24px_48px_1fr_auto] items-start gap-3 sm:gap-4 py-5 pl-4 pr-3 sm:pl-6 hover:bg-surface-muted transition-colors">
+      <div className="w-full grid grid-cols-[24px_1fr_auto] items-start gap-3 sm:gap-4 py-5 pl-4 pr-3 sm:pl-6 hover:bg-surface-muted transition-colors">
         {/* 즐겨찾기 토글 (좌측 별 버튼) */}
         <button
           type="button"
@@ -504,15 +505,6 @@ function InsightRow({
           <StarIcon filled={isStarred} />
         </button>
 
-        {/* 출처 이미지 */}
-        <div className="pt-0.5">
-          {source ? (
-            <SourceImg image={source.image} label={source.label} size={40} />
-          ) : (
-            <div className="w-10 h-10 bg-surface-muted" />
-          )}
-        </div>
-
         {/* 본문 (전체 클릭 영역) */}
         <button
           type="button"
@@ -524,11 +516,6 @@ function InsightRow({
             {isStarred && (
               <span className="text-[10px] tracking-[0.18em] uppercase text-primary-500">
                 Pinned
-              </span>
-            )}
-            {source && (
-              <span className="text-[10px] tracking-[0.15em] uppercase text-foreground-faint">
-                {source.label}
               </span>
             )}
           </div>

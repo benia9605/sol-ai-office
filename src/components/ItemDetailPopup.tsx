@@ -19,6 +19,7 @@ import {
 import { categoryColorPresets, availableSourceImages, rooms } from '../data';
 import { ProjectSelect } from './ProjectSelect';
 import { FEATURES } from '../config/features';
+import { CategoryBadge } from './CategoryBadge';
 import { GoalSelect } from './GoalSelect';
 import { downloadIcs } from '../utils/icsExport';
 import { uploadImage } from '../services/storage.service';
@@ -530,127 +531,25 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
     const i = data as InsightItem;
     return (
       <>
-        {/* 출처 */}
+        {/* 카테고리 */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-sm font-medium text-gray-600">출처</label>
-            <button onClick={() => setShowSourceManager(!showSourceManager)}
-              className={`text-xs ${typeTheme.insight.manage}`}>
-              {showSourceManager ? '닫기' : '관리'}
-            </button>
-          </div>
+          <label className="text-sm font-medium text-gray-600 block mb-1.5">카테고리</label>
           <div className="flex flex-wrap gap-1.5">
-            {insightSources.map((src) => (
-              <button key={src.id}
-                onClick={() => update({ source: i.source === src.id ? '' : src.id })}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  i.source === src.id ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}>
-                {renderSourceImg(src.image, src.label)}
-                {src.label}
-              </button>
-            ))}
+            {categories.map((cat) => {
+              const on = i.category === cat.id;
+              return (
+                <button key={cat.id}
+                  onClick={() => update({ category: on ? undefined : cat.id })}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium border transition-all ${
+                    on ? 'text-white border-transparent' : 'bg-gray-100 text-gray-600 border-transparent hover:bg-gray-200'
+                  }`}
+                  style={on ? { backgroundColor: cat.color } : undefined}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: on ? '#ffffff' : cat.color }} aria-hidden />
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
-          {showSourceManager && (
-            <div className="mt-2 p-3 bg-gray-50 rounded-xl space-y-3">
-              {/* 새 출처 추가 */}
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <input type="text" placeholder="새 출처 이름" value={newSourceLabel}
-                    onChange={(e) => setNewSourceLabel(e.target.value)}
-                    className="flex-1 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-200" />
-                  <button onClick={handleAddInsightSource}
-                    disabled={!newSourceLabel.trim() || (sourceImageMode === 'image' ? !newSourceImage : !newSourceEmoji)}
-                    className="px-2 py-1.5 text-xs text-white bg-amber-400 hover:bg-amber-500 rounded-lg disabled:opacity-40">추가</button>
-                </div>
-                {/* 이미지 / 이모지 탭 */}
-                <div className="flex gap-1 mb-1">
-                  <button onClick={() => setSourceImageMode('image')}
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all ${
-                      sourceImageMode === 'image' ? 'bg-amber-200 text-amber-800' : 'bg-gray-200 text-gray-500'
-                    }`}>이미지</button>
-                  <button onClick={() => setSourceImageMode('emoji')}
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all ${
-                      sourceImageMode === 'emoji' ? 'bg-amber-200 text-amber-800' : 'bg-gray-200 text-gray-500'
-                    }`}>이모지</button>
-                </div>
-                {sourceImageMode === 'image' ? (
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap gap-1.5">
-                      {availableSourceImages.map((path) => (
-                        <button key={path}
-                          onClick={() => setNewSourceImage(path)}
-                          className={`w-8 h-8 rounded-lg overflow-hidden border-2 transition-all ${
-                            newSourceImage === path ? 'border-amber-400 ring-1 ring-amber-300' : 'border-gray-200 hover:border-gray-400'
-                          }`}
-                          title={getFileName(path)}>
-                          <img src={path} alt={getFileName(path)} className="w-full h-full object-cover" />
-                        </button>
-                      ))}
-                      {/* 업로드 버튼 */}
-                      <button
-                        onClick={() => sourceImageFileRef.current?.click()}
-                        disabled={sourceImageUploading}
-                        className="w-8 h-8 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-amber-400 hover:text-amber-500 transition-all"
-                        title="이미지 업로드"
-                      >
-                        {sourceImageUploading
-                          ? <span className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                          : <span className="text-xs">+</span>}
-                      </button>
-                      <input
-                        ref={sourceImageFileRef}
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp,image/gif"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          setSourceImageUploading(true);
-                          try {
-                            const url = await uploadImage(file, 'sources');
-                            setNewSourceImage(url);
-                          } catch (err) {
-                            alert(err instanceof Error ? err.message : '이미지 업로드 실패');
-                          } finally {
-                            setSourceImageUploading(false);
-                            e.target.value = '';
-                          }
-                        }}
-                      />
-                    </div>
-                    {/* 업로드된 이미지 미리보기 */}
-                    {newSourceImage && isImagePath(newSourceImage) && !availableSourceImages.includes(newSourceImage) && (
-                      <div className="flex items-center gap-2 px-2 py-1 bg-amber-50 rounded-lg">
-                        <img src={newSourceImage} alt="업로드됨" className="w-6 h-6 rounded-full object-cover" />
-                        <span className="text-[10px] text-amber-600 truncate flex-1">업로드된 이미지</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex gap-2 items-center">
-                    <input type="text" placeholder="이모지 입력 (예: 📱)" value={newSourceEmoji}
-                      onChange={(e) => setNewSourceEmoji(e.target.value)}
-                      className="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-200" />
-                    {newSourceEmoji && <span className="text-lg">{newSourceEmoji}</span>}
-                  </div>
-                )}
-              </div>
-              {/* 등록된 출처 목록 (모두 삭제 가능) */}
-              <div>
-                <span className="text-[10px] text-gray-400 block mb-1">등록된 출처</span>
-                <div className="flex flex-wrap gap-1">
-                  {insightSources.map((src) => (
-                    <span key={src.id} className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-white rounded-full border">
-                      {renderSourceImg(src.image, src.label, 'w-3.5 h-3.5')}
-                      {src.label}
-                      <button onClick={() => handleRemoveInsightSource(src.id)} className="text-gray-400 hover:text-red-500 ml-0.5">x</button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* 링크 */}
@@ -698,9 +597,6 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
           <AutoTextarea value={i.content} onChange={(e) => update({ content: e.target.value })} rows={3}
             className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-200" />
         </div>
-
-        {/* 태그 */}
-        {renderTagEditor(i.tags, (tags) => update({ tags }))}
       </>
     );
   };
@@ -1004,14 +900,10 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
               </button>
             </ViewSection>
           )}
-          {src && (
-            <ViewSection label="출처">
-              <span className="inline-flex items-center gap-1.5 text-sm text-gray-800">
-                {renderSourceImg(src.image, src.label, 'w-4 h-4')}
-                {src.label}
-              </span>
-            </ViewSection>
-          )}
+          {i.category && (() => {
+            const c = categories.find((x) => x.id === i.category);
+            return c ? <ViewSection label="카테고리"><CategoryBadge color={c.color} label={c.label} size="sm" /></ViewSection> : null;
+          })()}
           {i.createdAt && (
             <ViewSection label="기록일">
               <span className="text-sm text-gray-800">{i.createdAt}{i.time ? ` ${i.time}` : ''}</span>
@@ -1025,12 +917,6 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
             <div className="text-sm text-gray-700 leading-relaxed markdown-body">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{i.content}</ReactMarkdown>
             </div>
-          </div>
-        )}
-        {/* 태그 */}
-        {i.tags && i.tags.length > 0 && (
-          <div className="pt-4 border-t border-gray-100">
-            <ViewTags tags={i.tags} theme={theme.tag} />
           </div>
         )}
       </div>
