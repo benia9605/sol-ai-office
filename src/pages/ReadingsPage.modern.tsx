@@ -18,6 +18,7 @@ import { calcReadingProgress, progressLabel } from '../utils/readingProgress';
 import { ReadingDetailView } from '../components/readings/ReadingDetailView';
 import { searchBooks, getBookDetail, parseCategoryToTags, AladinSearchItem } from '../services/aladinApi';
 import { generateBookToc } from '../services/claudeApi';
+import { FilterDropdown } from '../components/FilterDropdown';
 import { CategoryBadge } from '../components/CategoryBadge';
 
 const PAGE_SIZE = 12;
@@ -241,14 +242,12 @@ export function ReadingsPageModern() {
               onClick={() => { setInputMode(inputMode === 'search' ? null : 'search'); }}
               labelEn="Search"
               labelKo="도서 검색 추가"
-              hint="알라딘에서 자동 입력"
             />
             <InputToggleButton
               active={inputMode === 'manual'}
               onClick={() => { setInputMode(inputMode === 'manual' ? null : 'manual'); }}
               labelEn="Manual"
               labelKo="직접 추가"
-              hint="강좌 · 아티클 · 팟캐스트"
             />
           </div>
 
@@ -275,39 +274,9 @@ export function ReadingsPageModern() {
           )}
         </section>
 
-        {/* ── 필터 ── */}
+        {/* ── 검색 + 필터 (할일과 동일 개념: 검색 위 · 디자인 드롭다운) ── */}
         <section className="space-y-4">
-          {/* 상태 chip */}
-          <div className="flex flex-wrap gap-2">
-            {statusOptions.map((s) => (
-              <FilterChip
-                key={s.key}
-                active={statusFilter === s.key}
-                onClick={() => setStatusFilter(s.key)}
-                label={`${s.label} ${counts[s.key]}`}
-              />
-            ))}
-          </div>
-
-          {/* 카테고리 chip */}
-          <div className="flex flex-wrap gap-2">
-            <FilterChip
-              active={categoryFilter === 'all'}
-              onClick={() => setCategoryFilter('all')}
-              label="모든 종류"
-            />
-            {categories.map((cat) => (
-              <FilterChip
-                key={cat.id}
-                active={categoryFilter === cat.id}
-                onClick={() => setCategoryFilter(categoryFilter === cat.id ? 'all' : cat.id)}
-                label={cat.label}
-                dotColor={cat.color}
-              />
-            ))}
-          </div>
-
-          {/* 검색 */}
+          {/* 검색 — 필터 위 */}
           <div className="relative">
             <svg viewBox="0 0 20 20" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-faint" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="9" cy="9" r="6" />
@@ -316,8 +285,24 @@ export function ReadingsPageModern() {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="제목 · 저자 · 태그 검색"
+              placeholder="제목 · 저자 검색"
               className="w-full pl-10 pr-4 py-2.5 bg-surface border border-line text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
+            />
+          </div>
+
+          {/* 상태 · 종류 — 디자인 드롭다운 */}
+          <div className="grid grid-cols-2 gap-2">
+            <FilterDropdown
+              label="상태"
+              value={statusFilter}
+              options={statusOptions.map((s) => ({ key: s.key, label: `${s.label} ${counts[s.key]}` }))}
+              onChange={(k) => setStatusFilter(k as 'all' | ReadingItem['status'])}
+            />
+            <FilterDropdown
+              label="종류"
+              value={categoryFilter}
+              options={[{ key: 'all', label: '전체' }, ...categories.map((c) => ({ key: c.id, label: c.label, dotColor: c.color }))]}
+              onChange={setCategoryFilter}
             />
           </div>
         </section>
@@ -436,13 +421,12 @@ function FilterChip({
 }
 
 function InputToggleButton({
-  active, onClick, labelEn, labelKo, hint,
+  active, onClick, labelEn, labelKo,
 }: {
   active: boolean;
   onClick: () => void;
   labelEn: string;
   labelKo: string;
-  hint: string;
 }) {
   return (
     <button
@@ -458,9 +442,6 @@ function InputToggleButton({
         {labelEn}
       </p>
       <p className="mt-1.5 text-sm leading-tight">{labelKo}</p>
-      <p className={`mt-1 text-[10px] ${active ? 'text-surface/60' : 'text-foreground-faint'}`}>
-        {hint}
-      </p>
     </button>
   );
 }
