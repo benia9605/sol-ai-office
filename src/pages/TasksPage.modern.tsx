@@ -857,8 +857,8 @@ function DateGroupBlock({
   const isOverdue = dayDiff < 0;
 
   return (
-    <div className="grid grid-cols-[104px_1fr] sm:grid-cols-[128px_1fr] gap-4 sm:gap-6 py-3 border-b border-line items-center">
-      {/* 좌측: (월 — 바뀔 때만) / 일 · 요일·건수 — 왼쪽 정렬 */}
+    <div className={`grid grid-cols-[104px_1fr] sm:grid-cols-[128px_1fr] gap-4 sm:gap-6 py-3 border-b border-line items-center ${showMonth ? 'bg-primary-50' : ''}`}>
+      {/* 좌측: (월 — 바뀔 때만) / 일 · 요일·건수 — 왼쪽 정렬. 월 경계 줄은 연초록 배경 */}
       <div>
         {showMonth && (
           <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">
@@ -1387,10 +1387,10 @@ function TodayFocusSection({
                     <p className="text-base font-normal truncate">{t.title}</p>
                     {cat && cc && (
                       <span
-                        className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 leading-none shrink-0"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md shrink-0"
                         style={{ backgroundColor: cc.bg, color: cc.text }}
                       >
-                        <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
                         {cat.label}
                       </span>
                     )}
@@ -1533,10 +1533,10 @@ function ResumeSection({
                     <p className="text-base truncate">{t.title}</p>
                     {cat && cc && (
                       <span
-                        className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 leading-none shrink-0"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md shrink-0"
                         style={{ backgroundColor: cc.bg, color: cc.text }}
                       >
-                        <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
                         {cat.label}
                       </span>
                     )}
