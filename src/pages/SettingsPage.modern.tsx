@@ -12,6 +12,7 @@ import { useUserProfile, UserProfile } from '../hooks/useUserProfile';
 import { useAuth } from '../hooks/useAuth';
 import { useProjects } from '../hooks/useProjects';
 import { Project } from '../types';
+import { FEATURES } from '../config/features';
 import { uploadImage, deleteImage } from '../services/storage.service';
 import { NotificationSettings } from '../components/NotificationSettings';
 import { ThemePicker } from '../components/ThemePicker';
@@ -133,7 +134,7 @@ export function SettingsPageModern() {
             설정
           </h1>
           <p className="mt-4 text-sm text-foreground-muted">
-            프로필 · 테마 · 알림 · 프로젝트 관리
+            프로필 · 테마 · 알림{FEATURES.projects ? ' · 프로젝트 관리' : ''}
           </p>
         </section>
 
@@ -274,7 +275,8 @@ export function SettingsPageModern() {
           )}
         </section>
 
-        {/* ── 프로젝트 관리 ── */}
+        {/* ── 프로젝트 관리 — 슬림다운으로 백업/숨김 (FEATURES.projects) ── */}
+        {FEATURES.projects && (
         <section className="space-y-3">
           <div className="flex items-baseline justify-between border-b border-line pb-3">
             <div className="flex items-baseline gap-3">
@@ -466,6 +468,7 @@ export function SettingsPageModern() {
             </>
           )}
         </section>
+        )}
 
         {/* ── 알림 ── */}
         {user && <NotificationSettings userId={user.id} />}

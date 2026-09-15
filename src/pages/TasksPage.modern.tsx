@@ -12,6 +12,8 @@
  */
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { AutoTextarea } from "../components/AutoTextarea";
+import { FilterDropdown } from '../components/FilterDropdown';
+import { FEATURES } from '../config/features';
 import { TaskItem, TaskStatus, RepeatType, ScheduleCategory } from '../types';
 import { useTasks } from '../hooks/useTasks';
 import { defaultTaskCategories } from '../data';
@@ -391,7 +393,7 @@ export function TasksPageModern() {
               active={inputMode === 'inbox'}
               onClick={() => setInputMode(inputMode === 'inbox' ? null : 'inbox')}
               labelEn="Capture"
-              labelKo="떠오르는 생각 던져놓기"
+              labelKo="떠오르는 생각"
               hint="분류 없이 인박스에"
             />
             <InputToggleButton
@@ -508,67 +510,43 @@ export function TasksPageModern() {
           />
         )}
 
-        {/* ── Filters ── */}
+        {/* ── Search + Filters ── */}
         <section className="space-y-4">
-          {/* 상태 chip */}
-          <div className="flex flex-wrap gap-2">
-            {statusFilters.map((f) => (
-              <FilterChip
-                key={f.key}
-                active={statusFilter === f.key}
-                onClick={() => setStatusFilter(f.key)}
-                label={f.label}
-              />
-            ))}
-          </div>
-
-          {/* 카테고리 chip */}
-          <div className="flex flex-wrap gap-2">
-            <FilterChip
-              active={categoryFilter === 'all'}
-              onClick={() => setCategoryFilter('all')}
-              label="모든 카테고리"
+          {/* 검색 — 필터 위 */}
+          <div className="relative">
+            <svg viewBox="0 0 20 20" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-faint" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="9" cy="9" r="6" />
+              <path d="M14 14l3 3" strokeLinecap="round" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="제목, 메모, 태그 검색"
+              className="w-full pl-10 pr-4 py-2.5 bg-surface border border-line text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
             />
-            {categories.map((cat) => (
-              <FilterChip
-                key={cat.id}
-                active={categoryFilter === cat.id}
-                onClick={() => setCategoryFilter(categoryFilter === cat.id ? 'all' : cat.id)}
-                label={cat.label}
-                dotColor={cat.color}
-              />
-            ))}
           </div>
 
-          {/* 정렬 + 프로젝트 + 검색 */}
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
-            <div className="relative">
-              <svg viewBox="0 0 20 20" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-faint" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="9" cy="9" r="6" />
-                <path d="M14 14l3 3" strokeLinecap="round" />
-              </svg>
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="제목, 메모, 태그, 프로젝트 검색"
-                className="w-full pl-10 pr-4 py-2.5 bg-surface border border-line text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
-              />
-            </div>
-            <select
-              value={projectFilter}
-              onChange={(e) => setProjectFilter(e.target.value)}
-              className="border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
-            >
-              <option value="all">모든 프로젝트</option>
-              {projectNames.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-            <select
+          {/* 상태 · 카테고리 · 정렬 — 디자인 드롭다운 한 줄 */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <FilterDropdown
+              label="상태"
+              value={statusFilter}
+              options={statusFilters.map((f) => ({ key: f.key, label: f.label }))}
+              onChange={(k) => setStatusFilter(k as StatusFilter)}
+            />
+            <FilterDropdown
+              label="분류"
+              value={categoryFilter}
+              options={[{ key: 'all', label: '모든 카테고리' }, ...categories.map((c) => ({ key: c.id, label: c.label, dotColor: c.color }))]}
+              onChange={setCategoryFilter}
+            />
+            <FilterDropdown
+              label="정렬"
               value={sortMode}
-              onChange={(e) => setSortMode(e.target.value as SortMode)}
-              className="border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
-            >
-              {sortOptions.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
-            </select>
+              options={sortOptions.map((o) => ({ key: o.key, label: o.label }))}
+              onChange={(k) => setSortMode(k as SortMode)}
+              className="col-span-2 sm:col-span-1"
+            />
           </div>
 
           {/* 선택 모드 토글 + 일괄 액션 */}
@@ -1058,16 +1036,16 @@ function TaskRow({
           {/* 카테고리 (작게) */}
           {cat && cc && (
             <span
-              className="hidden sm:inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 leading-none shrink-0"
+              className="hidden sm:inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded shrink-0"
               style={{ backgroundColor: cc.bg, color: cc.text }}
             >
-              <span className="w-1 h-1 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
+              <span className="w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
               {cat.label}
             </span>
           )}
 
-          {/* 프로젝트 (작게) */}
-          {task.project && (
+          {/* 프로젝트 (작게) — 슬림다운으로 백업/숨김 */}
+          {FEATURES.projects && task.project && (
             <span className="hidden sm:inline text-[10px] text-foreground-faint truncate max-w-[80px] shrink-0">
               {task.project}
             </span>
@@ -1096,10 +1074,10 @@ function TaskRow({
             </p>
             {cat && cc && (
               <span
-                className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 leading-none shrink-0"
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md shrink-0"
                 style={{ backgroundColor: cc.bg, color: cc.text }}
               >
-                <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cc.dot }} aria-hidden />
                 {cat.label}
               </span>
             )}
@@ -1109,7 +1087,7 @@ function TaskRow({
               <span className="w-1.5 h-1.5" style={{ backgroundColor: priority.color }} aria-hidden />
               {priority.label}
             </span>
-            {task.project && <span className="truncate">· {task.project}</span>}
+            {FEATURES.projects && task.project && <span className="truncate">· {task.project}</span>}
             {task.repeat && task.repeat !== 'none' && (
               <span>· 반복 {repeatLabels[task.repeat]}</span>
             )}
@@ -1163,8 +1141,8 @@ function DailyRoutineSection({
         </p>
       </div>
 
-      {/* 칩 가로 스크롤 */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 sm:px-5 py-3">
+      {/* 칩 — 줄바꿈(늘어나도 여러 줄로 흘러 가독성 유지) */}
+      <div className="flex flex-wrap gap-2 px-4 sm:px-5 py-3">
         {tasks.map((t) => {
           const cat = categories.find((c) => c.id === t.category);
           const isCompleted = t.status === 'completed';

@@ -18,6 +18,7 @@ import {
 } from '../types';
 import { categoryColorPresets, availableSourceImages, rooms } from '../data';
 import { ProjectSelect } from './ProjectSelect';
+import { FEATURES } from '../config/features';
 import { GoalSelect } from './GoalSelect';
 import { downloadIcs } from '../utils/icsExport';
 import { uploadImage } from '../services/storage.service';
@@ -285,11 +286,13 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
           )}
         </div>
 
-        {/* 프로젝트 */}
+        {/* 프로젝트 — 슬림다운으로 백업/숨김 */}
+        {FEATURES.projects && (
         <div>
           <label className="text-sm font-medium text-gray-600 block mb-1.5">프로젝트</label>
           <ProjectSelect value={s.project || ''} onChange={(v) => update({ project: v })} />
         </div>
+        )}
 
         {/* 반복 */}
         <div>
@@ -681,11 +684,13 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
           </div>
         </div>
 
-        {/* 프로젝트 */}
+        {/* 프로젝트 — 슬림다운으로 백업/숨김 */}
+        {FEATURES.projects && (
         <div>
           <label className="text-sm font-medium text-gray-600 block mb-1.5">프로젝트</label>
           <ProjectSelect value={i.project || ''} onChange={(v) => update({ project: v })} placeholder="선택 안함" />
         </div>
+        )}
 
         {/* 내용 */}
         <div>
