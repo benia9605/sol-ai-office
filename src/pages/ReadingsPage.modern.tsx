@@ -12,7 +12,8 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { AutoTextarea } from "../components/AutoTextarea";
 import { ReadingItem, ReadingCategory, StudyNote } from '../types';
-import { defaultReadingCategories } from '../data';
+import { CategorySelect } from '../components/CategorySelect';
+import { useCategories } from '../hooks/useCategories';
 import { useReadings } from '../hooks/useReadings';
 import { calcReadingProgress, progressLabel } from '../utils/readingProgress';
 import { ReadingDetailView } from '../components/readings/ReadingDetailView';
@@ -36,7 +37,7 @@ export function ReadingsPageModern() {
     addReading, updateReading, removeReading,
     addNote, updateNote, removeNote,
   } = useReadings();
-  const [categories] = useState<ReadingCategory[]>(defaultReadingCategories);
+  const { categories } = useCategories('reading');
 
   // 필터/검색
   const [statusFilter, setStatusFilter] = useState<'all' | ReadingItem['status']>('all');
@@ -570,29 +571,10 @@ function AddForm({
     <section className="border border-line p-6 sm:p-8 space-y-6 bg-surface">
       <p className="label">{mode === 'search' ? 'Aladin Search' : 'New Entry'}</p>
 
-      {/* 종류 */}
+      {/* 종류 — 공용 CategorySelect */}
       <div className="space-y-2">
         <p className="label">종류</p>
-        <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => {
-            const active = form.category === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setForm({ ...form, category: cat.id })}
-                className={`inline-flex items-center gap-2 px-4 py-1.5 text-xs border transition-colors ${
-                  active
-                    ? 'bg-foreground text-surface border-foreground'
-                    : 'bg-surface text-foreground-muted border-line hover:border-foreground hover:text-foreground'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 shrink-0" style={{ backgroundColor: cat.color }} aria-hidden />
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
+        <CategorySelect scope="reading" value={form.category} onChange={(id) => setForm({ ...form, category: id })} />
       </div>
 
       {/* 알라딘 검색 (search 모드 + book일 때만) */}

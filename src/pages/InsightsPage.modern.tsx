@@ -12,7 +12,8 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { AutoTextarea } from "../components/AutoTextarea";
 import { FilterDropdown } from '../components/FilterDropdown';
 import { CategoryBadge } from '../components/CategoryBadge';
-import { defaultTaskCategories } from '../data';
+import { CategorySelect } from '../components/CategorySelect';
+import { useCategories } from '../hooks/useCategories';
 import { FEATURES } from '../config/features';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -22,7 +23,6 @@ import { useInsightSources } from '../hooks/useInsightSources';
 import { ItemDetailPopup } from '../components/ItemDetailPopup';
 import { ProjectSelect } from '../components/ProjectSelect';
 
-const insightCategories = defaultTaskCategories;
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 const MONTHS_EN = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -84,6 +84,8 @@ function SourceImg({ image, label, size = 40 }: { image: string; label: string; 
 
 export function InsightsPageModern() {
   const { insights, add, update, remove } = useInsights();
+  // 인사이트는 할일과 동일 카테고리 세트(scope='task') — 기존 tcat-* 호환
+  const { categories: insightCategories } = useCategories('task');
   const { sources } = useInsightSources();
 
   // 입력 모드
@@ -622,29 +624,10 @@ function InsightAddForm({ form, setForm, sources, onAddTag, onCancel, onSubmit }
         />
       </label>
 
-      {/* 카테고리 (할일과 동일 세트) */}
+      {/* 카테고리 — 공용 CategorySelect(할일과 동일 세트) */}
       <div className="space-y-2">
         <p className="label">카테고리</p>
-        <div className="flex flex-wrap gap-2">
-          {insightCategories.map((c) => {
-            const active = form.category === c.id;
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setForm({ ...form, category: active ? '' : c.id })}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border transition-colors ${
-                  active
-                    ? 'bg-foreground text-surface border-foreground'
-                    : 'bg-surface text-foreground-muted border-line hover:border-foreground hover:text-foreground'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.color }} aria-hidden />
-                {c.label}
-              </button>
-            );
-          })}
-        </div>
+        <CategorySelect scope="task" value={form.category} onChange={(id) => setForm({ ...form, category: id })} allowNone />
       </div>
 
       {/* 링크 (+ 프로젝트는 슬림다운으로 숨김) */}
