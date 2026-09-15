@@ -377,6 +377,49 @@ body {
   --tw-ring-color: var(--color-line-strong) !important;
 }
 
+/* ────────────────────────────────────────────────────────
+   상태색 복원 (오피스) — 의미색만 예외로 되살림
+   .office-shell 스코프라 위 모노 무력화(0,2,0)보다 specificity(0,3,0) 높아 이김.
+   성공/활성/완료 = 브랜드 초록(primary), 위험/지연/긴급/삭제 = 빨강. (경고 amber는 중립 유지)
+   ──────────────────────────────────────────────────────── */
+/* 성공·활성 (emerald) → 브랜드 초록 */
+[data-theme="modern"] .office-shell [class*="text-emerald-"] {
+  color: var(--color-primary-500) !important;
+}
+[data-theme="modern"] .office-shell [class~="bg-emerald-400"],
+[data-theme="modern"] .office-shell [class~="bg-emerald-500"],
+[data-theme="modern"] .office-shell [class~="bg-emerald-600"] {
+  background-color: var(--color-primary-400) !important;
+}
+[data-theme="modern"] .office-shell [class~="bg-emerald-50"],
+[data-theme="modern"] .office-shell [class~="bg-emerald-100"] {
+  background-color: var(--color-primary-50) !important;
+}
+[data-theme="modern"] .office-shell [class*="border-emerald-"] {
+  border-color: var(--color-primary-400) !important;
+}
+/* 위험·지연·긴급·삭제 (rose/red) → 빨강 */
+[data-theme="modern"] .office-shell [class*="text-rose-"],
+[data-theme="modern"] .office-shell [class*="text-red-"] {
+  color: #e11d48 !important;
+}
+[data-theme="modern"] .office-shell [class~="bg-rose-50"],
+[data-theme="modern"] .office-shell [class~="bg-red-50"],
+[data-theme="modern"] .office-shell [class~="bg-rose-100"],
+[data-theme="modern"] .office-shell [class~="bg-red-100"] {
+  background-color: #fff1f2 !important;
+}
+[data-theme="modern"] .office-shell [class~="bg-rose-500"],
+[data-theme="modern"] .office-shell [class~="bg-rose-600"],
+[data-theme="modern"] .office-shell [class~="bg-red-500"],
+[data-theme="modern"] .office-shell [class~="bg-red-600"] {
+  background-color: #e11d48 !important;
+}
+[data-theme="modern"] .office-shell [class*="border-rose-"],
+[data-theme="modern"] .office-shell [class*="border-red-"] {
+  border-color: #e11d48 !important;
+}
+
 /* 6) 헤딩 — MUJI 톤은 font-light(300) ~ font-normal(400) */
 [data-theme="modern"] h1,
 [data-theme="modern"] h2,

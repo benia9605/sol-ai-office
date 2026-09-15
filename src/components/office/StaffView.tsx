@@ -28,7 +28,7 @@ import { HireStaffModal, MODEL_OPTIONS } from './HireStaffModal';
 
 function StatePill({ state }: { state: Staff['state'] }) {
   return state === 'working'
-    ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground font-medium">● 근무 중</span>
+    ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-medium">● 근무 중</span>
     : <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground-faint font-medium">대기</span>;
 }
 
