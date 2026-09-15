@@ -762,13 +762,16 @@ function ListPaginated({
         </p>
       </div>
 
-      {/* 페이지된 dated 그룹 — 월은 바뀌는 첫 날짜에만 표시 */}
+      {/* 페이지된 dated 그룹 — 내림차순이라, 월은 그 달의 '가장 이른 날짜'(아래로 월 바뀌기 직전)에만 표시 */}
       {pagedDated.map(([date, items], i) => (
         <DateGroupBlock
           key={date}
           date={date}
           items={items}
-          showMonth={i === 0 || new Date(date).getMonth() !== new Date(pagedDated[i - 1][0]).getMonth()}
+          showMonth={(() => {
+            const nextDate = dated[startIdx + i + 1]?.[0];  // 한 칸 아래(더 이른 날짜)
+            return !nextDate || new Date(nextDate).getMonth() !== new Date(date).getMonth();
+          })()}
           categories={categories}
           selectMode={selectMode}
           selectedIds={selectedIds}
