@@ -267,33 +267,42 @@ function ModalHost({ modal, setModal, onClose, itemById, childrenOf, snapsOf, la
       {c.url && <a href={c.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 border border-line rounded-lg p-3 text-xs text-foreground-muted hover:border-primary-500 mb-3"><ChannelIcon channel={ch} size={16} /><span className="truncate">{c.url}</span></a>}
       <div className="h-px bg-line my-4" />
       <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground-faint mb-1.5">수치 기록 (최신순)</p>
-      {snaps.length ? snaps.map((s: ContentMetric) => {
-        const [d, t] = (s.measuredAt || '').split(' ');
-        return <div key={s.id} className="flex gap-4 py-3.5 border-b border-line last:border-0">
-          <div className="shrink-0 min-w-[92px] text-xs text-foreground-faint pt-0.5 tabular-nums whitespace-nowrap">{d?.slice(5)} {t || ''}</div>
-          <div className="flex-1 flex flex-wrap gap-x-5 gap-y-3">
-            {(CHANNEL_METRIC_FIELDS[ch] || []).filter((f) => s.metrics?.[f.key] != null).map((f) => (
-              <div key={f.key} className="text-[11px] text-foreground-muted">{f.label}<b className="block text-base text-foreground font-semibold tabular-nums mt-0.5">{fmt(s.metrics?.[f.key])}</b></div>
-            ))}
-          </div>
-        </div>;
-      }) : <p className="text-xs text-foreground-faint py-2">아직 기록된 수치가 없어요.</p>}
       {auto ? (() => {
+        // 유튜브: 연결된 영상의 라이브 수치가 곧 수치 기록 (수기 없음)
         const lv = linkedVideoOf(c.id);
-        if (lv) return <div className="mt-1">
-          <div className="rounded-lg border border-line p-3">
-            <div className="flex items-center gap-2 mb-2"><ChannelIcon channel="youtube" size={15} /><span className="text-xs font-medium text-foreground truncate flex-1">{lv.title}</span><button onClick={() => onLinkYt(lv.id, null)} className="text-[11px] text-foreground-faint hover:text-rose-500">연결 해제</button></div>
-            <div className="flex flex-wrap gap-x-5 gap-y-2">
+        if (lv) return <div>
+          <div className="flex gap-4 py-3.5">
+            <div className="shrink-0 min-w-[92px] text-xs text-foreground-faint pt-0.5 whitespace-nowrap">실시간</div>
+            <div className="flex-1 flex flex-wrap gap-x-5 gap-y-3">
               <div className="text-[11px] text-foreground-muted">조회수<b className="block text-base text-foreground font-semibold tabular-nums mt-0.5">{fmt(lv.view_count)}</b></div>
               <div className="text-[11px] text-foreground-muted">좋아요<b className="block text-base text-foreground font-semibold tabular-nums mt-0.5">{fmt(lv.like_count)}</b></div>
               <div className="text-[11px] text-foreground-muted">댓글<b className="block text-base text-foreground font-semibold tabular-nums mt-0.5">{fmt(lv.comment_count)}</b></div>
             </div>
           </div>
-          <div className="mt-2 text-[11px] text-primary-500">▶️ 연결된 유튜브 영상에서 조회·좋아요·댓글을 <b>자동 반영</b>해요.</div>
+          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-foreground-faint border-t border-line pt-2.5">
+            <ChannelIcon channel="youtube" size={13} />
+            <span className="truncate">연결됨 · {lv.title} · 자동 반영</span>
+            <button onClick={() => onLinkYt(lv.id, null)} className="ml-auto shrink-0 text-foreground-faint hover:text-rose-500">연결 해제</button>
+          </div>
         </div>;
-        return <button onClick={() => back({ t: 'linkYt', id: c.id, from: modal.from })} className="w-full mt-2 flex items-center justify-center gap-2 border border-dashed border-line-strong rounded-lg py-3 text-sm text-foreground-muted hover:border-primary-500 hover:text-primary-500 transition-colors"><ChannelIcon channel="youtube" size={15} /> 유튜브 영상 연결 (수치 자동)</button>;
-      })()
-        : <button onClick={() => back({ t: 'addMetric', id: c.id, from: modal.from })} className="w-full mt-2 flex items-center justify-center gap-2 border border-dashed border-line-strong rounded-lg py-3 text-sm text-foreground-muted hover:border-primary-500 hover:text-primary-500 transition-colors">＋ 수치 추가 (기록 시점 저장)</button>}
+        return <>
+          <p className="text-xs text-foreground-faint py-2">유튜브 영상을 연결하면 조회·좋아요·댓글이 자동으로 채워져요.</p>
+          <button onClick={() => back({ t: 'linkYt', id: c.id, from: modal.from })} className="w-full mt-1 flex items-center justify-center gap-2 border border-dashed border-line-strong rounded-lg py-3 text-sm text-foreground-muted hover:border-primary-500 hover:text-primary-500 transition-colors"><ChannelIcon channel="youtube" size={15} /> 유튜브 영상 연결 (수치 자동)</button>
+        </>;
+      })() : (<>
+        {snaps.length ? snaps.map((s: ContentMetric) => {
+          const [d, t] = (s.measuredAt || '').split(' ');
+          return <div key={s.id} className="flex gap-4 py-3.5 border-b border-line last:border-0">
+            <div className="shrink-0 min-w-[92px] text-xs text-foreground-faint pt-0.5 tabular-nums whitespace-nowrap">{d?.slice(5)} {t || ''}</div>
+            <div className="flex-1 flex flex-wrap gap-x-5 gap-y-3">
+              {(CHANNEL_METRIC_FIELDS[ch] || []).filter((f) => s.metrics?.[f.key] != null).map((f) => (
+                <div key={f.key} className="text-[11px] text-foreground-muted">{f.label}<b className="block text-base text-foreground font-semibold tabular-nums mt-0.5">{fmt(s.metrics?.[f.key])}</b></div>
+              ))}
+            </div>
+          </div>;
+        }) : <p className="text-xs text-foreground-faint py-2">아직 기록된 수치가 없어요.</p>}
+        <button onClick={() => back({ t: 'addMetric', id: c.id, from: modal.from })} className="w-full mt-2 flex items-center justify-center gap-2 border border-dashed border-line-strong rounded-lg py-3 text-sm text-foreground-muted hover:border-primary-500 hover:text-primary-500 transition-colors">＋ 수치 추가 (기록 시점 저장)</button>
+      </>)}
     </Sheet>;
   }
 
