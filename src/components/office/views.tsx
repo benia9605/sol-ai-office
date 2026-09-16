@@ -513,7 +513,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
             <div key={t.id} className="flex items-center gap-2 py-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-primary-400 flex-shrink-0" />
               <span className="text-sm text-foreground-muted truncate flex-1">{t.title}</span>
-              {t.priority === 'high' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-500 flex-shrink-0">긴급</span>}
+              {t.priority === 'high' && <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] bg-rose-50 text-rose-500 flex-shrink-0">긴급</span>}
             </div>
           )) : <Empty t="할일이 없어요" />}
         </Panel>
@@ -1974,7 +1974,7 @@ export function ContentDetailView({ workspace, contentId, onBack }: { workspace:
           ) : (
             <>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
-                <span className={`px-2 py-0.5 rounded-full ${CONTENT_STATUS_CLS[item.status]}`}>{CONTENT_STATUS_LABEL[item.status]}</span>
+                <span className={`px-2 py-0.5 rounded-[4px] ${CONTENT_STATUS_CLS[item.status]}`}>{CONTENT_STATUS_LABEL[item.status]}</span>
                 {item.platform && <span className="text-foreground-muted">{item.platform}</span>}
                 {item.contentType && <span className="text-foreground-muted">{CONTENT_TYPE_LABEL[item.contentType]}</span>}
                 {item.owner && <span className="text-foreground-faint">담당 {item.owner}</span>}
@@ -2035,7 +2035,7 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
   const openContent = (c: ContentItem) => onNavigate ? onNavigate('contents/' + c.id) : setSelected(c);
   const chip = (id: ContentStatus | 'all', label: string) => (
     <button key={id} onClick={() => setFilter(id)}
-      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${filter === id ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
+      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${filter === id ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
   );
 
   return (
@@ -2084,7 +2084,7 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
                 <span className="text-sm font-medium text-foreground truncate flex-1 min-w-0">{c.title}</span>
                 {c.contentType && <span className="hidden sm:inline text-[11px] text-foreground-faint flex-shrink-0">{CONTENT_TYPE_LABEL[c.contentType]}</span>}
                 {c.platform && <span className="text-[11px] text-foreground-faint flex-shrink-0">{c.platform}</span>}
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${CONTENT_STATUS_CLS[c.status]}`}>{CONTENT_STATUS_LABEL[c.status]}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-[4px] flex-shrink-0 ${CONTENT_STATUS_CLS[c.status]}`}>{CONTENT_STATUS_LABEL[c.status]}</span>
               </button>
             </li>
           ))}
@@ -2243,8 +2243,8 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
             <Card key={p.id} className="group p-4 flex items-center gap-3">
               <button onClick={() => { if (compat) setSelected(p); }} className={`flex items-center gap-3 flex-1 min-w-0 text-left ${compat ? '' : 'cursor-default'}`}>
                 <span className="text-sm font-semibold text-foreground truncate">{p.name}</span>
-                {p.category && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground-muted flex-shrink-0">{p.category}</span>}
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${PRODUCT_STATUS[p.status].cls}`}>{PRODUCT_STATUS[p.status].label}</span>
+                {p.category && <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] bg-surface-muted text-foreground-muted flex-shrink-0">{p.category}</span>}
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-[4px] flex-shrink-0 ${PRODUCT_STATUS[p.status].cls}`}>{PRODUCT_STATUS[p.status].label}</span>
                 <span className="ml-auto text-xs text-foreground-muted flex-shrink-0">{won(p.price)}</span>
                 <span className="text-[11px] text-foreground-faint flex-shrink-0 w-14 text-right">마진 {marginPct(p.price, p.cost)}</span>
                 <span className="text-[11px] text-foreground-faint flex-shrink-0 w-14 text-right">재고 {p.stock ?? '—'}</span>
@@ -2371,7 +2371,7 @@ export function SalesDailyView({ workspace }: { workspace: Workspace }) {
                     <Card className="p-3.5">
                       <button onClick={() => { if (!compat) return; setEditing(r); setForm({ date: r.date, source: r.source, revenue: r.revenue?.toString() ?? '', orders: r.orders?.toString() ?? '', visitors: r.visitors?.toString() ?? '', memo: r.memo ?? '' }); }}
                         className="w-full flex items-center gap-3 text-left">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground-muted flex-shrink-0">{r.sourceLabel ?? salesSourceLabel(r.source)}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] bg-surface-muted text-foreground-muted flex-shrink-0">{r.sourceLabel ?? salesSourceLabel(r.source)}</span>
                         <span className="text-sm font-semibold text-foreground flex-shrink-0">{wonShort(r.revenue)}</span>
                         <span className="text-[11px] text-foreground-faint flex-shrink-0">주문 {r.orders ?? '—'}</span>
                         <span className="text-[11px] text-foreground-faint flex-shrink-0">객단가 {r.ordersBasis === 'voucher' ? '—' : (aov(r.revenue, r.orders) != null ? `${aov(r.revenue, r.orders)!.toLocaleString()}원` : '—')}</span>
@@ -2479,7 +2479,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
 
   const chip = (id: MemoryKind | 'all', label: string) => (
     <button key={id} onClick={() => setKindFilter(id)}
-      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${kindFilter === id ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
+      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${kindFilter === id ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted hover:bg-surface-muted'}`}>{label}</button>
   );
 
   return (
@@ -2494,7 +2494,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
         {chip('all', '전체')}
         {MEMORY_KINDS.map(k => chip(k.v, k.label))}
         <button onClick={() => setShowArchived(v => !v)}
-          className={`ml-auto px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${showArchived ? 'bg-foreground text-surface' : 'bg-surface-muted text-foreground-faint hover:bg-surface-muted'}`}>보관함</button>
+          className={`ml-auto px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${showArchived ? 'bg-foreground text-surface' : 'bg-surface-muted text-foreground-faint hover:bg-surface-muted'}`}>보관함</button>
       </div>
 
       {showForm && (
@@ -2530,7 +2530,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
               <button onClick={() => setSelected(m)} className="w-full text-left">
                 <div className="flex items-center gap-2 mb-1">
                   {m.pinned && <span className="text-[11px]">📌</span>}
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground-muted flex-shrink-0">{memoryKindLabel(m.kind)}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] bg-surface-muted text-foreground-muted flex-shrink-0">{memoryKindLabel(m.kind)}</span>
                   {m.category && <CategoryBadge color={catColor(m.category)} label={catLabel(m.category) || '카테고리'} size="sm" />}
                   <span className="text-sm font-semibold text-foreground truncate">{m.title}</span>
                   <span className="ml-auto text-[10px] text-foreground-faint flex-shrink-0">중요도 {salienceLabel(m.salience)}</span>
@@ -2538,7 +2538,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
                 {(m.summary || m.body) && <p className="text-xs text-foreground-muted line-clamp-2">{m.summary || m.body}</p>}
                 {m.tags && m.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
-                    {m.tags.map(t => <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground">#{t}</span>)}
+                    {m.tags.map(t => <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-[4px] bg-surface-muted text-foreground">#{t}</span>)}
                   </div>
                 )}
               </button>
@@ -2771,7 +2771,7 @@ export function MembersView({ workspace }: { workspace: Workspace }) {
             <span className="text-sm font-medium text-foreground flex-1 min-w-0 truncate">
               {m.nickname || m.name || <span className="text-foreground-faint italic">이름 없음</span>}{m.userId === myId && ' (나)'}
             </span>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground-muted flex-shrink-0">{m.role === 'owner' ? '오너' : '멤버'}</span>
+            <span className="text-[11px] px-2 py-0.5 rounded-[4px] bg-surface-muted text-foreground-muted flex-shrink-0">{m.role === 'owner' ? '오너' : '멤버'}</span>
             <button onClick={() => setDetailMember(m)} className="text-[11px] text-foreground-faint hover:text-foreground flex-shrink-0">담당 할일 ›</button>
             {iAmOwner && m.userId !== myId && (
               <>

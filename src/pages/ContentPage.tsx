@@ -199,7 +199,7 @@ export function ContentPage({ embedded, workspaceId, hideHead }: { embedded?: bo
             <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <img src="/images/content.svg" alt="콘텐츠" className="w-6 h-6 object-contain" />
               콘텐츠
-              {usingDummy && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400">목업</span>}
+              {usingDummy && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-[4px] bg-gray-100 text-gray-400">목업</span>}
             </h1>
           </div>
         )}
@@ -208,12 +208,12 @@ export function ContentPage({ embedded, workspaceId, hideHead }: { embedded?: bo
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setActiveChannel('all')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeChannel === 'all' ? T.chipActive : 'bg-white text-gray-600 shadow-soft hover:shadow-hover'}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeChannel === 'all' ? T.chipActive : 'bg-white text-gray-600 shadow-soft hover:shadow-hover'}`}
           >전체</button>
           {channels.map((c) => (
             <span
               key={c.id}
-              className={`group inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${activeChannel === c.channelId ? T.chipActive : 'bg-white text-gray-600 shadow-soft hover:shadow-hover'}`}
+              className={`group inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${activeChannel === c.channelId ? T.chipActive : 'bg-white text-gray-600 shadow-soft hover:shadow-hover'}`}
               onClick={() => setActiveChannel(c.channelId)}
             >
               {c.thumbnail && <img src={c.thumbnail} alt={c.title} className="w-4 h-4 rounded-full object-cover" />}
@@ -227,7 +227,7 @@ export function ContentPage({ embedded, workspaceId, hideHead }: { embedded?: bo
           ))}
           <button
             onClick={() => { setShowAdd((v) => !v); setAddError(null); }}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border border-dashed transition-all ${modern ? 'border-line text-foreground-muted hover:border-foreground' : 'border-gray-300 text-gray-500 hover:border-amber-400 hover:text-amber-600'}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium border border-dashed transition-all ${modern ? 'border-line text-foreground-muted hover:border-foreground' : 'border-gray-300 text-gray-500 hover:border-amber-400 hover:text-amber-600'}`}
           >+ 채널</button>
 
           <button
@@ -287,7 +287,7 @@ export function ContentPage({ embedded, workspaceId, hideHead }: { embedded?: bo
                     <button
                       key={m.key}
                       onClick={() => setMetric(m.key)}
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${metric === m.key ? 'text-white' : T.chipIdle}`}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${metric === m.key ? 'text-white' : T.chipIdle}`}
                       style={metric === m.key ? { backgroundColor: m.color } : undefined}
                     >{m.label}</button>
                   ))}
@@ -362,15 +362,15 @@ export function ContentPage({ embedded, workspaceId, hideHead }: { embedded?: bo
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <h2 className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
                   댓글
-                  {pendingCount > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">미답글 {pendingCount}</span>}
-                  {!hasOAuth && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400 font-medium" title="VITE_GOOGLE_CLIENT_ID 설정 시 실제 발행">발행 미연동</span>}
+                  {pendingCount > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] bg-red-100 text-red-600 font-medium">미답글 {pendingCount}</span>}
+                  {!hasOAuth && <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] bg-gray-100 text-gray-400 font-medium" title="VITE_GOOGLE_CLIENT_ID 설정 시 실제 발행">발행 미연동</span>}
                 </h2>
                 <div className="flex gap-1.5">
                   {([['none', '미답글'], ['draft', '초안'], ['published', '발행됨'], ['all', '전체']] as const).map(([key, label]) => (
                     <button
                       key={key}
                       onClick={() => setCommentFilter(key)}
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${commentFilter === key ? T.chipActive : T.chipIdle}`}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${commentFilter === key ? T.chipActive : T.chipIdle}`}
                     >{label}</button>
                   ))}
                 </div>

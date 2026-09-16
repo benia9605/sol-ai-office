@@ -209,7 +209,7 @@ export function ContentHubView({ workspace }: { workspace: Workspace; onNavigate
 function TabBtn({ on, onClick, label, count }: { on: boolean; onClick: () => void; label: React.ReactNode; count: number }) {
   return (
     <button onClick={onClick}
-      className={`flex-none inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border transition-colors ${on ? 'bg-primary-500 border-primary-500 text-white' : 'bg-surface border-line text-foreground-muted hover:border-line-strong hover:text-foreground'}`}>
+      className={`flex-none inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium border transition-colors ${on ? 'bg-primary-500 border-primary-500 text-white' : 'bg-surface border-line text-foreground-muted hover:border-line-strong hover:text-foreground'}`}>
       {label}<span className="text-[11px] opacity-70">{count}</span>
     </button>
   );
@@ -384,7 +384,7 @@ function ContentForm({ ideaId, itemById, onBack, onClose, onCreate, X, Sheet }: 
     <label className="block text-xs font-semibold text-foreground-muted mb-1.5">채널</label>
     <div className="flex gap-2 flex-wrap">
       {CHANNELS.map((c) => (
-        <button key={c.key} onClick={() => setChannel(c.key)} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm border ${channel === c.key ? 'border-primary-500 bg-primary-50 text-primary-500' : 'border-line text-foreground-muted'}`}><ChannelIcon channel={c.key} size={15} />{c.name}</button>
+        <button key={c.key} onClick={() => setChannel(c.key)} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm border ${channel === c.key ? 'border-primary-500 bg-primary-50 text-primary-500' : 'border-line text-foreground-muted'}`}><ChannelIcon channel={c.key} size={15} />{c.name}</button>
       ))}
     </div>
     <label className="flex items-center gap-2 mt-3.5 text-sm text-foreground-muted cursor-pointer"><input type="checkbox" checked={noTitle} onChange={(e) => setNoTitle(e.target.checked)} className="w-4 h-4 accent-primary-500" /> 제목 없음 (인스타·릴스처럼)</label>

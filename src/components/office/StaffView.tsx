@@ -28,8 +28,8 @@ import { HireStaffModal, MODEL_OPTIONS } from './HireStaffModal';
 
 function StatePill({ state }: { state: Staff['state'] }) {
   return state === 'working'
-    ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-medium">● 근무 중</span>
-    : <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground-faint font-medium">대기</span>;
+    ? <span className="text-[11px] px-2 py-0.5 rounded-[4px] bg-emerald-50 text-emerald-600 font-medium">● 근무 중</span>
+    : <span className="text-[11px] px-2 py-0.5 rounded-[4px] bg-surface-muted text-foreground-faint font-medium">대기</span>;
 }
 
 /* 직접 시키기 모드별 아이콘 (라벨 키워드 매칭) */
@@ -148,7 +148,7 @@ function AnalystDataPanel({ workspace }: { workspace: Workspace }) {
                     <div key={i} className="flex items-center gap-2 text-[12px]">
                       <span className="text-foreground-muted flex-1">{f.label}</span>
                       <span className="font-bold text-foreground tabular-nums">{f.value}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${f.n > 10 ? 'bg-emerald-50 text-emerald-600' : f.n >= 6 ? 'bg-surface-muted text-foreground' : f.n >= 3 ? 'bg-amber-50 text-amber-600' : 'bg-surface-muted text-foreground-faint'}`}>{f.nLabel}·n{f.n}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-[4px] ${f.n > 10 ? 'bg-emerald-50 text-emerald-600' : f.n >= 6 ? 'bg-surface-muted text-foreground' : f.n >= 3 ? 'bg-amber-50 text-amber-600' : 'bg-surface-muted text-foreground-faint'}`}>{f.nLabel}·n{f.n}</span>
                     </div>
                   ))}
                 </div>
@@ -600,7 +600,7 @@ function StaffUsageGuide({ typeKey }: { typeKey: string }) {
       <div className="rounded-[20px] border border-line bg-surface-muted/60 p-4 mb-4">
         <div className="flex items-center gap-2 mb-1.5">
           <span className="text-sm font-bold text-foreground">📖 활용 가이드</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STAGE_UI.gpt.cls}`}>{STAGE_UI.gpt.label}</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-[4px] ${STAGE_UI.gpt.cls}`}>{STAGE_UI.gpt.label}</span>
         </div>
         <p className="text-[12px] text-foreground-muted leading-relaxed">이 직원은 앱에서 <b>유지만</b> 해요. 긴 대화가 필요한 생산 작업(상세페이지·SNS·광고·비주얼·신제품 기획)은 <b>GPT 프로젝트</b>에서 하고, 결과물만 앱(콘텐츠·기억)으로 가져오는 걸 권장해요.</p>
       </div>
@@ -610,7 +610,7 @@ function StaffUsageGuide({ typeKey }: { typeKey: string }) {
     <div className="rounded-[20px] border border-line bg-surface-muted/40 p-4 mb-4 space-y-2">
       <div className="flex items-center gap-2">
         <span className="text-sm font-bold text-foreground">📖 활용 가이드</span>
-        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${STAGE_UI[g.stage].cls}`}>{STAGE_UI[g.stage].label}</span>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-[4px] ${STAGE_UI[g.stage].cls}`}>{STAGE_UI[g.stage].label}</span>
       </div>
       <div className="space-y-1.5 text-[12px] leading-relaxed">
         <p><b className="text-foreground">무엇을:</b> <span className="text-foreground-muted">{g.role}</span></p>
@@ -681,7 +681,7 @@ export function ReportCard({ r, onSave, onCredits }: { r: DailyReport; onSave?: 
       <button onClick={toggle} className="w-full text-left">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${r.trigger === 'manual' ? 'bg-violet-50 text-violet-500' : 'bg-surface-muted text-foreground-faint'}`}>{r.trigger === 'manual' ? '👤 수동' : '🕒 자동'}</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-[4px] flex-shrink-0 ${r.trigger === 'manual' ? 'bg-violet-50 text-violet-500' : 'bg-surface-muted text-foreground-faint'}`}>{r.trigger === 'manual' ? '👤 수동' : '🕒 자동'}</span>
             <span className="text-sm font-bold text-foreground truncate">{r.title}</span>
           </div>
           <span className="text-[11px] text-foreground-faint flex-shrink-0">{r.date}</span>
@@ -723,7 +723,7 @@ function SavedCard({ item, onDelete }: { item: StaffSavedItem; onDelete: (id: st
   return (
     <Card className="group p-3 relative space-y-1">
       <button onClick={() => onDelete(item.id)} className="absolute top-2 right-2 text-[11px] text-foreground-faint hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">삭제</button>
-      {p.type && <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-muted text-foreground">{p.type}</span>}
+      {p.type && <span className="text-[11px] px-2 py-0.5 rounded-[4px] bg-surface-muted text-foreground">{p.type}</span>}
       {p.thumbnailUrl && <img src={p.thumbnailUrl} alt="" className="w-full rounded-lg border border-line" />}
       {(p.headline || p.title || p.coreLine) && <div className="text-sm font-bold text-foreground pr-8">{p.headline || p.title || p.coreLine}</div>}
       {p.sub && <div className="text-xs text-foreground-muted">{p.sub}</div>}
@@ -811,7 +811,7 @@ function ManualRunModal({ staff, workspace, fields, presetMode, emoji, onClose, 
                       {f.options?.map(o => {
                         const sel = (input[f.name] || '').split(',').filter(Boolean).includes(o);
                         return <button key={o} type="button" onClick={() => toggleMulti(f.name, o)}
-                          className={`text-[11px] px-2.5 py-1 rounded-full transition-all active:scale-95 ${sel ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted'}`}>{o}</button>;
+                          className={`text-[11px] px-2.5 py-1 rounded-lg transition-all active:scale-95 ${sel ? 'bg-primary-500 text-white' : 'bg-surface-muted text-foreground-muted'}`}>{o}</button>;
                       })}
                     </div>
                   ) : f.type === 'duration' ? (() => {
@@ -1194,7 +1194,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
             <StatePill state={state} />
             <div className="relative">
               <button onClick={() => setShowModel(s => !s)}
-                className="text-[11px] px-2 py-0.5 rounded-full bg-white text-foreground-muted border border-line hover:border-line transition-colors">
+                className="text-[11px] px-2 py-0.5 rounded-[4px] bg-white text-foreground-muted border border-line hover:border-line transition-colors">
                 🧠 {modelLabel(staff.model)} ▾
               </button>
               {showModel && (
@@ -1342,7 +1342,7 @@ function StaffDetail({ staff, workspace, onBack, onChanged, onRan }: { staff: St
               const title = String((a.payload as { title?: string })?.title || '');
               return (
                 <div key={a.id} className="flex items-center gap-2 p-2 rounded-2xl bg-surface-muted">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-muted text-foreground flex-shrink-0">{label}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-[4px] bg-surface-muted text-foreground flex-shrink-0">{label}</span>
                   <span className="text-sm text-foreground flex-1 truncate">{title}</span>
                   <button onClick={() => approve(a)} className="text-[11px] px-2.5 py-1 rounded-lg bg-primary-500 text-white hover:opacity-85 active:scale-95 transition-all flex-shrink-0">승인</button>
                   <button onClick={() => dismiss(a.id)} className="text-[11px] px-2.5 py-1 rounded-lg bg-surface-muted text-foreground-muted hover:bg-surface-muted active:scale-95 transition-all flex-shrink-0">반려</button>

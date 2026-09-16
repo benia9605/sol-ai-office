@@ -22,10 +22,10 @@ export function CategoryBadge({ color, label, size = 'md', className = '' }: Pro
   const dot = size === 'sm' ? 'w-1 h-1' : 'w-1.5 h-1.5';
   return (
     <span
-      className={`inline-flex items-center ${sz} shrink-0 ${className}`}
+      className={`inline-flex items-center rounded-[4px] ${sz} shrink-0 ${className}`}
       style={{ backgroundColor: cc.bg, color: cc.text }}
     >
-      <span className={`${dot} shrink-0`} style={{ backgroundColor: cc.dot }} aria-hidden />
+      <span className={`${dot} rounded-full shrink-0`} style={{ backgroundColor: cc.dot }} aria-hidden />
       <span className="truncate">{label}</span>
     </span>
   );
