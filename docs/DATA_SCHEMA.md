@@ -3,7 +3,7 @@
 > **용도:** 앱이 기대하는 전체 DB 스키마의 단일 레퍼런스(백업).
 > **갱신 규칙:** 테이블/컬럼을 추가·수정하면 **반드시 이 파일을 같이 갱신** (CLAUDE.md "DB 변경 규칙" 참조).
 > **출처:** `supabase/migrations/*` + `src/services/*.service.ts`(Row 타입) + `src/services/mockSupabase.ts`(시드).
-> **최종 갱신:** 2026-06-15
+> **최종 갱신:** 2026-09-16 (051~057 반영)
 >
 > ⚠️ 기본(base) 테이블들은 과거에 Supabase에 직접 생성됨(레포에 DDL 없음). 이 문서가 그 칼럼을 기록한 백업.
 > 실제 DB와 차이가 의심되면 이 문서 기준으로 대조/보정할 것.
@@ -123,5 +123,12 @@
 | `041_tasks_team_and_activities.sql` | 팀 할일 가시성 — tasks에 SELECT(공유+멤버)·UPDATE(담당자) 정책 '추가' + workspace_activities(활동 로그) 테이블·RLS |
 | `042_user_profiles_dedup_unique.sql` | user_profiles 중복 정리(user_id별 최신 1건) + user_id 부분 UNIQUE 인덱스 — 프로필 저장 안 됨 버그 방어 |
 | `050_meeting_agenda.sql` | meetings에 agenda(안건 목록) 컬럼 추가 — 회의록 아젠다를 본문과 분리(이식 킷 06) |
+| `051_options_workspace.sql` | options에 workspace_id(NULL=개인/값=오피스) + 인덱스 + RLS(개인·워크스페이스 멤버) — 공용 카테고리 시스템 기반(docs/CATEGORY_SYSTEM.md) |
+| `052_content_idea_category_channel.sql` | content_items에 idea_id(아이디어 트리)·category·channel(정규화) + platform→channel 백필 — 콘텐츠 허브 |
+| `053_content_metrics_snapshots.sql` | content_metrics에 metrics(jsonb) + (item,checkpoint) 유니크·checkpoint NOT NULL/CHECK 해제 → 기록시점 다중 스냅샷 |
+| `054_youtube_video_content_link.sql` | youtube_videos에 content_item_id FK — 콘텐츠 발행물↔유튜브 영상 연결 |
+| `055_company_memory_insight_fields.sql` | company_memory에 source·link·category — 인사이트+기억 통합 무손실 보존 |
+| `056_migrate_insights_into_memory.sql` | 오피스 insights → company_memory(kind='insight') 복사(개인·테이블 보존). 없는 컬럼은 to_jsonb로 안전 읽기 |
+| `057_insights_category.sql` | insights.category 컬럼 보정(누락) — 앱이 쓰는데 마이그가 없어 추가 |
 
 > ⚠️ **base 테이블(tasks·schedules·insights·journals·readings·projects·conversations·messages·goals·kpis·user_profiles 등)은 레포에 DDL이 없음** — 과거 Supabase에 직접 생성. 새로 환경을 만들 땐 이 문서를 기준으로 재생성 필요. (TODO: base 스키마 덤프를 `000_base_schema.sql`로 박제하면 완전 재현 가능)
