@@ -38,7 +38,7 @@ function FormSection({ icon, label, sectionBg, labelColor, badgeBg, children }: 
 }) {
   return (
     <div className={`${sectionBg} rounded-xl p-3.5 space-y-2`}>
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${badgeBg}`}>
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${badgeBg}`}>
         {icon}
         <span className={`text-[11px] font-semibold ${labelColor}`}>{label}</span>
       </span>

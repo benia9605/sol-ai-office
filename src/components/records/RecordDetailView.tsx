@@ -33,7 +33,7 @@ function Section({ icon, label, labelColor, badgeBg, children }: {
 }) {
   return (
     <div className="py-4 first:pt-0 last:pb-0 space-y-2">
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${badgeBg}`}>
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${badgeBg}`}>
         {icon}
         <span className={`text-[11px] font-semibold ${labelColor}`}>{label}</span>
       </span>
@@ -212,7 +212,7 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
                       {cfg.label}
                     </span>
                   ) : (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${cfg.bgColor} ${cfg.textColor}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-[4px] font-medium ${cfg.bgColor} ${cfg.textColor}`}>
                       {cfg.label}
                     </span>
                   )}
@@ -237,7 +237,7 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
                         className={`inline-flex items-center gap-1 text-xs transition-colors ${
                           isModern
                             ? 'border border-line px-2 py-0.5 text-foreground-muted hover:border-foreground hover:text-foreground'
-                            : 'px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 font-medium'
+                            : 'px-2 py-0.5 rounded-[4px] bg-purple-50 text-purple-600 hover:bg-purple-100 font-medium'
                         }`}
                       >
                         {proj?.color && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: proj.color }} />}
@@ -254,7 +254,7 @@ export function RecordDetailView({ record, onUpdate, onDelete, onClose }: Record
                         key={tag}
                         className={isModern
                           ? 'text-xs text-foreground-faint border border-line px-2 py-0.5'
-                          : `text-xs px-2 py-0.5 rounded-full ${cfg.bgColor} ${cfg.textColor} font-medium`}
+                          : `text-xs px-2 py-0.5 rounded-[4px] ${cfg.bgColor} ${cfg.textColor} font-medium`}
                       >
                         #{tag}
                       </span>

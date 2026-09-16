@@ -125,11 +125,11 @@ export function RecordCalendar({ records, selectedDate, onSelectDate }: RecordCa
           <span className="text-base font-bold text-gray-800">
             {viewYear}년 {viewMonth + 1}월
           </span>
-          <button onClick={handleToday} className="text-[10px] px-2 py-0.5 rounded-full bg-pink-100 text-pink-500 font-medium hover:bg-pink-200 transition-colors">
+          <button onClick={handleToday} className="text-[10px] px-2 py-0.5 rounded-[4px] bg-pink-100 text-pink-500 font-medium hover:bg-pink-200 transition-colors">
             오늘
           </button>
           {selectedDate && (
-            <button onClick={() => onSelectDate(null)} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium hover:bg-gray-200 transition-colors">
+            <button onClick={() => onSelectDate(null)} className="text-[10px] px-2 py-0.5 rounded-[4px] bg-gray-100 text-gray-500 font-medium hover:bg-gray-200 transition-colors">
               전체 보기
             </button>
           )}
@@ -147,12 +147,12 @@ export function RecordCalendar({ records, selectedDate, onSelectDate }: RecordCa
           {(Object.entries(typeCounts) as [RecordType, number][]).map(([type, count]) => {
             const rc = recordTypeConfig[type];
             return (
-              <span key={type} className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${rc.bgColor} ${rc.textColor}`}>
+              <span key={type} className={`text-[10px] px-2 py-0.5 rounded-[4px] font-medium ${rc.bgColor} ${rc.textColor}`}>
                 {rc.label} {count}
               </span>
             );
           })}
-          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-500">
+          <span className="text-[10px] px-2 py-0.5 rounded-[4px] font-medium bg-gray-100 text-gray-500">
             총 {monthRecords.length}건
           </span>
         </div>

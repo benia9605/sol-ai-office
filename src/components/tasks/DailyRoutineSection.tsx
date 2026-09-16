@@ -93,7 +93,7 @@ export function DailyRoutineSection({
                 {task.title}
               </span>
               {task.project && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-white/70 text-gray-500 flex-shrink-0">
+                <span className="text-xs px-2 py-0.5 rounded-[4px] bg-white/70 text-gray-500 flex-shrink-0">
                   {task.project}
                 </span>
               )}

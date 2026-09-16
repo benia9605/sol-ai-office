@@ -288,7 +288,7 @@ function GoalSubGroups({
               >
                 <path d="M2 3l3 4 3-4H2z" />
               </svg>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-[4px] bg-gray-100 text-gray-500">
                 목표 없음
               </span>
               <span className="text-[11px] text-gray-400">{noGoalTasks.length}</span>

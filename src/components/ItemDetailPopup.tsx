@@ -86,7 +86,7 @@ function ViewTags({ tags, theme }: { tags: string[]; theme: string }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {tags.map((t) => (
-        <span key={t} className={`px-2 py-0.5 rounded-full text-xs font-medium ${theme}`}>#{t}</span>
+        <span key={t} className={`px-2 py-0.5 rounded-[4px] text-xs font-medium ${theme}`}>#{t}</span>
       ))}
     </div>
   );
@@ -234,7 +234,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
             {categories.map((cat) => (
               <button key={cat.id}
                 onClick={() => update({ category: s.category === cat.id ? undefined : cat.id })}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   s.category === cat.id ? 'text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
                 style={s.category === cat.id ? { backgroundColor: cat.color } : undefined}>
@@ -405,7 +405,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
             {categories.map((cat) => (
               <button key={cat.id}
                 onClick={() => update({ category: t.category === cat.id ? undefined : cat.id })}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   t.category === cat.id ? 'text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
                 style={t.category === cat.id ? { backgroundColor: cat.color } : undefined}>
@@ -660,7 +660,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
       <label className="text-sm font-medium text-gray-600 block mb-1.5">태그</label>
       <div className="flex flex-wrap gap-1.5 mb-2">
         {currentTags.map((tag) => (
-          <span key={tag} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${theme.tag}`}>
+          <span key={tag} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium ${theme.tag}`}>
             #{tag}
             <button onClick={() => onChange(currentTags.filter((t) => t !== tag))}
               className={`ml-0.5 ${theme.tagX}`}>x</button>
@@ -779,7 +779,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
                 setData(updated);
                 (onQuickUpdate || onSave)(updated);
               }}
-              className={`text-xs px-2.5 py-1 rounded-full font-medium cursor-pointer hover:opacity-80 transition-opacity ${st.cls}`}
+              className={`text-xs px-2.5 py-1 rounded-lg font-medium cursor-pointer hover:opacity-80 transition-opacity ${st.cls}`}
             >
               {st.label}
             </button>
@@ -939,7 +939,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
         {r.link && (
           <ViewSection label="링크">
             <a href={r.link} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-medium">
+              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-medium">
               바로가기 &rarr;
             </a>
           </ViewSection>
@@ -1043,7 +1043,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
                     const cfg = p === 'high' ? { l: '높음', c: 'bg-red-100 text-red-500' }
                       : p === 'low' ? { l: '낮음', c: 'bg-gray-100 text-gray-400' }
                       : { l: '보통', c: 'bg-amber-100 text-amber-500' };
-                    return <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${cfg.c}`}>{cfg.l}</span>;
+                    return <span className={`text-[10px] px-2 py-0.5 rounded-[4px] font-medium flex-shrink-0 ${cfg.c}`}>{cfg.l}</span>;
                   })()}
                 </div>
               )}

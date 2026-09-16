@@ -274,7 +274,7 @@ export function TaskListItem({
             const cc = getBadgeColors(category.color);
             return (
               <span
-                className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-[4px]"
                 style={{ backgroundColor: cc.bg, color: cc.text }}
               >
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: cc.dot }} />

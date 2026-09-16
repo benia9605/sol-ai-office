@@ -214,7 +214,7 @@ export function ReadingDetailView({
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm text-gray-500">{reading.author}</span>
                     {cat && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full text-white font-medium"
+                      <span className="text-[10px] px-2 py-0.5 rounded-[4px] text-white font-medium"
                         style={{ backgroundColor: cat.color }}>
                         {cat.label}
                       </span>

@@ -132,7 +132,7 @@ function KanbanCard({ task, categories, projectColor, goalName, goalColor, onSel
           {cat && (() => {
             const cc = getBadgeColors(cat.color);
             return (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-[4px]"
                 style={{ backgroundColor: cc.bg, color: cc.text }}>
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: cc.dot }} />
                 {cat.label}
@@ -252,7 +252,7 @@ function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectCol
     >
       <div className="flex items-center justify-between mb-3">
         <h3 className={`text-sm font-semibold ${column.color}`}>{column.label}</h3>
-        <span className="text-xs text-gray-400 bg-white px-2 py-0.5 rounded-full">{tasks.length}</span>
+        <span className="text-xs text-gray-400 bg-white px-2 py-0.5 rounded-[4px]">{tasks.length}</span>
       </div>
       <SortableContext items={visibleTaskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-2 min-h-[60px]">
@@ -301,7 +301,7 @@ function KanbanColumn({ column, tasks, categories, colorMap, goalMap, projectCol
                     >
                       <path d="M2 3l3 4 3-4H2z" />
                     </svg>
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">목표 없음</span>
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-[4px] bg-gray-200 text-gray-500">목표 없음</span>
                     <span className="text-[11px] text-gray-400">{noGoalTasks.length}</span>
                   </button>
                   {!collapsed.has(`${column.id}-no_goal`) && (
