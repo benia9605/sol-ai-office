@@ -52,7 +52,7 @@ function buildWeeklyStats(videos: YoutubeVideo[]): YoutubeWeeklyStat[] {
   return buckets;
 }
 
-export function ContentPage({ embedded, workspaceId }: { embedded?: boolean; workspaceId?: string } = {}) {
+export function ContentPage({ embedded, workspaceId, hideHead }: { embedded?: boolean; workspaceId?: string; hideHead?: boolean } = {}) {
   const { theme } = useTheme();
   const modern = theme === 'modern';
 
@@ -180,14 +180,12 @@ export function ContentPage({ embedded, workspaceId }: { embedded?: boolean; wor
   return (
     <div className={T.page}>
       <div className={T.container}>
-        {/* ── 헤더 ── */}
-        {embedded ? (
-          <div className="mb-10">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-500 mb-3">YOUTUBE</div>
-            <h1 className="text-3xl sm:text-4xl font-light leading-[1.2] text-gray-800">유튜브</h1>
-            <p className="text-sm text-gray-400 mt-3">채널 {channels.length} · 영상 {videos.length} · 댓글 {comments.length}{usingDummy && ' · 목업'}</p>
+        {/* ── 헤더 ── (hideHead: 콘텐츠 허브 유튜브 탭 내부에선 상위 헤더가 있어 숨김) */}
+        {embedded ? (hideHead ? null : (
+          <div className="mb-6">
+            <p className="text-sm text-gray-400">채널 {channels.length} · 영상 {videos.length} · 댓글 {comments.length}{usingDummy && ' · 목업'}</p>
           </div>
-        ) : modern ? (
+        )) : modern ? (
           <section>
             <p className="label">Content</p>
             <h1 className="mt-4 text-4xl font-light leading-[1.25] sm:text-5xl">콘텐츠</h1>

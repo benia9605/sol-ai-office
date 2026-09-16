@@ -182,7 +182,7 @@ export function ContentHubView({ workspace }: { workspace: Workspace; onNavigate
       )}
 
       {/* 채널 탭 — 유튜브는 라이브(ContentPage) 편입, 나머지는 수기 통계 패널 */}
-      {tab === 'youtube' && <ContentPage embedded workspaceId={wsId} />}
+      {tab === 'youtube' && <ContentPage embedded hideHead workspaceId={wsId} />}
       {tab !== 'idea' && tab !== 'youtube' && channelPanel(tab)}
 
       {modal && createPortal(

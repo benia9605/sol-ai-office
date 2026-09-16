@@ -12,8 +12,8 @@ import { useWorkspaceContext } from '../../contexts/WorkspaceContext';
 import { WorkspaceCreateModal } from '../WorkspaceCreateModal';
 import { WorkspaceLauncher } from '../WorkspaceLauncher';
 import {
-  DashboardView, BriefingView, TodosView, ScheduleView,
-  InsightsView, LogView, ActivityView, ActivityFeedView, MembersView, ProductsView, ContentItemsView, SalesDailyView, CompanyMemoryView, TaskDetailView, InsightDetailView, RecordDetailPage, ContentDetailView,
+  DashboardView, TodosView, ScheduleView,
+  LogView, ActivityView, ActivityFeedView, MembersView, ProductsView, SalesDailyView, CompanyMemoryView, TaskDetailView, RecordDetailPage,
 } from './views';
 import { StaffView } from './StaffView';
 import { ContentHubView } from './ContentHubView';
@@ -23,7 +23,6 @@ import { GlobalSearch } from './GlobalSearch';
 import { MeetingsView } from './MeetingsView';
 import { CompanySettingsView } from './CompanySettingsView';
 import { MeView } from './MeView';
-import { ContentPage } from '../../pages/ContentPage';
 import { fetchCredits, fetchUsage } from '../../services/credits.service';
 import { fetchStaff } from '../../services/staff.service';
 import { StaffUsage } from '../../types';
