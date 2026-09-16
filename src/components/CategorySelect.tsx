@@ -40,7 +40,7 @@ export function CategorySelect({ scope, workspaceId, value, onChange, placeholde
       <div className="relative flex-1 min-w-0" ref={ref}>
         <button type="button" onClick={() => setOpen((o) => !o)}
           className={`w-full flex items-center gap-2 border bg-surface rounded-lg px-3 py-2.5 text-sm text-foreground transition-colors ${open ? 'border-primary-500' : 'border-line'}`}>
-          {sel && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: sel.color }} />}
+          {sel && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: sel.color }} />}
           <span className="flex-1 min-w-0 truncate text-left">{sel ? sel.label : <span className="text-foreground-faint">{placeholder}</span>}</span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-foreground-faint ml-2 shrink-0"><path d="m6 9 6 6 6-6" /></svg>
         </button>
@@ -49,7 +49,7 @@ export function CategorySelect({ scope, workspaceId, value, onChange, placeholde
             {allowNone && (
               <button type="button" onClick={() => { onChange(''); setOpen(false); }}
                 className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-foreground-muted hover:bg-surface-muted text-left">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-line" />
+                <span className="w-2 h-2 rounded-full shrink-0 border border-line" />
                 <span className="flex-1">미지정</span>
                 {!value && <span className="text-primary-500">✓</span>}
               </button>
@@ -57,7 +57,7 @@ export function CategorySelect({ scope, workspaceId, value, onChange, placeholde
             {categories.map((c) => (
               <button key={c.id} type="button" onClick={() => { onChange(c.id); setOpen(false); }}
                 className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-foreground hover:bg-surface-muted text-left">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c.color }} />
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
                 <span className="flex-1 min-w-0 truncate">{c.label}</span>
                 {c.id === value && <span className="text-primary-500">✓</span>}
               </button>

@@ -714,7 +714,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
             {cat ? (
               <ViewSection label="카테고리">
                 <span className="inline-flex items-center gap-1.5 text-sm text-gray-800">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
                   {cat.label}
                 </span>
               </ViewSection>
@@ -809,7 +809,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
             {cat ? (
               <ViewSection label="카테고리">
                 <span className="inline-flex items-center gap-1.5 text-sm text-gray-800">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
                   {cat.label}
                 </span>
               </ViewSection>

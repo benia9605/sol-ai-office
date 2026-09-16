@@ -46,7 +46,7 @@ export function CategoryManager({ categories, onAdd, onUpdate, onRemove, onClose
             <div key={c.id}>
               <div className="flex items-center gap-3 py-2.5">
                 <button type="button" onClick={() => setEditId(editId === c.id ? null : c.id)} className="p-1 rounded hover:bg-surface-muted" aria-label="색 변경">
-                  <span className="w-3 h-3 rounded-full block" style={{ background: c.color }} />
+                  <span className="w-2 h-2 rounded-full block" style={{ background: c.color }} />
                 </button>
                 <span className="flex-1 text-sm text-foreground truncate">{c.label}</span>
                 <button type="button" onClick={() => onRemove(c.id)} className="w-6 h-6 rounded-full text-foreground-faint hover:text-rose-500 text-xs" aria-label="삭제">✕</button>

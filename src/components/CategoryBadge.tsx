@@ -18,8 +18,8 @@ interface Props {
 
 export function CategoryBadge({ color, label, size = 'md', className = '' }: Props) {
   const cc = getBadgeColors(color || '');
-  const sz = size === 'sm' ? 'text-[10px] px-2 py-0.5 gap-1' : 'text-[11px] font-medium px-2 py-0.5 gap-1.5';
-  const dot = size === 'sm' ? 'w-1 h-1' : 'w-1.5 h-1.5';
+  const sz = size === 'sm' ? 'text-[10px] px-2 py-0.5 gap-1.5' : 'text-[11px] font-medium px-2 py-0.5 gap-1.5';
+  const dot = 'w-1.5 h-1.5';   // 배찌 점 표준 6px (sm/md 통일)
   return (
     <span
       className={`inline-flex items-center rounded-[4px] ${sz} shrink-0 ${className}`}
