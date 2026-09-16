@@ -224,7 +224,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
         {/* 종류 (카테고리) */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-sm font-medium text-gray-600">종류</label>
+            <label className="text-sm font-medium text-gray-600">카테고리</label>
             <button onClick={() => setShowCatManager(!showCatManager)}
               className={`text-xs ${typeTheme[type].manage}`}>
               {showCatManager ? '닫기' : '관리'}
@@ -395,7 +395,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
         {/* 종류 (카테고리) */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-sm font-medium text-gray-600">종류</label>
+            <label className="text-sm font-medium text-gray-600">카테고리</label>
             <button onClick={() => setShowCatManager(!showCatManager)}
               className={`text-xs ${typeTheme[type].manage}`}>
               {showCatManager ? '닫기' : '관리'}
@@ -478,8 +478,8 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
         {/* 태그 */}
         {renderTagEditor(t.tags || [], (tags) => update({ tags }))}
 
-        {/* 프로젝트 표시 */}
-        {t.project && <div className="text-xs text-gray-400">프로젝트: {t.project}</div>}
+        {/* 프로젝트 표시 — 슬림다운으로 숨김 */}
+        {FEATURES.projects && t.project && <div className="text-xs text-gray-400">프로젝트: {t.project}</div>}
       </>
     );
   };
@@ -712,7 +712,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
               </ViewSection>
             ) : <div />}
             {cat ? (
-              <ViewSection label="종류">
+              <ViewSection label="카테고리">
                 <span className="inline-flex items-center gap-1.5 text-sm text-gray-800">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
                   {cat.label}
@@ -807,7 +807,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
               </ViewSection>
             ) : <div />}
             {cat ? (
-              <ViewSection label="종류">
+              <ViewSection label="카테고리">
                 <span className="inline-flex items-center gap-1.5 text-sm text-gray-800">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
                   {cat.label}

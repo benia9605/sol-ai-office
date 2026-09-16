@@ -21,7 +21,6 @@ import { TaskItem, TaskStatus, RepeatType, ScheduleCategory } from '../types';
 import { useTasks } from '../hooks/useTasks';
 import { defaultTaskCategories } from '../data';
 import { ItemDetailPopup } from '../components/ItemDetailPopup';
-import { GoalSelect } from '../components/GoalSelect';
 import { getTodayStr } from '../utils/dateCalc';
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
@@ -118,7 +117,6 @@ export function TasksPageModern() {
   // 필터/정렬/검색
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [projectFilter, setProjectFilter] = useState<string>('all');
   const [sortMode, setSortMode] = useState<SortMode>('deadline');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -127,7 +125,7 @@ export function TasksPageModern() {
   const [listPage, setListPage] = useState(0);
 
   // 필터/검색 바뀌면 페이지 초기화
-  useEffect(() => { setListPage(0); }, [statusFilter, categoryFilter, projectFilter, sortMode, searchQuery]);
+  useEffect(() => { setListPage(0); }, [statusFilter, categoryFilter, sortMode, searchQuery]);
 
   // 입력 모드 (3-toggle): null | 'inbox' | 'quick' | 'detail'
   type InputMode = 'inbox' | 'quick' | 'detail';
@@ -208,7 +206,6 @@ export function TasksPageModern() {
 
     if (statusFilter !== 'all') result = result.filter((t) => t.status === statusFilter);
     if (categoryFilter !== 'all') result = result.filter((t) => t.category === categoryFilter);
-    if (projectFilter !== 'all') result = result.filter((t) => t.project === projectFilter);
 
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
@@ -233,7 +230,7 @@ export function TasksPageModern() {
     });
 
     return result;
-  }, [nonDailyTasks, statusFilter, categoryFilter, projectFilter, sortMode, searchQuery]);
+  }, [nonDailyTasks, statusFilter, categoryFilter, sortMode, searchQuery]);
 
   // 날짜별 그룹핑 — 같은 날짜의 할일을 하나로 묶음 (일정 페이지 톤)
   const dateGroups = useMemo(() => {
@@ -1223,15 +1220,6 @@ function AddForm({ form, setForm, categories, onCancel, onSubmit }: AddFormProps
         </label>
       </div>
 
-      {/* 목표 */}
-      <label className="block space-y-2">
-        <span className="label">목표 / 프로젝트</span>
-        <GoalSelect
-          value={form.goalId}
-          projectName={form.project}
-          onChange={(g) => setForm({ ...form, goalId: g.goalId, project: g.projectName })}
-        />
-      </label>
 
       {/* 카테고리 — 공용 CategorySelect(디자인 드롭다운 + 관리) */}
       <div className="space-y-2">

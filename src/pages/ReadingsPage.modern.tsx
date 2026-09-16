@@ -300,7 +300,7 @@ export function ReadingsPageModern() {
               onChange={(k) => setStatusFilter(k as 'all' | ReadingItem['status'])}
             />
             <FilterDropdown
-              label="종류"
+              label="카테고리"
               value={categoryFilter}
               options={[{ key: 'all', label: '전체' }, ...categories.map((c) => ({ key: c.id, label: c.label, dotColor: c.color }))]}
               onChange={setCategoryFilter}
@@ -573,7 +573,7 @@ function AddForm({
 
       {/* 종류 — 공용 CategorySelect */}
       <div className="space-y-2">
-        <p className="label">종류</p>
+        <p className="label">카테고리</p>
         <CategorySelect scope="reading" value={form.category} onChange={(id) => setForm({ ...form, category: id })} />
       </div>
 
