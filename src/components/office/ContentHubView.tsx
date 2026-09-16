@@ -10,6 +10,7 @@ import { createPortal } from 'react-dom';
 import { Workspace, ContentItem, ContentMetric, ContentChannel, CHANNEL_METRIC_FIELDS } from '../../types';
 import { fetchContentItems, addContentItem, updateContentItem, deleteContentItem } from '../../services/contentItems.service';
 import { fetchMetricsByWorkspace, addMetricSnapshot } from '../../services/contentMetrics.service';
+import { fetchVideos, linkVideoToContent, YoutubeVideoRow } from '../../services/youtube.service';
 import { useCategories } from '../../hooks/useCategories';
 import { CategorySelect } from '../CategorySelect';
 import { CategoryBadge } from '../CategoryBadge';
@@ -35,6 +36,7 @@ type Modal =
   | { t: 'ideaBody'; id: string }
   | { t: 'content'; id: string; from?: string }
   | { t: 'addMetric'; id: string; from?: string }
+  | { t: 'linkYt'; id: string; from?: string }
   | { t: 'ideaForm' }
   | { t: 'contentForm'; ideaId: string };
 
@@ -53,6 +55,7 @@ export function ContentHubView({ workspace }: { workspace: Workspace; onNavigate
   const wsId = workspace.id;
   const [items, setItems] = useState<ContentItem[]>([]);
   const [metrics, setMetrics] = useState<ContentMetric[]>([]);
+  const [ytVideos, setYtVideos] = useState<YoutubeVideoRow[]>([]);
   const [tab, setTab] = useState<'idea' | ContentChannel>('idea');
   const [modal, setModal] = useState<Modal | null>(null);
   const { categories, colorOf, labelOf } = useCategories('content', wsId);
@@ -60,6 +63,12 @@ export function ContentHubView({ workspace }: { workspace: Workspace; onNavigate
   const reload = () => {
     fetchContentItems(wsId).then(setItems).catch(() => setItems([]));
     fetchMetricsByWorkspace(wsId).then(setMetrics).catch(() => setMetrics([]));
+    fetchVideos(wsId).then(setYtVideos).catch(() => setYtVideos([]));
+  };
+  const linkedVideoOf = (contentId: string) => ytVideos.find((v) => v.content_item_id === contentId) || null;
+  const doLinkYt = async (videoRowId: string, contentId: string | null) => {
+    await linkVideoToContent(videoRowId, contentId).catch(() => {});
+    reload();
   };
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [wsId]);
 
@@ -191,6 +200,7 @@ export function ContentHubView({ workspace }: { workspace: Workspace; onNavigate
           itemById={itemById} childrenOf={childrenOf} snapsOf={snapsOf} latestOf={latestOf}
           contentRow={contentRow} catBadge={catBadge} wsId={wsId}
           onSaveMetric={saveMetric} onCreateIdea={createIdea} onCreateContent={createContent}
+          ytVideos={ytVideos} linkedVideoOf={linkedVideoOf} onLinkYt={doLinkYt}
         />, document.body)}
     </div>
   );
@@ -206,7 +216,7 @@ function TabBtn({ on, onClick, label, count }: { on: boolean; onClick: () => voi
 }
 
 /* ───────── 모달 호스트 (아이디어/본문/콘텐츠/수치추가/폼) ───────── */
-function ModalHost({ modal, setModal, onClose, itemById, childrenOf, snapsOf, latestOf, contentRow, catBadge, wsId, onSaveMetric, onCreateIdea, onCreateContent }: any) {
+function ModalHost({ modal, setModal, onClose, itemById, childrenOf, snapsOf, latestOf, contentRow, catBadge, wsId, onSaveMetric, onCreateIdea, onCreateContent, ytVideos, linkedVideoOf, onLinkYt }: any) {
   const stop = (e: React.MouseEvent) => e.stopPropagation();
   const back = (m: Modal) => setModal(m);
 
@@ -268,9 +278,39 @@ function ModalHost({ modal, setModal, onClose, itemById, childrenOf, snapsOf, la
           </div>
         </div>;
       }) : <p className="text-xs text-foreground-faint py-2">아직 기록된 수치가 없어요.</p>}
-      {auto
-        ? <div className="mt-3 text-xs text-primary-500 bg-primary-50 rounded-lg px-3 py-2.5 leading-relaxed">▶️ 유튜브는 API로 조회·좋아요·댓글이 <b>자동 수집</b>돼요. 수기 추가는 없어요.</div>
+      {auto ? (() => {
+        const lv = linkedVideoOf(c.id);
+        if (lv) return <div className="mt-1">
+          <div className="rounded-lg border border-line p-3">
+            <div className="flex items-center gap-2 mb-2"><ChannelIcon channel="youtube" size={15} /><span className="text-xs font-medium text-foreground truncate flex-1">{lv.title}</span><button onClick={() => onLinkYt(lv.id, null)} className="text-[11px] text-foreground-faint hover:text-rose-500">연결 해제</button></div>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              <div className="text-[11px] text-foreground-muted">조회수<b className="block text-base text-foreground font-semibold tabular-nums mt-0.5">{fmt(lv.view_count)}</b></div>
+              <div className="text-[11px] text-foreground-muted">좋아요<b className="block text-base text-foreground font-semibold tabular-nums mt-0.5">{fmt(lv.like_count)}</b></div>
+              <div className="text-[11px] text-foreground-muted">댓글<b className="block text-base text-foreground font-semibold tabular-nums mt-0.5">{fmt(lv.comment_count)}</b></div>
+            </div>
+          </div>
+          <div className="mt-2 text-[11px] text-primary-500">▶️ 연결된 유튜브 영상에서 조회·좋아요·댓글을 <b>자동 반영</b>해요.</div>
+        </div>;
+        return <button onClick={() => back({ t: 'linkYt', id: c.id, from: modal.from })} className="w-full mt-2 flex items-center justify-center gap-2 border border-dashed border-line-strong rounded-lg py-3 text-sm text-foreground-muted hover:border-primary-500 hover:text-primary-500 transition-colors"><ChannelIcon channel="youtube" size={15} /> 유튜브 영상 연결 (수치 자동)</button>;
+      })()
         : <button onClick={() => back({ t: 'addMetric', id: c.id, from: modal.from })} className="w-full mt-2 flex items-center justify-center gap-2 border border-dashed border-line-strong rounded-lg py-3 text-sm text-foreground-muted hover:border-primary-500 hover:text-primary-500 transition-colors">＋ 수치 추가 (기록 시점 저장)</button>}
+    </Sheet>;
+  }
+
+  if (modal.t === 'linkYt') {
+    const c = itemById(modal.id); if (!c) return null;
+    const avail = (ytVideos as YoutubeVideoRow[]).filter((v) => !v.content_item_id);
+    return <Sheet>
+      <button onClick={() => back({ t: 'content', id: modal.id, from: modal.from })} className="text-sm text-foreground-muted hover:text-foreground mb-3 block">‹ 뒤로</button>
+      <div className="flex items-center gap-3 mb-1"><h3 className="text-lg font-semibold text-foreground flex-1">유튜브 영상 연결</h3><X /></div>
+      <p className="text-xs text-foreground-faint mb-3">연결하면 이 콘텐츠의 조회·좋아요·댓글이 유튜브 영상 실측치로 자동 반영돼요.</p>
+      {avail.length ? avail.map((v) => (
+        <button key={v.id} onClick={() => { onLinkYt(v.id, c.id); back({ t: 'content', id: c.id, from: modal.from }); }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-muted text-left">
+          <span className="w-8 h-8 rounded-lg bg-surface-muted flex items-center justify-center shrink-0"><ChannelIcon channel="youtube" size={16} /></span>
+          <span className="flex-1 min-w-0"><span className="block text-sm font-medium text-foreground truncate">{v.title}</span><span className="block text-xs text-foreground-faint mt-0.5 tabular-nums">조회 {fmt(v.view_count)} · 좋아요 {fmt(v.like_count)}</span></span>
+        </button>
+      )) : <p className="text-sm text-foreground-faint py-3">연결 가능한 유튜브 영상이 없어요. (유튜브 탭에서 채널을 먼저 등록하세요)</p>}
     </Sheet>;
   }
 

@@ -64,7 +64,7 @@ const mockData: Record<string, any[]> = {
     // 아이디어 루트(idea_id=null) + 채널별 발행물(idea_id=루트)
     { id: 'ci-idea1', workspace_id: 'ws-simok', created_by: 'dev', title: '10년 쓸 도마 고르는 법', platform: null, content_type: 'info', status: 'idea', hook: '도마 하나 바꿨을 뿐인데', script: '아이디어: 쇼츠·릴스로 확장', shot_list: null, url: null, published_at: null, primary_product_id: 'prod-1', content_purpose: 'save', owner: '쏠닝', scheduled_for: null, idea_id: null, category: 'ccat-edu', channel: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
     { id: 'ci-1', workspace_id: 'ws-simok', created_by: 'dev', title: '도마 고르는 3가지 기준 (릴스)', platform: 'Instagram', content_type: 'info', status: 'published', hook: '도마 하나 바꿨을 뿐인데', script: null, shot_list: null, url: 'https://instagram.com/reel/abc', published_at: new Date().toISOString(), primary_product_id: 'prod-1', content_purpose: 'save', owner: '쏠닝', scheduled_for: null, idea_id: 'ci-idea1', category: 'ccat-edu', channel: 'instagram', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-    { id: 'ci-2', workspace_id: 'ws-simok', created_by: 'dev', title: '나무를 오래 팔며 집에서 없앤 것들', platform: 'YouTube Shorts', content_type: 'worldview', status: 'scripted', hook: '20년 나무를 보면서 깨달은 것', script: '1) 오프닝 훅\n2) 없앤 것 3가지\n3) 시목 철학 연결', shot_list: '주방 와이드 / 손 클로즈업 / 제품 컷', url: null, published_at: null, primary_product_id: null, content_purpose: 'brand', owner: '홍대표', scheduled_for: null, idea_id: null, category: 'ccat-brand', channel: 'youtube', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: 'ci-2', workspace_id: 'ws-simok', created_by: 'dev', title: '나무를 오래 팔며 집에서 없앤 것들', platform: 'YouTube Shorts', content_type: 'worldview', status: 'scripted', hook: '20년 나무를 보면서 깨달은 것', script: '1) 오프닝 훅\n2) 없앤 것 3가지\n3) 시목 철학 연결', shot_list: '주방 와이드 / 손 클로즈업 / 제품 컷', url: null, published_at: null, primary_product_id: null, content_purpose: 'brand', owner: '홍대표', scheduled_for: null, idea_id: 'ci-idea1', category: 'ccat-brand', channel: 'youtube', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
   ],
   content_metrics: [
     { id: 'cmet-1', workspace_id: 'ws-simok', content_item_id: 'ci-1', checkpoint: null, measured_at: '2026-09-12 21:00', metrics: { views: 5200, reach: 4100, likes: 420, comments: 15, shares: 33, saves: 88, profile: 120, follows: 14 }, created_at: new Date().toISOString() },
@@ -189,17 +189,25 @@ const mockData: Record<string, any[]> = {
     workspace_id: 'ws-personal', is_shared: false,
     created_at: r.createdAt,
   })),
-  youtube_channels: dummyYoutubeChannels.map(c => ({
-    id: c.id, user_id: 'dev', workspace_id: null, channel_id: c.channelId, title: c.title,
-    thumbnail: c.thumbnail ?? null, subscriber_count: c.subscriberCount ?? null,
-    video_count: c.videoCount ?? null, connected_at: c.connectedAt ?? null,
-  })),
-  youtube_videos: dummyYoutubeVideos.map(v => ({
-    id: v.id, user_id: 'dev', workspace_id: null, channel_id: v.channelId, video_id: v.videoId,
-    title: v.title, thumbnail: v.thumbnail ?? null, published_at: v.publishedAt,
-    view_count: v.viewCount ?? null, like_count: v.likeCount ?? null,
-    comment_count: v.commentCount ?? null, script: v.script ?? null,
-  })),
+  youtube_channels: [
+    ...dummyYoutubeChannels.map(c => ({
+      id: c.id, user_id: 'dev', workspace_id: null, channel_id: c.channelId, title: c.title,
+      thumbnail: c.thumbnail ?? null, subscriber_count: c.subscriberCount ?? null,
+      video_count: c.videoCount ?? null, connected_at: c.connectedAt ?? null,
+    })),
+    // 오피스(시목) 채널 — 콘텐츠 허브 유튜브 탭·연결 테스트용
+    { id: 'ytc-simok', user_id: 'dev', workspace_id: 'ws-simok', channel_id: 'UCsimok', title: '시목 원목', thumbnail: null, subscriber_count: 1240, video_count: 2, connected_at: new Date().toISOString() },
+  ],
+  youtube_videos: [
+    ...dummyYoutubeVideos.map(v => ({
+      id: v.id, user_id: 'dev', workspace_id: null, channel_id: v.channelId, video_id: v.videoId,
+      title: v.title, thumbnail: v.thumbnail ?? null, published_at: v.publishedAt,
+      view_count: v.viewCount ?? null, like_count: v.likeCount ?? null,
+      comment_count: v.commentCount ?? null, script: v.script ?? null, content_item_id: null,
+    })),
+    { id: 'ytv-simok-1', user_id: 'dev', workspace_id: 'ws-simok', channel_id: 'UCsimok', video_id: 'sm_v1', title: '나무를 오래 팔며 집에서 없앤 것들', thumbnail: null, published_at: '2026-09-10T09:00:00Z', view_count: 8400, like_count: 372, comment_count: 41, script: null, content_item_id: null },
+    { id: 'ytv-simok-2', user_id: 'dev', workspace_id: 'ws-simok', channel_id: 'UCsimok', video_id: 'sm_v2', title: '원목 도마 관리법 60초', thumbnail: null, published_at: '2026-09-14T09:00:00Z', view_count: 3210, like_count: 154, comment_count: 22, script: null, content_item_id: null },
+  ],
   youtube_comments: dummyYoutubeComments.map(c => ({
     id: c.id, user_id: 'dev', workspace_id: null, comment_id: c.commentId, video_id: c.videoId,
     channel_id: c.channelId, author: c.author, author_thumbnail: c.authorThumbnail ?? null,
@@ -255,7 +263,7 @@ const mockData: Record<string, any[]> = {
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v8';
+const _LS_KEY = 'mock-db-v10';
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {

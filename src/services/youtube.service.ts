@@ -46,6 +46,7 @@ export interface YoutubeVideoRow {
   comment_count?: number;
   script?: string;
   workspace_id?: string;
+  content_item_id?: string | null;   // 연결된 콘텐츠 발행물 (마이그 054)
 }
 
 export interface YoutubeCommentRow {
@@ -116,6 +117,12 @@ export async function fetchVideos(workspaceId?: string): Promise<YoutubeVideoRow
   const { data, error } = await q.order('published_at', { ascending: false });
   if (error) throw error;
   return data ?? [];
+}
+
+/** 콘텐츠 허브: 유튜브 영상 ↔ 콘텐츠 발행물 연결/해제 (마이그 054). contentItemId=null이면 해제. */
+export async function linkVideoToContent(videoRowId: string, contentItemId: string | null): Promise<void> {
+  const { error } = await supabase.from('youtube_videos').update({ content_item_id: contentItemId }).eq('id', videoRowId);
+  if (error) throw error;
 }
 
 export async function insertVideos(channelId: string, videos: {
