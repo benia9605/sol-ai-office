@@ -669,7 +669,7 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
     fetchMeetings(task.workspaceId).then(setMeetings).catch(() => {});
   }, [task.workspaceId]);
   const memberName = (m: WorkspaceMember) => m.nickname || m.name || m.email || '멤버';
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
       <div className="bg-surface rounded-2xl border border-line shadow-lg w-[440px] max-w-[92vw] max-h-[88dvh] overflow-y-auto p-6 space-y-3 my-auto" onMouseDown={e => e.stopPropagation()}>
@@ -1153,7 +1153,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
     return m ? (m.nickname || m.name || m.email || '멤버') : '담당';
   };
   const memberAvatar = (uid?: string) => members.find(x => x.userId === uid)?.avatarUrl;
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
   // 추가폼 전용 — CategorySelect와 같은 흰 배경+테두리로 통일(드롭다운 레이아웃 정돈)
   const addFieldBase = 'px-3.5 py-2.5 rounded-lg bg-surface border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:border-foreground transition-colors';
   const addField = `w-full ${addFieldBase}`;
@@ -1603,7 +1603,7 @@ export function LogView({ workspace, onNavigate }: { workspace: Workspace; onNav
       {writing && (
         <Card className="p-4 mb-3 space-y-2.5">
           <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="제목"
-            className="w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors" />
+            className="w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors" />
           <div className="flex justify-end">
             <ClaudeQuickButtons
               onClaude={() => editorRef.current?.insertClaudeBlock()}
@@ -1782,7 +1782,7 @@ function ContentEditPopup({ item, products, workspaceId, members, onSave, onDele
 }) {
   const [f, setF] = useState<Partial<ContentItem>>({ ...item });
   const set = (patch: Partial<ContentItem>) => setF(prev => ({ ...prev, ...patch }));
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
   const next = f.status ? nextContentStatus(f.status) : null;
 
   // 발행 연동: published로 전환 시 published_at 자동, URL 없으면 경고(저장은 허용)
@@ -2014,7 +2014,7 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
     fetchProducts(workspace.id, workspaceErpSource(workspace)).then(setProducts).catch(() => setProducts([]));
     /* eslint-disable-next-line */
   }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
   const save = async () => {
     if (!form.title.trim()) return;
@@ -2170,7 +2170,7 @@ function ProductEditPopup({ product, onSave, onDelete, onClose }: {
     cost: product.cost?.toString() ?? '', stock: product.stock?.toString() ?? '', sku: product.sku ?? '',
     status: product.status, description: product.description ?? '', image: product.imageUrl ?? '',
   });
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] overflow-y-auto" onMouseDown={onClose}>
       <div className="bg-surface rounded-2xl border border-line shadow-lg w-[460px] max-w-[92vw] max-h-[86vh] overflow-y-auto p-6 space-y-2.5" onMouseDown={e => e.stopPropagation()}>
@@ -2218,7 +2218,7 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
   const [selected, setSelected] = useState<Product | null>(null);
   const load = () => fetchProducts(workspace.id, erp).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
   const save = async () => {
     if (!form.name.trim()) return;
@@ -2322,7 +2322,7 @@ export function SalesDailyView({ workspace }: { workspace: Workspace }) {
   const [editing, setEditing] = useState<SalesDaily | null>(null);
   const load = () => fetchSalesDaily(workspace.id, 90, erp).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
   const save = async (f: SalesForm) => {
     if (!f.date) return;
@@ -2431,7 +2431,7 @@ function MemoryDetailPopup({ item, onSave, onArchive, onDelete, onClose }: {
     title: item.title, body: item.body ?? '', kind: (item.kind ?? 'ceo_memo') as MemoryKind,
     tags: (item.tags ?? []).join(', '), salience: item.salience ?? 50, pinned: item.pinned ?? false,
   });
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
   const submit = () => onSave({
     title: f.title.trim() || item.title, body: f.body.trim() || undefined, kind: f.kind,
     tags: f.tags ? f.tags.split(',').map(t => t.trim()).filter(Boolean) : [], salience: f.salience, pinned: f.pinned,
@@ -2483,7 +2483,7 @@ export function CompanyMemoryView({ workspace }: { workspace: Workspace }) {
   const [showArchived, setShowArchived] = useState(false);
   const load = () => fetchMemories(workspace.id).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
-  const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+  const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 
   const save = async () => {
     if (!form.title.trim()) return;
