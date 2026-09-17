@@ -16,7 +16,7 @@ import {
   ScheduleItem, TaskItem, InsightItem, ReadingItem,
   ScheduleCategory, RepeatType, TaskStatus, InsightSource,
 } from '../types';
-import { categoryColorPresets, availableSourceImages, rooms } from '../data';
+import { availableSourceImages, rooms } from '../data';
 import { ProjectSelect } from './ProjectSelect';
 import { FEATURES } from '../config/features';
 import { CategoryBadge } from './CategoryBadge';
@@ -29,7 +29,6 @@ import { fetchAllGoals, GoalRow } from '../services/goals.service';
 import { fetchProjects } from '../services/projects.service';
 
 import { GoalBadge } from './GoalBadge';
-import { SortableCategoryList } from './SortableCategoryChip';
 import { DateRangePicker } from './calendar/DateRangePicker';
 
 type ItemType = 'schedule' | 'task' | 'insight' | 'reading';
@@ -102,12 +101,7 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [data, setData] = useState<AnyItem>({ ...item });
-  const [showCatManager, setShowCatManager] = useState(false);
-  const [newCatLabel, setNewCatLabel] = useState('');
-  const [newCatColor, setNewCatColor] = useState(categoryColorPresets[0]);
   const [tagInput, setTagInput] = useState('');
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const colorInputRef = useRef<HTMLInputElement>(null);
   const [showSourceManager, setShowSourceManager] = useState(false);
   const [newSourceLabel, setNewSourceLabel] = useState('');
   const [convMessages, setConvMessages] = useState<MessageRow[]>([]);
@@ -189,23 +183,6 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
     return currentTags;
   };
 
-  const handleAddCategory = () => {
-    if (!newCatLabel.trim() || !onCategoriesChange) return;
-    const newCat: ScheduleCategory = {
-      id: `cat-${Date.now()}`,
-      label: newCatLabel.trim(),
-      color: newCatColor,
-    };
-    onCategoriesChange([...categories, newCat]);
-    setNewCatLabel('');
-    setNewCatColor(categoryColorPresets[0]);
-  };
-
-  const handleRemoveCategory = (catId: string) => {
-    if (!onCategoriesChange) return;
-    onCategoriesChange(categories.filter((c) => c.id !== catId));
-  };
-
   const renderScheduleFields = () => {
     const s = data as ScheduleItem;
     return (
@@ -222,70 +199,10 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
           />
         </div>
 
-        {/* 종류 (카테고리) */}
+        {/* 카테고리 — 공용 CategorySelect(디자인 드롭다운 + 관리 팝업) */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-sm font-medium text-gray-600">카테고리</label>
-            <button onClick={() => setShowCatManager(!showCatManager)}
-              className={`text-xs ${typeTheme[type].manage}`}>
-              {showCatManager ? '닫기' : '관리'}
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {categories.map((cat) => (
-              <button key={cat.id}
-                onClick={() => update({ category: s.category === cat.id ? undefined : cat.id })}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  s.category === cat.id ? 'text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-                style={s.category === cat.id ? { backgroundColor: cat.color } : undefined}>
-                {cat.label}
-              </button>
-            ))}
-          </div>
-          {showCatManager && (
-            <div className="mt-2 p-3 bg-gray-50 rounded-xl space-y-2">
-              <div className="flex gap-2">
-                <input type="text" placeholder="새 카테고리 이름" value={newCatLabel}
-                  onChange={(e) => setNewCatLabel(e.target.value)}
-                  className="flex-1 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-200" />
-                <button onClick={handleAddCategory} disabled={!newCatLabel.trim()}
-                  className="px-2 py-1.5 text-xs text-white bg-orange-400 hover:bg-orange-500 rounded-lg disabled:opacity-40">추가</button>
-              </div>
-              <div className="flex flex-wrap gap-1.5 items-center">
-                {categoryColorPresets.map((c) => (
-                  <button key={c}
-                    onClick={() => setNewCatColor(c)}
-                    onDoubleClick={() => { setShowColorPicker(true); setTimeout(() => colorInputRef.current?.click(), 0); }}
-                    className={`w-6 h-6 rounded-full transition-all ${newCatColor === c ? 'ring-2 ring-offset-1 ring-gray-600' : ''}`}
-                    style={{ backgroundColor: c }}
-                    title="더블클릭: 커스텀 컬러" />
-                ))}
-                <div className="relative">
-                  <button
-                    onClick={() => { setShowColorPicker(true); setTimeout(() => colorInputRef.current?.click(), 0); }}
-                    className="w-6 h-6 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-gray-500 hover:text-gray-600 text-xs"
-                    title="직접 색상 선택"
-                  >+</button>
-                  <input
-                    ref={colorInputRef}
-                    type="color"
-                    value={newCatColor}
-                    onChange={(e) => setNewCatColor(e.target.value)}
-                    className="absolute top-0 left-0 w-0 h-0 opacity-0 pointer-events-none"
-                  />
-                </div>
-                {showColorPicker && (
-                  <span className="text-xs text-gray-400 ml-1">선택: {newCatColor}</span>
-                )}
-              </div>
-              <SortableCategoryList
-                categories={categories}
-                onReorder={(cats) => onCategoriesChange?.(cats)}
-                onRemove={handleRemoveCategory}
-              />
-            </div>
-          )}
+          <label className="text-sm font-medium text-gray-600 block mb-1.5">카테고리</label>
+          <CategorySelect scope="schedule" value={s.category} onChange={(id) => update({ category: id || undefined })} allowNone />
         </div>
 
         {/* 프로젝트 — 슬림다운으로 백업/숨김 */}
@@ -472,25 +389,10 @@ export function ItemDetailPopup({ type, item, categories = [], insightSources = 
     const i = data as InsightItem;
     return (
       <>
-        {/* 카테고리 */}
+        {/* 카테고리 — 공용 CategorySelect(할일과 동일 세트 scope='task') */}
         <div>
           <label className="text-sm font-medium text-gray-600 block mb-1.5">카테고리</label>
-          <div className="flex flex-wrap gap-1.5">
-            {categories.map((cat) => {
-              const on = i.category === cat.id;
-              return (
-                <button key={cat.id}
-                  onClick={() => update({ category: on ? undefined : cat.id })}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium border transition-all ${
-                    on ? 'text-white border-transparent' : 'bg-gray-100 text-gray-600 border-transparent hover:bg-gray-200'
-                  }`}
-                  style={on ? { backgroundColor: cat.color } : undefined}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: on ? '#ffffff' : cat.color }} aria-hidden />
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
+          <CategorySelect scope="task" value={i.category} onChange={(id) => update({ category: id || undefined })} allowNone />
         </div>
 
         {/* 링크 */}

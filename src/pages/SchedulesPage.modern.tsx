@@ -11,9 +11,11 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { AutoTextarea } from "../components/AutoTextarea";
 import { useSchedules } from '../hooks/useSchedules';
 import { useTasks } from '../hooks/useTasks';
-import { defaultScheduleCategories, officeScheduleCategories, defaultTaskCategories } from '../data';
+import { defaultTaskCategories } from '../data';
 import { ScheduleItem, ScheduleCategory, RepeatType, TaskItem } from '../types';
 import { ItemDetailPopup } from '../components/ItemDetailPopup';
+import { CategorySelect } from '../components/CategorySelect';
+import { useCategories } from '../hooks/useCategories';
 import { DateRangePicker } from '../components/calendar/DateRangePicker';
 import { ProjectSelect } from '../components/ProjectSelect';
 import { downloadIcs } from '../utils/icsExport';
@@ -58,7 +60,7 @@ export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: s
   const { schedules, add: addSchedule, update: updateSchedule, remove: removeSchedule, toggleComplete } = useSchedules(workspaceId);
   const { tasks, updateTask } = useTasks();
   const [taskCategories] = useState(defaultTaskCategories);
-  const [categories] = useState<ScheduleCategory[]>(embedded ? officeScheduleCategories : defaultScheduleCategories);
+  const { categories } = useCategories('schedule', workspaceId);  // 공용 카테고리 세트(개인=ws없음/오피스=ws)
 
   const [selectedItem, setSelectedItem] = useState<ScheduleItem | null>(null);
   const [selectedTaskItem, setSelectedTaskItem] = useState<TaskItem | null>(null);
@@ -214,7 +216,7 @@ export function SchedulesPageModern({ workspaceId, embedded }: { workspaceId?: s
           <AddForm
             form={form}
             setForm={setForm}
-            categories={categories}
+            workspaceId={workspaceId}
             embedded={embedded}
             showAdvanced={showAdvanced}
             setShowAdvanced={setShowAdvanced}
@@ -936,7 +938,7 @@ interface AddFormProps {
     tagInput: string; tags: string[];
   };
   setForm: React.Dispatch<React.SetStateAction<AddFormProps['form']>>;
-  categories: ScheduleCategory[];
+  workspaceId?: string;
   embedded?: boolean;
   showAdvanced: boolean;
   setShowAdvanced: (v: boolean) => void;
@@ -945,7 +947,7 @@ interface AddFormProps {
   onSubmit: () => void;
 }
 
-function AddForm({ form, setForm, categories, embedded, showAdvanced, setShowAdvanced, onAddTag, onCancel, onSubmit }: AddFormProps) {
+function AddForm({ form, setForm, workspaceId, embedded, showAdvanced, setShowAdvanced, onAddTag, onCancel, onSubmit }: AddFormProps) {
   return (
     <section className="border border-line p-6 sm:p-8 space-y-6 bg-surface">
       <p className="label">New Schedule</p>
@@ -983,28 +985,10 @@ function AddForm({ form, setForm, categories, embedded, showAdvanced, setShowAdv
         </label>
       )}
 
-      {/* 카테고리 */}
+      {/* 카테고리 — 공용 CategorySelect(디자인 드롭다운 + 관리 팝업) */}
       <div className="space-y-2">
         <p className="label">카테고리</p>
-        <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => {
-            const active = form.category === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setForm({ ...form, category: active ? '' : cat.id })}
-                className={`px-4 py-1.5 text-xs border transition-colors ${
-                  active
-                    ? 'bg-foreground text-surface border-foreground'
-                    : 'bg-surface text-foreground-muted border-line hover:border-foreground hover:text-foreground'
-                }`}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
+        <CategorySelect scope="schedule" workspaceId={workspaceId} value={form.category} onChange={(id) => setForm({ ...form, category: id })} allowNone />
       </div>
 
       {/* 태그 */}

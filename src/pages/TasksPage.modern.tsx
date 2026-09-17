@@ -435,7 +435,7 @@ export function TasksPageModern() {
                 type="button"
                 onClick={handleInboxAdd}
                 disabled={!inboxTitle.trim()}
-                className="shrink-0 text-xs text-foreground-muted hover:text-foreground disabled:opacity-40 px-1"
+                className="shrink-0 border border-foreground bg-foreground text-surface text-sm px-5 py-2.5 hover:bg-foreground-muted hover:border-foreground-muted disabled:opacity-40 transition-colors"
               >
                 기록
               </button>
@@ -465,7 +465,7 @@ export function TasksPageModern() {
                 type="button"
                 onClick={handleQuickAdd}
                 disabled={!quickTitle.trim()}
-                className="shrink-0 text-xs text-foreground-muted hover:text-foreground disabled:opacity-40 px-1"
+                className="shrink-0 border border-foreground bg-foreground text-surface text-sm px-5 py-2.5 hover:bg-foreground-muted hover:border-foreground-muted disabled:opacity-40 transition-colors"
               >
                 추가
               </button>

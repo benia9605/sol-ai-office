@@ -14,6 +14,7 @@ import { StudyNoteCard } from './StudyNoteCard';
 import { StudyNoteEditor } from './StudyNoteEditor';
 import { generateBookToc } from '../../services/claudeApi';
 import { uploadImage } from '../../services/storage.service';
+import { CategorySelect } from '../CategorySelect';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface ReadingDetailViewProps {
@@ -339,14 +340,6 @@ export function ReadingDetailView({
                       onChange={(e) => setForm({ ...form, author: e.target.value })}
                       className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm" />
                   </div>
-                  <div className="w-28">
-                    <label className="text-xs text-gray-500 mb-1 block">종류</label>
-                    <select value={form.category}
-                      onChange={(e) => setForm({ ...form, category: e.target.value })}
-                      className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                      {categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                    </select>
-                  </div>
                   <div className="w-24">
                     <label className="text-xs text-gray-500 mb-1 block">상태</label>
                     <select value={form.status}
@@ -357,6 +350,12 @@ export function ReadingDetailView({
                       <option value="completed">완독</option>
                     </select>
                   </div>
+                </div>
+
+                {/* 카테고리 — 공용 CategorySelect(디자인 드롭다운 + 관리 팝업) */}
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">카테고리</label>
+                  <CategorySelect scope="reading" value={form.category} onChange={(id) => setForm({ ...form, category: id })} />
                 </div>
 
                 {/* 진행률 입력 */}
