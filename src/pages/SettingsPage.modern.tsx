@@ -106,6 +106,23 @@ export function SettingsPageModern() {
 
   const [imageUploading, setImageUploading] = useState(false);
 
+  // 프로필 아바타 업로드 → profileForm.avatarUrl (저장 시 handleProfileSave가 persist)
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageUploading(true);
+    try {
+      const url = await uploadImage(file, 'sources');
+      setProfileForm((f) => ({ ...f, avatarUrl: url }));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '이미지 업로드 실패');
+    } finally {
+      setImageUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -182,6 +199,21 @@ export function SettingsPageModern() {
 
           {profileEditing ? (
             <div className="space-y-5">
+              {/* 프로필 이미지 */}
+              <div className="flex items-center gap-4">
+                <button type="button" onClick={() => avatarInputRef.current?.click()}
+                  className="w-16 h-16 rounded-full overflow-hidden border border-line bg-surface-muted flex items-center justify-center text-xl font-light text-foreground-muted shrink-0">
+                  {profileForm.avatarUrl ? <img src={profileForm.avatarUrl} alt="" className="w-full h-full object-cover" /> : (profileForm.name || '?')[0]}
+                </button>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => avatarInputRef.current?.click()} className="text-xs text-foreground-muted hover:text-foreground underline">
+                    {imageUploading ? '업로드 중…' : profileForm.avatarUrl ? '이미지 변경' : '이미지 추가'}
+                  </button>
+                  {profileForm.avatarUrl && <button type="button" onClick={() => setProfileForm((f) => ({ ...f, avatarUrl: '' }))} className="text-xs text-foreground-faint hover:text-rose-500">제거</button>}
+                </div>
+                <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+              </div>
+
               <label className="block space-y-2">
                 <span className="label">이름</span>
                 <input
@@ -207,8 +239,8 @@ export function SettingsPageModern() {
           ) : (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 border border-line bg-surface-muted flex items-center justify-center text-base font-light text-foreground-muted">
-                  {(profile.name || '?')[0]}
+                <div className="w-12 h-12 rounded-full border border-line bg-surface-muted overflow-hidden flex items-center justify-center text-base font-light text-foreground-muted">
+                  {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" /> : (profile.name || '?')[0]}
                 </div>
                 <div>
                   <p className="text-base">{profile.name || '이름 미설정'}</p>

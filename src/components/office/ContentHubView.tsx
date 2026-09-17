@@ -92,6 +92,8 @@ export function ContentHubView({ workspace }: { workspace: Workspace; onNavigate
     await addContentItem(wsId, { title: f.title, ideaId, channel: f.channel, status: f.status, hook: f.body, url: f.link, category: idea?.category }).catch(() => {});
     reload();
   };
+  const updateContent = async (id: string, fields: Partial<ContentItem>) => { await updateContentItem(id, fields).catch(() => {}); reload(); };
+  const removeContent = async (id: string) => { await deleteContentItem(id).catch(() => {}); reload(); };
 
   const catBadge = (catId?: string) => catId ? <CategoryBadge color={colorOf(catId)} label={labelOf(catId) || '카테고리'} size="sm" /> : null;
 
@@ -200,6 +202,7 @@ export function ContentHubView({ workspace }: { workspace: Workspace; onNavigate
           itemById={itemById} childrenOf={childrenOf} snapsOf={snapsOf} latestOf={latestOf}
           contentRow={contentRow} catBadge={catBadge} wsId={wsId}
           onSaveMetric={saveMetric} onCreateIdea={createIdea} onCreateContent={createContent}
+          onUpdateContent={updateContent} onRemoveContent={removeContent}
           ytVideos={ytVideos} linkedVideoOf={linkedVideoOf} onLinkYt={doLinkYt}
         />, document.body)}
     </div>
@@ -216,7 +219,7 @@ function TabBtn({ on, onClick, label, count }: { on: boolean; onClick: () => voi
 }
 
 /* ───────── 모달 호스트 (아이디어/본문/콘텐츠/수치추가/폼) ───────── */
-function ModalHost({ modal, setModal, onClose, itemById, childrenOf, snapsOf, latestOf, contentRow, catBadge, wsId, onSaveMetric, onCreateIdea, onCreateContent, ytVideos, linkedVideoOf, onLinkYt }: any) {
+function ModalHost({ modal, setModal, onClose, itemById, childrenOf, snapsOf, latestOf, contentRow, catBadge, wsId, onSaveMetric, onCreateIdea, onCreateContent, onUpdateContent, onRemoveContent, ytVideos, linkedVideoOf, onLinkYt }: any) {
   const stop = (e: React.MouseEvent) => e.stopPropagation();
   const back = (m: Modal) => setModal(m);
 
@@ -263,6 +266,16 @@ function ModalHost({ modal, setModal, onClose, itemById, childrenOf, snapsOf, la
         </div>
         <h3 className="text-lg font-semibold text-foreground">{c.title || `${channelName(ch)} 게시물`}</h3>
       </div><X /></div>
+      <div className="flex items-center gap-2 mb-3">
+        <select value={c.status} onChange={(e) => onUpdateContent(c.id, { status: e.target.value })}
+          className="border border-line bg-surface rounded-lg px-2.5 py-1.5 text-xs text-foreground focus:border-primary-500 focus:outline-none">
+          {(['idea', 'scripted', 'scheduled', 'published', 'archived'] as const).map((s) => (
+            <option key={s} value={s}>{({ idea: '아이디어', scripted: '대본', scheduled: '예약', published: '발행', archived: '보관' } as Record<string, string>)[s]}</option>
+          ))}
+        </select>
+        <button onClick={() => { if (window.confirm('이 콘텐츠를 삭제할까요?')) { onRemoveContent(c.id); modal.from ? back({ t: 'ideaDetail', id: modal.from }) : onClose(); } }}
+          className="ml-auto text-xs text-foreground-faint hover:text-rose-500">삭제</button>
+      </div>
       {c.hook && <p className="text-sm text-foreground-muted leading-relaxed whitespace-pre-wrap mb-3">{c.hook}</p>}
       {c.url && <a href={c.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 border border-line rounded-lg p-3 text-xs text-foreground-muted hover:border-primary-500 mb-3"><ChannelIcon channel={ch} size={16} /><span className="truncate">{c.url}</span></a>}
       <div className="h-px bg-line my-4" />

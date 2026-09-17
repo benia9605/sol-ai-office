@@ -19,6 +19,7 @@ import { calcReadingProgress, progressLabel } from '../utils/readingProgress';
 import { ReadingDetailView } from '../components/readings/ReadingDetailView';
 import { searchBooks, getBookDetail, parseCategoryToTags, AladinSearchItem } from '../services/aladinApi';
 import { generateBookToc } from '../services/claudeApi';
+import { uploadImage } from '../services/storage.service';
 import { FilterDropdown } from '../components/FilterDropdown';
 import { CategoryBadge } from '../components/CategoryBadge';
 
@@ -566,6 +567,22 @@ function AddForm({
 }: AddFormProps) {
   const isBook = form.category === 'rcat-book';
   const isCourse = form.category === 'rcat-course';
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const [coverBusy, setCoverBusy] = useState(false);
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverBusy(true);
+    try {
+      const url = await uploadImage(file, 'readings');
+      setForm((prev) => ({ ...prev, coverImage: url }));
+    } catch {
+      alert('커버 이미지 업로드에 실패했어요. 다시 시도해 주세요.');
+    } finally {
+      setCoverBusy(false);
+      if (coverInputRef.current) coverInputRef.current.value = '';
+    }
+  };
 
   return (
     <section className="border border-line p-6 sm:p-8 space-y-6 bg-surface">
@@ -639,6 +656,34 @@ function AddForm({
           )}
         </div>
       )}
+
+      {/* 커버 이미지 (수동 등록·변경) */}
+      <div className="space-y-2">
+        <p className="label">커버</p>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => coverInputRef.current?.click()}
+            disabled={coverBusy}
+            className={`${isCourse ? 'w-20 h-20' : 'w-16 h-20'} border border-line bg-surface-muted overflow-hidden flex items-center justify-center text-2xl text-foreground-faint shrink-0 hover:border-foreground transition-colors`}
+          >
+            {form.coverImage
+              ? <img src={form.coverImage} alt="" className="w-full h-full object-cover" />
+              : (coverBusy ? '…' : form.coverEmoji)}
+          </button>
+          <div className="flex flex-col gap-1.5">
+            <button type="button" onClick={() => coverInputRef.current?.click()} disabled={coverBusy}
+              className="text-xs text-foreground-muted hover:text-foreground text-left">
+              {form.coverImage ? '이미지 변경' : '이미지 등록'}
+            </button>
+            {form.coverImage && (
+              <button type="button" onClick={() => setForm({ ...form, coverImage: '' })}
+                className="text-xs text-primary-500 hover:opacity-70 text-left">제거</button>
+            )}
+          </div>
+          <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
+        </div>
+      </div>
 
       {/* 제목 / 저자 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -4,7 +4,7 @@
  * - 실데이터: 할일(useTasks, 워크스페이스 필터됨) · 멤버(fetchMembers)
  * - 샘플/빈 상태: 대시보드 KPI·브리핑·일정·인사이트·기록 (실연동은 Phase 4~5)
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type ChangeEvent } from 'react';
 import { AutoTextarea } from "../AutoTextarea";
 import { Workspace, WorkspaceMember, TaskItem, DailyReport, RecordItem, Product, ContentItem, ContentType, ContentStatus, ContentMetric, ContentCheckpoint, SalesDaily, CompanyMemory, MemoryKind } from '../../types';
 import { useTasks } from '../../hooks/useTasks';
@@ -25,6 +25,7 @@ import { fetchReportsByWorkspace } from '../../services/dailyReports.service';
 import { SchedulesPageModern } from '../../pages/SchedulesPage.modern';
 import { fetchInsights, fetchInsightById, addInsight, updateInsight, deleteInsight, InsightRow } from '../../services/insights.service';
 import { fetchRecords, fetchRecordById, addRecord, deleteRecord, updateRecord, RecordRow } from '../../services/records.service';
+import { uploadImage } from '../../services/storage.service';
 import { fetchProducts, addProduct, updateProduct, deleteProduct } from '../../services/products.service';
 import { fetchContentItems, fetchContentItemById, addContentItem, updateContentItem, deleteContentItem } from '../../services/contentItems.service';
 import { fetchMetricsByItem, saveMetric } from '../../services/contentMetrics.service';
@@ -2131,14 +2132,42 @@ const won = (n?: number) => (n == null ? '—' : `${n.toLocaleString()}원`);
 const marginPct = (price?: number, cost?: number) =>
   price && cost != null && price > 0 ? `${Math.round((1 - cost / price) * 100)}%` : '—';
 
-type ProductForm = { name: string; category: string; price: string; cost: string; stock: string; sku: string; status: Product['status']; description: string };
-const emptyProductForm: ProductForm = { name: '', category: '', price: '', cost: '', stock: '', sku: '', status: 'active', description: '' };
+type ProductForm = { name: string; category: string; price: string; cost: string; stock: string; sku: string; status: Product['status']; description: string; image: string };
+const emptyProductForm: ProductForm = { name: '', category: '', price: '', cost: '', stock: '', sku: '', status: 'active', description: '', image: '' };
 const formToFields = (f: ProductForm): Partial<Product> => ({
   name: f.name.trim(), category: f.category.trim() || undefined, sku: f.sku.trim() || undefined,
   status: f.status, description: f.description.trim() || undefined,
   price: f.price ? Number(f.price) : undefined, cost: f.cost ? Number(f.cost) : undefined,
-  stock: f.stock ? Number(f.stock) : undefined,
+  stock: f.stock ? Number(f.stock) : undefined, imageUrl: f.image || undefined,
 });
+
+/** 제품 대표이미지 업로드 필드 (추가·수정 공용) */
+function ProductImageField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const pick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    try { onChange(await uploadImage(file, 'visuals')); }
+    catch { alert('이미지 업로드에 실패했어요. 다시 시도해 주세요.'); }
+    finally { setBusy(false); if (inputRef.current) inputRef.current.value = ''; }
+  };
+  return (
+    <div className="flex items-center gap-3">
+      <button type="button" onClick={() => inputRef.current?.click()} disabled={busy}
+        className="w-16 h-16 rounded-xl border border-line bg-surface-muted overflow-hidden flex items-center justify-center text-foreground-faint text-lg shrink-0 hover:border-foreground transition-colors">
+        {value ? <img src={value} alt="" className="w-full h-full object-cover" /> : (busy ? '…' : '＋')}
+      </button>
+      <div className="flex flex-col gap-1">
+        <button type="button" onClick={() => inputRef.current?.click()} disabled={busy}
+          className="text-xs text-foreground-muted hover:text-foreground text-left">{value ? '이미지 변경' : '대표 이미지 등록'}</button>
+        {value && <button type="button" onClick={() => onChange('')} className="text-xs text-rose-400 hover:text-rose-600 text-left">제거</button>}
+      </div>
+      <input ref={inputRef} type="file" accept="image/*" onChange={pick} className="hidden" />
+    </div>
+  );
+}
 
 function ProductEditPopup({ product, onSave, onDelete, onClose }: {
   product: Product; onSave: (fields: Partial<Product>) => void; onDelete: () => void; onClose: () => void;
@@ -2146,7 +2175,7 @@ function ProductEditPopup({ product, onSave, onDelete, onClose }: {
   const [f, setF] = useState<ProductForm>({
     name: product.name, category: product.category ?? '', price: product.price?.toString() ?? '',
     cost: product.cost?.toString() ?? '', stock: product.stock?.toString() ?? '', sku: product.sku ?? '',
-    status: product.status, description: product.description ?? '',
+    status: product.status, description: product.description ?? '', image: product.imageUrl ?? '',
   });
   const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
   return (
@@ -2157,6 +2186,7 @@ function ProductEditPopup({ product, onSave, onDelete, onClose }: {
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-surface-muted text-foreground-faint flex items-center justify-center">✕</button>
         </div>
         <input autoFocus value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="제품명" className={fieldCls} />
+        <ProductImageField value={f.image} onChange={url => setF({ ...f, image: url })} />
         <div className="grid grid-cols-2 gap-2">
           <input value={f.category} onChange={e => setF({ ...f, category: e.target.value })} placeholder="카테고리 (도마·가구…)" className={fieldCls} />
           <input value={f.sku} onChange={e => setF({ ...f, sku: e.target.value })} placeholder="상품코드(선택)" className={fieldCls} />
@@ -2218,6 +2248,7 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
       {showForm && compat && (
         <Card className="p-4 mb-3 space-y-2.5">
           <input autoFocus value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="제품명" className={fieldCls} />
+          <ProductImageField value={form.image} onChange={url => setForm({ ...form, image: url })} />
           <div className="grid grid-cols-2 gap-2">
             <input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="카테고리 (도마·가구…)" className={fieldCls} />
             <input value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} placeholder="상품코드(선택)" className={fieldCls} />
