@@ -485,10 +485,22 @@ const mockAuth = {
 
 // ── Mock Storage ──
 
+// 업로드한 파일을 data URL로 보관해 실제로 표시되게 함(로컬엔 Storage 서버가 없으므로)
+const _mockFiles: Record<string, string> = {};
+const _fileToDataUrl = (file: Blob): Promise<string> =>
+  new Promise((resolve) => {
+    try { const r = new FileReader(); r.onload = () => resolve(r.result as string); r.onerror = () => resolve(''); r.readAsDataURL(file); }
+    catch { resolve(''); }
+  });
+
 const mockStorage = {
   from: (_bucket: string) => ({
-    upload: async () => ({ data: { path: 'mock-path' }, error: null }),
-    getPublicUrl: (path: string) => ({ data: { publicUrl: `/mock-storage/${path}` } }),
+    upload: async (path: string, file?: Blob) => {
+      if (file) { const url = await _fileToDataUrl(file); if (url) _mockFiles[path] = url; }
+      return { data: { path }, error: null };
+    },
+    // 저장해둔 data URL이 있으면 그걸(→ <img>에 바로 표시), 없으면 폴백 경로
+    getPublicUrl: (path: string) => ({ data: { publicUrl: _mockFiles[path] || `/mock-storage/${path}` } }),
     remove: async () => ({ data: null, error: null }),
   }),
 };
