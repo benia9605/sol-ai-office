@@ -760,15 +760,15 @@ function ListPaginated({
         </p>
       </div>
 
-      {/* 페이지된 dated 그룹 — 내림차순이라, 월은 그 달의 '가장 이른 날짜'(아래로 월 바뀌기 직전)에만 표시 */}
+      {/* 페이지된 dated 그룹 — 내림차순. 월 구분선은 각 월 그룹의 '첫(가장 늦은) 날짜' 위에 표시 */}
       {pagedDated.map(([date, items], i) => (
         <DateGroupBlock
           key={date}
           date={date}
           items={items}
           showMonth={(() => {
-            const nextDate = dated[startIdx + i + 1]?.[0];  // 한 칸 아래(더 이른 날짜)
-            return !nextDate || new Date(nextDate).getMonth() !== new Date(date).getMonth();
+            const prevDate = dated[startIdx + i - 1]?.[0];  // 한 칸 위(더 늦은 날짜)
+            return !prevDate || new Date(prevDate).getMonth() !== new Date(date).getMonth();
           })()}
           categories={categories}
           selectMode={selectMode}
@@ -855,14 +855,20 @@ function DateGroupBlock({
   const isOverdue = dayDiff < 0;
 
   return (
-    <div className={`grid grid-cols-[104px_1fr] sm:grid-cols-[128px_1fr] gap-4 sm:gap-6 py-3 border-b border-line items-center ${showMonth ? 'bg-primary-50' : ''}`}>
-      {/* 좌측: (월 — 바뀔 때만) / 일 · 요일·건수 — 왼쪽 정렬. 월 경계 줄은 연초록 배경 */}
+    <>
+      {/* 월 구분선 — 월이 바뀔 때만, 할일 바깥 전체폭 + 가운데 월 표시(여백) */}
+      {showMonth && (
+        <div className="flex items-center gap-3 pt-7 pb-1 first:pt-1">
+          <span className="flex-1 h-px bg-line" />
+          <span className="text-[10px] tracking-[0.2em] uppercase text-foreground-faint tabular-nums">
+            {MONTHS_EN[d.getMonth()]} {d.getFullYear()}
+          </span>
+          <span className="flex-1 h-px bg-line" />
+        </div>
+      )}
+    <div className="grid grid-cols-[104px_1fr] sm:grid-cols-[128px_1fr] gap-4 sm:gap-6 py-3 border-b border-line items-center">
+      {/* 좌측: 일 · 요일·건수 — 왼쪽 정렬 */}
       <div>
-        {showMonth && (
-          <p className="text-[9px] tracking-[0.2em] uppercase text-primary-500">
-            {MONTHS_EN[d.getMonth()]}
-          </p>
-        )}
         <div className="mt-0.5 flex items-baseline gap-1.5">
           <span className={`text-xl font-light leading-none tabular-nums ${
             isOverdue ? 'text-primary-500' : 'text-foreground-muted'
@@ -895,6 +901,7 @@ function DateGroupBlock({
         </ul>
       </div>
     </div>
+    </>
   );
 }
 
