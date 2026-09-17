@@ -856,11 +856,10 @@ function DateGroupBlock({
 
   return (
     <>
-      {/* 월 구분선 — 월이 바뀔 때만, 할일 바깥 전체폭 + 가운데 월 표시(여백) */}
+      {/* 월 구분선 — 월이 바뀔 때만: 왼쪽 진초록 큰 월표시 + 오른쪽 구분선(여백) */}
       {showMonth && (
-        <div className="flex items-center gap-3 pt-7 pb-1 first:pt-1">
-          <span className="flex-1 h-px bg-line" />
-          <span className="text-[10px] tracking-[0.2em] uppercase text-foreground-faint tabular-nums">
+        <div className="flex items-center gap-4 pt-8 pb-2 first:pt-1">
+          <span className="text-lg font-semibold tracking-[0.12em] uppercase text-primary-500 tabular-nums shrink-0">
             {MONTHS_EN[d.getMonth()]} {d.getFullYear()}
           </span>
           <span className="flex-1 h-px bg-line" />
