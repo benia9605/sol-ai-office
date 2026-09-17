@@ -19,7 +19,13 @@ export async function fetchCategories(scope: CategoryScope, workspaceId?: string
     for (let i = 0; i < defaults.length; i++) {
       const d = defaults[i];
       try {
-        await addOption({ id: d.id, category: optCat(scope), name: d.label, color: d.color, sort_order: i }, workspaceId);
+        // id 전략: 개인은 고정 id(tcat-*) 보존(기존 아이템 참조 유지).
+        // 오피스는 워크스페이스별 결정적 합성 id(`{기본id}__{wsId}`) —
+        //  (1) 개인과 같은 고정 id를 쓰면 options.id PK 충돌로 카테고리가 아예 안 생기고,
+        //  (2) id를 DB 자동생성으로 두면 동시 시드(예: TodosView + CategorySelect가 함께 마운트)가
+        //      서로 다른 id로 각각 insert돼 중복이 생긴다. 결정적 id면 두 번째 insert가 PK 충돌로 멱등.
+        const id = workspaceId ? `${d.id}__${workspaceId}` : d.id;
+        await addOption({ id, category: optCat(scope), name: d.label, color: d.color, sort_order: i }, workspaceId);
       } catch { /* 이미 존재/경합 무시 */ }
     }
     rows = await fetchOptionsByCategory(optCat(scope), workspaceId);

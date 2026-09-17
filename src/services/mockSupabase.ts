@@ -9,7 +9,7 @@ import {
   dummySchedules, dummyTasks, dummyInsights,
   dummyReadings, dummyStudyNotes, dummyRecords,
   projects, defaultScheduleCategories, defaultTaskCategories,
-  defaultReadingCategories, defaultRecordCategories,
+  defaultReadingCategories, defaultRecordCategories, defaultInsightCategories,
   dummyYoutubeChannels, dummyYoutubeVideos, dummyYoutubeComments,
 } from '../data';
 
@@ -257,13 +257,24 @@ const mockData: Record<string, any[]> = {
       id: c.id, user_id: 'dev', workspace_id: null, category: `${scope}_category`,
       name: c.label, color: c.color, sort_order: i, created_at: new Date().toISOString(),
     }))),
+    // 오피스(ws-simok) 통합 인사이트 카테고리 — 실 DB는 마이그레이션으로 시드됨(cm-3가 icat-market 참조)
+    ...defaultInsightCategories.map((c, i) => ({
+      id: c.id, user_id: 'dev', workspace_id: 'ws-simok', category: 'insight_category',
+      name: c.label, color: c.color, sort_order: i, created_at: new Date().toISOString(),
+    })),
+    // 오피스(ws-simok) 할일 카테고리 — 미리 시드해 lazy-seed 동시성 중복 방지.
+    // id는 categories.service의 오피스 시드 포맷(`{기본id}__{wsId}`)과 동일.
+    ...defaultTaskCategories.map((c, i) => ({
+      id: `${c.id}__ws-simok`, user_id: 'dev', workspace_id: 'ws-simok', category: 'task_category',
+      name: c.label, color: c.color, sort_order: i, created_at: new Date().toISOString(),
+    })),
   ],
 };
 
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v10';
+const _LS_KEY = 'mock-db-v12';
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {

@@ -6,7 +6,7 @@
  */
 import { useEffect, useRef, useState, type ReactNode, type ChangeEvent } from 'react';
 import { AutoTextarea } from "../AutoTextarea";
-import { Workspace, WorkspaceMember, TaskItem, DailyReport, RecordItem, Product, ContentItem, ContentType, ContentStatus, ContentMetric, ContentCheckpoint, SalesDaily, CompanyMemory, MemoryKind } from '../../types';
+import { Workspace, WorkspaceMember, TaskItem, DailyReport, RecordItem, Product, ContentItem, ContentType, ContentStatus, ContentMetric, ContentCheckpoint, SalesDaily, CompanyMemory, MemoryKind, Category } from '../../types';
 import { useTasks } from '../../hooks/useTasks';
 import { fetchMembers, removeMember, changeMemberRole, updateWorkspace } from '../../services/workspaces.service';
 import { generateBriefing, fetchLatestBriefing, BriefingJson, BriefStatus, Severity } from '../../services/officeBriefing.service';
@@ -592,7 +592,6 @@ function PriorityDot({ p }: { p: TaskItem['priority'] }) {
   return <span className={`w-2 h-2 rounded-full ${c} flex-shrink-0`} />;
 }
 
-const TASK_CATEGORIES = ['콘텐츠', '제품', '쇼룸', '운영', '마케팅', 'CS', '기타'];
 const isAiTask = (t: TaskItem) => t.category === '🤖 AI' || t.source === 'ai';
 
 /**
@@ -600,10 +599,12 @@ const isAiTask = (t: TaskItem) => t.category === '🤖 AI' || t.source === 'ai';
  * 그림자·둥근카드 없이 얇은 divide-y 선, 사각 체크박스. (레퍼런스 screens/01)
  * 비어 있으면 섹션 자체를 숨긴다.
  */
-function TaskCol({ title, items, onOpen, onToggle, memberName, memberAvatar, onMeeting, danger, noTopBorder, selectable, selectedIds, onToggleSelect }: {
+function TaskCol({ title, items, onOpen, onToggle, memberName, memberAvatar, onMeeting, danger, noTopBorder, selectable, selectedIds, onToggleSelect, categories }: {
   title: string; items: TaskItem[]; onOpen: (t: TaskItem) => void; onToggle: (t: TaskItem) => void; memberName: (uid?: string) => string;
   memberAvatar?: (uid?: string) => string | undefined;
   onMeeting?: () => void; danger?: boolean; noTopBorder?: boolean;
+  /** 카테고리 세트 — 색 배지 렌더용(id → label·color 해석) */
+  categories?: Category[];
   /** 일괄편집 모드 — 선택 체크박스 표시, 행 클릭 시 선택 토글 */
   selectable?: boolean; selectedIds?: Set<string>; onToggleSelect?: (t: TaskItem) => void;
 }) {
@@ -634,7 +635,7 @@ function TaskCol({ title, items, onOpen, onToggle, memberName, memberAvatar, onM
               <button onClick={() => selectable ? onToggleSelect?.(t) : onOpen(t)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
                 {!done && t.priority === 'high' && <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />}
                 <span className={`text-sm flex-1 truncate ${done ? 'line-through text-foreground-faint' : 'text-foreground'}`}>{t.title}</span>
-                {t.category && t.category !== '🤖 AI' && <CategoryBadge label={t.category} size="sm" className="hidden sm:inline-flex" />}
+                {(() => { const cat = categories?.find(c => c.id === t.category); return cat ? <CategoryBadge label={cat.label} color={cat.color} size="sm" className="hidden sm:inline-flex" /> : null; })()}
                 {isAiTask(t) && <span className="text-[11px] text-foreground-faint shrink-0">AI</span>}
                 {t.assigneeId && <span className="flex items-center gap-1 shrink-0"><Avatar name={memberName(t.assigneeId)} url={memberAvatar?.(t.assigneeId)} size="xs" /><span className="text-xs text-foreground-muted truncate max-w-[5rem]">{memberName(t.assigneeId)}</span></span>}
                 {t.date && <span className={`text-xs shrink-0 tabular-nums ${danger ? 'text-rose-500' : 'text-foreground-faint'}`}>{t.date.slice(5)}</span>}
@@ -689,13 +690,8 @@ function TaskDetailPopup({ task, members, onSave, onDelete, onClose }: {
             <option value="completed">완료</option>
           </select>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className={fieldCls} />
-          <select value={category} onChange={e => setCategory(e.target.value)} className={fieldCls}>
-            <option value="">카테고리 없음</option>
-            {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
+        <input type="date" value={date} onChange={e => setDate(e.target.value)} className={fieldCls} />
+        <CategorySelect scope="task" workspaceId={task.workspaceId} value={category} onChange={setCategory} allowNone placeholder="카테고리 (선택)" />
         {members.length > 1 && (
           <select value={assigneeId} onChange={e => setAssigneeId(e.target.value)} className={fieldCls}>
             <option value="">담당자 없음</option>
@@ -743,6 +739,7 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
   const [notFound, setNotFound] = useState(false);
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [saving, setSaving] = useState(false);
+  const { categories: taskCats } = useCategories('task', workspace.id);  // 색 배지 해석용
 
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<TaskItem['priority']>('medium');
@@ -875,10 +872,8 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
                   <option value="pending">할 일</option><option value="in_progress">진행 중</option><option value="completed">완료</option>
                 </select>
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} className={fieldCls} />
-                <select value={category} onChange={e => setCategory(e.target.value)} className={fieldCls}>
-                  <option value="">카테고리 없음</option>{TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
               </div>
+              <CategorySelect scope="task" workspaceId={workspace.id} value={category} onChange={setCategory} allowNone placeholder="카테고리 (선택)" />
               {members.length > 1 && (
                 <MemberSelect value={assigneeId} members={members} onChange={setAssigneeId} memberName={memberName} avatarUrl={memberAvatar} />
               )}
@@ -894,7 +889,7 @@ export function TaskDetailView({ workspace, taskId, onBack }: { workspace: Works
               <span className="inline-flex items-center gap-1.5"><span className="text-foreground-faint">우선순위</span> {priorityLabel}</span>
               {date && <span className="inline-flex items-center gap-1.5"><span className="text-foreground-faint">마감</span> {date}</span>}
               {members.length > 1 && <span className="inline-flex items-center gap-1.5"><span className="text-foreground-faint">담당</span> {memberName(assigneeId || undefined)}</span>}
-              {category && <CategoryBadge label={category} size="sm" />}
+              {(() => { const cat = taskCats.find(c => c.id === category); return cat ? <CategoryBadge label={cat.label} color={cat.color} size="sm" /> : null; })()}
               {linkedMeeting && <span className="inline-flex items-center gap-1.5 text-foreground-faint">📋 {linkedMeeting.title}</span>}
             </div>
           )}
@@ -1121,6 +1116,7 @@ export function RecordDetailPage({ workspace, recordId, onBack }: { workspace: W
 
 export function TodosView({ workspace, onNavigate, initialScope }: { workspace: Workspace; onNavigate?: Nav; initialScope?: 'all' | 'mine' | 'assigned' }) {
   const { add } = useTasks({ autoLoad: false });  // 목록은 fetchWorkspaceTasks로 로드 — 개인 할일 전체 조회 불필요
+  const { categories: taskCats } = useCategories('task', workspace.id);  // 색 배지·필터용 카테고리 세트
   // 프리페치 캐시가 있으면 즉시 그려서 메뉴 전환 시 스피너 없이 표시(뒤이어 재검증)
   const [wsTasks, setWsTasks] = useState<TaskItem[]>(() => (cacheGet<any[]>('ws-tasks', workspace.id) ?? []).map(rowToTaskItem));
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
@@ -1295,12 +1291,9 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
       {selectMode && (
         <div className="sticky top-0 z-20 mb-3 rounded-xl border border-line bg-surface shadow-sm p-3 flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-foreground mr-1">{selectedIds.size}개 선택</span>
-          <select disabled={!selectedIds.size} defaultValue="" onChange={e => { const v = e.target.value; e.target.value = ''; if (v) bulkUpdate({ category: v === '__none' ? '' : v }); }}
-            className="px-2.5 py-1.5 rounded-lg bg-surface-muted border border-line text-xs text-foreground focus:outline-none focus:border-foreground disabled:opacity-40">
-            <option value="">카테고리 지정…</option>
-            <option value="__none">카테고리 없음</option>
-            {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <div className="w-48 shrink-0">
+            <CategorySelect scope="task" workspaceId={workspace.id} value="" onChange={id => { if (selectedIds.size) bulkUpdate({ category: id }); }} allowNone placeholder="카테고리 지정…" />
+          </div>
           {members.length > 1 && (
             <select disabled={!selectedIds.size} defaultValue="" onChange={e => { const v = e.target.value; e.target.value = ''; if (v) bulkUpdate({ assigneeId: v === '__none' ? '' : v }); }}
               className="px-2.5 py-1.5 rounded-lg bg-surface-muted border border-line text-xs text-foreground focus:outline-none focus:border-foreground disabled:opacity-40">
@@ -1321,17 +1314,12 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
         <Card className="p-4 mb-3 space-y-2.5">
           <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
             onKeyDown={e => { if (e.key === 'Enter') save(); }} placeholder="무엇을 할까요?" className={fieldCls} />
-          <div className="grid grid-cols-2 gap-2">
-            <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value as TaskItem['priority'] })} className={fieldCls}>
-              <option value="high">우선순위 · 높음</option>
-              <option value="medium">우선순위 · 보통</option>
-              <option value="low">우선순위 · 낮음</option>
-            </select>
-            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className={fieldCls}>
-              <option value="">카테고리 없음</option>
-              {TASK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
+          <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value as TaskItem['priority'] })} className={fieldCls}>
+            <option value="high">우선순위 · 높음</option>
+            <option value="medium">우선순위 · 보통</option>
+            <option value="low">우선순위 · 낮음</option>
+          </select>
+          <CategorySelect scope="task" workspaceId={workspace.id} value={form.category} onChange={id => setForm({ ...form, category: id })} allowNone placeholder="카테고리 (선택)" />
           <div className="grid grid-cols-2 gap-2">
             <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className={fieldCls} />
             {members.length > 1 && (
@@ -1366,13 +1354,13 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
           <div className="space-y-7">
             {overdue.length > 0 && (
               <div className="rounded-xl border border-rose-200 bg-rose-50/60 px-4 py-3">
-                <TaskCol title="지연" items={overdue} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} danger noTopBorder selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+                <TaskCol title="지연" items={overdue} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} categories={taskCats} danger noTopBorder selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
               </div>
             )}
-            <TaskCol title="할 일" items={dayOpen} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+            <TaskCol title="할 일" items={dayOpen} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} categories={taskCats} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
             {/* 날짜 미정 — 오늘 화면에서만, 따로 구분해 표시 */}
-            {cursor === today && <TaskCol title="날짜 없음" items={noDate} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />}
-            <TaskCol title="완료" items={dayDone} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+            {cursor === today && <TaskCol title="날짜 없음" items={noDate} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} categories={taskCats} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />}
+            <TaskCol title="완료" items={dayDone} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} categories={taskCats} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
             {overdue.length + dayOpen.length + dayDone.length + (cursor === today ? noDate.length : 0) === 0 && <p className="text-sm text-foreground-faint py-10 text-center">이 날짜에 할일이 없어요.</p>}
           </div>
         </>
@@ -1386,9 +1374,9 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
             <TabBtn id="mine" label="내 할일" count={counts.mine} />
           </div>
           <div className="space-y-7">
-            <TaskCol title="할 일" items={openDated} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
-            <TaskCol title="날짜 없음" items={openNoDate} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
-            <TaskCol title="완료" items={done} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+            <TaskCol title="할 일" items={openDated} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} categories={taskCats} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+            <TaskCol title="날짜 없음" items={openNoDate} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} categories={taskCats} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+            <TaskCol title="완료" items={done} onOpen={openTask} onToggle={toggleDone} memberName={memberName} memberAvatar={memberAvatar} onMeeting={openMeeting} categories={taskCats} selectable={selectMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
             {open.length + done.length === 0 && <p className="text-sm text-foreground-faint py-10 text-center">할일이 없어요.</p>}
           </div>
         </>

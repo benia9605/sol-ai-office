@@ -133,10 +133,12 @@ export function TasksPageModern() {
 
   // 인박스 빠른 기록 입력
   const [inboxTitle, setInboxTitle] = useState('');
+  const [inboxCategory, setInboxCategory] = useState('');
   const inboxInputRef = useRef<HTMLInputElement>(null);
 
   // 빠른 추가 입력 (오늘 자동)
   const [quickTitle, setQuickTitle] = useState('');
+  const [quickCategory, setQuickCategory] = useState('');
   const quickAddRef = useRef<HTMLInputElement>(null);
 
   // 상세 추가 폼
@@ -266,7 +268,7 @@ export function TasksPageModern() {
     [filtered],
   );
 
-  // 떠오르는 생각 — 분류 없이 인박스로 (date/project/category 모두 비움)
+  // 떠오르는 생각 — 인박스로(날짜·프로젝트 없음). 카테고리는 선택 시 함께 기록.
   const handleInboxAdd = useCallback(() => {
     if (!inboxTitle.trim()) return;
     add({
@@ -275,12 +277,13 @@ export function TasksPageModern() {
       priority: 'medium',
       status: 'pending',
       starred: false,
+      category: inboxCategory || undefined,
     });
     setInboxTitle('');
     setTimeout(() => inboxInputRef.current?.focus(), 50);
-  }, [inboxTitle, add]);
+  }, [inboxTitle, inboxCategory, add]);
 
-  // 빠른 추가 — 오늘 마감으로 빠르게
+  // 빠른 추가 — 오늘 마감으로 빠르게. 카테고리는 선택 시 함께 기록.
   const handleQuickAdd = useCallback(() => {
     if (!quickTitle.trim()) return;
     add({
@@ -290,10 +293,11 @@ export function TasksPageModern() {
       status: 'pending',
       starred: false,
       date: getTodayStr(),
+      category: quickCategory || undefined,
     });
     setQuickTitle('');
     setTimeout(() => quickAddRef.current?.focus(), 50);
-  }, [quickTitle, add]);
+  }, [quickTitle, quickCategory, add]);
 
   // 다시 시작 — 마감일을 오늘로 + 진행중으로
   const handleResume = useCallback((task: TaskItem) => {
@@ -410,56 +414,62 @@ export function TasksPageModern() {
 
           {/* 인박스 입력 */}
           {inputMode === 'inbox' && (
-            <div className="border border-line bg-surface px-4 py-3 flex items-center gap-2">
-              <input
-                ref={inboxInputRef}
-                autoFocus
-                type="text"
-                placeholder="떠오른 생각을 그대로 — Enter로 인박스에 기록"
-                value={inboxTitle}
-                onChange={(e) => setInboxTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleInboxAdd();
-                  if (e.key === 'Escape') setInputMode(null);
-                }}
-                className="flex-1 bg-transparent text-sm placeholder:text-foreground-faint focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleInboxAdd}
-                disabled={!inboxTitle.trim()}
-                className="text-xs text-foreground-muted hover:text-foreground disabled:opacity-40"
-              >
-                기록
-              </button>
+            <div className="border border-line bg-surface px-4 py-3 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inboxInputRef}
+                  autoFocus
+                  type="text"
+                  placeholder="떠오른 생각을 그대로 — Enter로 인박스에 기록"
+                  value={inboxTitle}
+                  onChange={(e) => setInboxTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleInboxAdd();
+                    if (e.key === 'Escape') setInputMode(null);
+                  }}
+                  className="flex-1 bg-transparent text-sm placeholder:text-foreground-faint focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleInboxAdd}
+                  disabled={!inboxTitle.trim()}
+                  className="text-xs text-foreground-muted hover:text-foreground disabled:opacity-40"
+                >
+                  기록
+                </button>
+              </div>
+              <CategorySelect scope="task" value={inboxCategory} onChange={setInboxCategory} allowNone placeholder="카테고리 (선택)" />
             </div>
           )}
 
           {/* 빠른 추가 입력 */}
           {inputMode === 'quick' && (
-            <div className="border border-line bg-surface px-4 py-3 flex items-center gap-2">
-              <input
-                ref={quickAddRef}
-                autoFocus
-                type="text"
-                placeholder="제목 입력 — Enter로 오늘 마감 할일로 추가"
-                value={quickTitle}
-                onChange={(e) => setQuickTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleQuickAdd();
-                  if (e.key === 'Escape') setInputMode(null);
-                }}
-                className="flex-1 bg-transparent text-sm placeholder:text-foreground-faint focus:outline-none"
-              />
-              <span className="text-[10px] tracking-[0.18em] uppercase text-foreground-faint shrink-0">Today</span>
-              <button
-                type="button"
-                onClick={handleQuickAdd}
-                disabled={!quickTitle.trim()}
-                className="text-xs text-foreground-muted hover:text-foreground disabled:opacity-40"
-              >
-                추가
-              </button>
+            <div className="border border-line bg-surface px-4 py-3 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={quickAddRef}
+                  autoFocus
+                  type="text"
+                  placeholder="제목 입력 — Enter로 오늘 마감 할일로 추가"
+                  value={quickTitle}
+                  onChange={(e) => setQuickTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleQuickAdd();
+                    if (e.key === 'Escape') setInputMode(null);
+                  }}
+                  className="flex-1 bg-transparent text-sm placeholder:text-foreground-faint focus:outline-none"
+                />
+                <span className="text-[10px] tracking-[0.18em] uppercase text-foreground-faint shrink-0">Today</span>
+                <button
+                  type="button"
+                  onClick={handleQuickAdd}
+                  disabled={!quickTitle.trim()}
+                  className="text-xs text-foreground-muted hover:text-foreground disabled:opacity-40"
+                >
+                  추가
+                </button>
+              </div>
+              <CategorySelect scope="task" value={quickCategory} onChange={setQuickCategory} allowNone placeholder="카테고리 (선택)" />
             </div>
           )}
 
