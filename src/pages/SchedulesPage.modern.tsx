@@ -960,7 +960,7 @@ function AddForm({ form, setForm, workspaceId, embedded, showAdvanced, setShowAd
           placeholder="일정 제목"
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full border border-line bg-surface px-4 py-3 text-base placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
+          className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-base placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
         />
       </label>
 
@@ -1019,7 +1019,7 @@ function AddForm({ form, setForm, workspaceId, embedded, showAdvanced, setShowAd
               onAddTag();
             }
           }}
-          className="w-full border border-line bg-surface px-4 py-2.5 text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
+          className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
         />
       </div>
 
@@ -1039,7 +1039,7 @@ function AddForm({ form, setForm, workspaceId, embedded, showAdvanced, setShowAd
               <select
                 value={form.repeat}
                 onChange={(e) => setForm({ ...form, repeat: e.target.value as RepeatType })}
-                className="w-full border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
+                className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
               >
                 {Object.entries(repeatLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
@@ -1049,7 +1049,7 @@ function AddForm({ form, setForm, workspaceId, embedded, showAdvanced, setShowAd
               <select
                 value={form.reminder}
                 onChange={(e) => setForm({ ...form, reminder: e.target.value })}
-                className="w-full border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
+                className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
               >
                 <option value="none">없음</option>
                 <option value="10min">10분 전</option>
@@ -1066,7 +1066,7 @@ function AddForm({ form, setForm, workspaceId, embedded, showAdvanced, setShowAd
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={3}
               placeholder="메모를 입력하세요"
-              className="w-full border border-line bg-surface px-4 py-3 text-sm resize-none placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
+              className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm resize-none placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
             />
           </label>
         </div>

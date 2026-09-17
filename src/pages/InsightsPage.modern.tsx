@@ -336,6 +336,7 @@ export function InsightsPageModern() {
                   key={i.id}
                   item={i}
                   sources={sources}
+                  categories={insightCategories}
                   onClick={() => setSelectedItem(i)}
                   onToggleStar={() => handleToggleStar(i)}
                 />
@@ -473,11 +474,13 @@ function InputToggleButton({
 function InsightRow({
   item,
   sources,
+  categories,
   onClick,
   onToggleStar,
 }: {
   item: InsightItem;
   sources: InsightSource[];
+  categories: { id: string; label: string; color: string }[];
   onClick: () => void;
   onToggleStar: () => void;
 }) {
@@ -529,7 +532,7 @@ function InsightRow({
           )}
 
           {item.category && (() => {
-            const c = insightCategories.find((x) => x.id === item.category);
+            const c = categories.find((x) => x.id === item.category);
             return c ? <div className="mt-2"><CategoryBadge color={c.color} label={c.label} size="sm" /></div> : null;
           })()}
         </button>
@@ -609,7 +612,7 @@ function InsightAddForm({ form, setForm, sources, onAddTag, onCancel, onSubmit }
           placeholder="인사이트 제목"
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full border border-line bg-surface px-4 py-3 text-base placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
+          className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-base placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
         />
       </label>
 
@@ -620,7 +623,7 @@ function InsightAddForm({ form, setForm, sources, onAddTag, onCancel, onSubmit }
           onChange={(e) => setForm({ ...form, content: e.target.value })}
           rows={4}
           placeholder="구체적인 내용을 적어주세요 (Markdown 지원)"
-          className="w-full border border-line bg-surface px-4 py-3 text-sm resize-none placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
+          className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm resize-none placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
         />
       </label>
 
@@ -639,7 +642,7 @@ function InsightAddForm({ form, setForm, sources, onAddTag, onCancel, onSubmit }
             placeholder="https://..."
             value={form.link}
             onChange={(e) => setForm({ ...form, link: e.target.value })}
-            className="w-full border border-line bg-surface px-3 py-2.5 text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
+            className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm placeholder:text-foreground-faint focus:border-foreground focus:outline-none transition-colors"
           />
         </label>
         {FEATURES.projects && (
@@ -658,7 +661,7 @@ function InsightAddForm({ form, setForm, sources, onAddTag, onCancel, onSubmit }
             type="date"
             value={form.date}
             onChange={(e) => setForm({ ...form, date: e.target.value })}
-            className="w-full border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
+            className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
           />
         </label>
         <label className="block space-y-2">
@@ -667,7 +670,7 @@ function InsightAddForm({ form, setForm, sources, onAddTag, onCancel, onSubmit }
             type="time"
             value={form.time}
             onChange={(e) => setForm({ ...form, time: e.target.value })}
-            className="w-full border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
+            className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
           />
         </label>
         <label className="block space-y-2">
@@ -675,7 +678,7 @@ function InsightAddForm({ form, setForm, sources, onAddTag, onCancel, onSubmit }
           <select
             value={form.priority}
             onChange={(e) => setForm({ ...form, priority: e.target.value as InsightItem['priority'] })}
-            className="w-full border border-line bg-surface px-3 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
+            className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm focus:border-foreground focus:outline-none transition-colors"
           >
             <option value="high">중요</option>
             <option value="medium">보통</option>
