@@ -124,12 +124,12 @@ export async function createWorkspace(
 /** 워크스페이스 정보 수정 (이름/이모지/이미지/사업정보) */
 export async function updateWorkspace(
   id: string,
-  fields: { name?: string; emoji?: string; imageUrl?: string; bizInfo?: string; monthlySalesTarget?: number | null },
+  fields: { name?: string; emoji?: string; imageUrl?: string | null; bizInfo?: string; monthlySalesTarget?: number | null },
 ): Promise<void> {
   const payload: Record<string, unknown> = {};
   if (fields.name !== undefined) payload.name = fields.name.trim();
   if (fields.emoji !== undefined) payload.emoji = fields.emoji;
-  if (fields.imageUrl !== undefined) payload.image_url = fields.imageUrl;
+  if (fields.imageUrl !== undefined) payload.image_url = fields.imageUrl ?? null;  // null이면 로고 제거 반영
   if (fields.bizInfo !== undefined) payload.biz_info = fields.bizInfo;
   if (fields.monthlySalesTarget !== undefined) payload.monthly_sales_target = fields.monthlySalesTarget;
   if (Object.keys(payload).length === 0) return;

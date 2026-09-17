@@ -51,7 +51,8 @@ function CompanyInfoCard({ workspace, onSaved }: { workspace: Workspace; onSaved
     if (!name.trim() || busy) return;
     setBusy(true);
     try {
-      const imageUrl = imageFile ? await uploadImage(imageFile, 'workspaces') : (image || undefined);
+      // image===null이면 로고 제거 → null 명시 전달(undefined면 서비스가 스킵해서 기존 로고 잔존)
+      const imageUrl = imageFile ? await uploadImage(imageFile, 'workspaces') : (image || null);
       await updateWorkspace(workspace.id, {
         name, emoji, imageUrl,
         bizInfo: isOffice ? bizInfo.trim() : undefined,

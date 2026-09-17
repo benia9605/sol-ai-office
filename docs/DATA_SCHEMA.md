@@ -64,7 +64,7 @@
 | `company_memory` | id, **workspace_id**, created_by, kind('idea'\|'insight'\|'philosophy'\|'failure'\|'experiment'\|'reference'\|'competitor'\|'ceo_memo'), title, body, summary, tags, salience(0~100), pinned, status('active'\|'archived'), **source**·**link**·**category**(인사이트 통합·마이그 055), created_at, updated_at (마이그 031) |
 | `schedules` | id, user_id, title, date, end_date, time, project, color, category, repeat, reminder, notes, tags, **workspace_id**, **is_shared**, **completed**, **completed_at**, **is_milestone**, **plan_id**, **phase**, **sort_order**, **generated_by**, **meeting_id**(→meetings ON DELETE CASCADE, 회의 캘린더 연동·마이그 040), created_at · 플랜 컬럼은 021에서 추가 |
 | `schedule_plans` (플랜 — D-day 프로젝트) | id, user_id, **workspace_id**, name, emoji, goal, description, target_date, start_date, phases(jsonb 주차정의), categories(jsonb 카테고리정의), status('active'\|'done'\|'archived'), generated_by('manual'\|'ai'), created_at · 021에서 신설. 소속 일정은 `schedules.plan_id`로 연결 |
-| `insights` | id, user_id, title, content, source, link, tags, project, starred(002), time, **workspace_id**(014), **is_shared**·**created_by**(046), **category**(공용 카테고리 id·마이그 057), created_at · ⚠️ `priority` 컬럼 없음(앱도 미사용). 오피스 인사이트는 company_memory로 통합(056), 개인은 이 테이블 유지 |
+| `insights` | id, user_id, title, content, source, link, tags, project, starred(002), priority(058), time, **workspace_id**(014), **is_shared**·**created_by**(046), **category**(공용 카테고리 id·마이그 057), created_at · 오피스 인사이트는 company_memory로 통합(056), 개인은 이 테이블 유지 |
 | `readings` | id, user_id, title, author, category, total_pages, current_page, total_lessons, current_lesson, status, cover_emoji, cover_image, start_date, completed_date, rating, review, tags, link, price, toc, chapters, isbn13, **workspace_id**, **is_shared**, **recommended_by**, created_at |
 | `reading_logs` (스터디/독서 노트) | id, user_id, reading_id, date, time, chapter, content(jsonb), raw_text, sections(jsonb), **action_items_json**(jsonb), **workspace_id**, **is_shared**, created_at, updated_at · ⚠️ 실제 테이블명은 `reading_logs`(코드/서비스 기준). 워크스페이스 컬럼은 007에서 추가 |
 | `journals` (기록) | id, user_id, record_type('morning'\|'evening'\|'weekly'\|'memo'), date, time, title, mood, energy, tags, project, conversation_id, morning_data(jsonb), evening_data(jsonb), weekly_data(jsonb), memo_body(jsonb), **workspace_id**, **is_shared**(기본 false), created_at |
@@ -130,5 +130,6 @@
 | `055_company_memory_insight_fields.sql` | company_memory에 source·link·category — 인사이트+기억 통합 무손실 보존 |
 | `056_migrate_insights_into_memory.sql` | 오피스 insights → company_memory(kind='insight') 복사(개인·테이블 보존). 없는 컬럼은 to_jsonb로 안전 읽기 |
 | `057_insights_category.sql` | insights.category 컬럼 보정(누락) — 앱이 쓰는데 마이그가 없어 추가 |
+| `058_insights_priority.sql` | insights.priority 컬럼 보정(누락) — 중요도가 UI에만 있고 컬럼 없어 유실되던 것 |
 
 > ⚠️ **base 테이블(tasks·schedules·insights·journals·readings·projects·conversations·messages·goals·kpis·user_profiles 등)은 레포에 DDL이 없음** — 과거 Supabase에 직접 생성. 새로 환경을 만들 땐 이 문서를 기준으로 재생성 필요. (TODO: base 스키마 덤프를 `000_base_schema.sql`로 박제하면 완전 재현 가능)

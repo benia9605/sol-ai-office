@@ -19,6 +19,7 @@ export interface InsightRow {
   link?: string;
   tags: string[];
   project?: string;
+  priority?: string;
   starred?: boolean;
   conversation_id?: string;
   workspace_id?: string;

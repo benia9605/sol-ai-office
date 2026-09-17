@@ -32,6 +32,7 @@ function toInsightItem(row: InsightRow): InsightItem {
     createdAt: dateStr,
     time: timeStr,
     project: row.project,
+    priority: row.priority as InsightItem['priority'],
     starred: row.starred ?? false,
   };
 }
@@ -53,6 +54,7 @@ function toDbFields(patch: Partial<InsightItem>): Partial<InsightRow> {
   if (patch.link !== undefined) db.link = patch.link || undefined;
   if (patch.tags !== undefined) db.tags = patch.tags;
   if (patch.project !== undefined) db.project = patch.project || undefined;
+  if (patch.priority !== undefined) db.priority = patch.priority || undefined;
   if (patch.starred !== undefined) db.starred = patch.starred;
   if (patch.createdAt !== undefined || patch.time !== undefined) {
     db.created_at = combineDateTime(patch.createdAt, patch.time);
@@ -97,6 +99,7 @@ export function useInsights() {
         link: data.link,
         tags: data.tags,
         project: data.project,
+        priority: data.priority,
         starred: data.starred ?? false,
         created_at: combineDateTime(data.createdAt, data.time),
         conversation_id: data.conversation_id,

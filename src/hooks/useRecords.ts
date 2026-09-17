@@ -93,6 +93,7 @@ export function useRecords() {
         mood: data.mood,
         energy: data.energy,
         tags: data.tags,
+        project: data.project,
         conversation_id: data.conversationId,
         morning_data: data.morningData as unknown as Record<string, unknown>,
         evening_data: data.eveningData as unknown as Record<string, unknown>,
