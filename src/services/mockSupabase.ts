@@ -9,7 +9,7 @@ import {
   dummySchedules, dummyTasks, dummyInsights,
   dummyReadings, dummyStudyNotes, dummyRecords,
   projects, defaultScheduleCategories, defaultTaskCategories,
-  defaultReadingCategories, defaultRecordCategories, defaultInsightCategories,
+  defaultReadingCategories, defaultRecordCategories, defaultInsightCategories, defaultMeetingCategories,
   dummyYoutubeChannels, dummyYoutubeVideos, dummyYoutubeComments,
 } from '../data';
 
@@ -268,13 +268,18 @@ const mockData: Record<string, any[]> = {
       id: `${c.id}__ws-simok`, user_id: 'dev', workspace_id: 'ws-simok', category: 'task_category',
       name: c.label, color: c.color, sort_order: i, created_at: new Date().toISOString(),
     })),
+    // 오피스(ws-simok) 회의 카테고리 — 동일 사유(동시성 중복 방지)
+    ...defaultMeetingCategories.map((c, i) => ({
+      id: `${c.id}__ws-simok`, user_id: 'dev', workspace_id: 'ws-simok', category: 'meeting_category',
+      name: c.label, color: c.color, sort_order: i, created_at: new Date().toISOString(),
+    })),
   ],
 };
 
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v12';
+const _LS_KEY = 'mock-db-v13';
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {

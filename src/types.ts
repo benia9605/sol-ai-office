@@ -208,6 +208,7 @@ export interface Meeting {
   meetingTime?: string;
   agenda?: string;         // 아젠다(안건) — 줄바꿈으로 여러 개
   content?: string;        // 회의록 본문
+  category?: string;       // 공용 카테고리(options scope=meeting) id — 마이그 059
   createdAt?: string;
   updatedAt?: string;
 }
@@ -307,7 +308,7 @@ export interface ScheduleCategory {
  * options 테이블(category='<scope>_category')에 영속. ScheduleCategory와 동형.
  */
 export type Category = ScheduleCategory;
-export type CategoryScope = 'task' | 'schedule' | 'reading' | 'insight' | 'record' | 'content';
+export type CategoryScope = 'task' | 'schedule' | 'reading' | 'insight' | 'record' | 'content' | 'meeting';
 
 /** 반복 유형 */
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';

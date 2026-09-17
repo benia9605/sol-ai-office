@@ -20,8 +20,12 @@ import { LikeCommentBlock } from './LikeCommentBlock';
 import { AttachmentsSection } from './AttachmentsSection';
 import { getTodayStr } from '../../utils/dateCalc';
 import { cacheGet } from '../../services/cache';
+import { CategorySelect } from '../CategorySelect';
+import { CategoryBadge } from '../CategoryBadge';
+import { useCategories } from '../../hooks/useCategories';
 
-const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
+// 추가폼 전용 — CategorySelect와 같은 흰 배경+테두리로 통일
+const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface border border-line text-sm focus:outline-none focus:border-foreground transition-colors';
 
 export function MeetingsView({ workspace, openId }: { workspace: Workspace; openId?: string }) {
   const [list, setList] = useState<Meeting[]>(() => cacheGet<Meeting[]>('meetings', workspace.id) ?? []);
@@ -29,8 +33,9 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
   const [progress, setProgress] = useState<Map<string, { done: number; total: number }>>(new Map());
   const [selected, setSelected] = useState<Meeting | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', date: getTodayStr(), time: '' });
+  const [form, setForm] = useState({ title: '', date: getTodayStr(), time: '', category: '' });
   const [q, setQ] = useState('');
+  const { categories: meetingCats } = useCategories('meeting', workspace.id);  // 색 배지·선택용
 
   // 딥링크(/meetings/:id · 알림·활동 클릭)로 들어오면 해당 회의를 연다
   useEffect(() => {
@@ -63,9 +68,9 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
   const create = async () => {
     if (!form.title.trim()) return;
     try {
-      const m = await addMeeting(workspace.id, { title: form.title.trim(), meetingDate: form.date || undefined, meetingTime: form.time || undefined });
+      const m = await addMeeting(workspace.id, { title: form.title.trim(), meetingDate: form.date || undefined, meetingTime: form.time || undefined, category: form.category || undefined });
       recordActivity({ workspaceId: workspace.id, action: 'created_meeting', resourceType: 'meeting', resourceId: m.id, metadata: { title: m.title } });
-      setForm({ title: '', date: getTodayStr(), time: '' }); setShowForm(false);
+      setForm({ title: '', date: getTodayStr(), time: '', category: '' }); setShowForm(false);
       await load(); setSelected(m);
     } catch (e) { console.error(e); alert('회의 생성 실패'); }
   };
@@ -86,6 +91,7 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
           <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className={fieldCls} />
           <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} className={fieldCls} />
         </div>
+        <CategorySelect scope="meeting" workspaceId={workspace.id} value={form.category} onChange={id => setForm({ ...form, category: id })} allowNone placeholder="카테고리 (선택)" />
         <div className="flex gap-2 justify-end">
           <button onClick={() => setShowForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-foreground-muted hover:bg-surface-muted">취소</button>
           <button onClick={create} disabled={!form.title.trim()} className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-500 text-white hover:opacity-85 disabled:opacity-40">만들기</button>
@@ -106,6 +112,7 @@ export function MeetingsView({ workspace, openId }: { workspace: Workspace; open
                 <button onClick={() => setSelected(m)} className="w-full text-left py-5 -mx-2 px-2 hover:bg-surface-muted transition-colors block">
                   <div className="flex items-baseline gap-3">
                     <span className="text-sm font-medium text-foreground flex-1 truncate">{m.title}</span>
+                    {(() => { const cat = meetingCats.find(c => c.id === m.category); return cat ? <CategoryBadge label={cat.label} color={cat.color} size="sm" className="self-center" /> : null; })()}
                     {m.meetingDate && <span className="text-xs text-foreground-faint flex-shrink-0 tabular-nums">{m.meetingDate.slice(5)}{m.meetingTime ? ` ${m.meetingTime}` : ''}</span>}
                   </div>
                   {preview && <p className="text-xs text-foreground-muted mt-1.5 line-clamp-2">{preview}</p>}
@@ -131,6 +138,8 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
 }) {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const [note, setNote] = useState(() => parseDoc(meeting.content));
+  const [category, setCategory] = useState(meeting.category ?? '');
+  const { categories: meetingCats } = useCategories('meeting', workspace.id);
   const [saving, setSaving] = useState(false);
   const [actions, setActions] = useState<ActionDraft[]>([emptyAction()]);
   const [bulk, setBulk] = useState({ title: '', due: '' });
@@ -194,7 +203,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
     try {
       const hadContent = !!docToText(meeting.content);
       const agendaStr = agenda.map(s => s.trim()).filter(Boolean).join('\n');
-      await updateMeeting(meeting.id, { content: serializeDoc(note), agenda: agendaStr });
+      await updateMeeting(meeting.id, { content: serializeDoc(note), agenda: agendaStr, category: category || undefined });
       if (!hadContent && docToText(note).trim()) await notifyMeetingNote(workspace.id, meeting);
       const drafts: MeetingTaskDraft[] = actions.map(a => ({ id: a.id, title: a.title, assigneeId: a.assigneeId, due: a.due }));
       await syncMeetingTasks(meeting.id, workspace.id, drafts);
@@ -229,6 +238,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
               {meeting.meetingDate}{meeting.meetingTime ? ` ${meeting.meetingTime}` : ''}
             </div>
           )}
+          {(() => { const cat = meetingCats.find(c => c.id === category); return cat ? <div className="mt-3"><CategoryBadge label={cat.label} color={cat.color} /></div> : null; })()}
           {progress.total > 0 && <div className="mt-4 max-w-md"><TaskProgress done={progress.done} total={progress.total} /></div>}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -238,7 +248,7 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
                 <button onClick={del} className="border border-line-strong px-4 py-2 text-sm text-rose-500 hover:border-rose-400 transition-colors">삭제</button>
               </>
             : <>
-                <button onClick={() => { setMode('view'); loadItems(); setNote(parseDoc(meeting.content)); setAgenda(parseAgenda(meeting.agenda)); }} className="border border-line-strong px-4 py-2 text-sm text-foreground hover:border-foreground transition-colors">취소</button>
+                <button onClick={() => { setMode('view'); loadItems(); setNote(parseDoc(meeting.content)); setAgenda(parseAgenda(meeting.agenda)); setCategory(meeting.category ?? ''); }} className="border border-line-strong px-4 py-2 text-sm text-foreground hover:border-foreground transition-colors">취소</button>
                 <button onClick={save} disabled={saving} className="border border-foreground bg-foreground px-5 py-2 text-sm text-surface hover:opacity-85 disabled:opacity-60 transition-all">{saving ? '저장 중…' : '저장'}</button>
               </>}
         </div>
@@ -247,6 +257,13 @@ function MeetingDetail({ meeting, workspace, members, memberName, onBack, onChan
       {mode === 'edit' ? (
         /* ═══════════ 편집 모드 (이식 킷 06 그대로) ═══════════ */
         <div className="space-y-12">
+          {/* ── 카테고리 ── */}
+          <Section title="카테고리">
+            <div className="max-w-sm">
+              <CategorySelect scope="meeting" workspaceId={workspace.id} value={category} onChange={setCategory} allowNone placeholder="카테고리 (선택)" />
+            </div>
+          </Section>
+
           {/* ── 아젠다 ── */}
           <Section title="아젠다">
             <ul className="space-y-2">

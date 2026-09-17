@@ -226,6 +226,15 @@ export const defaultRecordCategories: ScheduleCategory[] = [
   { id: 'rcat-etc',     label: '기타',     color: '#9ca3af' },
 ];
 
+// ── 회의 카테고리 (오피스 회의 · scope='meeting') ──
+export const defaultMeetingCategories: ScheduleCategory[] = [
+  { id: 'mcat-regular', label: '정기',   color: '#60a5fa' },
+  { id: 'mcat-plan',    label: '기획',   color: '#c084fc' },
+  { id: 'mcat-review',  label: '회고',   color: '#fbbf24' },
+  { id: 'mcat-1on1',    label: '1:1',    color: '#4ade80' },
+  { id: 'mcat-etc',     label: '기타',   color: '#9ca3af' },
+];
+
 // ── 더미 데이터: 일정 ──
 
 export const dummySchedules: ScheduleItem[] = [
@@ -328,6 +337,7 @@ export const DEFAULT_CATEGORIES: Record<string, ScheduleCategory[]> = {
   insight:  defaultInsightCategories,
   record:   defaultRecordCategories,
   content:  defaultContentCategories,
+  meeting:  defaultMeetingCategories,
 };
 
 // ── 더미 데이터: 독서 ──

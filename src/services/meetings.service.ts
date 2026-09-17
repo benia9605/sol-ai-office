@@ -16,7 +16,7 @@ import { recordActivity } from './activities.service';
 const toMeeting = (r: any): Meeting => ({
   id: r.id, workspaceId: r.workspace_id, createdBy: r.created_by, title: r.title,
   meetingDate: r.meeting_date ?? undefined, meetingTime: r.meeting_time ?? undefined,
-  agenda: r.agenda ?? undefined, content: r.content ?? undefined, createdAt: r.created_at, updatedAt: r.updated_at,
+  agenda: r.agenda ?? undefined, content: r.content ?? undefined, category: r.category ?? undefined, createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
 export async function fetchMeetings(workspaceId: string): Promise<Meeting[]> {
@@ -28,10 +28,10 @@ export async function fetchMeetings(workspaceId: string): Promise<Meeting[]> {
   return cacheSet('meetings', workspaceId, (data ?? []).map(toMeeting));
 }
 
-export async function addMeeting(workspaceId: string, fields: { title: string; meetingDate?: string; meetingTime?: string }): Promise<Meeting> {
+export async function addMeeting(workspaceId: string, fields: { title: string; meetingDate?: string; meetingTime?: string; category?: string }): Promise<Meeting> {
   const userId = await getCurrentUserId().catch(() => null);
   const { data, error } = await supabase.from('meetings')
-    .insert({ workspace_id: workspaceId, created_by: userId, title: fields.title.trim(), meeting_date: fields.meetingDate || null, meeting_time: fields.meetingTime || null })
+    .insert({ workspace_id: workspaceId, created_by: userId, title: fields.title.trim(), meeting_date: fields.meetingDate || null, meeting_time: fields.meetingTime || null, category: fields.category || null })
     .select().single();
   if (error) throw error;
   const m = toMeeting(data);
@@ -58,6 +58,7 @@ export async function updateMeeting(id: string, fields: Partial<Meeting>): Promi
   if (fields.meetingTime !== undefined) p.meeting_time = fields.meetingTime || null;
   if (fields.agenda !== undefined) p.agenda = fields.agenda || null;
   if (fields.content !== undefined) p.content = fields.content || null;
+  if (fields.category !== undefined) p.category = fields.category || null;
   const { error } = await supabase.from('meetings').update(p).eq('id', id);
   if (error) throw error;
   // 연동된 일정도 동기화(제목·날짜·시간)

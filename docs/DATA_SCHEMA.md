@@ -56,7 +56,7 @@
 | 테이블 | 컬럼 |
 |---|---|
 | `tasks` | id, user_id, title, type, project, goal_id, status('todo'\|'in_progress'\|'done'), priority, starred, due_date, category, notes, repeat, tags, estimated_time, actual_time, conversation_id, completed_at, **workspace_id**, **is_shared**, **assignee_id**, **meeting_id**(→meetings, 회의 액션아이템 연결·마이그 040), **source**('manual'\|'content'\|'decision'\|'memory'\|'campaign'\|'ai'), created_at |
-| `meetings` (회의 + 회의록) | id, **workspace_id**, created_by, title, meeting_date, meeting_time, **agenda**(안건 목록, '\n' join 문자열·마이그 050), content(회의록 본문), created_at, updated_at · 마이그 040. 액션아이템은 `tasks.meeting_id`, 캘린더 연동은 `schedules.meeting_id`(category='회의'). 참석자/투표 없음 |
+| `meetings` (회의 + 회의록) | id, **workspace_id**, created_by, title, meeting_date, meeting_time, **agenda**(안건 목록, '\n' join 문자열·마이그 050), content(회의록 본문), **category**(options scope=meeting id·마이그 059), created_at, updated_at · 마이그 040. 액션아이템은 `tasks.meeting_id`, 캘린더 연동은 `schedules.meeting_id`(category='회의'). 참석자/투표 없음 |
 | `products` | id, **workspace_id**, created_by, name, sku, category, status('active'\|'draft'\|'discontinued'), price, cost, stock, image_url, description, tags, created_at, updated_at (마이그 026) |
 | `content_items` | id, **workspace_id**, created_by, title, platform, content_type('desire'\|'info'\|'worldview'\|'behind'), status('idea'\|'approved'\|'scripted'\|'shooting'\|'editing'\|'scheduled'\|'published'\|'archived'), hook, script, shot_list, url, published_at, **primary_product_id**, **content_purpose**('view'\|'follow'\|'save'\|'sale'\|'brand'), **owner**, **scheduled_for**, **idea_id**(자기참조·NULL=아이디어 루트/값=발행물·마이그 052), **category**(options scope=content id·052), **channel**(youtube\|instagram\|threads\|daangn\|blog\|tiktok\|etc·052), created_at, updated_at (마이그 027·028·052) |
 | `content_metrics` | id, **workspace_id**, content_item_id, **measured_at**(스냅샷 시점·053), **metrics**(jsonb 채널별 지표·053), checkpoint(레거시·nullable·053), views, likes, comments, saves, shares, watch_time, completion_rate, follower_delta, measured_at, created_at, updated_at, UNIQUE(content_item_id,checkpoint) (마이그 029) |
@@ -131,5 +131,6 @@
 | `056_migrate_insights_into_memory.sql` | 오피스 insights → company_memory(kind='insight') 복사(개인·테이블 보존). 없는 컬럼은 to_jsonb로 안전 읽기 |
 | `057_insights_category.sql` | insights.category 컬럼 보정(누락) — 앱이 쓰는데 마이그가 없어 추가 |
 | `058_insights_priority.sql` | insights.priority 컬럼 보정(누락) — 중요도가 UI에만 있고 컬럼 없어 유실되던 것 |
+| `059_meeting_category.sql` | meetings.category 추가 — 오피스 회의도 공용 카테고리(scope=meeting)로 분류·색배지 |
 
 > ⚠️ **base 테이블(tasks·schedules·insights·journals·readings·projects·conversations·messages·goals·kpis·user_profiles 등)은 레포에 DDL이 없음** — 과거 Supabase에 직접 생성. 새로 환경을 만들 땐 이 문서를 기준으로 재생성 필요. (TODO: base 스키마 덤프를 `000_base_schema.sql`로 박제하면 완전 재현 가능)
