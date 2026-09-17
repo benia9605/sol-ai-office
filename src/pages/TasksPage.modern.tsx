@@ -414,62 +414,61 @@ export function TasksPageModern() {
 
           {/* 인박스 입력 */}
           {inputMode === 'inbox' && (
-            <div className="border border-line bg-surface px-4 py-3 space-y-2.5">
-              <div className="flex items-center gap-2">
-                <input
-                  ref={inboxInputRef}
-                  autoFocus
-                  type="text"
-                  placeholder="떠오른 생각을 그대로 — Enter로 인박스에 기록"
-                  value={inboxTitle}
-                  onChange={(e) => setInboxTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleInboxAdd();
-                    if (e.key === 'Escape') setInputMode(null);
-                  }}
-                  className="flex-1 bg-transparent text-sm placeholder:text-foreground-faint focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleInboxAdd}
-                  disabled={!inboxTitle.trim()}
-                  className="text-xs text-foreground-muted hover:text-foreground disabled:opacity-40"
-                >
-                  기록
-                </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                ref={inboxInputRef}
+                autoFocus
+                type="text"
+                placeholder="떠오른 생각을 그대로 — Enter로 인박스에 기록"
+                value={inboxTitle}
+                onChange={(e) => setInboxTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleInboxAdd();
+                  if (e.key === 'Escape') setInputMode(null);
+                }}
+                className="flex-1 min-w-[12rem] border border-line bg-surface px-3.5 py-2.5 text-sm placeholder:text-foreground-faint focus:outline-none focus:border-foreground transition-colors"
+              />
+              <div className="w-52 shrink-0">
+                <CategorySelect scope="task" value={inboxCategory} onChange={setInboxCategory} allowNone placeholder="카테고리 (선택)" />
               </div>
-              <CategorySelect scope="task" value={inboxCategory} onChange={setInboxCategory} allowNone placeholder="카테고리 (선택)" />
+              <button
+                type="button"
+                onClick={handleInboxAdd}
+                disabled={!inboxTitle.trim()}
+                className="shrink-0 text-xs text-foreground-muted hover:text-foreground disabled:opacity-40 px-1"
+              >
+                기록
+              </button>
             </div>
           )}
 
           {/* 빠른 추가 입력 */}
           {inputMode === 'quick' && (
-            <div className="border border-line bg-surface px-4 py-3 space-y-2.5">
-              <div className="flex items-center gap-2">
-                <input
-                  ref={quickAddRef}
-                  autoFocus
-                  type="text"
-                  placeholder="제목 입력 — Enter로 오늘 마감 할일로 추가"
-                  value={quickTitle}
-                  onChange={(e) => setQuickTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleQuickAdd();
-                    if (e.key === 'Escape') setInputMode(null);
-                  }}
-                  className="flex-1 bg-transparent text-sm placeholder:text-foreground-faint focus:outline-none"
-                />
-                <span className="text-[10px] tracking-[0.18em] uppercase text-foreground-faint shrink-0">Today</span>
-                <button
-                  type="button"
-                  onClick={handleQuickAdd}
-                  disabled={!quickTitle.trim()}
-                  className="text-xs text-foreground-muted hover:text-foreground disabled:opacity-40"
-                >
-                  추가
-                </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                ref={quickAddRef}
+                autoFocus
+                type="text"
+                placeholder="제목 입력 — Enter로 오늘 마감 할일로 추가"
+                value={quickTitle}
+                onChange={(e) => setQuickTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleQuickAdd();
+                  if (e.key === 'Escape') setInputMode(null);
+                }}
+                className="flex-1 min-w-[12rem] border border-line bg-surface px-3.5 py-2.5 text-sm placeholder:text-foreground-faint focus:outline-none focus:border-foreground transition-colors"
+              />
+              <div className="w-52 shrink-0">
+                <CategorySelect scope="task" value={quickCategory} onChange={setQuickCategory} allowNone placeholder="카테고리 (선택)" />
               </div>
-              <CategorySelect scope="task" value={quickCategory} onChange={setQuickCategory} allowNone placeholder="카테고리 (선택)" />
+              <button
+                type="button"
+                onClick={handleQuickAdd}
+                disabled={!quickTitle.trim()}
+                className="shrink-0 text-xs text-foreground-muted hover:text-foreground disabled:opacity-40 px-1"
+              >
+                추가
+              </button>
             </div>
           )}
 

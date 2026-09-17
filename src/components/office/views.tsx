@@ -1291,7 +1291,7 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
       {selectMode && (
         <div className="sticky top-0 z-20 mb-3 rounded-xl border border-line bg-surface shadow-sm p-3 flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-foreground mr-1">{selectedIds.size}개 선택</span>
-          <div className="w-48 shrink-0">
+          <div className="w-64 shrink-0">
             <CategorySelect scope="task" workspaceId={workspace.id} value="" onChange={id => { if (selectedIds.size) bulkUpdate({ category: id }); }} allowNone placeholder="카테고리 지정…" />
           </div>
           {members.length > 1 && (
