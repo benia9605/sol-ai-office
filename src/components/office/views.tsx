@@ -1155,7 +1155,8 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
   const memberAvatar = (uid?: string) => members.find(x => x.userId === uid)?.avatarUrl;
   const fieldCls = 'w-full px-4 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
   // 추가폼 전용 — CategorySelect와 같은 흰 배경+테두리로 통일(드롭다운 레이아웃 정돈)
-  const addField = 'w-full px-3.5 py-2.5 rounded-lg bg-surface border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:border-foreground transition-colors';
+  const addFieldBase = 'px-3.5 py-2.5 rounded-lg bg-surface border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:border-foreground transition-colors';
+  const addField = `w-full ${addFieldBase}`;
 
   const save = async () => {
     if (!form.title.trim()) return;
@@ -1316,15 +1317,17 @@ export function TodosView({ workspace, onNavigate, initialScope }: { workspace: 
         <Card className="p-4 mb-3 space-y-2.5">
           <input autoFocus value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
             onKeyDown={e => { if (e.key === 'Enter') save(); }} placeholder="무엇을 할까요?" className={addField} />
-          <div className="grid grid-cols-2 gap-2">
-            <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value as TaskItem['priority'] })} className={addField}>
-              <option value="high">우선순위 · 높음</option>
-              <option value="medium">우선순위 · 보통</option>
-              <option value="low">우선순위 · 낮음</option>
+          <div className="flex flex-wrap items-center gap-2">
+            <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value as TaskItem['priority'] })} className={`${addFieldBase} w-24 shrink-0`} aria-label="우선순위">
+              <option value="high">높음</option>
+              <option value="medium">보통</option>
+              <option value="low">낮음</option>
             </select>
-            <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className={addField} />
+            <div className="flex-1 min-w-[11rem]">
+              <CategorySelect scope="task" workspaceId={workspace.id} value={form.category} onChange={id => setForm({ ...form, category: id })} allowNone placeholder="카테고리 (선택)" />
+            </div>
+            <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className={`${addFieldBase} w-40 shrink-0`} />
           </div>
-          <CategorySelect scope="task" workspaceId={workspace.id} value={form.category} onChange={id => setForm({ ...form, category: id })} allowNone placeholder="카테고리 (선택)" />
           {members.length > 1 && (
             <MemberSelect value={form.assigneeId} members={members} onChange={v => setForm({ ...form, assigneeId: v })} memberName={memberName} avatarUrl={memberAvatar} />
           )}
