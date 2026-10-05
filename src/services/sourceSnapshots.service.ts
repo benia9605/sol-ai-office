@@ -6,11 +6,13 @@
  * - scope = (workspace, source_system, environment, usage, business_date, schema_version).
  * - revision 규칙: 같은 scope+revision 은 같은 bytes → 기존 결과 재사용(200).
  *   같은 scope+revision 에 다른 bytes → 409 충돌. 낮은 revision 이 늦게 와도 latest 를 되돌리지 않는다.
- * - 같은 내용(content_digest 동일)이 관찰 시각만 달라져 오면 새 revision 을 만들지 않고 last_seen_at 만 올린다.
+ * - 같은 내용(content_digest 동일)이 관찰 시각만 달라져 오면 새 revision 을 만들지 않고
+ *   source_snapshot_latest.last_confirmed_at 만 올린다(원문 행은 immutable · 마이그 061).
  * - 실패는 source_ingest_errors 에 남긴다. 빈 배열·0 매출로 바꾸지 않는다(계약 §8).
  *
  * ⚠️ 모델 API 를 호출하지 않는다(D-007). 이 파일은 provider client 를 import 하지 않는다.
- * 마이그레이션: 060_simok_contract_guards.sql. Mock 동기화: mockSupabase.ts source_snapshots.
+ * 마이그레이션: 060_simok_contract_guards.sql + 061_snapshot_last_confirmed.sql.
+ * Mock 동기화: mockSupabase.ts source_snapshots / source_snapshot_latest.
  */
 import { supabase } from './supabase';
 import { getCurrentUserId } from './auth';
@@ -44,6 +46,7 @@ export interface SnapshotRow {
   generated_at: string;
   source_updated_at: string | null;
   received_at: string;
+  /** 수신 시점 값으로 고정(이 테이블은 immutable). 재확인 시각은 source_snapshot_latest.last_confirmed_at */
   last_seen_at: string;
   quality: unknown;
 }
@@ -162,10 +165,11 @@ export async function ingestSnapshot(
   }
 
   // 계약 §7.2·§7.3: 내용이 그대로인데 관찰 시각만 달라진 재전송은 새 revision 사유가 아니다.
+  // ★ 재확인 시각은 **원문 행이 아니라** 쓰기 가능한 pointer 에 쓴다.
+  //   source_snapshots 는 immutable(SELECT+INSERT 정책만)이라 UPDATE 가 RLS 에 조용히 막힌다.
+  //   계약 §7.3 "마지막 재확인 시각은 별도 운영 메타데이터에 저장한다" 도 같은 요구다. (마이그 061)
   if (latest && latest.content_digest === digest) {
-    await supabase.from('source_snapshots')
-      .update({ last_seen_at: new Date().toISOString() })
-      .eq('id', latest.id);
+    await touchLatestConfirmed(sc);
     return { status: 'unchanged_content', snapshotPk: latest.id, revision: latest.revision, rawSha256 };
   }
 
@@ -226,6 +230,23 @@ async function upsertLatest(sc: SnapshotScope, revision: number, snapshotPk: str
   } else {
     const { error } = await supabase.from('source_snapshot_latest').insert(row) as unknown as { error: unknown };
     if (error) throw error;
+  }
+}
+
+/**
+ * 같은 내용을 다시 확인했을 때 pointer 의 재확인 시각만 올린다(마이그 061).
+ * 실패해도 수신 자체는 성공으로 둔다 — 운영 메타데이터이고 원문·revision 에는 영향이 없다.
+ */
+async function touchLatestConfirmed(sc: SnapshotScope): Promise<void> {
+  try {
+    const { error } = await scopeFilter(
+      supabase.from('source_snapshot_latest')
+        .update({ last_confirmed_at: new Date().toISOString() }) as unknown as Eqable,
+      sc,
+    ) as unknown as { error: unknown };
+    if (error) throw error;
+  } catch {
+    console.warn('[sourceSnapshots] 재확인 시각 기록 실패 (수신 결과에는 영향 없음)');
   }
 }
 

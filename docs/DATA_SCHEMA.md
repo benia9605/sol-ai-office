@@ -133,6 +133,7 @@
 | `058_insights_priority.sql` | insights.priority 컬럼 보정(누락) — 중요도가 UI에만 있고 컬럼 없어 유실되던 것 |
 | `059_meeting_category.sql` | meetings.category 추가 — 오피스 회의도 공용 카테고리(scope=meeting)로 분류·색배지 |
 | `060_simok_contract_guards.sql` | **시목 연동 가드 + 계약 0.2.0 수신 저장소.** ① `workspaces.erp_business_entity`(ERP 사업자 식별값 — 코드 하드코딩 '시목' 대체) ② `workspaces.ai_provider_enabled`(D-007 서버 정책: false 면 모델 API 호출 거절. `erp_source='simok_api'` 인 워크스페이스를 false 로 설정) ③ `ingest_credentials`(토큰 sha256 → workspace+scope 매핑, legacy_body_workspace 점진 전환) ④ `source_snapshots`(원문 immutable + raw_sha256 + content_digest + revision, scope UNIQUE) ⑤ `source_snapshot_latest`(scope당 최신 revision pointer) ⑥ `source_ingest_errors`(수신·검증 실패 원장) |
+| `061_snapshot_last_confirmed.sql` | `source_snapshot_latest.last_confirmed_at` 추가 — 060 이 `source_snapshots` 를 immutable(SELECT+INSERT)로 만들었는데 같은 테이블의 `last_seen_at` 을 갱신하려 해 RLS 에 막히던 것 보정. 계약 0.2.0 §7.3 "재확인 시각은 별도 운영 메타데이터" 준수 |
 
 ## 계약 0.2.0 수신 테이블 (마이그 060)
 
@@ -149,7 +150,7 @@
 | `raw_body` | 받은 원문 JSONB (변경 금지) |
 | `raw_sha256` | 수신 bytes 해시 — 같은 revision 재수신 판단·감사 |
 | `content_digest` | §7.3 canonical digest. snapshot_id·revision·generated_at·source_updated_at·모든 quality.as_of 를 **제외**하고 계산 → 관찰 시각만 달라진 재전송은 새 revision 이 아니다 |
-| `received_at` / `last_seen_at` | 수신 시각 / 같은 digest 재확인 시각 |
+| `received_at` / `last_seen_at` | 수신 시각 / **수신 시점 값으로 고정**(이 테이블은 immutable). 재확인 시각은 `source_snapshot_latest.last_confirmed_at`(마이그 061) |
 | `quality` | 블록별 status 요약(연결 상태 화면용) |
 
 UNIQUE `(workspace_id, source_system, environment, usage, business_date, schema_version, revision)` — 동시 생성 방지(§7.6).
@@ -157,6 +158,7 @@ RLS: 멤버 SELECT + INSERT 만. UPDATE/DELETE 정책 없음(immutable).
 
 ### `source_snapshot_latest` — scope당 최신 revision pointer
 낮은 revision 이 늦게 도착해도 되돌리지 않는다(§7.5). PK = scope 6개 컬럼.
+`last_confirmed_at`(061): 같은 content_digest 를 다시 받아 "내용 그대로" 를 재확인한 시각. **새 revision 사유가 아니다.**
 
 ### `source_ingest_errors` — 실패·불완전 원장
 `code`(validation_failed / conflict / upstream_timeout / incomplete_page …) + `retryable` + `trace_id`.

@@ -91,7 +91,7 @@ const mockData: Record<string, any[]> = {
   // 계약 0.2.0 수신 저장소 (마이그 060). 시드는 비워 둔다 — 디자인 예시 수치를 운영/목업 집계에
   // 넣지 않는다(04 핸드오프 O3). fixture import 로 채워 넣어 시험한다.
   source_snapshots: [],
-  source_snapshot_latest: [],
+  source_snapshot_latest: [],   // 컬럼: scope6 + revision·snapshot_pk·updated_at·last_confirmed_at(마이그 061)
   source_ingest_errors: [],
   ingest_credentials: [],
   // CS 문의 티켓 + FAQ
