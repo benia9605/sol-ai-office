@@ -55,11 +55,17 @@ function toRow(fields: Partial<Product>): Record<string, unknown> {
 
 /**
  * 시목 앱 API에서 제품 마스터 조회 (System of Record).
- * 계약 ⑪: business_entity='시목' 필터, status는 발행 상품페이지 등록 기준(active/draft).
- * ※ ERP_SOURCE는 현재 전역 스위치라 v1은 시목 워크스페이스 전용으로 간주(다른 브랜드 ERP 붙으면 워크스페이스별 라우팅 필요).
+ * status 는 발행 상품페이지 등록 기준(active/draft).
+ *
+ * ★ business_entity 는 **workspace 설정**(workspaces.erp_business_entity, 마이그 060)에서 온다.
+ *   이전 구현은 '시목' 을 하드코딩해서, erp_source 만 켜면 어느 workspace 든 시목 제품을 봤다.
+ *   계약 0.2.0 §2: 브랜드 표시 이름 문자열로 분기하지 않는다.
  */
-async function fetchProductsFromSimok(workspaceId: string): Promise<Product[]> {
-  const rows = await erpProxyGet<SimokProduct>('products', { business_entity: '시목', limit: 1000 });
+async function fetchProductsFromSimok(workspaceId: string, businessEntity?: string): Promise<Product[]> {
+  if (!businessEntity) {
+    throw new Error('이 워크스페이스에 ERP 사업자 식별값(erp_business_entity)이 설정되지 않았어요. 관리자가 설정해야 조회할 수 있어요.');
+  }
+  const rows = await erpProxyGet<SimokProduct>(workspaceId, 'products', { business_entity: businessEntity, limit: 1000 });
   return rows.map(p => ({
     id: p.id,
     workspaceId,
@@ -78,8 +84,8 @@ async function fetchProductsFromSimok(workspaceId: string): Promise<Product[]> {
 }
 
 /** 워크스페이스 제품 목록 (최신순) — 소스 분기: 시목 API(조회) / Compatibility(수기) */
-export async function fetchProducts(workspaceId: string, source: ErpSource = 'manual'): Promise<Product[]> {
-  if (source === 'simok_api') return fetchProductsFromSimok(workspaceId);
+export async function fetchProducts(workspaceId: string, source: ErpSource = 'manual', businessEntity?: string): Promise<Product[]> {
+  if (source === 'simok_api') return fetchProductsFromSimok(workspaceId, businessEntity);
   // Compatibility Mode: AI Office 임시 수기 입력분(Supabase)
   const { data, error } = await supabase
     .from('products')

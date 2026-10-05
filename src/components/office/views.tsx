@@ -34,7 +34,7 @@ import { fetchMemories, addMemory, updateMemory, deleteMemory } from '../../serv
 import { workspaceErpSource, isWsCompat } from '../../config/dataSource';
 import { RecordDetailView } from '../records/RecordDetailView';
 import { ReportCard } from './StaffView';
-import { fetchWorkspaceAnalytics, WorkspaceAnalytics } from '../../services/analytics.service';
+import { fetchWorkspaceAnalytics, WorkspaceAnalytics, REVENUE_BASIS_NOTE } from '../../services/analytics.service';
 import { TiptapEditor, TiptapEditorHandle } from '../tiptap/TiptapEditor';
 import { CalendarView } from '../calendar/CalendarView';
 import { defaultTaskCategories, officeScheduleCategories } from '../../data';
@@ -80,33 +80,80 @@ function ClaudeQuickButtons({ onClaude, onQA }: { onClaude: () => void; onQA: ()
 type Nav = (v: string, opts?: { scope?: 'all' | 'mine' | 'assigned' }) => void;
 
 /* ───────── 대시보드 ───────── */
-const FLAT_SPARK = [0, 0, 0, 0, 0, 0, 0];
+// 평평한 0 스파크라인은 더 쓰지 않는다 — 실적 미연결 상태에서 가짜 그래프를 기본값으로
+// 보여주지 말라는 04 핸드오프 O3 때문에, spark=null 이면 그래프 자체를 그리지 않는다.
 
-type Kpi = { k: string; unit: string; value: number; spark: number[]; delta: number | null };
+/**
+ * KPI 카드 1장.
+ * value=null 은 "모른다" 는 뜻이고 0과 다르다 (계약 0.2.0 §5).
+ * loading 중에도 0을 그리지 않는다 — 빈 상태를 0 실적으로 위장하지 않는다.
+ */
+type Kpi = {
+  k: string; unit: string;
+  value: number | null;
+  spark: number[] | null;
+  delta: number | null;
+  /** 값이 없는 이유 또는 숫자의 의미 설명. 카드에 함께 보여준다. */
+  note?: string | null;
+};
 
-/** 워크스페이스 KPI — 실데이터(매출 sales_daily + 콘텐츠 성과 content_metrics). 없으면 0·플랫 */
-function useDashboardKpis(workspace: Workspace): Kpi[] {
+/**
+ * 워크스페이스 KPI — 실데이터(매출 sales_daily + 콘텐츠 성과 content_metrics).
+ * ★ 데이터가 없으면 0이 아니라 null(—)을 돌려준다. 가짜 실적 그래프를 기본값으로 쓰지 않는다
+ *   (04 핸드오프 O3 · 계약 §5 · GPT-R1-O2 "실패→빈배열/0 숨김 제거").
+ */
+function useDashboardKpis(workspace: Workspace): { kpis: Kpi[]; loading: boolean; basisNote: string | null } {
   const [a, setA] = useState<WorkspaceAnalytics | null>(null);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    fetchWorkspaceAnalytics(workspace.id, workspaceErpSource(workspace)).then(setA).catch(() => setA(null));
+    let alive = true;
+    setLoading(true);
+    fetchWorkspaceAnalytics(workspace.id, workspaceErpSource(workspace))
+      .then(r => { if (alive) setA(r); })
+      .catch(() => { if (alive) setA(null); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
   }, [workspace.id, workspace.erpSource]);
 
-  if (!a) return [
-    { k: '주간 매출', unit: '만원', value: 0, spark: FLAT_SPARK, delta: null },
-    { k: '객단가', unit: '원', value: 0, spark: FLAT_SPARK, delta: null },
-    { k: '저장률', unit: '%', value: 0, spark: FLAT_SPARK, delta: null },
-    { k: '공유율', unit: '%', value: 0, spark: FLAT_SPARK, delta: null },
+  const empty: Kpi[] = [
+    { k: '집계액(7일)', unit: '만원', value: null, spark: null, delta: null, note: loading ? null : '아직 연결된 매출 데이터가 없습니다' },
+    { k: '주문당 금액', unit: '원', value: null, spark: null, delta: null },
+    { k: '저장률', unit: '%', value: null, spark: null, delta: null },
+    { k: '공유율', unit: '%', value: null, spark: null, delta: null },
   ];
+  if (!a) return { kpis: empty, loading, basisNote: null };
+
+  const hasSales = a.sales.hasData;
   const rev = a.sales.dailySeries.map(v => Math.round(v / 10000));  // 만원
   const revLast = rev[rev.length - 1] ?? 0;
   const revPrev = rev.length > 1 ? rev[rev.length - 2] : null;
-  const revDelta = revPrev && revPrev !== 0 ? Math.round(((revLast - revPrev) / revPrev) * 100) : null;
-  return [
-    { k: '주간 매출', unit: '만원', value: Math.round(a.sales.last7Revenue / 10000), spark: rev.some(v => v > 0) ? rev : FLAT_SPARK, delta: revDelta },
-    { k: '객단가', unit: '원', value: a.sales.aov ?? 0, spark: FLAT_SPARK, delta: null },
-    { k: '저장률', unit: '%', value: a.content.avgSaveRate ?? 0, spark: FLAT_SPARK, delta: null },
-    { k: '공유율', unit: '%', value: a.content.avgShareRate ?? 0, spark: FLAT_SPARK, delta: null },
-  ];
+  // legacy ERP 집계액은 의미가 검증되지 않아 증감률을 내지 않는다(계약 §1).
+  const deltaAllowed = a.sales.revenueBasis !== 'legacy_erp_unverified';
+  const revDelta = deltaAllowed && revPrev && revPrev !== 0
+    ? Math.round(((revLast - revPrev) / revPrev) * 100) : null;
+  const basisNote = hasSales ? REVENUE_BASIS_NOTE[a.sales.revenueBasis] : null;
+
+  return {
+    loading,
+    basisNote,
+    kpis: [
+      {
+        k: a.sales.revenueBasis === 'legacy_erp_unverified' ? '집계액(7일·미검증)' : '매출(7일·수기)',
+        unit: '만원',
+        value: hasSales ? Math.round(a.sales.last7Revenue / 10000) : null,
+        spark: hasSales && rev.some(v => v > 0) ? rev : null,
+        delta: revDelta,
+        note: hasSales ? basisNote : '아직 연결된 매출 데이터가 없습니다',
+      },
+      {
+        k: '주문당 금액', unit: '원',
+        value: a.sales.aov, spark: null, delta: null,
+        note: a.sales.aov == null ? (a.sales.aovNote ?? '주문 기준 데이터가 없습니다') : a.sales.aovNote,
+      },
+      { k: '저장률', unit: '%', value: a.content.avgSaveRate, spark: null, delta: null, note: a.content.hasData ? null : '콘텐츠 성과 입력 전입니다' },
+      { k: '공유율', unit: '%', value: a.content.avgShareRate, spark: null, delta: null },
+    ],
+  };
 }
 
 /** 하루 운영 흐름 가이드 — 워크스페이스 메인 홈 상단. 접기/펼치기(localStorage). */
@@ -425,7 +472,7 @@ function MyTaskFocus({ tasks, onNavigate }: { tasks: TaskItem[]; onNavigate: Nav
 }
 
 export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; workspace: Workspace }) {
-  const kpis = useDashboardKpis(workspace);
+  const { kpis, loading: kpiLoading, basisNote } = useDashboardKpis(workspace);
   // 프리페치 캐시로 즉시 그리기(스피너 없이) — 각 useEffect fetch가 뒤이어 최신값으로 갱신
   const [wsTasks, setWsTasks] = useState<TaskItem[]>(() => (cacheGet<any[]>('ws-tasks', workspace.id) ?? []).map(rowToTaskItem));
   const [myId, setMyId] = useState<string | null>(null);
@@ -478,7 +525,7 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
       <BriefingPanel workspace={workspace} onNavigate={onNavigate} />
 
       {/* KPI 스트립 — 실데이터 있을 때만 표시 (연동 전엔 빈 그래프 숨김) */}
-      {kpis.some(k => k.value > 0 || k.delta !== null) && (
+      {(kpiLoading || kpis.some(k => k.value !== null)) && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {kpis.map((kpi, i) => (
             <div key={i} className="rounded-2xl border border-line bg-surface p-5">
@@ -488,13 +535,23 @@ export function DashboardView({ onNavigate, workspace }: { onNavigate: Nav; work
                   ? <span className="text-xs font-semibold text-foreground-faint">—</span>
                   : <span className={`text-xs font-semibold ${kpi.delta >= 0 ? 'text-primary-500' : 'text-rose-400'}`}>{kpi.delta >= 0 ? '▲' : '▼'} {Math.abs(kpi.delta)}%</span>}
               </div>
+              {/* ★ 모르는 값은 0이 아니라 — 로 그린다 (계약 0.2.0 §5) */}
               <div className="text-2xl font-light mt-1.5 text-foreground tabular-nums">
-                {kpi.value.toLocaleString()}<span className="text-sm text-foreground-faint ml-0.5">{kpi.unit}</span>
+                {kpi.value === null
+                  ? <span className="text-foreground-faint">{kpiLoading ? '···' : '—'}</span>
+                  : <>{kpi.value.toLocaleString()}<span className="text-sm text-foreground-faint ml-0.5">{kpi.unit}</span></>}
               </div>
-              <div className="mt-1.5"><Spark data={kpi.spark} /></div>
+              {/* 실적 미연결 상태에서 가짜 그래프를 기본값으로 보여주지 않는다 (04 핸드오프 O3) */}
+              {kpi.spark && <div className="mt-1.5"><Spark data={kpi.spark} /></div>}
+              {kpi.note && <p className="text-[10px] leading-snug text-foreground-faint mt-1.5">{kpi.note}</p>}
             </div>
           ))}
         </div>
+      )}
+      {basisNote && (
+        <p className="text-[11px] text-foreground-faint -mt-3">
+          ⚠️ {basisNote}
+        </p>
       )}
 
       {/* 확인이 필요한 일 + 내 할일 버킷 */}
@@ -1888,7 +1945,7 @@ export function ContentDetailView({ workspace, contentId, onBack }: { workspace:
   useEffect(() => {
     load();
     fetchMembers(workspace.id).then(setMembers).catch(() => {});
-    fetchProducts(workspace.id, workspaceErpSource(workspace)).then(setProducts).catch(() => {});
+    fetchProducts(workspace.id, workspaceErpSource(workspace), workspace.erpBusinessEntity).then(setProducts).catch(() => {});
     /* eslint-disable-next-line */
   }, [contentId]);
 
@@ -2011,7 +2068,7 @@ export function ContentItemsView({ workspace, onNavigate }: { workspace: Workspa
   useEffect(() => {
     load();
     fetchMembers(workspace.id).then(setMembers).catch(() => setMembers([]));
-    fetchProducts(workspace.id, workspaceErpSource(workspace)).then(setProducts).catch(() => setProducts([]));
+    fetchProducts(workspace.id, workspaceErpSource(workspace), workspace.erpBusinessEntity).then(setProducts).catch(() => setProducts([]));
     /* eslint-disable-next-line */
   }, [workspace.id]);
   const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
@@ -2216,7 +2273,7 @@ export function ProductsView({ workspace }: { workspace: Workspace }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<ProductForm>(emptyProductForm);
   const [selected, setSelected] = useState<Product | null>(null);
-  const load = () => fetchProducts(workspace.id, erp).then(setList).catch(() => setList([]));
+  const load = () => fetchProducts(workspace.id, erp, workspace.erpBusinessEntity).then(setList).catch(() => setList([]));
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [workspace.id]);
   const fieldCls = 'w-full px-3.5 py-2.5 rounded-lg bg-surface-muted border border-line text-sm text-foreground placeholder:text-foreground-faint focus:outline-none focus:bg-surface focus:border-foreground transition-colors';
 

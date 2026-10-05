@@ -56,7 +56,7 @@ async function fetchSalesFromSimok(workspaceId: string, limit: number): Promise<
   const to = new Date();
   const from = new Date(to.getTime() - days * 86400000);
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  const rows = await erpProxyGet<SimokSalesRow>('sales-daily', { from: fmt(from), to: fmt(to) });
+  const rows = await erpProxyGet<SimokSalesRow>(workspaceId, 'sales-daily', { from: fmt(from), to: fmt(to) });
   // 최신 날짜순으로 뒤집어 반환(뷰가 최신순 기대)
   return rows.map(r => ({
     id: `${r.date}__${r.source}`,   // 집계라 실 id 없음 → 결정적 키 합성

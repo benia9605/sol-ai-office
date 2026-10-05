@@ -6,8 +6,29 @@
  * - 마키(GPT-4o), 서치(Sonar Pro)
  */
 
-// AI 키는 서버(server.js)가 주입한다. 브라우저는 로그인 토큰(x-sb-auth)만 보낸다.
+// AI 키는 서버(server.js)가 주입한다. 브라우저는 로그인 토큰(x-sb-auth)과
+// 어느 워크스페이스로 요청하는지(x-ws-id)만 보낸다.
+// ★ x-ws-id 는 권한이 아니라 "요청 범위"다. 서버가 그 워크스페이스의 멤버십(RLS)과
+//   ai_provider_enabled 정책을 확인한 뒤에만 provider 를 호출한다(D-007 · 계약 0.2.0 §9).
 import { sbAccessToken } from './supabase';
+
+/** provider 요청 공통 헤더 */
+async function providerHeaders(workspaceId?: string): Promise<Record<string, string>> {
+  const h: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-sb-auth': await sbAccessToken(),
+  };
+  if (workspaceId) h['x-ws-id'] = workspaceId;
+  return h;
+}
+
+/** 서버가 D-007 정책으로 막았을 때 사용자에게 보여줄 메시지를 꺼낸다 */
+function providerErrorMessage(body: unknown, status: number, fallback: string): string {
+  const e = (body as { error?: { code?: string; message?: string } } | null)?.error;
+  if (e?.code === 'provider_disabled') return e.message || 'AI 모델 실행이 꺼진 워크스페이스예요.';
+  if (e?.message) return e.message;
+  return `${fallback} (${status})`;
+}
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -53,13 +74,12 @@ export function calcCoins(model: string, usage: LLMUsage): number {
 /** Anthropic Claude API */
 async function callAnthropic(
   config: ModelConfig, systemPrompt: string, messages: ChatMessage[], maxTokens: number,
-  signal?: AbortSignal,
+  signal?: AbortSignal, workspaceId?: string,
 ): Promise<LLMResult> {
   const res = await fetch('/api/claude/v1/messages', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'x-sb-auth': await sbAccessToken(),
+      ...(await providerHeaders(workspaceId)),
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
@@ -73,7 +93,7 @@ async function callAnthropic(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `Anthropic API 실패 (${res.status})`);
+    throw new Error(providerErrorMessage(err, res.status, 'Anthropic API 실패'));
   }
 
   const data = await res.json();
@@ -84,14 +104,11 @@ async function callAnthropic(
 /** OpenAI GPT API */
 async function callOpenAI(
   config: ModelConfig, systemPrompt: string, messages: ChatMessage[], maxTokens: number,
-  signal?: AbortSignal,
+  signal?: AbortSignal, workspaceId?: string,
 ): Promise<LLMResult> {
   const res = await fetch('/api/openai/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-sb-auth': await sbAccessToken(),
-    },
+    headers: await providerHeaders(workspaceId),
     body: JSON.stringify({
       model: config.model,
       max_tokens: maxTokens,
@@ -105,7 +122,7 @@ async function callOpenAI(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `OpenAI API 실패 (${res.status})`);
+    throw new Error(providerErrorMessage(err, res.status, 'OpenAI API 실패'));
   }
 
   const data = await res.json();
@@ -115,14 +132,11 @@ async function callOpenAI(
 /** Perplexity Sonar API */
 async function callPerplexity(
   config: ModelConfig, systemPrompt: string, messages: ChatMessage[], maxTokens: number,
-  signal?: AbortSignal,
+  signal?: AbortSignal, workspaceId?: string,
 ): Promise<LLMResult> {
   const res = await fetch('/api/perplexity/chat/completions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-sb-auth': await sbAccessToken(),
-    },
+    headers: await providerHeaders(workspaceId),
     body: JSON.stringify({
       model: config.model,
       max_tokens: maxTokens,
@@ -136,7 +150,7 @@ async function callPerplexity(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `Perplexity API 실패 (${res.status})`);
+    throw new Error(providerErrorMessage(err, res.status, 'Perplexity API 실패'));
   }
 
   const data = await res.json();
@@ -172,33 +186,39 @@ export async function sendChatMessage(
   roomId: string,
   maxTokens = 2048,
   signal?: AbortSignal,
+  workspaceId?: string,
 ): Promise<string> {
   const config = MODEL_MAP[roomId] || DEFAULT_CONFIG;
 
   switch (config.provider) {
     case 'openai':
-      return (await callOpenAI(config, systemPrompt, messages, maxTokens, signal)).text;
+      return (await callOpenAI(config, systemPrompt, messages, maxTokens, signal, workspaceId)).text;
     case 'perplexity':
-      return (await callPerplexity(config, systemPrompt, messages, maxTokens, signal)).text;
+      return (await callPerplexity(config, systemPrompt, messages, maxTokens, signal, workspaceId)).text;
     default:
-      return (await callAnthropic(config, systemPrompt, messages, maxTokens, signal)).text;
+      return (await callAnthropic(config, systemPrompt, messages, maxTokens, signal, workspaceId)).text;
   }
 }
 
-/** 모델을 직접 지정해서 호출 (AI 직원 실행 엔진용) — 토큰 usage 포함 반환 */
+/**
+ * 모델을 직접 지정해서 호출 (AI 직원 실행 엔진용) — 토큰 usage 포함 반환.
+ * ★ workspaceId 필수: 직원 실행은 항상 특정 워크스페이스의 일이고, 서버가 그 워크스페이스의
+ *   D-007 정책을 검사해야 한다. 빠뜨리면 정책을 우회하게 되므로 타입으로 강제한다.
+ */
 export async function sendWithModel(
   config: { provider: 'anthropic' | 'openai' | 'perplexity'; model: string },
   systemPrompt: string,
   messages: ChatMessage[],
+  workspaceId: string,
   maxTokens = 1500,
   signal?: AbortSignal,
 ): Promise<LLMResult> {
   switch (config.provider) {
     case 'openai':
-      return callOpenAI(config, systemPrompt, messages, maxTokens, signal);
+      return callOpenAI(config, systemPrompt, messages, maxTokens, signal, workspaceId);
     case 'perplexity':
-      return callPerplexity(config, systemPrompt, messages, maxTokens, signal);
+      return callPerplexity(config, systemPrompt, messages, maxTokens, signal, workspaceId);
     default:
-      return callAnthropic(config, systemPrompt, messages, maxTokens, signal);
+      return callAnthropic(config, systemPrompt, messages, maxTokens, signal, workspaceId);
   }
 }

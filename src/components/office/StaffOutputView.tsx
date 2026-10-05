@@ -689,9 +689,12 @@ function ImageBriefView({ d, onSave, workspaceId, staffId, onCredits }: { d: any
   const [busy, setBusy] = useState<number | null>(null);
   const [imgs, setImgs] = useState<Record<number, string>>({});
   const gen = async (p: any, i: number) => {
+    // D-007: 이미지 생성도 provider 호출이므로 워크스페이스 정책 검사가 필요하다.
+    // workspaceId 가 없으면 서버가 정책을 평가할 수 없어 아예 시도하지 않는다.
+    if (!workspaceId) { alert('워크스페이스를 확인할 수 없어 이미지 생성을 건너뜁니다.'); return; }
     setBusy(i);
     try {
-      const { url: dataUrl, coins } = await generateImage(p.text, ratioToSize(p.ratio));
+      const { url: dataUrl, coins } = await generateImage(p.text, workspaceId, ratioToSize(p.ratio));
       if (!dataUrl) return;
       // base64 그대로 저장하면 egress 폭증 → Storage 업로드 후 URL만 사용 (실패 시 dataURL 폴백)
       let url = dataUrl;

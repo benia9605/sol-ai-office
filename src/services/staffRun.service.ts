@@ -509,18 +509,18 @@ async function runAndParse(staff: Staff, workspace: Workspace, opts: { tasks: st
       const r1 = await sendWithModel(
         RESEARCH_MODEL,
         `${system}\n\n[검색 단계] 위 작업에 필요한 최신 시장·경쟁사·가격·트렌드 정보를 검색해 핵심 사실과 수치를 출처와 함께 정리해줘.`,
-        [{ role: 'user', content: userMsg }], 1200,
+        [{ role: 'user', content: userMsg }], workspace.id, 1200,
       );
       // 2단계: Claude Sonnet으로 검색 결과를 전용 뷰용 JSON으로 구조화
       const r2 = await sendWithModel(
         MODEL_REGISTRY.sonnet, system,
-        [{ role: 'user', content: `${userMsg}\n\n[검색 결과 — 아래 사실을 근거로 정리해라]\n${r1.text}` }], 1500,
+        [{ role: 'user', content: `${userMsg}\n\n[검색 결과 — 아래 사실을 근거로 정리해라]\n${r1.text}` }], workspace.id, 1500,
       );
       out = r2.text;
       coins = calcCoins(RESEARCH_MODEL.model, r1.usage) + calcCoins(MODEL_REGISTRY.sonnet.model, r2.usage);
     } else {
       const cfg = MODEL_REGISTRY[modelKey] || MODEL_REGISTRY.sonnet;
-      const r = await sendWithModel(cfg, system, [{ role: 'user', content: userMsg }], 1500);
+      const r = await sendWithModel(cfg, system, [{ role: 'user', content: userMsg }], workspace.id, 1500);
       out = r.text;
       coins = calcCoins(cfg.model, r.usage);
     }

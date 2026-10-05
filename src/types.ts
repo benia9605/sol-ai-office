@@ -37,6 +37,8 @@ export interface Workspace {
   inviteCode?: string;
   credits?: number;      // 코인 잔액 (직원 실행 시 토큰 비용만큼 차감)
   erpSource?: 'manual' | 'simok_api';  // ERP 데이터 소스(워크스페이스별). manual=수기, simok_api=시목앱 조회
+  erpBusinessEntity?: string;          // ERP 원천에서 이 워크스페이스에 해당하는 사업자 식별값(마이그 060). 코드 하드코딩 대체
+  aiProviderEnabled?: boolean;         // D-007: false 면 서버가 모델 API 호출을 거절(마이그 060). 기본 true
   monthlySalesTarget?: number;         // 월 매출 목표(원). 수동 설정. 브리핑 달성률 계산용
   createdBy: string;
   createdAt: string;

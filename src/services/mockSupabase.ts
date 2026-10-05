@@ -21,8 +21,8 @@ const mockData: Record<string, any[]> = {
   ],
   // ── 공유 워크스페이스 (로컬 테스트용: 개인 + 시목 팀) ──
   workspaces: [
-    { id: 'ws-personal', user_id: 'dev', name: '개인 공간', emoji: '🧸', color: null, image_url: null, biz_info: null, type: 'personal', invite_code: null, credits: 10000, erp_source: 'manual', created_by: 'dev', created_at: new Date().toISOString() },
-    { id: 'ws-simok', user_id: 'dev', name: '시목', emoji: '🪵', color: '#8d6e63', image_url: null, biz_info: '원목 가구/소품 · 스마트스토어·자사몰', type: 'office', invite_code: 'SIMOK1', credits: 10000, erp_source: 'manual', created_by: 'dev', created_at: new Date().toISOString() },
+    { id: 'ws-personal', user_id: 'dev', name: '개인 공간', emoji: '🧸', color: null, image_url: null, biz_info: null, type: 'personal', invite_code: null, credits: 10000, erp_source: 'manual', erp_business_entity: null, ai_provider_enabled: true, created_by: 'dev', created_at: new Date().toISOString() },
+    { id: 'ws-simok', user_id: 'dev', name: '시목', emoji: '🪵', color: '#8d6e63', image_url: null, biz_info: '원목 가구/소품 · 스마트스토어·자사몰', type: 'office', invite_code: 'SIMOK1', credits: 10000, erp_source: 'manual', erp_business_entity: '시목', ai_provider_enabled: false, created_by: 'dev', created_at: new Date().toISOString() },
   ],
   workspace_members: [
     { workspace_id: 'ws-personal', user_id: 'dev', role: 'owner', nickname: null, joined_at: new Date().toISOString() },
@@ -88,6 +88,12 @@ const mockData: Record<string, any[]> = {
   staff_output_actions: [],
   // 오피스 CEO 브리핑 (운영매니저 산출물 · 대시보드가 렌더)
   office_briefings: [],
+  // 계약 0.2.0 수신 저장소 (마이그 060). 시드는 비워 둔다 — 디자인 예시 수치를 운영/목업 집계에
+  // 넣지 않는다(04 핸드오프 O3). fixture import 로 채워 넣어 시험한다.
+  source_snapshots: [],
+  source_snapshot_latest: [],
+  source_ingest_errors: [],
+  ingest_credentials: [],
   // CS 문의 티켓 + FAQ
   tickets: [],
   cs_faq: [],

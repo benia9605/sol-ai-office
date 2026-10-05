@@ -5,6 +5,8 @@
  * - 4겹 프롬프트(베이스 SOP + 브랜드 + 직원 프롬프트 + 동료 산출물) → Anthropic 호출
  * - 결과를 daily_reports에 저장 + [액션] 파싱해 일정/할일/인사이트 자동 등록 + 멤버 푸시
  * - service role 사용(RLS 우회). last_run_at으로 하루 1회 중복 방지.
+ * - ★ D-007: workspaces.ai_provider_enabled = false 인 워크스페이스는 모델을 호출하지 않고 건너뛴다.
+ *   service_role 은 RLS 를 우회하므로 이 검사를 함수 안에서 직접 해야 한다(계약 0.2.0 §9).
  *
  * 배포: supabase functions deploy office-staff-run
  * cron: Supabase Dashboard → Edge Functions → Schedules (예: 매 15분) 또는 pg_cron(009 참고)
@@ -299,6 +301,7 @@ Deno.serve(async () => {
   const { data: routines } = await sb.from('staff_routines').select('*').eq('enabled', true);
 
   let ran = 0;
+  let skippedByPolicy = 0;
   for (const r of routines ?? []) {
     if (!isDue(r, now)) continue;
 
@@ -306,6 +309,17 @@ Deno.serve(async () => {
     if (!staff) continue;
     const { data: ws } = await sb.from('workspaces').select('*').eq('id', r.workspace_id).maybeSingle();
     if (!ws) continue;
+
+    // ★ D-007 서버 정책 (계약 0.2.0 §9 · GPT-R1-O1)
+    //   이 함수는 service_role 로 돌아 RLS 를 우회하므로, workspace 정책을 **직접** 확인해야 한다.
+    //   ai_provider_enabled = false 인 워크스페이스(시목)는 모델을 호출하지 않고 건너뛴다.
+    //   컬럼이 아직 없으면(마이그 060 미적용) undefined → 기존 동작 유지(허용).
+    if (ws.ai_provider_enabled === false) {
+      skippedByPolicy++;
+      console.log(`[office-staff-run] provider 차단된 워크스페이스 건너뜀 ws=${ws.id} routine=${r.id}`);
+      // 실행하지 않았으므로 last_run_at 을 올리지 않는다 — "돌았는데 결과 없음" 으로 보이면 안 된다.
+      continue;
+    }
     const { data: bc } = await sb.from('brand_contexts').select('*').eq('workspace_id', ws.id).maybeSingle();
 
     const { data: reports } = await sb.from('daily_reports').select('staff_id,title,summary')
@@ -353,5 +367,8 @@ Deno.serve(async () => {
     ran++;
   }
 
-  return new Response(JSON.stringify({ ok: true, checked: routines?.length ?? 0, ran }), { headers: { 'content-type': 'application/json' } });
+  // skippedByPolicy 를 응답에 포함한다 — "돌았지만 정책으로 건너뜀" 과 "실패" 를 구별하기 위해(계약 §8).
+  return new Response(JSON.stringify({
+    ok: true, checked: routines?.length ?? 0, ran, skipped_by_policy: skippedByPolicy,
+  }), { headers: { 'content-type': 'application/json' } });
 });

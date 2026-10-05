@@ -18,16 +18,24 @@ export function ratioToSize(ratio?: string): string {
   }
 }
 
-/** 프롬프트로 이미지 1장 생성. data URL + 소모 코인 반환 */
-export async function generateImage(prompt: string, size = '1024x1024'): Promise<{ url: string; coins: number }> {
+/**
+ * 프롬프트로 이미지 1장 생성. data URL + 소모 코인 반환.
+ * ★ workspaceId 필수 — 서버가 D-007 정책(ai_provider_enabled)을 검사한다.
+ */
+export async function generateImage(prompt: string, workspaceId: string, size = '1024x1024'): Promise<{ url: string; coins: number }> {
   const res = await fetch('/api/openai/v1/images/generations', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-sb-auth': await sbAccessToken() },
+    headers: {
+      'content-type': 'application/json',
+      'x-sb-auth': await sbAccessToken(),
+      'x-ws-id': workspaceId,
+    },
     body: JSON.stringify({ model: 'gpt-image-1', prompt, size, n: 1 }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `이미지 생성 실패 (${res.status})`);
+    const e = (err as { error?: { code?: string; message?: string } })?.error;
+    throw new Error(e?.message || `이미지 생성 실패 (${res.status})`);
   }
   const j = await res.json();
   const b64 = j.data?.[0]?.b64_json;
