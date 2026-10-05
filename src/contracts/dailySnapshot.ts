@@ -337,45 +337,96 @@ export function validateSnapshot(input: unknown): DailySnapshot {
   return s;
 }
 
-// ── canonical digest (계약 §7.3) ──
-// 변경 감지 대상에서 snapshot_id / revision / generated_at / source_updated_at / 모든 quality.as_of 를 제외한다.
-// 관찰 시각만 달라졌다고 새 revision 을 만들지 않기 위한 규칙.
+// ── canonical semantic digest (계약 0.2.0 §7.3 · §11) ──
+//
+// 레퍼런스 구현: 공유 폴더 `contracts/canonical_digest.py`.
+// 이 TS 구현은 그 레퍼런스와 **바이트 단위로 같은 문자열**을 만들어야 한다.
+// 7개 시험 벡터 대조: `npm run test:contract` (contracts/canonical-vectors.json).
+//
+// 제외 규칙
+//   - 루트: snapshot_id · revision · generated_at · source_updated_at
+//   - 모든 quality 객체의 as_of (관찰 시각)
+//   - by_channel[].channel_name  ← §11 B-3: 표시명 변경만으로 새 revision 을 만들지 않는다
+// 포함 규칙 (§11 B-3 명시)
+//   - source_system · environment · usage · business_date · schema_version
+//   - products[].name · sku  → 변경되면 새 revision
+// 정렬
+//   - by_channel → channel_id / products → item_key / inventory → product_id
+//   - object key → 코드포인트 순
+// 직렬화
+//   - 구분자 공백 없음(`,` `:`), 비 ASCII 는 이스케이프하지 않음(literal UTF-8)
+//
+// ⚠️ 이것은 **의미 변경 감지용**이고 수신 bytes 해시(raw_sha256)와 다르다.
 
-const DIGEST_EXCLUDED_ROOT = new Set(['snapshot_id', 'revision', 'generated_at', 'source_updated_at']);
+const DIGEST_ROOT_EXCLUDED = ['snapshot_id', 'revision', 'generated_at', 'source_updated_at'] as const;
 
-function canonicalize(value: unknown, keyPath: string[] = []): unknown {
-  if (Array.isArray(value)) {
-    const arr = value.map(v => canonicalize(v, keyPath));
-    // 계약 §7.3: by_channel=channel_id, products=item_key, inventory=product_id 로 정렬
-    const parent = keyPath[keyPath.length - 1];
-    const sortKey = parent === 'by_channel' ? 'channel_id'
-      : keyPath.includes('products') ? 'item_key'
-      : keyPath.includes('inventory') ? 'product_id' : null;
-    if (sortKey) {
-      arr.sort((a, b) => {
-        const av = String((a as Record<string, unknown>)?.[sortKey] ?? '');
-        const bv = String((b as Record<string, unknown>)?.[sortKey] ?? '');
-        return av < bv ? -1 : av > bv ? 1 : 0;
-      });
+/** 코드포인트 순 키 정렬 — Python sort_keys=True 와 맞춘다 (UTF-16 코드유닛 순서와 BMP 밖에서 갈린다) */
+function sortedKeys(o: Record<string, unknown>): string[] {
+  return Object.keys(o).sort((a, b) => {
+    const ca = [...a], cb = [...b];
+    for (let i = 0; i < Math.min(ca.length, cb.length); i++) {
+      const d = ca[i].codePointAt(0)! - cb[i].codePointAt(0)!;
+      if (d !== 0) return d;
     }
-    return arr;
-  }
-  if (value && typeof value === 'object') {
-    const out: Record<string, unknown> = {};
-    // JSON object key 정렬 고정
-    for (const k of Object.keys(value as Record<string, unknown>).sort()) {
-      if (keyPath.length === 0 && DIGEST_EXCLUDED_ROOT.has(k)) continue;
-      if (k === 'as_of') continue; // 모든 quality.as_of 제외 (관찰 시각)
-      out[k] = canonicalize((value as Record<string, unknown>)[k], [...keyPath, k]);
-    }
-    return out;
-  }
-  return value;
+    return ca.length - cb.length;
+  });
 }
 
-/** digest 대상 문자열. 정렬·키순서를 고정한 UTF-8 JSON. */
+/** 키 순서를 고정한 JSON 직렬화 (Python json.dumps(sort_keys=True, separators=(',',':'), ensure_ascii=False) 동등) */
+function stableStringify(v: unknown): string {
+  if (v === null) return 'null';
+  if (typeof v === 'number') {
+    if (!Number.isFinite(v)) throw new ContractError('유한하지 않은 숫자는 digest 대상이 될 수 없습니다');
+    return JSON.stringify(v);
+  }
+  if (typeof v === 'boolean' || typeof v === 'string') return JSON.stringify(v);
+  if (Array.isArray(v)) return '[' + v.map(stableStringify).join(',') + ']';
+  if (typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    return '{' + sortedKeys(o).map(k => JSON.stringify(k) + ':' + stableStringify(o[k])).join(',') + '}';
+  }
+  throw new ContractError('digest 로 만들 수 없는 값');
+}
+
+/** quality.as_of 를 재귀적으로 제거 — 레퍼런스의 walk() 과 같은 범위(quality 안의 as_of 만) */
+function stripObservedAt(v: unknown): void {
+  if (Array.isArray(v)) { v.forEach(stripObservedAt); return; }
+  if (v && typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    const q = o.quality;
+    if (q && typeof q === 'object' && !Array.isArray(q)) delete (q as Record<string, unknown>).as_of;
+    Object.values(o).forEach(stripObservedAt);
+  }
+}
+
+function byKey<T extends Record<string, unknown>>(rows: T[], key: keyof T): T[] {
+  return [...rows].sort((a, b) => {
+    const av = String(a[key] ?? ''), bv = String(b[key] ?? '');
+    return av < bv ? -1 : av > bv ? 1 : 0;
+  });
+}
+
+/** digest 대상 문자열. 레퍼런스 canonical_input() 과 동일해야 한다. */
 export function canonicalDigestInput(snapshot: DailySnapshot): string {
-  return JSON.stringify(canonicalize(snapshot));
+  // 원문을 건드리지 않기 위해 깊은 복사
+  const s = JSON.parse(JSON.stringify(snapshot)) as Record<string, unknown>;
+  for (const k of DIGEST_ROOT_EXCLUDED) delete s[k];
+  stripObservedAt(s);
+
+  const commerce = s.commerce as Record<string, unknown>;
+  const channels = (commerce.by_channel as Record<string, unknown>[]).map(c => {
+    const { channel_name: _omit, ...rest } = c;  // §11 B-3: 표시명 제외
+    void _omit;
+    return rest;
+  });
+  commerce.by_channel = byKey(channels, 'channel_id');
+
+  const products = s.products as Record<string, unknown>;
+  products.items = byKey(products.items as Record<string, unknown>[], 'item_key');
+  const inventory = s.inventory as Record<string, unknown>;
+  inventory.items = byKey(inventory.items as Record<string, unknown>[], 'product_id');
+
+  return stableStringify(s);
 }
 
 /** SHA-256 hex. 브라우저·Deno·Node 18+ 공통 WebCrypto 사용. */

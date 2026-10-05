@@ -123,7 +123,7 @@ function UsageModal({ workspace, credits, onClose }: { workspace: Workspace; cre
   );
 }
 
-export function OfficeShell({ workspace }: { workspace: Workspace }) {
+export function OfficeShell({ workspace, onSwitchShell }: { workspace: Workspace; onSwitchShell?: () => void }) {
   // ── URL ↔ view 동기화 (가이드 00 원칙 1: 팝업이 아니라 페이지) ──
   // 경로 첫 세그먼트 = view (예: /todos), 둘째 = 상세 id (예: /todos/abc, Phase 2+에서 사용).
   const navigate = useNavigate();
@@ -240,6 +240,16 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
             </button>
 
           </div>
+
+          {/* 전용 셸이 있는 워크스페이스면 화면을 다시 고를 수 있게 (대표 요청 2026-10-05).
+              기존 공통 화면을 지운 게 아니라 '고를 수 있게' 한 것이므로 양쪽에 길을 둔다. */}
+          {onSwitchShell && (
+            <button onClick={onSwitchShell}
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium text-foreground-muted border border-line hover:bg-surface-muted transition-colors flex-shrink-0"
+              title="시목 스튜디오 화면으로 바꾸기">
+              🪵 화면 바꾸기
+            </button>
+          )}
 
           {/* PC 그룹 네비 */}
           <nav className="hidden lg:flex items-center gap-0.5 text-sm ml-1">
@@ -395,6 +405,17 @@ export function OfficeShell({ workspace }: { workspace: Workspace }) {
                 </div>
               </div>
             </div>
+
+            {/* 전용 셸이 있는 워크스페이스면 화면을 다시 고를 수 있게 (대표 요청 2026-10-05) */}
+            {onSwitchShell && (
+              <>
+                <p className="text-[10px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">화면</p>
+                <button onClick={() => { setMoreOpen(false); onSwitchShell(); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 mb-4 rounded-xl text-sm text-foreground-muted hover:bg-surface-muted transition-colors text-left">
+                  <span className="text-base leading-none">🪵</span> 화면 바꾸기 (시목 스튜디오)
+                </button>
+              </>
+            )}
 
             {/* 워크스페이스 전환 */}
             <p className="text-[10px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">워크스페이스 전환</p>

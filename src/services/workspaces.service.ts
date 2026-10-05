@@ -22,6 +22,7 @@ export interface WorkspaceRow {
   erp_source?: string;
   erp_business_entity?: string;
   ai_provider_enabled?: boolean;
+  office_shell?: string;
   monthly_sales_target?: number;
   created_by: string;
   created_at: string;
@@ -36,6 +37,7 @@ function fromRow(r: WorkspaceRow): Workspace {
     erpBusinessEntity: r.erp_business_entity ?? undefined,
     // 마이그 060 적용 전이면 컬럼이 없다 → undefined. 기본 허용(true)으로 본다(기존 브랜드 보존).
     aiProviderEnabled: r.ai_provider_enabled ?? undefined,
+    officeShell: r.office_shell ?? undefined,
     monthlySalesTarget: r.monthly_sales_target ?? undefined,
     createdBy: r.created_by, createdAt: r.created_at,
   };

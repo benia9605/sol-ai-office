@@ -31,6 +31,13 @@ const P = await import(join(outdir, 'projection.js'));
 let pass = 0, fail = 0;
 const failures = [];
 
+/** 두 문자열의 첫 불일치 위치를 사람이 읽게 */
+function firstDiff(a, b) {
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) if (a[i] !== b[i]) return `idx ${i}: ts=${JSON.stringify(a.slice(i, i + 40))} py=${JSON.stringify(b.slice(i, i + 40))}`;
+  return `길이만 다름 (${a.length} vs ${b.length})`;
+}
+
 function ok(name, cond, detail = '') {
   if (cond) { pass++; console.log(`  ok   ${name}`); }
   else { fail++; failures.push(name + (detail ? ` — ${detail}` : '')); console.log(`  FAIL ${name}${detail ? ' — ' + detail : ''}`); }
@@ -294,7 +301,47 @@ console.log('\n── 13. latest revision 선택 (계약 §7.5) ──');
     reordered.find(r => r.businessDate === '2026-10-02').revision === 2);
 }
 
-console.log('\n── 14. 구버전 거절 ──');
+console.log('\n── 14. canonical 7벡터 대조 (계약 §11 · GPT-R2-O5) ──');
+{
+  // 레퍼런스: contracts/canonical_digest.py. TS 가 **같은 문자열·같은 SHA** 를 만들어야 한다.
+  const vec = JSON.parse(readFileSync(join(CONTRACTS, 'canonical-vectors.json'), 'utf8'));
+  // 파이썬 레퍼런스로 입력문자열+digest 를 뽑아 온다
+  const refOut = execFileSync('python3', ['-c', `
+import json,sys
+sys.path.insert(0,'.')
+from canonical_digest import canonical_input, digest
+d=json.load(open('canonical-vectors.json'))
+print(json.dumps([{'name':v['name'],'input':canonical_input(v['snapshot']),'digest':digest(v['snapshot'])} for v in d['vectors']], ensure_ascii=False))
+`], { cwd: CONTRACTS, encoding: 'utf8', maxBuffer: 50 * 1024 * 1024 });
+  const ref = JSON.parse(refOut);
+  let baseDigest = null;
+  for (let i = 0; i < vec.vectors.length; i++) {
+    const v = vec.vectors[i], r = ref[i];
+    const tsInput = C.canonicalDigestInput(v.snapshot);
+    const tsDigest = await C.contentDigest(v.snapshot);
+    if (v.name === 'base') baseDigest = tsDigest;
+
+    ok(`[${v.name}] 입력 문자열이 Python 레퍼런스와 바이트 동일`, tsInput === r.input,
+      tsInput === r.input ? '' : `len ts=${tsInput.length} py=${r.input.length} · 첫 차이 ${firstDiff(tsInput, r.input)}`);
+    ok(`[${v.name}] digest 일치 ${r.digest.slice(0, 16)}…`, tsDigest === r.digest, `ts=${tsDigest.slice(0,16)}`);
+    // 벡터가 선언한 same_as_base 기대와 맞는지
+    const expectSame = v.same_as_base === true;
+    ok(`[${v.name}] same_as_base=${expectSame} 기대 충족`, (tsDigest === baseDigest) === expectSame);
+  }
+  // 제외/포함 규칙이 실제로 그렇게 동작하는지 한 번 더 명시
+  const base = vec.vectors.find(v => v.name === 'base').snapshot;
+  ok('channel_name 은 digest 입력에 없다 (§11 B-3)', !C.canonicalDigestInput(base).includes('"channel_name"'));
+  ok('quality.as_of 는 digest 입력에 없다', !C.canonicalDigestInput(base).includes('"as_of"'));
+  for (const k of ['snapshot_id', 'revision', 'generated_at', 'source_updated_at']) {
+    ok(`루트 ${k} 는 digest 입력에 없다`, !C.canonicalDigestInput(base).includes(`"${k}"`));
+  }
+  for (const k of ['source_system', 'environment', 'usage', 'business_date', 'schema_version']) {
+    ok(`${k} 는 digest 입력에 포함된다 (§11 B-3)`, C.canonicalDigestInput(base).includes(`"${k}"`));
+  }
+  ok('상품 name 은 digest 입력에 포함된다 (변경 시 새 revision)', C.canonicalDigestInput(base).includes('"name"'));
+}
+
+console.log('\n── 15. 구버전 거절 ──');
 {
   const old = fx(join('versions', '0.1.0', 'demo-daily-snapshot.json').replace(/\\/g, '/'));
   try { C.validateSnapshot(old); ok('0.1.0 fixture 는 0.2.0 검증기에서 거절', false, '통과해버림'); }

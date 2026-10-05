@@ -21,12 +21,15 @@ const mockData: Record<string, any[]> = {
   ],
   // ── 공유 워크스페이스 (로컬 테스트용: 개인 + 시목 팀) ──
   workspaces: [
-    { id: 'ws-personal', user_id: 'dev', name: '개인 공간', emoji: '🧸', color: null, image_url: null, biz_info: null, type: 'personal', invite_code: null, credits: 10000, erp_source: 'manual', erp_business_entity: null, ai_provider_enabled: true, created_by: 'dev', created_at: new Date().toISOString() },
-    { id: 'ws-simok', user_id: 'dev', name: '시목', emoji: '🪵', color: '#8d6e63', image_url: null, biz_info: '원목 가구/소품 · 스마트스토어·자사몰', type: 'office', invite_code: 'SIMOK1', credits: 10000, erp_source: 'manual', erp_business_entity: '시목', ai_provider_enabled: false, created_by: 'dev', created_at: new Date().toISOString() },
+    { id: 'ws-personal', user_id: 'dev', name: '개인 공간', emoji: '🧸', color: null, image_url: null, biz_info: null, type: 'personal', invite_code: null, credits: 10000, erp_source: 'manual', erp_business_entity: null, ai_provider_enabled: true, office_shell: null, created_by: 'dev', created_at: new Date().toISOString() },
+    { id: 'ws-simok', user_id: 'dev', name: '시목', emoji: '🪵', color: '#8d6e63', image_url: null, biz_info: '원목 가구/소품 · 스마트스토어·자사몰', type: 'office', invite_code: 'SIMOK1', credits: 10000, erp_source: 'manual', erp_business_entity: '시목', ai_provider_enabled: false, office_shell: 'simok', created_by: 'dev', created_at: new Date().toISOString() },
+    // 다른 브랜드 — 전용 셸이 없다(office_shell: null). 기존 공통 오피스 화면이 그대로 떠야 한다(회귀 확인용).
+    { id: 'ws-other', user_id: 'dev', name: '운명랩', emoji: '🔮', color: '#7e57c2', image_url: null, biz_info: '사주·운세 콘텐츠', type: 'office', invite_code: 'FATE01', credits: 10000, erp_source: 'manual', erp_business_entity: null, ai_provider_enabled: true, office_shell: null, created_by: 'dev', created_at: new Date().toISOString() },
   ],
   workspace_members: [
     { workspace_id: 'ws-personal', user_id: 'dev', role: 'owner', nickname: null, joined_at: new Date().toISOString() },
     { workspace_id: 'ws-simok', user_id: 'dev', role: 'owner', nickname: null, joined_at: new Date().toISOString() },
+    { workspace_id: 'ws-other', user_id: 'dev', role: 'owner', nickname: null, joined_at: new Date().toISOString() },
   ],
   workspace_invites: [],
   workspace_activities: [],
@@ -94,6 +97,8 @@ const mockData: Record<string, any[]> = {
   source_snapshot_latest: [],   // 컬럼: scope6 + revision·snapshot_pk·updated_at·last_confirmed_at(마이그 061)
   source_ingest_errors: [],
   ingest_credentials: [],
+  web_analytics: [],      // 마이그 062 — 방문·유입 집계. 시드 없음(수집 전을 0으로 채우지 않는다)
+  content_links: [],      // 마이그 062 — UTM 등록부
   // CS 문의 티켓 + FAQ
   tickets: [],
   cs_faq: [],
@@ -285,7 +290,7 @@ const mockData: Record<string, any[]> = {
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v13';
+const _LS_KEY = 'mock-db-v14';   // v14: workspaces 에 office_shell·erp_business_entity·ai_provider_enabled + 운명랩(회귀 확인용) + 062 테이블
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {

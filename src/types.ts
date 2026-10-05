@@ -39,6 +39,7 @@ export interface Workspace {
   erpSource?: 'manual' | 'simok_api';  // ERP 데이터 소스(워크스페이스별). manual=수기, simok_api=시목앱 조회
   erpBusinessEntity?: string;          // ERP 원천에서 이 워크스페이스에 해당하는 사업자 식별값(마이그 060). 코드 하드코딩 대체
   aiProviderEnabled?: boolean;         // D-007: false 면 서버가 모델 API 호출을 거절(마이그 060). 기본 true
+  officeShell?: string;                // UI 전용 셸 키(마이그 062). 'simok'=시목 전용 화면. 표시 분기용이며 권한과 무관
   monthlySalesTarget?: number;         // 월 매출 목표(원). 수동 설정. 브리핑 달성률 계산용
   createdBy: string;
   createdAt: string;

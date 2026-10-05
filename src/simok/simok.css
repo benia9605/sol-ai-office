@@ -1,0 +1,268 @@
+/**
+ * @file src/simok/simok.css
+ * @description 시목 전용 Office 화면 스타일 — 공유 폴더 preview/index.html 이식
+ *
+ * 기준: 11_SIMOK_OFFICE_BUILD_PACK.md §3, preview/design-manifest.json v1.7 tokens
+ *
+ * ★ 격리 원칙 (BUILD_PACK §2)
+ *   "전체 앱의 body/root CSS 를 덮어쓰지 않는다. .simok-office 하위 CSS 변수로 격리하고
+ *    사용자 전역 active_theme 를 바꾸지 않는다."
+ *   → 모든 선택자가 `.simok-office` 아래에 있다. :root / body / html 을 건드리지 않는다.
+ *   → Tailwind 토큰(--color-*)이나 ThemeContext 의 data-theme 도 건드리지 않는다.
+ *   다른 workspace 로 나가면 이 클래스가 사라지므로 기존 디자인이 그대로 복원된다.
+ */
+
+.simok-office {
+  /* design-manifest.json v1.7 tokens */
+  --paper: #f4f2eb;
+  --white: #fffefa;
+  --ink: #253a32;
+  --muted: #737a70;
+  --green: #1f4035;
+  --line: #dedfd5;
+  --sage: #e6ebdf;
+  --brown: #98735a;
+  --blue: #e7edf0;
+  --radius: 14px;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  min-height: 100vh;
+}
+
+.simok-office *,
+.simok-office *::before,
+.simok-office *::after { box-sizing: border-box; }
+
+.simok-office button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; }
+.simok-office h1, .simok-office h2, .simok-office h3, .simok-office h4 { margin: 0; font-weight: 500; }
+.simok-office p { margin: 0; }
+.simok-office ul { margin: 0; padding: 0; list-style: none; }
+
+/* 키보드 접근성 — 색만으로 상태를 표현하지 않는다 (BUILD_PACK §8) */
+.simok-office :focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ───────── 레이아웃 ───────── */
+
+.simok-shell { display: block; }
+
+.simok-sidebar {
+  position: fixed; inset: 0 auto 0 0; width: 218px;
+  padding: 35px 24px 23px;
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  background: #eeeee5;
+  z-index: 3;
+  overflow-y: auto;
+}
+
+.simok-main { padding: 26px 26px 60px; margin-left: 218px; }
+.simok-main-inner { max-width: 1180px; }
+
+@media (min-width: 1600px) {
+  .simok-sidebar { width: 236px; }
+  .simok-main { margin-left: 236px; padding: 29px 34px 70px; }
+}
+@media (max-width: 1150px) {
+  .simok-sidebar { width: 185px; padding: 30px 17px; }
+  .simok-main { margin-left: 185px; padding: 23px; }
+}
+@media (max-width: 900px) {
+  /* 모바일: 메뉴가 상단으로 — 가로 스크롤 되는 메뉴 바 */
+  .simok-sidebar {
+    position: sticky; top: 0; width: 100%;
+    padding: 14px 16px; flex-direction: row; align-items: center; gap: 22px;
+    overflow-x: auto; overflow-y: hidden;
+    border-right: 0; border-bottom: 1px solid var(--line);
+  }
+  .simok-main { margin-left: 0; padding: 19px 16px 60px; }
+  .simok-side-bottom { display: none; }
+  .simok-office .nav-num { display: none; }
+}
+
+/* ───────── 브랜드 / 내비 ───────── */
+
+.simok-brand { flex-shrink: 0; }
+.simok-logo { font-size: 37px; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 4px; font-weight: 500; line-height: 1; }
+.simok-logo-sub { font-size: 9px; letter-spacing: 3.6px; margin-top: 11px; color: var(--muted); }
+.simok-ws-label { margin-top: 52px; font-size: 9px; letter-spacing: 1.8px; color: #858b7d; margin-bottom: 15px; }
+
+.simok-nav { display: flex; flex-direction: column; gap: 2px; }
+.simok-nav button {
+  display: flex; align-items: center; text-align: left; gap: 15px;
+  padding: 12px 13px; border-radius: 7px; font-size: 12px; font-weight: 500;
+  width: 100%;
+}
+.simok-nav .nav-num { font-size: 10px; opacity: .52; font-variant-numeric: tabular-nums; }
+.simok-nav button:hover { background: #e2e5d9; }
+.simok-nav button[aria-current='page'] { background: var(--green); color: #fff; }
+.simok-nav button[aria-current='page'] .nav-num { opacity: .7; }
+
+@media (max-width: 900px) {
+  .simok-ws-label { display: none; }
+  .simok-logo { font-size: 20px; letter-spacing: 2px; }
+  .simok-logo-sub { display: none; }
+  .simok-nav { flex-direction: row; gap: 4px; }
+  .simok-nav button { white-space: nowrap; padding: 9px 12px; }
+}
+
+.simok-side-bottom { margin-top: auto; border-top: 1px solid #d5d9cc; padding-top: 24px; }
+.simok-season { font-family: Georgia, serif; font-style: italic; font-size: 21px; margin: 7px 0; }
+.simok-side-bottom p { font-size: 10px; color: var(--muted); }
+.simok-profile { display: flex; gap: 10px; align-items: center; margin-top: 24px; font-size: 11px; }
+.simok-avatar { width: 31px; height: 31px; border-radius: 50%; background: #d9decf; display: grid; place-items: center; font-family: Georgia, serif; flex-shrink: 0; }
+.simok-switch {
+  margin-top: 18px; font-size: 11px; color: var(--green);
+  background: #e7ebdb; border-radius: 7px; padding: 9px 12px; text-align: left; width: 100%;
+}
+
+/* ───────── 공통 요소 ───────── */
+
+.simok-eyebrow { font-size: 10px; letter-spacing: 2px; font-weight: 600; text-transform: uppercase; color: #8c987f; }
+.simok-page-intro { font-size: 12px; color: var(--muted); margin: -2px 0 22px; }
+
+.simok-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
+
+.simok-section-head { display: flex; align-items: center; justify-content: space-between; margin: 26px 0 13px; gap: 14px; flex-wrap: wrap; }
+.simok-section-head h2 { font-size: 16px; font-weight: 550; letter-spacing: -.5px; }
+.simok-section-head .sub { font-size: 10px; color: var(--muted); font-weight: 400; margin-left: 12px; }
+
+.simok-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--white);
+  padding: 10px 16px; font-weight: 500; font-size: 12px; text-decoration: none; color: inherit;
+}
+.simok-btn.primary { background: var(--green); color: #fff; border-color: var(--green); }
+.simok-btn.text { border: 0; padding: 0; background: none; }
+.simok-btn:hover { filter: brightness(.96); }
+.simok-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.simok-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; line-height: 1.4; padding: 5px 9px; background: var(--sage); border-radius: 5px; }
+.simok-pill.paper { background: #f1efe7; color: #6a6c61; }
+.simok-pill.blue { background: var(--blue); color: #446270; }
+.simok-pill.amber { background: #f2e7d8; color: #835f36; }
+.simok-pill.rose { background: #f6e3e0; color: #8a4f46; }
+
+/* 역할 표식 — 색과 역할 문자를 **같이** 표시한다 (BUILD_PACK §3·08 문서) */
+.simok-role { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 5px; font-size: 10px; font-weight: 500; line-height: 1.5; background: #e6ebdf; color: #36503b; }
+.simok-role.human { background: #f0e4d8; color: #825e3f; }
+.simok-role.system { background: #e7edf0; color: #476471; }
+.simok-role small { font-size: 9px; opacity: .85; }
+
+.simok-note { border-left: 2px solid #a5b397; padding: 14px 21px; margin-top: 26px; font-size: 12px; color: #77816f; line-height: 1.9; }
+.simok-note strong { color: #344e3d; font-weight: 500; }
+
+.simok-filters { display: flex; gap: 7px; margin: 0 0 18px; flex-wrap: wrap; }
+.simok-filter { font-size: 11px; border: 1px solid var(--line); padding: 6px 14px; border-radius: 20px; background: var(--white); }
+.simok-filter[aria-pressed='true'] { background: var(--green); color: #fff; border-color: var(--green); }
+
+/* ───────── 히어로 ───────── */
+
+.simok-hero { display: grid; grid-template-columns: .95fr 1.05fr; min-height: 288px; border-radius: var(--radius); overflow: hidden; background: #e8e9df; margin-bottom: 26px; }
+.simok-hero-copy { padding: 32px 34px; display: flex; flex-direction: column; align-items: flex-start; }
+.simok-hero-copy .simok-eyebrow { color: #7c826f; font-size: 9px; }
+.simok-hero h2 { font-size: 31px; letter-spacing: -1.2px; line-height: 1.55; font-weight: 400; margin: 18px 0 11px; }
+.simok-hero p { font-size: 11px; color: #697265; line-height: 1.9; }
+.simok-hero .simok-btn { margin-top: 21px; }
+.simok-hero-image { position: relative; min-height: 288px; }
+.simok-hero-image img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.simok-hero-caption { position: absolute; bottom: 18px; right: 22px; color: #fff; font-size: 9px; letter-spacing: 1.8px; text-shadow: 0 1px 6px #513927; }
+/* 연출 참고 이미지임을 화면에도 남긴다 (PROVENANCE.md) */
+.simok-hero-credit { position: absolute; bottom: 6px; left: 14px; color: rgba(255,255,255,.72); font-size: 8px; letter-spacing: .4px; text-shadow: 0 1px 5px #40301f; }
+
+@media (max-width: 1150px) { .simok-hero { grid-template-columns: 1fr 1fr; } .simok-hero h2 { font-size: 27px; } .simok-hero-copy { padding: 26px; } }
+@media (max-width: 900px) {
+  .simok-hero { grid-template-columns: 1fr; }
+  .simok-hero-copy { padding: 24px; }
+  .simok-hero h2 { font-size: 25px; margin-top: 15px; }
+  .simok-hero-image { min-height: 200px; }
+}
+
+/* ───────── 지표 ───────── */
+
+.simok-metrics { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); background: var(--white); border-radius: 12px; margin-bottom: 25px; }
+.simok-metric { padding: 20px 24px; }
+.simok-metric + .simok-metric { border-left: 1px solid var(--line); }
+.simok-metric-label { font-size: 11px; color: #72796e; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.simok-metric-label small { font-size: 9px; color: #999c92; }
+.simok-metric-value { font-family: Georgia, serif; font-size: 32px; letter-spacing: -.7px; margin: 7px 0 4px; line-height: 1.4; }
+.simok-metric-value span { font-family: inherit; font-size: 14px; margin-left: 4px; }
+.simok-metric-value.unknown { color: var(--muted); }
+.simok-metric-note { font-size: 10px; color: var(--muted); line-height: 1.7; }
+
+@media (max-width: 900px) {
+  .simok-metrics { grid-template-columns: 1fr; }
+  .simok-metric { padding: 16px 20px; }
+  .simok-metric + .simok-metric { border-left: 0; border-top: 1px solid var(--line); }
+  .simok-metric-value { font-size: 28px; margin: 4px 0; }
+}
+
+/* ───────── 역할 요약 ───────── */
+
+.simok-responsibility { margin: 0 0 26px; background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 20px 23px; }
+.simok-responsibility-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 15px; flex-wrap: wrap; }
+.simok-responsibility-head h2 { font-size: 14px; font-weight: 550; }
+.simok-responsibility-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.simok-responsibility-grid p { font-size: 10px; color: var(--muted); line-height: 1.75; margin-top: 8px; }
+.simok-automation-note { font-size: 10px; color: var(--muted); margin-top: 14px; }
+@media (max-width: 900px) { .simok-responsibility-grid { grid-template-columns: 1fr; gap: 14px; } }
+
+/* ───────── 카드 그리드 ───────── */
+
+.simok-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.simok-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 1150px) { .simok-board { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 900px) { .simok-board, .simok-grid-2 { grid-template-columns: 1fr; } }
+
+.simok-work-card { background: var(--white); border: 1px solid #dfe1d5; border-radius: 9px; padding: 17px; }
+.simok-work-card h3 { font-size: 13px; font-weight: 500; line-height: 1.7; margin: 11px 0; }
+.simok-work-card p { font-size: 10px; color: var(--muted); line-height: 1.7; }
+.simok-work-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; align-items: center; }
+
+/* ───────── 보고서 목록 ───────── */
+
+.simok-report-list { display: grid; gap: 12px; }
+.simok-report-row {
+  display: grid; grid-template-columns: 80px 1fr auto; gap: 20px; align-items: center;
+  padding: 25px 28px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius);
+  text-align: left; width: 100%;
+}
+.simok-report-row:hover { filter: brightness(.985); }
+.simok-report-date .day { font-family: Georgia, serif; font-size: 34px; line-height: 1.1; }
+.simok-report-date .month { font-size: 9px; letter-spacing: 1px; color: var(--muted); margin-top: 6px; }
+.simok-report-row h3 { font-size: 16px; font-weight: 500; margin: 8px 0; }
+.simok-report-row p { font-size: 11px; color: var(--muted); }
+@media (max-width: 620px) {
+  .simok-report-row { grid-template-columns: 1fr; gap: 10px; padding: 20px; }
+  .simok-report-date { display: flex; align-items: baseline; gap: 8px; }
+  .simok-report-date .month { margin-top: 0; }
+}
+
+/* ───────── 상태 표시 (BUILD_PACK §8: unknown ≠ 0) ───────── */
+
+.simok-empty { background: var(--white); border: 1px dashed var(--line); border-radius: var(--radius); padding: 40px 28px; text-align: center; }
+.simok-empty .simok-empty-title { font-size: 14px; font-weight: 500; }
+.simok-empty p { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.8; }
+.simok-skeleton { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
+.simok-skeleton-bar { height: 11px; border-radius: 4px; background: #e9e8de; margin-bottom: 10px; }
+@media (prefers-reduced-motion: no-preference) {
+  .simok-skeleton-bar { animation: simok-pulse 1.4s ease-in-out infinite; }
+  @keyframes simok-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .55 } }
+}
+.simok-error { background: #fdf4f2; border: 1px solid #ecd6d1; border-radius: var(--radius); padding: 18px 22px; font-size: 12px; color: #8a4f46; line-height: 1.8; }
+
+/* 검증용 자료 배지 — 운영 집계와 구별 (계약 §2) */
+.simok-banner { display: flex; gap: 10px; align-items: flex-start; border-radius: 10px; padding: 12px 16px; font-size: 11px; line-height: 1.75; margin-bottom: 18px; }
+.simok-banner.validation { background: #f2e7d8; color: #7a5830; }
+.simok-banner.info { background: var(--blue); color: #3f5d6a; }
+
+.simok-dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 11px; }
+.simok-dl dt { color: var(--muted); }
+.simok-dl dd { margin: 0; }
