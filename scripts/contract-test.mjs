@@ -22,12 +22,14 @@ const CONTRACTS = join(SHARED, 'contracts');
 const { build } = await import('esbuild');
 const outdir = mkdtempSync(join(tmpdir(), 'contract-ts-'));
 await build({
-  entryPoints: ['src/contracts/dailySnapshot.ts', 'src/contracts/projection.ts', 'src/contracts/webAnalyticsV1.ts'],
-  outdir, bundle: true, format: 'esm', platform: 'node', target: 'node18', logLevel: 'silent',
+  entryPoints: ['src/contracts/dailySnapshot.ts', 'src/contracts/projection.ts', 'src/contracts/webAnalyticsV1.ts', 'src/simok/authorship.ts'],
+  // outbase 를 고정하지 않으면 엔트리 루트가 달라질 때 출력 경로가 바뀐다
+  outdir, outbase: 'src', bundle: true, format: 'esm', platform: 'node', target: 'node18', logLevel: 'silent',
 });
-const C = await import(join(outdir, 'dailySnapshot.js'));
-const P = await import(join(outdir, 'projection.js'));
-const W = await import(join(outdir, 'webAnalyticsV1.js'));
+const C = await import(join(outdir, 'contracts', 'dailySnapshot.js'));
+const P = await import(join(outdir, 'contracts', 'projection.js'));
+const W = await import(join(outdir, 'contracts', 'webAnalyticsV1.js'));
+const A = await import(join(outdir, 'simok', 'authorship.js'));
 
 let pass = 0, fail = 0;
 const failures = [];
@@ -397,7 +399,81 @@ console.log('\n── 15. web-analytics.v1 — 시목 round5 실제 fixture 대�
   }
 }
 
-console.log('\n── 16. 구버전 거절 ──');
+console.log('\n── 16. web wire 보존·명명 (GPT-R3-O1) ──');
+{
+  const text = readFileSync(join(CONTRACTS, 'demo-web-analytics-complete.json'), 'utf8');
+  let full = null;
+  try { full = W.validateWebAnalyticsV1(JSON.parse(text)); ok('공유 complete fixture 통과', true); }
+  catch (e) { ok('공유 complete fixture 통과', false, e.message); }
+
+  if (full) {
+    ok('query_version 이 schema_version 과 다르다', full.query_version !== full.schema_version);
+    const row = W.toStorageRow(full);
+    ok('★ wire query_version 을 보존한다', row.query_version === 'web-analytics.v1/2026-10-05', row.query_version);
+    ok('  schema_version 을 따로 저장한다', row.schema_version === 'web-analytics.v1');
+    ok('★ 루트 source_data_through 를 보관', row.source_data_through === full.source_data_through);
+    ok('★ content_digest 를 보관', row.content_digest === full.content_digest);
+    // GA 분해는 **원천 명명** 그대로
+    ok('★ by_source 는 source_medium 명명', full.ga.by_source[0].source_medium === 'instagram / organic_social');
+    ok('★ by_event 는 event_name 명명', full.ga.by_event[0].event_name === 'page_view');
+    ok('  GA 분해가 ga_breakdown 으로 그대로', row.ga_breakdown.by_source[0].source_medium === full.ga.by_source[0].source_medium);
+  }
+
+  const mut = (fn) => { const c = JSON.parse(text); fn(c); return c; };
+  const bad = (name, obj, re) => {
+    try { W.validateWebAnalyticsV1(obj); ok(name, false, '거절되어야 하는데 통과'); }
+    catch (e) { ok(name, re ? re.test(e.message) : true, e.message); }
+  };
+  bad('query_version 없으면 거절', mut(c => { delete c.query_version; }), /query_version/);
+  bad('content_digest 가 hex 64 아니면 거절', mut(c => { c.content_digest = 'nope'; }), /content_digest/);
+  bad('currency 없으면 거절', mut(c => { delete c.currency; }), /currency/);
+
+  console.log('\n   — GPT-R3-O2: 검증 빈틈');
+  bad('★ by_attribution.orders 가 문자열이면 거절(합 검사 건너뛰기 방지)',
+    mut(c => { c.orders.by_attribution[0].orders = '3'; }), /orders/);
+  bad('★ GA 지표가 음수면 거절', mut(c => { c.ga.sessions = -1; }), /음수/);
+  bad('by_source.sessions 가 문자열이면 거절', mut(c => { c.ga.by_source[0].sessions = '120'; }), /sessions/);
+  bad('by_source 세션 합이 전체보다 크면 거절',
+    mut(c => { c.ga.by_source[0].sessions = 999999; }), /세션 합/);
+  bad('by_event 에 같은 event_name 두 번이면 거절',
+    mut(c => { c.ga.by_event.push({ ...c.ga.by_event[0] }); }), /event_name/);
+  bad('by_event.count 가 문자열이면 거절', mut(c => { c.ga.by_event[0].count = '180'; }), /count/);
+  bad('unattributed reason 이 비면 거절', mut(c => {
+    if (c.orders.unattributed_by_reason[0]) c.orders.unattributed_by_reason[0].reason = '';
+    else c.orders.unattributed_by_reason.push({ reason: '', orders: 0 });
+  }), /reason/);
+  bad('GA missing 인데 by_event 가 있으면 거절', mut(c => {
+    c.ga.status = 'missing'; c.ga.reason = 'x';
+    c.ga.visitors_observed = null; c.ga.sessions = null; c.ga.page_views = null; c.ga.by_source = null;
+  }), /by_event/);
+}
+
+console.log('\n── 17. 작성자 ≠ 실행 계기 (GPT-R3-O3) ──');
+{
+  // 과거 Office 엔진 기록을 '구독 GPT 가 썼다' 고 표시하면 안 된다
+  const a1 = A.attributionOf({ trigger: 'auto', model: 'sonnet' });
+  ok('★ 모델 기록이 있으면 Office 엔진으로 판정', a1.author.kind === 'office_engine', JSON.stringify(a1.author));
+  ok('  구독 GPT 로 표시하지 않는다', a1.author.kind !== 'external_gpt');
+  ok('★ 예약 실행기가 미가동이면 그렇게 쓴다', /현재 미가동/.test(A.triggerLabel(a1.trigger)), A.triggerLabel(a1.trigger));
+  ok('  가동 중이면 "예약 실행"', A.triggerLabel(A.attributionOf({ trigger: 'auto', model: 'sonnet' }, true).trigger) === '예약 실행');
+
+  const a2 = A.attributionOf({ trigger: 'manual', model: 'gpt-4o' });
+  ok('수동 + 모델 → 작성자는 엔진, 계기는 사람', a2.author.kind === 'office_engine' && a2.trigger.kind === 'manual');
+
+  const a3 = A.attributionOf({ trigger: 'manual' });
+  ok('모델 기록 없는 수동 → 사람이 작성', a3.author.kind === 'human');
+
+  const a4 = A.attributionOf({ trigger: undefined, model: null });
+  ok('★ 출처 미상은 미상으로 둔다', a4.author.kind === 'unknown' && A.authorLabel(a4.author).text === '작성자 미상');
+
+  const a5 = A.attributionOf({ source: 'bridge', trigger: 'manual' });
+  ok('bridge 로 들어온 것은 외부 GPT', a5.author.kind === 'external_gpt');
+  ok('  계기는 "사람이 실행"', a5.trigger.kind === 'manual');
+
+  ok('Office 엔진 라벨에 모델이 보인다', /모델 sonnet/.test(A.authorLabel(a1.author).sub));
+}
+
+console.log('\n── 18. 구버전 거절 ──');
 {
   const old = fx(join('versions', '0.1.0', 'demo-daily-snapshot.json').replace(/\\/g, '/'));
   try { C.validateSnapshot(old); ok('0.1.0 fixture 는 0.2.0 검증기에서 거절', false, '통과해버림'); }

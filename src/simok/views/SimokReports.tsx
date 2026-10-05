@@ -18,6 +18,7 @@ import { MarkdownView } from '../../components/office/MarkdownView';
 import { fetchReportsByWorkspace, fetchReportById } from '../../services/dailyReports.service';
 import { fetchActions, approveAction } from '../../services/staffOutputActions.service';
 import { DailyReport, StaffOutputAction } from '../../types';
+import { attributionOf, authorLabel, triggerLabel } from '../authorship';
 
 type Filter = 'all' | 'manual' | 'auto' | 'failed';
 
@@ -91,9 +92,21 @@ function ReportList({ workspace, go }: Omit<SimokViewProps, 'detailId'>) {
                 </div>
                 <div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    {/* 실제 작성 주체·실행 경로를 그대로 */}
-                    <RoleBadge actor={r.trigger === 'manual' ? 'human' : 'gpt'} how={r.trigger === 'manual' ? '사람이 실행' : '예약 실행'} />
-                    {r.model && <span className="simok-pill paper">{r.model}</span>}
+                    {/* ★ 작성자와 실행 계기를 **분리**해서 표시 (GPT-R3-O3).
+                        trigger 는 "어떻게 시작됐나" 일 뿐 "누가 썼나" 가 아니다. */}
+                    {(() => {
+                      const a = attributionOf(r);
+                      const al = authorLabel(a.author);
+                      return (
+                        <>
+                          <RoleBadge
+                            actor={a.author.kind === 'human' ? 'human' : a.author.kind === 'external_gpt' ? 'gpt' : 'system'}
+                            how={al.text === 'GPT' ? al.sub : `${al.text} · ${al.sub}`}
+                          />
+                          <span className="simok-pill paper">{triggerLabel(a.trigger)}</span>
+                        </>
+                      );
+                    })()}
                     {r.status === 'failed' && <span className="simok-pill rose">실행 실패</span>}
                   </div>
                   <h3>{r.title}</h3>
@@ -179,8 +192,19 @@ function ReportDetail({ workspace, reportId, go }: { workspace: SimokViewProps['
           <div className="simok-card" style={{ marginTop: 16 }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <span className="simok-eyebrow">{report.date}</span>
-              <RoleBadge actor={report.trigger === 'manual' ? 'human' : 'gpt'} how={report.trigger === 'manual' ? '사람이 실행' : '예약 실행'} />
-              {report.model && <span className="simok-pill paper">{report.model}</span>}
+              {(() => {
+                const a = attributionOf(report);
+                const al = authorLabel(a.author);
+                return (
+                  <>
+                    <RoleBadge
+                      actor={a.author.kind === 'human' ? 'human' : a.author.kind === 'external_gpt' ? 'gpt' : 'system'}
+                      how={al.text === 'GPT' ? al.sub : `${al.text} · ${al.sub}`}
+                    />
+                    <span className="simok-pill paper">{triggerLabel(a.trigger)}</span>
+                  </>
+                );
+              })()}
               {report.status === 'failed' && <span className="simok-pill rose">실행 실패</span>}
             </div>
             <h3 style={{ fontSize: 22, margin: '14px 0 10px', lineHeight: 1.5, fontWeight: 400 }}>{report.title}</h3>
@@ -188,8 +212,10 @@ function ReportDetail({ workspace, reportId, go }: { workspace: SimokViewProps['
 
             {/* 근거·기록 — 읽기 모드 본문에 기술 ID 를 나열하지 않고 여기 모은다 (06_UI_SPEC) */}
             <dl className="simok-dl" style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
-              <dt>작성</dt>
-              <dd>{report.trigger === 'manual' ? '사람이 실행' : '예약 실행'}{report.model ? ` · 모델 ${report.model}` : ''}</dd>
+              <dt>작성자</dt>
+              <dd>{(() => { const al = authorLabel(attributionOf(report).author); return `${al.text} · ${al.sub}`; })()}</dd>
+              <dt>실행 계기</dt>
+              <dd>{triggerLabel(attributionOf(report).trigger)}</dd>
               <dt>저장 시각</dt>
               <dd>{report.createdAt?.slice(0, 16).replace('T', ' ')}</dd>
               <dt>기록 ID</dt>

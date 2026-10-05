@@ -26,6 +26,17 @@ export const WEB_ANALYTICS_VERSION = 'web-analytics.v1';
 
 export type BlockStatus = 'complete' | 'partial' | 'missing';
 
+/** 원천 명명 그대로 — Office 가 임의로 source/medium 으로 쪼개지 않는다 (GPT-R3-O1) */
+export interface GaSourceRow {
+  source_medium: string;          // 예: "instagram / organic_social"
+  campaign: string | null;
+  content: string | null;
+  sessions: number;
+}
+export interface GaEventRow {
+  event_name: string;
+  count: number;
+}
 export interface GaBlock {
   status: BlockStatus;
   reason: string | null;
@@ -34,8 +45,8 @@ export interface GaBlock {
   visitors_observed: number | null;
   sessions: number | null;
   page_views: number | null;
-  by_source: { source: string; medium: string; sessions: number }[] | null;
-  by_event: { event: string; count: number }[] | null;
+  by_source: GaSourceRow[] | null;
+  by_event: GaEventRow[] | null;
 }
 
 export interface AttributionRow {
@@ -60,6 +71,9 @@ export interface OrdersBlock {
 
 export interface WebAnalyticsV1 {
   schema_version: string;
+  /** ★ wire 의 query_version 을 **그대로 보존**한다 (예: 'web-analytics.v1/2026-10-05').
+   *  schema_version 으로 덮어쓰면 어떤 질의본인지 추적이 끊긴다 (GPT-R3-O1) */
+  query_version: string;
   source_system: string;
   environment: 'demo' | 'staging' | 'production';
   usage: 'validation' | 'operational';
@@ -68,10 +82,14 @@ export interface WebAnalyticsV1 {
   period: { from: string; to: string };
   observed_at: string;
   collection_started_at: string | null;
+  /** 루트 레벨 — 원천이 "여기까지 처리됨" 이라고 밝힌 시점 */
+  source_data_through: string | null;
   freshness: 'provisional' | 'rechecked';
   ga: GaBlock;
   orders: OrdersBlock;
   limitations: string[];
+  /** 원천이 계산한 의미 digest. Office 는 이것을 **보관**하고 revision 판단에 쓴다 */
+  content_digest: string;
 }
 
 function need(ok: unknown, msg: string, code = 'validation_failed'): void {
@@ -90,7 +108,14 @@ export function validateWebAnalyticsV1(input: unknown): WebAnalyticsV1 {
 
   need(r.schema_version === WEB_ANALYTICS_VERSION,
     `schema_version 은 ${WEB_ANALYTICS_VERSION} 이어야 합니다 (받은 값 ${String(r.schema_version)})`);
+  // query_version 은 schema_version 과 다른 값일 수 있다(질의본 식별). 반드시 보존한다.
+  need(typeof r.query_version === 'string' && r.query_version.length > 0, 'query_version 이 필요합니다');
   need(typeof r.source_system === 'string' && r.source_system.length > 0, 'source_system 이 필요합니다');
+  need(typeof r.currency === 'string' && r.currency.length > 0, 'currency 가 필요합니다');
+  need(typeof r.content_digest === 'string' && /^[0-9a-f]{64}$/.test(r.content_digest),
+    'content_digest 는 64자리 소문자 hex(SHA-256)여야 합니다');
+  need(r.source_data_through === null || typeof r.source_data_through === 'string',
+    'source_data_through 는 문자열 또는 null 이어야 합니다');
   need(['demo', 'staging', 'production'].includes(r.environment), 'environment 가 잘못되었습니다');
   need(['validation', 'operational'].includes(r.usage), 'usage 가 잘못되었습니다');
   // 계약 §2 와 같은 규칙 — 비 production 은 validation 만
@@ -119,6 +144,8 @@ export function validateWebAnalyticsV1(input: unknown): WebAnalyticsV1 {
   for (const k of gaNums) {
     const v = ga[k] as number | null;
     need(v === null || isInt(v), `ga.${k} 는 정수 또는 null 이어야 합니다`);
+    // ★ 관측 지표는 음수가 될 수 없다 (GPT-R3-O2)
+    need(v === null || (v as number) >= 0, `ga.${k} 는 음수일 수 없습니다 (받은 값 ${v})`);
     // ★ 미수집을 0 으로 쓰지 않는다
     if (ga.status !== 'complete') {
       need(v === null, `ga.${k}: GA 가 ${ga.status} 인데 값이 있습니다 — 미수집을 0/숫자로 쓰지 않습니다`);
@@ -127,6 +154,32 @@ export function validateWebAnalyticsV1(input: unknown): WebAnalyticsV1 {
   if (ga.status !== 'complete') {
     need(ga.by_source === null || (Array.isArray(ga.by_source) && ga.by_source.length === 0),
       'ga.by_source: GA 미수집이면 경로 분해가 있을 수 없습니다');
+    need(ga.by_event === null || (Array.isArray(ga.by_event) && ga.by_event.length === 0),
+      'ga.by_event: GA 미수집이면 event 분해가 있을 수 없습니다');
+  }
+  // 분해 행의 **타입까지** 검사한다. 문자열이 오면 합 검사가 조용히 건너뛰어진다(GPT-R3-O2).
+  if (Array.isArray(ga.by_source)) {
+    ga.by_source.forEach((row, i) => {
+      need(row && typeof row.source_medium === 'string' && row.source_medium.length > 0,
+        `ga.by_source[${i}].source_medium 이 필요합니다 (원천 명명)`);
+      need(isInt(row.sessions) && row.sessions >= 0, `ga.by_source[${i}].sessions 는 0 이상 정수여야 합니다`);
+      need(row.campaign === null || typeof row.campaign === 'string', `ga.by_source[${i}].campaign`);
+      need(row.content === null || typeof row.content === 'string', `ga.by_source[${i}].content`);
+    });
+    if (ga.sessions !== null && ga.status === 'complete') {
+      const sum = ga.by_source.reduce((a, x) => a + x.sessions, 0);
+      need(sum <= (ga.sessions as number),
+        `ga.by_source 세션 합(${sum})이 전체 세션(${ga.sessions})보다 많습니다`);
+    }
+  }
+  if (Array.isArray(ga.by_event)) {
+    ga.by_event.forEach((row, i) => {
+      need(row && typeof row.event_name === 'string' && row.event_name.length > 0,
+        `ga.by_event[${i}].event_name 이 필요합니다 (원천 명명)`);
+      need(isInt(row.count) && row.count >= 0, `ga.by_event[${i}].count 는 0 이상 정수여야 합니다`);
+    });
+    const names = ga.by_event.map(x => x.event_name);
+    need(new Set(names).size === names.length, 'ga.by_event 에 같은 event_name 이 두 번 있습니다');
   }
   // 전환율 칸은 애초에 받지 않는다 (10 문서 §5)
   for (const banned of ['conversion_rate', 'purchase_conversion_rate', 'cvr']) {
@@ -144,16 +197,32 @@ export function validateWebAnalyticsV1(input: unknown): WebAnalyticsV1 {
   }
   need(Array.isArray(o.by_attribution), 'orders.by_attribution 은 배열이어야 합니다');
   need(Array.isArray(o.unattributed_by_reason), 'orders.unattributed_by_reason 은 배열이어야 합니다');
+  // ★ 행의 타입을 먼저 강제한다. 예전 구현은 orders 가 문자열이면 합 검사를 **건너뛰었다**(GPT-R3-O2).
+  o.by_attribution.forEach((row, i) => {
+    need(row && typeof row.source === 'string' && typeof row.medium === 'string',
+      `orders.by_attribution[${i}]: source/medium 이 필요합니다`);
+    need(isInt(row.orders) && row.orders >= 0, `orders.by_attribution[${i}].orders 는 0 이상 정수여야 합니다`);
+    for (const mk of ['merchandise_captured_krw', 'shipping_captured_krw'] as const) {
+      const mv = row[mk];
+      need(mv === null || (isInt(mv) && mv >= 0), `orders.by_attribution[${i}].${mk}`);
+    }
+  });
+  o.unattributed_by_reason.forEach((row, i) => {
+    need(row && typeof row.reason === 'string' && row.reason.length > 0,
+      `orders.unattributed_by_reason[${i}].reason 이 필요합니다`);
+    need(isInt(row.orders) && row.orders >= 0, `orders.unattributed_by_reason[${i}].orders`);
+  });
 
   const total = o.total_paid_orders, att = o.attributed_orders, un = o.unattributed_orders;
 
   // 분해 합이 전체와 맞는가
-  if (att !== null && Array.isArray(o.by_attribution) && o.by_attribution.every(x => isInt(x.orders))) {
-    const sum = o.by_attribution.reduce((s, x) => s + x.orders, 0);
+  // 타입은 위에서 이미 강제했으므로 합 검사를 **건너뛰지 않는다**
+  if (att !== null) {
+    const sum = o.by_attribution.reduce((s2, x) => s2 + x.orders, 0);
     need(sum === att, `orders.by_attribution 합(${sum})이 attributed_orders(${att})와 다릅니다`);
   }
-  if (un !== null && o.unattributed_by_reason.every(x => isInt(x.orders))) {
-    const sum = o.unattributed_by_reason.reduce((s, x) => s + x.orders, 0);
+  if (un !== null) {
+    const sum = o.unattributed_by_reason.reduce((s2, x) => s2 + x.orders, 0);
     need(sum === un, `unattributed_by_reason 합(${sum})이 unattributed_orders(${un})와 다릅니다`);
   }
   if (total !== null && att !== null && un !== null) {
@@ -188,10 +257,14 @@ export function toStorageRow(r: WebAnalyticsV1) {
     period_start: r.period.from,
     period_end: r.period.to,
     timezone: r.timezone,
-    query_version: r.schema_version,
+    // ★ wire 의 query_version 을 그대로 (schema_version 으로 덮어쓰지 않는다)
+    query_version: r.query_version,
+    schema_version: r.schema_version,
     source_ref: r.ga.property_ref,
     observed_at: r.observed_at,
-    source_data_through: r.ga.data_through,
+    // 루트 source_data_through 가 기준. 없으면 GA 블록 값으로 폴백
+    source_data_through: r.source_data_through ?? r.ga.data_through,
+    content_digest: r.content_digest,
     collection_started_at: r.collection_started_at,
     freshness: r.freshness,
     ga_metrics: {

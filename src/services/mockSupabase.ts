@@ -99,6 +99,11 @@ const mockData: Record<string, any[]> = {
   ingest_credentials: [],
   web_analytics: [],      // 마이그 062 — 방문·유입 집계. 시드 없음(수집 전을 0으로 채우지 않는다)
   content_links: [],      // 마이그 062 — UTM 등록부
+  // 마이그 063 — bridge 왕복·대표 수정 요청·업무 MD. 시드 없음(실제 요청을 만들어내지 않는다)
+  edit_requests: [],
+  work_documents: [],
+  bridge_runs: [],
+  bridge_outputs: [],
   // CS 문의 티켓 + FAQ
   tickets: [],
   cs_faq: [],
@@ -290,7 +295,7 @@ const mockData: Record<string, any[]> = {
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v14';   // v14: workspaces 에 office_shell·erp_business_entity·ai_provider_enabled + 운명랩(회귀 확인용) + 062 테이블
+const _LS_KEY = 'mock-db-v15';   // v15: 063 bridge 테이블 추가 (v14: office_shell·운명랩·062)
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {

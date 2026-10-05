@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "test:contract": "node scripts/contract-test.mjs",
     "test:guard": "node scripts/guard-test.mjs",
-    "test:simok": "node scripts/contract-test.mjs && node scripts/guard-test.mjs"
+    "test:simok": "node scripts/contract-test.mjs && node scripts/guard-test.mjs && node scripts/bridge-test.mjs",
+    "test:bridge": "node scripts/bridge-test.mjs",
+    "bridge": "node scripts/bridge.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -11,6 +11,8 @@
  *  - 수집 시작일 이전 기간은 '수집 전' 이다. 0으로 채우지 않는다.
  *  - 운영 조회 기본값은 production+operational. 검증용이 운영 집계에 섞이지 않는다.
  *  - 정정은 새 revision 으로 들어오고, 조회는 기간별 **최신 revision** 만 읽는다.
+ *  - revision 은 **Office 가 발급하는 local revision** 이다(GPT round3 §5).
+ *    원천 web 집계에는 source revision 이 없다. 일일 snapshot 의 source revision 과 혼동하지 않는다.
  *
  * ⚠️ 모델 API 를 호출하지 않는다(D-007). 수집용 외부 API 호출도 일반 코드다.
  */
@@ -38,6 +40,10 @@ export interface WebAnalyticsRecord {
   usage: string;
   periodStart: string;
   periodEnd: string;
+  /** 어떤 질의본인지 (예: web-analytics.v1/2026-10-05) */
+  queryVersion: string;
+  /** 원천이 계산한 의미 digest — 수신 bytes 해시와 다르다 */
+  contentDigest: string | null;
   revision: number;
   freshness: Freshness;
   observedAt: string;
@@ -75,6 +81,8 @@ interface Row {
   period_start: string;
   period_end: string;
   query_version: string;
+  schema_version: string | null;
+  content_digest: string | null;
   revision: number;
   freshness: Freshness;
   observed_at: string;
@@ -146,6 +154,8 @@ function toRecord(r: Row): WebAnalyticsRecord {
     usage: r.usage,
     periodStart: r.period_start,
     periodEnd: r.period_end,
+    queryVersion: r.query_version,
+    contentDigest: r.content_digest,
     revision: r.revision,
     freshness: r.freshness,
     observedAt: r.observed_at,
@@ -188,7 +198,9 @@ export async function fetchWebAnalytics(
     .eq('workspace_id', workspaceId)
     .eq('environment', o.environment)
     .eq('usage', o.usage)
-    .eq('query_version', QUERY_VERSION)
+    // ★ query_version 은 질의본 식별자라 날짜가 붙는다(web-analytics.v1/2026-10-05).
+    //   고정값으로 거르면 새 질의본이 조회에서 사라진다 → schema_version 으로 거른다(GPT-R3-O1).
+    .eq('schema_version', WEB_ANALYTICS_VERSION)
     .gte('period_start', fromDate)
     .lte('period_end', toDate)
     .order('period_end', { ascending: false }) as unknown as { data: Row[] | null; error: unknown };
@@ -225,8 +237,8 @@ export function assertRange(fromDate: string, toDate: string): void {
  * - workspace 는 호출자가 아니라 서버/연결이 정한 값이어야 한다. 본문의 workspace 는 거절된다.
  */
 export async function importWebAnalyticsText(
-  workspaceId: string, text: string, opts: { revision?: number } = {},
-): Promise<{ id: string; rawSha256: string; record: WebAnalyticsV1 }> {
+  workspaceId: string, text: string,
+): Promise<{ id: string; revision: number; rawSha256: string; reused: boolean; record: WebAnalyticsV1 }> {
   const rawSha256 = await sha256Hex(text);
   let parsed: unknown;
   try { parsed = JSON.parse(text); }
@@ -235,15 +247,54 @@ export async function importWebAnalyticsText(
   const record = validateWebAnalyticsV1(parsed);
   const row = toStorageRow(record);
 
+  // ── local revision 발급 (GPT 통합 round3 §5) ──
+  //   scope = (workspace, source_system, environment, usage, period.from/to, query_version)
+  //   · 최신 의미 digest 와 **같으면** 같은 revision 재사용 — 새 관측 기록만 남긴다
+  //   · 다르면 최신 + 1
+  //   · A→B→A 는 r1→r2→r3 (과거 A 로 되돌리지 않는다)
+  //   ⚠️ 원천 web 에는 source revision 이 없다. 이것은 **Office 가 발급하는 local revision** 이고
+  //      일일 snapshot 의 source revision 규칙과 혼동하면 안 된다.
+  const scope =
+    `workspace_id=eq.${workspaceId}` +
+    `&source_system=eq.${encodeURIComponent(row.source_system)}` +
+    `&environment=eq.${row.environment}` +
+    `&usage=eq.${row.usage}` +
+    `&period_start=eq.${row.period_start}` +
+    `&period_end=eq.${row.period_end}` +
+    `&query_version=eq.${encodeURIComponent(row.query_version)}`;
+
+  const { data: existing, error: readErr } = await supabase
+    .from('web_analytics')
+    .select('id, revision, content_digest')
+    .eq('workspace_id', workspaceId)
+    .eq('source_system', row.source_system)
+    .eq('environment', row.environment)
+    .eq('usage', row.usage)
+    .eq('period_start', row.period_start)
+    .eq('period_end', row.period_end)
+    .eq('query_version', row.query_version)
+    .order('revision', { ascending: false }) as unknown as {
+      data: { id: string; revision: number; content_digest: string | null }[] | null; error: unknown;
+    };
+  if (readErr) throw readErr;
+  void scope;
+
+  const latest = existing?.[0] ?? null;
+  // 같은 내용이면 새 revision 을 만들지 않는다 (관측 시각만 다른 재조회)
+  if (latest && latest.content_digest && latest.content_digest === record.content_digest) {
+    return { id: latest.id, revision: latest.revision, rawSha256, reused: true, record };
+  }
+
+  const revision = latest ? latest.revision + 1 : 1;
   const { data, error } = await supabase.from('web_analytics').insert({
     workspace_id: workspaceId,
-    revision: opts.revision ?? 1,
+    revision,
     raw_sha256: rawSha256,
     raw_body_text: text,
     ...row,
   }).select('id').single() as unknown as { data: { id: string } | null; error: unknown };
   if (error) throw error;
-  return { id: data!.id, rawSha256, record };
+  return { id: data!.id, revision, rawSha256, reused: false, record };
 }
 
 /**
