@@ -22,11 +22,12 @@ const CONTRACTS = join(SHARED, 'contracts');
 const { build } = await import('esbuild');
 const outdir = mkdtempSync(join(tmpdir(), 'contract-ts-'));
 await build({
-  entryPoints: ['src/contracts/dailySnapshot.ts', 'src/contracts/projection.ts'],
+  entryPoints: ['src/contracts/dailySnapshot.ts', 'src/contracts/projection.ts', 'src/contracts/webAnalyticsV1.ts'],
   outdir, bundle: true, format: 'esm', platform: 'node', target: 'node18', logLevel: 'silent',
 });
 const C = await import(join(outdir, 'dailySnapshot.js'));
 const P = await import(join(outdir, 'projection.js'));
+const W = await import(join(outdir, 'webAnalyticsV1.js'));
 
 let pass = 0, fail = 0;
 const failures = [];
@@ -341,7 +342,62 @@ print(json.dumps([{'name':v['name'],'input':canonical_input(v['snapshot']),'dige
   ok('상품 name 은 digest 입력에 포함된다 (변경 시 새 revision)', C.canonicalDigestInput(base).includes('"name"'));
 }
 
-console.log('\n── 15. 구버전 거절 ──');
+console.log('\n── 15. web-analytics.v1 — 시목 round5 실제 fixture 대조 (WEB-O1) ──');
+{
+  const WA = join(SHARED, 'coordination', 'evidence', 'simok-app', 'round5');
+  const files = ['fixture-web-analytics-v1.ga-not-connected.json', 'fixture-web-analytics-v1.empty-day.json'];
+  const loaded = {};
+  for (const f of files) {
+    const text = readFileSync(join(WA, f), 'utf8');
+    try {
+      const rec = W.validateWebAnalyticsV1(JSON.parse(text));
+      loaded[f] = rec;
+      ok(`${f} 통과`, true);
+    } catch (e) { ok(`${f} 통과`, false, e.message); }
+  }
+
+  const ga = loaded[files[0]], empty = loaded[files[1]];
+  if (ga) {
+    ok('GA 미연결인데 방문 지표가 전부 null', ga.ga.visitors_observed === null && ga.ga.sessions === null && ga.ga.page_views === null);
+    ok('GA 미연결 사유가 남아 있다', typeof ga.ga.reason === 'string' && ga.ga.reason.length > 0);
+    ok('연결률은 0~1 ratio (0.5)', ga.orders.attribution_link_rate === 0.5);
+    ok('attributed + unattributed = total', ga.orders.attributed_orders + ga.orders.unattributed_orders === ga.orders.total_paid_orders);
+    const row = W.toStorageRow(ga);
+    ok('매핑: period → period_start/end', row.period_start === '2026-10-01' && row.period_end === '2026-10-05');
+    ok('매핑: ga 블록이 ga_metrics 로', row.ga_metrics.status === 'missing' && row.ga_metrics.visitors_observed === null);
+    ok('매핑: 주문 블록이 order_metrics 로', row.order_metrics.total_paid_orders === 10);
+    ok('매핑: 귀속 규칙이 attribution 으로', row.attribution.model === 'last_eligible_touch_30d_v1');
+    ok('매핑: GA 블록과 주문 블록이 분리됨', !('total_paid_orders' in row.ga_metrics) && !('visitors_observed' in row.order_metrics));
+  }
+  if (empty) {
+    ok('주문 0건이면 연결률은 null (0% 아님)', empty.orders.attribution_link_rate === null);
+    ok('주문 0건도 total=0 으로 기록된다', empty.orders.total_paid_orders === 0);
+  }
+
+  // 거절되어야 하는 변형
+  const mutate = (base, fn) => { const c = JSON.parse(JSON.stringify(base)); fn(c); return c; };
+  const expectBad = (name, obj, re) => {
+    try { W.validateWebAnalyticsV1(obj); ok(name, false, '거절되어야 하는데 통과'); }
+    catch (e) { ok(name, re ? re.test(e.message) : true, e.message); }
+  };
+  if (ga) {
+    expectBad('GA missing 인데 방문자 0 이면 거절', mutate(ga, c => { c.ga.visitors_observed = 0; }), /미수집을 0/);
+    expectBad('연결률이 재계산과 다르면 거절', mutate(ga, c => { c.orders.attribution_link_rate = 0.9; }), /불일치/);
+    expectBad('연결률이 %(50)로 오면 거절', mutate(ga, c => { c.orders.attribution_link_rate = 50; }), /0~1 ratio/);
+    expectBad('by_attribution 합이 안 맞으면 거절', mutate(ga, c => { c.orders.by_attribution[0].orders = 99; }), /by_attribution 합/);
+    expectBad('attributed+unattributed ≠ total 거절', mutate(ga, c => { c.orders.total_paid_orders = 11; }), /total/);
+    expectBad('전환율 칸이 오면 거절', mutate(ga, c => { c.ga.conversion_rate = 0.03; }), /전환율/);
+    expectBad('본문에 workspace_id 주입 거절', mutate(ga, c => { c.workspace_id = 'x'; }), /workspace/);
+    expectBad('demo + operational 거절', mutate(ga, c => { c.environment = 'demo'; c.usage = 'operational'; }), /validation/);
+    expectBad('31일 초과 거절', mutate(ga, c => { c.period.from = '2026-09-01'; c.period.to = '2026-10-05'; }), /31일/);
+    expectBad('구버전 schema_version 거절', mutate(ga, c => { c.schema_version = 'web-analytics.v0'; }), /schema_version/);
+  }
+  if (empty) {
+    expectBad('주문 0인데 연결률 0 이면 거절', mutate(empty, c => { c.orders.attribution_link_rate = 0; }), /null 이어야/);
+  }
+}
+
+console.log('\n── 16. 구버전 거절 ──');
 {
   const old = fx(join('versions', '0.1.0', 'demo-daily-snapshot.json').replace(/\\/g, '/'));
   try { C.validateSnapshot(old); ok('0.1.0 fixture 는 0.2.0 검증기에서 거절', false, '통과해버림'); }

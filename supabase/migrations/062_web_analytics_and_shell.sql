@@ -33,8 +33,10 @@ CREATE TABLE IF NOT EXISTS web_analytics (
   workspace_id   UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
 
   -- scope: workspace 는 서버가 부여하고 environment/usage 는 원천이 보낸다(계약 §2 와 같은 규칙)
+  source_system  TEXT NOT NULL,            -- 원천 이름('simok_app'). 권한 증명이 아니라 출처 표기
   environment    TEXT NOT NULL CHECK (environment IN ('demo','staging','production')),
   usage          TEXT NOT NULL CHECK (usage IN ('validation','operational')),
+  currency       TEXT NOT NULL DEFAULT 'KRW',
 
   -- 정확한 기간 (KST 양끝 포함). 최대 31일은 앱에서 검증한다.
   period_start   DATE NOT NULL,
@@ -50,7 +52,9 @@ CREATE TABLE IF NOT EXISTS web_analytics (
   -- GA4 는 처리 중 값이 바뀐다 → 잠정/재조회를 구별 (10 문서 §5)
   freshness      TEXT NOT NULL DEFAULT 'provisional' CHECK (freshness IN ('provisional','rechecked')),
   revision       INTEGER NOT NULL DEFAULT 1 CHECK (revision >= 1),
-  raw_sha256     TEXT,                     -- 수신 원문 해시(있으면)
+  raw_sha256     TEXT,                     -- 수신 원문 bytes 해시
+  raw_body_text  TEXT,                     -- ★ 수신 원문 그대로(TEXT). JSONB 는 키순서·공백을 잃어
+                                           --   원문 SHA 재계산이 불가능하다(GPT-R2-O3 의 지적을 여기에도 적용)
 
   -- ★ GA 관측 블록과 내부 주문 블록을 **분리 보관**한다 (10 문서 §5)
   --   섞어서 전환율을 만들지 않기 위해 구조부터 나눈다.
@@ -65,7 +69,7 @@ CREATE TABLE IF NOT EXISTS web_analytics (
   received_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
 
   -- 같은 scope·기간·query_version·revision 은 1행 (같은 사용자 기간 중복 방지 — WEB-O1)
-  UNIQUE (workspace_id, environment, usage, period_start, period_end, query_version, revision)
+  UNIQUE (workspace_id, source_system, environment, usage, period_start, period_end, query_version, revision)
 );
 
 CREATE INDEX IF NOT EXISTS web_analytics_scope_idx

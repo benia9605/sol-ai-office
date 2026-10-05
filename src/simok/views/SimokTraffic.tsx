@@ -16,7 +16,6 @@ import { useEffect, useState } from 'react';
 import { SimokViewProps } from '../SimokShell';
 import { Empty, ErrorBox, Loading, MetricCard, Note, ProvisionalBanner, SectionHead, ValidationBanner } from '../ui';
 import { WebAnalyticsRecord, fetchWebAnalytics } from '../../services/webAnalytics.service';
-import { Measure } from '../../contracts/projection';
 
 const RANGES = [
   { key: '7', label: '최근 7일' },
@@ -43,7 +42,6 @@ export function SimokTraffic({ workspace, go }: SimokViewProps) {
   }, [workspace.id, days, tick]);
 
   const latest = rec?.[0] ?? null;
-  const unknown = (reason: string): Measure => ({ known: false, status: 'missing', reason });
 
   return (
     <>
@@ -96,6 +94,12 @@ export function SimokTraffic({ workspace, go }: SimokViewProps) {
           )}
 
           <SectionHead title="관측된 방문" sub={`${latest.periodStart} ~ ${latest.periodEnd} · KST`} />
+          {latest.gaStatus !== 'complete' && (
+            <div className="simok-banner info" style={{ marginBottom: 14 }}>
+              <strong>{latest.gaStatus === 'missing' ? 'GA 미연결' : 'GA 일부만'}</strong>
+              <span>{latest.gaReason ?? '방문 지표를 수집하지 못했어요.'} — 숫자를 0으로 채우지 않습니다.</span>
+            </div>
+          )}
           <div className="simok-metrics">
             <MetricCard label="관측 방문자" value={latest.totalUsers} unit="명"
               note="웹 stream 한정 · 일별을 더해 주간 고유 방문자로 만들지 않아요" />
@@ -105,7 +109,11 @@ export function SimokTraffic({ workspace, go }: SimokViewProps) {
 
           <SectionHead title="어디서 왔나" sub="GA 세션 차원" />
           {latest.sources.length === 0 ? (
-            <Empty title="유입 경로가 집계되지 않았어요">같은 기간에 관측된 세션이 없거나 수집 범위 밖이에요.</Empty>
+            <Empty title="유입 경로가 집계되지 않았어요">
+              {latest.gaStatus !== 'complete'
+                ? 'GA 방문 수집이 연결되지 않아 경로 분해가 없어요. 아래 주문 유입 연결은 우리 원장만으로 계산한 값이라 그대로 볼 수 있어요.'
+                : '같은 기간에 관측된 세션이 없거나 수집 범위 밖이에요.'}
+            </Empty>
           ) : (
             <div className="simok-card">
               <table style={{ width: '100%', fontSize: 11, borderCollapse: 'collapse' }}>
@@ -137,11 +145,61 @@ export function SimokTraffic({ workspace, go }: SimokViewProps) {
               note={latest.attributionModel ? `규칙 ${latest.attributionModel}` : undefined} />
             <MetricCard
               label="주문 유입 연결률"
-              value={latest.attributionRate ?? unknown('분모(웹 결제 주문)가 없어 계산하지 않아요')}
+              value={latest.attributionRate}
               unit="%"
               note="구매 전환율이 아니에요. 유입 참조가 남은 주문의 비율입니다"
             />
           </div>
+
+          {latest.byAttribution.length > 0 && (
+            <div className="simok-card" style={{ marginTop: 14 }}>
+              <div className="simok-eyebrow">콘텐츠·경로별 (우리 원장)</div>
+              <table style={{ width: '100%', marginTop: 12, fontSize: 11, borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ textAlign: 'left', color: 'var(--muted)' }}>
+                    <th style={{ padding: '6px 0', fontWeight: 400 }}>경로</th>
+                    <th style={{ padding: '6px 0', fontWeight: 400 }}>콘텐츠</th>
+                    <th style={{ padding: '6px 0', fontWeight: 400, textAlign: 'right' }}>주문</th>
+                    <th style={{ padding: '6px 0', fontWeight: 400, textAlign: 'right' }}>상품 수납</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {latest.byAttribution.map((a, i) => (
+                    <tr key={i} style={{ borderTop: '1px solid var(--line)' }}>
+                      <td style={{ padding: '9px 0' }}>{a.source} / {a.medium}</td>
+                      <td style={{ padding: '9px 0', color: 'var(--muted)' }}>{a.content ?? '—'}</td>
+                      <td style={{ padding: '9px 0', textAlign: 'right' }}>{a.orders.toLocaleString()}</td>
+                      <td style={{ padding: '9px 0', textAlign: 'right' }}>
+                        {a.merchandise_captured_krw != null ? a.merchandise_captured_krw.toLocaleString() : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {latest.unattributedByReason.length > 0 && (
+            <div className="simok-card" style={{ marginTop: 14 }}>
+              <div className="simok-eyebrow">유입을 모르는 주문</div>
+              <ul style={{ marginTop: 10, display: 'grid', gap: 8, fontSize: 11 }}>
+                {latest.unattributedByReason.map((u, i) => (
+                  <li key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                    <span>
+                      {u.reason === 'direct_or_unknown' ? '직접 또는 경로 미상'
+                        : u.reason === 'consent_denied' ? '동의하지 않음'
+                        : u.reason === 'no_ref' ? '유입 참조 없음'
+                        : u.reason}
+                    </span>
+                    <strong>{u.orders.toLocaleString()}건</strong>
+                  </li>
+                ))}
+              </ul>
+              <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 12, lineHeight: 1.8 }}>
+                「직접 또는 경로 미상」에는 링크 복사·앱 내 이동 등이 섞여 있어요. 직접 방문이라고 단정하지 않습니다.
+              </p>
+            </div>
+          )}
 
           {latest.limitations.length > 0 && (
             <>
