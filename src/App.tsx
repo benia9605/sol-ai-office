@@ -11,7 +11,8 @@ import { updateLastAccess, hasActiveSubscription, subscribePush } from './servic
 import { WorkspaceProvider, useWorkspaceContext } from './contexts/WorkspaceContext';
 import { OfficeShell } from './components/office/OfficeShell';
 import { BrandShell } from './brand/BrandShell';
-import { readShellChoice, writeShellChoice } from './simok/ShellPicker';
+import { WorkspaceLauncher } from './components/WorkspaceLauncher';
+import { WorkspaceCreateModal } from './components/WorkspaceCreateModal';
 import { LoginPage } from './pages/LoginPage';
 import { Workspace } from './types';
 import { Layout } from './components/Layout';
@@ -79,7 +80,45 @@ function App() {
  * - office → 회사 오피스 셸(OfficeShell)
  * - personal / 전체(null) → 기존 개인 앱(라우터 + Layout)
  */
+/**
+ * 앱을 처음 열 때 「어디로 갈까요?」 (개인 공간 / 회사 오피스 → 어느 오피스) 팝업.
+ * 브라우저 탭마다 한 번 (sessionStorage). 슬랙 · 링크로 /w/... 에 바로 들어오면 띄우지 않는다.
+ * 닫으면 마지막에 있던 곳 그대로.
+ */
+const START_KEY = 'startLauncherShown';
+function StartLauncher() {
+  const { personal, offices, activeWorkspaceId, setActiveWorkspace, reload } = useWorkspaceContext();
+  const [open, setOpen] = useState(() => {
+    try {
+      if (sessionStorage.getItem(START_KEY) || window.location.pathname.startsWith('/w/')) return false;
+      sessionStorage.setItem(START_KEY, '1');
+    } catch { /* 사생활 보호 모드 - 그래도 한 번은 띄운다 */ }
+    return true;
+  });
+  const [showCreate, setShowCreate] = useState(false);
+  if (!personal && offices.length === 0) return null;
+
+  // AppShell 이 셸마다 BrowserRouter 를 새로 만들므로 주소를 먼저 바꿔 두면 그 화면으로 열린다
+  const pick = (id: string) => {
+    const ws = [personal, ...offices].find(w => w?.id === id);
+    window.history.replaceState(null, '', ws?.type === 'office' ? `/w/${id}/today` : '/');
+    setActiveWorkspace(id);
+  };
+  return (
+    <>
+      <WorkspaceLauncher open={open} onClose={() => setOpen(false)} personal={personal} offices={offices}
+        activeId={activeWorkspaceId} onPick={pick} onCreate={() => setShowCreate(true)} />
+      <WorkspaceCreateModal open={showCreate} onClose={() => setShowCreate(false)}
+        onCreated={async (ws: Workspace) => { await reload(); pick(ws.id); }} />
+    </>
+  );
+}
+
 function AppShell() {
+  return <><AppShellInner /><StartLauncher /></>;
+}
+
+function AppShellInner() {
   const { activeWorkspace, loading } = useWorkspaceContext();
 
   // 워크스페이스 목록 로드가 끝나야 어떤 셸(개인/오피스)인지 확정된다.
@@ -142,14 +181,21 @@ function AppShell() {
  * 「화면 바꾸기」 로 돌아온다. 고른 값은 workspace 별로 기억한다 (localStorage · 표시 취향일 뿐 권한과 무관).
  * 예전 시목 전용 셸(src/simok)은 코드만 남아 있다.
  */
+// 예전 화면 고르기 팝업의 값(officeShell:*)은 보지 않는다 - 새 키라 배포 뒤 모두 새 화면으로 연다
+const BACKUP_KEY = (wsId: string) => `officeBackup:${wsId}`;
+const readBackup = (wsId: string) => { try { return localStorage.getItem(BACKUP_KEY(wsId)) === '1'; } catch { return false; } };
+const writeBackup = (wsId: string, on: boolean) => {
+  try { if (on) localStorage.setItem(BACKUP_KEY(wsId), '1'); else localStorage.removeItem(BACKUP_KEY(wsId)); } catch { /* noop */ }
+};
+
 function OfficeEntry({ workspace }: { workspace: Workspace }) {
-  const [backup, setBackup] = useState(() => readShellChoice(workspace.id) === 'common');
-  useEffect(() => { setBackup(readShellChoice(workspace.id) === 'common'); }, [workspace.id]);
+  const [backup, setBackup] = useState(() => readBackup(workspace.id));
+  useEffect(() => { setBackup(readBackup(workspace.id)); }, [workspace.id]);
 
   if (backup) {
-    return <OfficeShell workspace={workspace} onSwitchShell={() => { writeShellChoice(workspace.id, 'simok'); setBackup(false); }} />;
+    return <OfficeShell workspace={workspace} onSwitchShell={() => { writeBackup(workspace.id, false); setBackup(false); }} />;
   }
-  return <BrandShell workspace={workspace} onBackupShell={() => { writeShellChoice(workspace.id, 'common'); setBackup(true); }} />;
+  return <BrandShell workspace={workspace} onBackupShell={() => { writeBackup(workspace.id, true); setBackup(true); }} />;
 }
 
 /**

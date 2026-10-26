@@ -246,8 +246,8 @@ export function OfficeShell({ workspace, onSwitchShell }: { workspace: Workspace
           {onSwitchShell && (
             <button onClick={onSwitchShell}
               className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium text-foreground-muted border border-line hover:bg-surface-muted transition-colors flex-shrink-0"
-              title="시목 스튜디오 화면으로 바꾸기">
-              🪵 화면 바꾸기
+              title="새 오피스 화면으로 돌아가기">
+              ← 새 오피스 화면으로
             </button>
           )}
 
@@ -412,7 +412,7 @@ export function OfficeShell({ workspace, onSwitchShell }: { workspace: Workspace
                 <p className="text-[10px] font-semibold text-foreground-faint uppercase tracking-wider mb-2">화면</p>
                 <button onClick={() => { setMoreOpen(false); onSwitchShell(); }}
                   className="w-full flex items-center gap-2 px-3 py-2 mb-4 rounded-xl text-sm text-foreground-muted hover:bg-surface-muted transition-colors text-left">
-                  <span className="text-base leading-none">🪵</span> 화면 바꾸기 (시목 스튜디오)
+                  <span className="text-base leading-none">←</span> 새 오피스 화면으로
                 </button>
               </>
             )}
