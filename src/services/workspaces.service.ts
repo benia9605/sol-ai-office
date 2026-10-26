@@ -24,6 +24,8 @@ export interface WorkspaceRow {
   ai_provider_enabled?: boolean;
   office_shell?: string;
   monthly_sales_target?: number;
+  brand_logo?: string; brand_sub?: string; brand_motto?: string; brand_paper?: string; brand_point?: string;
+  brand_hero_image?: string; brand_hero_word?: string; hq_brand_key?: string;
   created_by: string;
   created_at: string;
 }
@@ -39,6 +41,9 @@ function fromRow(r: WorkspaceRow): Workspace {
     aiProviderEnabled: r.ai_provider_enabled ?? undefined,
     officeShell: r.office_shell ?? undefined,
     monthlySalesTarget: r.monthly_sales_target ?? undefined,
+    brandLogo: r.brand_logo ?? undefined, brandSub: r.brand_sub ?? undefined, brandMotto: r.brand_motto ?? undefined,
+    brandPaper: r.brand_paper ?? undefined, brandPoint: r.brand_point ?? undefined,
+    brandHeroImage: r.brand_hero_image ?? undefined, brandHeroWord: r.brand_hero_word ?? undefined, hqBrandKey: r.hq_brand_key ?? undefined,
     createdBy: r.created_by, createdAt: r.created_at,
   };
 }
@@ -131,7 +136,12 @@ export async function createWorkspace(
 /** 워크스페이스 정보 수정 (이름/이모지/이미지/사업정보) */
 export async function updateWorkspace(
   id: string,
-  fields: { name?: string; emoji?: string; imageUrl?: string | null; bizInfo?: string; monthlySalesTarget?: number | null },
+  fields: {
+    name?: string; emoji?: string; imageUrl?: string | null; bizInfo?: string; monthlySalesTarget?: number | null;
+    // 브랜드 오피스 템플릿 값 (마이그 065)
+    brandLogo?: string; brandSub?: string; brandMotto?: string; brandPaper?: string; brandPoint?: string;
+    brandHeroImage?: string | null; brandHeroWord?: string;
+  },
 ): Promise<void> {
   const payload: Record<string, unknown> = {};
   if (fields.name !== undefined) payload.name = fields.name.trim();
@@ -139,6 +149,13 @@ export async function updateWorkspace(
   if (fields.imageUrl !== undefined) payload.image_url = fields.imageUrl ?? null;  // null이면 로고 제거 반영
   if (fields.bizInfo !== undefined) payload.biz_info = fields.bizInfo;
   if (fields.monthlySalesTarget !== undefined) payload.monthly_sales_target = fields.monthlySalesTarget;
+  if (fields.brandLogo !== undefined) payload.brand_logo = fields.brandLogo.trim() || null;
+  if (fields.brandSub !== undefined) payload.brand_sub = fields.brandSub.trim() || null;
+  if (fields.brandMotto !== undefined) payload.brand_motto = fields.brandMotto.trim() || null;
+  if (fields.brandPaper !== undefined) payload.brand_paper = fields.brandPaper || null;
+  if (fields.brandPoint !== undefined) payload.brand_point = fields.brandPoint || null;
+  if (fields.brandHeroImage !== undefined) payload.brand_hero_image = fields.brandHeroImage || null;
+  if (fields.brandHeroWord !== undefined) payload.brand_hero_word = fields.brandHeroWord.trim() || null;
   if (Object.keys(payload).length === 0) return;
   const { error } = await supabase.from('workspaces').update(payload).eq('id', id);
   if (error) throw error;

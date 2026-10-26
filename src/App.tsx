@@ -10,8 +10,8 @@ import { useAuth } from './hooks/useAuth';
 import { updateLastAccess, hasActiveSubscription, subscribePush } from './services/pushNotification.service';
 import { WorkspaceProvider, useWorkspaceContext } from './contexts/WorkspaceContext';
 import { OfficeShell } from './components/office/OfficeShell';
-import { SimokShell } from './simok/SimokShell';
-import { ShellPicker, ShellChoice, readShellChoice, writeShellChoice } from './simok/ShellPicker';
+import { BrandShell } from './brand/BrandShell';
+import { readShellChoice, writeShellChoice } from './simok/ShellPicker';
 import { LoginPage } from './pages/LoginPage';
 import { Workspace } from './types';
 import { Layout } from './components/Layout';
@@ -135,60 +135,21 @@ function AppShell() {
 }
 
 /**
- * 오피스 진입 — 전용 셸이 있는 워크스페이스면 "어떤 화면으로 볼까" 를 먼저 묻는다.
+ * 오피스 진입 - 모든 오피스 워크스페이스는 브랜드 오피스 템플릿(BrandShell)으로 연다.
  *
- * 대표 요청(2026-10-05): 오피스를 클릭하면 시목 / 직접 만든 오피스 중 고르는 팝업이 나오게.
- * 고른 값은 workspace 별로 localStorage 에 기억하고, 양쪽 셸에서 다시 고를 수 있다.
- *
- * ⚠️ 이 선택은 **표시 취향**이다. 데이터 접근 권한을 바꾸지 않는다(서버 RLS·가드가 결정).
+ * 대표 결정 (2026-10-27): 시목 · 쏠닝포인트 · 운명랩이 같은 템플릿을 쓰고 브랜드 값만 다르다.
+ * 기존 Teamie 화면(OfficeShell)은 백업 - 설정 → 「Teamie 기존 화면」 으로 들어가고, 그 화면의
+ * 「화면 바꾸기」 로 돌아온다. 고른 값은 workspace 별로 기억한다 (localStorage · 표시 취향일 뿐 권한과 무관).
+ * 예전 시목 전용 셸(src/simok)은 코드만 남아 있다.
  */
 function OfficeEntry({ workspace }: { workspace: Workspace }) {
-  // 전용 셸 후보가 있는가 — 신뢰되는 DB 설정(workspaces.office_shell, 마이그 062)
-  const hasDedicated = workspace.officeShell === 'simok';
-  const [choice, setChoice] = useState<ShellChoice | null>(() =>
-    hasDedicated ? readShellChoice(workspace.id) : 'common');
-  const [picking, setPicking] = useState(false);
+  const [backup, setBackup] = useState(() => readShellChoice(workspace.id) === 'common');
+  useEffect(() => { setBackup(readShellChoice(workspace.id) === 'common'); }, [workspace.id]);
 
-  // 워크스페이스를 바꾸면 그 workspace 의 선택을 다시 읽는다
-  useEffect(() => {
-    setChoice(hasDedicated ? readShellChoice(workspace.id) : 'common');
-    setPicking(false);
-  }, [workspace.id, hasDedicated]);
-
-  const pick = (c: ShellChoice) => {
-    writeShellChoice(workspace.id, c);
-    setChoice(c);
-    setPicking(false);
-  };
-
-  // 전용 셸이 없는 워크스페이스는 기존 화면 그대로 (운명랩·쏠닝오즈는 영향 없음)
-  if (!hasDedicated) return <OfficeShell workspace={workspace} />;
-
-  // 아직 고르지 않았으면 먼저 묻는다 (닫기 없음 — 골라야 들어간다)
-  if (!choice) {
-    return (
-      <>
-        <LoadingSplash />
-        <ShellPicker workspace={workspace} onPick={pick} />
-      </>
-    );
+  if (backup) {
+    return <OfficeShell workspace={workspace} onSwitchShell={() => { writeShellChoice(workspace.id, 'simok'); setBackup(false); }} />;
   }
-
-  return (
-    <>
-      {choice === 'simok'
-        ? <SimokShell workspace={workspace} onSwitchShell={() => setPicking(true)} />
-        : <OfficeShell workspace={workspace} onSwitchShell={() => setPicking(true)} />}
-      {picking && (
-        <ShellPicker
-          workspace={workspace}
-          current={choice}
-          onPick={pick}
-          onClose={() => setPicking(false)}
-        />
-      )}
-    </>
-  );
+  return <BrandShell workspace={workspace} onBackupShell={() => { writeShellChoice(workspace.id, 'common'); setBackup(true); }} />;
 }
 
 /**

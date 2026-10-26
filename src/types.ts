@@ -41,6 +41,15 @@ export interface Workspace {
   aiProviderEnabled?: boolean;         // D-007: false 면 서버가 모델 API 호출을 거절(마이그 060). 기본 true
   officeShell?: string;                // UI 전용 셸 키(마이그 062). 'simok'=시목 전용 화면. 표시 분기용이며 권한과 무관
   monthlySalesTarget?: number;         // 월 매출 목표(원). 수동 설정. 브리핑 달성률 계산용
+  // 브랜드 오피스 템플릿 값 (마이그 065) - 비어 있으면 이름 · 기본 색
+  brandLogo?: string;
+  brandSub?: string;
+  brandMotto?: string;
+  brandPaper?: string;                 // 배경 컬러 #rrggbb
+  brandPoint?: string;                 // 포인트 컬러 #rrggbb
+  brandHeroImage?: string;             // 대표 이미지 경로 (없으면 대표 글자)
+  brandHeroWord?: string;
+  hqBrandKey?: string;                 // 본부(sol-hq) 브랜드 키
   createdBy: string;
   createdAt: string;
 }

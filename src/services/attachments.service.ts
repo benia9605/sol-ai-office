@@ -11,7 +11,7 @@ import { getCurrentUserId } from './auth';
 const BUCKET = 'attachments';
 const MAX_SIZE = 30 * 1024 * 1024; // 30MB
 
-export type AttachmentRefType = 'task' | 'meeting' | 'insight' | 'record' | 'schedule';
+export type AttachmentRefType = 'task' | 'meeting' | 'insight' | 'record' | 'schedule' | 'library';  // library = 브랜드 오피스 자료실 (ref_id = workspace id)
 
 export interface Attachment {
   id: string;
