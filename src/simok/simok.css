@@ -37,7 +37,7 @@
 .simok-office *::before,
 .simok-office *::after { box-sizing: border-box; }
 
-.simok-office button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; }
+:where(.simok-office) button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; }
 .simok-office h1, .simok-office h2, .simok-office h3, .simok-office h4 { margin: 0; font-weight: 500; }
 .simok-office p { margin: 0; }
 .simok-office ul { margin: 0; padding: 0; list-style: none; }
