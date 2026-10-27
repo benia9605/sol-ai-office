@@ -9,39 +9,40 @@
  */
 import { RefObject, useEffect, useRef, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
-import { Briefing, briefingState, fmtDay, getBriefingHtml, listBriefings, pickDecisionByQuestion, setTaskDoneByTitle, todayKst } from '../hq.service';
+import { Briefing, briefingState, fmtDay, getBriefingHtml, listBriefings, pickDecisionByQuestion, setBriefingMemo, setDecisionOpinion, setTaskDoneByTitle, todayKst } from '../hq.service';
 import { Empty, Err, PageHead, Sec, Skeleton, Tabs, useEsc, useLockScroll } from '../ui';
 
 /**
- * 브리핑 안 체크 · 결정 → 오피스 할 일 · 결정 대기 (postMessage).
- *   iframe → { hq: 'ready', titles, questions } · { hq: 'task', title, done } · { hq: 'decide', question, picked|null }
- *   이 판 → { hq: 'state', tasks: {제목: 완료?}, decisions: {물음: 고른 안|null} }
- * 이 iframe 이 보낸 것만 받고 (e.source), 이 워크스페이스에서 글자가 같은 것만 바꾼다. 토큰은 iframe 에 가지 않는다.
+ * 브리핑 안 체크 · 결정 · 의견 · 메모 → 오피스 (postMessage).
+ *   iframe → { hq: 'act', id, act: { op: state|task|decide|opinion|memo, ... } }
+ *   이 판 → { hq: 'res', id, result | error }   (본부 보고서가 hq_act 로 받는 것과 같은 모양)
+ * 이 iframe 이 보낸 것만 받고 (e.source), 이 워크스페이스 · 이 브리핑 안에서만 바꾼다. 토큰은 iframe 에 가지 않는다.
  */
-function useBriefingSync(ws: string, frame: RefObject<HTMLIFrameElement>) {
+function useBriefingSync(ws: string, briefingId: string, frame: RefObject<HTMLIFrameElement>) {
   useEffect(() => {
-    let ask: { titles: string[]; questions: string[] } = { titles: [], questions: [] };
     const str = (v: unknown, max = 300) => (typeof v === 'string' && v.length <= max ? v : null);
     const strs = (v: unknown) => (Array.isArray(v) ? v.map(x => str(x)).filter((x): x is string => !!x) : []);
-    const send = async () => {
-      const st = await briefingState(ws, ask.titles, ask.questions);
-      frame.current?.contentWindow?.postMessage({ hq: 'state', ...st }, '*');
+    const run = async (a: Record<string, unknown>) => {
+      switch (a.op) {
+        case 'state': return briefingState(ws, briefingId, strs(a.titles), strs(a.questions));
+        case 'task': return { ok: !!str(a.title) && await setTaskDoneByTitle(ws, str(a.title)!, a.done === true) };
+        case 'decide': return { ok: !!str(a.question) && await pickDecisionByQuestion(ws, str(a.question)!, a.picked === null ? null : str(a.picked)) };
+        case 'opinion': return { ok: !!str(a.question) && await setDecisionOpinion(ws, str(a.question)!, str(a.text, 5000) ?? '') };
+        case 'memo': return { ok: await setBriefingMemo(ws, briefingId, str(a.slot) ?? '', str(a.text, 5000) ?? '') };
+        default: return { ok: false, why: 'unknown op' };
+      }
     };
     const on = async (e: MessageEvent) => {
       if (!frame.current || e.source !== frame.current.contentWindow) return;
-      const m = e.data as Record<string, unknown> | null;
-      if (!m || typeof m !== 'object') return;
-      try {
-        if (m.hq === 'ready') ask = { titles: strs(m.titles), questions: strs(m.questions) };
-        else if (m.hq === 'task' && str(m.title)) await setTaskDoneByTitle(ws, str(m.title)!, m.done === true);
-        else if (m.hq === 'decide' && str(m.question)) await pickDecisionByQuestion(ws, str(m.question)!, m.picked === null ? null : str(m.picked));
-        else return;
-      } catch (err) { console.error('[briefing sync]', err); }
-      send().catch(err => console.error('[briefing sync]', err));
+      const m = e.data as { hq?: string; id?: number; act?: Record<string, unknown> } | null;
+      if (!m || m.hq !== 'act' || typeof m.id !== 'number' || !m.act || typeof m.act !== 'object') return;
+      const reply = (body: Record<string, unknown>) => frame.current?.contentWindow?.postMessage({ hq: 'res', id: m.id, ...body }, '*');
+      try { reply({ result: await run(m.act) }); }
+      catch (err) { console.error('[briefing sync]', err); reply({ error: '저장 안 됨' }); }
     };
     window.addEventListener('message', on);
     return () => window.removeEventListener('message', on);
-  }, [ws, frame]);
+  }, [ws, briefingId, frame]);
 }
 
 export function BriefingModal({ briefing, workspaceId, onClose }: { briefing: Briefing; workspaceId: string; onClose: () => void }) {
@@ -50,7 +51,7 @@ export function BriefingModal({ briefing, workspaceId, onClose }: { briefing: Br
   const frame = useRef<HTMLIFrameElement>(null);
   useLockScroll();
   useEsc(onClose);
-  useBriefingSync(workspaceId, frame);
+  useBriefingSync(workspaceId, briefing.id, frame);
   useEffect(() => { getBriefingHtml(briefing.id).then(setHtml).catch(setErr); }, [briefing.id]);
   return (
     <>
