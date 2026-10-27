@@ -99,7 +99,7 @@ export function MetricsView({ workspace, detailId, go }: BrandViewProps) {
           {workOf(sel.date).length > 0 && <Field label="작업"><Card><List>{workOf(sel.date).map((w: any, i: number) => <Row key={i} left={<Kind>{w.kind}</Kind>} title={w.title} desc={w.detail} />)}</List></Card></Field>}
         </Panel>
       )}
-      {open && <BriefingModal briefing={open} onClose={() => setOpen(null)} />}
+      {open && <BriefingModal briefing={open} workspaceId={workspace.id} onClose={() => setOpen(null)} />}
     </>
   );
 }

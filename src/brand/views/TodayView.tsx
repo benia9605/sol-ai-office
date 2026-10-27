@@ -88,7 +88,7 @@ export function TodayView({ workspace, look, go }: BrandViewProps) {
         </Card>
       </Sec>
 
-      {open && <BriefingModal briefing={open} onClose={() => setOpen(null)} />}
+      {open && <BriefingModal briefing={open} workspaceId={workspace.id} onClose={() => setOpen(null)} />}
     </>
   );
 }

@@ -107,7 +107,7 @@ export function LibraryView({ workspace, members, myId, detailId, go }: BrandVie
         onAdd={async name => { await addPromptCategory(ws, name, cats.length); setCats(await listPromptCategories(ws)); }} />}
       {sel && <PromptPanel p={sel} cats={cats} onClose={() => go('library')}
         onRevise={async f => { const p = await revisePrompt(sel, f, me); setPrompts(xs => (xs ?? []).map(x => (x.id === p.id ? p : x))); }} />}
-      {openBrief && <BriefingModal briefing={openBrief} onClose={() => setOpenBrief(null)} />}
+      {openBrief && <BriefingModal briefing={openBrief} workspaceId={workspace.id} onClose={() => setOpenBrief(null)} />}
     </>
   );
 }

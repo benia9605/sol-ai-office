@@ -153,6 +153,63 @@ export async function decide(ws: string, d: Decision, f: { picked?: string; opin
   }
 }
 
+// ── 브리핑 안에서 체크 · 결정 (BriefingModal ↔ 브리핑 iframe) ──
+// 브리핑 HTML 은 본부가 만든 그대로라 할 일 · 결정을 제목 · 물음 글자로 찾는다. 이 워크스페이스 안에서만.
+export type BriefingState = { tasks: Record<string, boolean>; decisions: Record<string, string | null> };
+const latestBy = <T extends { updated_at: string }>(rows: T[], k: (r: T) => string) => {
+  const m = new Map<string, T>();
+  for (const r of rows) { const o = m.get(k(r)); if (!o || o.updated_at < r.updated_at) m.set(k(r), r); }
+  return m;
+};
+async function findTask(ws: string, title: string) {
+  const { data, error } = await supabase.from('hq_tasks').select('*').eq('workspace_id', ws).eq('title', title)
+    .neq('status', 'deleted').order('updated_at', { ascending: false }).limit(1);
+  if (error) throw error;
+  return data?.[0] ? rowTask(data[0]) : null;
+}
+async function findDecision(ws: string, question: string) {
+  const { data, error } = await supabase.from('hq_decisions').select('*').eq('workspace_id', ws).eq('question', question)
+    .order('updated_at', { ascending: false }).limit(1);
+  if (error) throw error;
+  return data?.[0] ? rowDecision(data[0]) : null;
+}
+/** 브리핑에 나온 할 일 · 결정이 오피스에서 지금 어떤 상태인지. 없는 것은 칸이 빠진다 (브리핑에서 못 누름) */
+export async function briefingState(ws: string, titles: string[], questions: string[]): Promise<BriefingState> {
+  const out: BriefingState = { tasks: {}, decisions: {} };
+  const t = [...new Set(titles)].slice(0, 100), q = [...new Set(questions)].slice(0, 50);
+  if (t.length) {
+    const { data, error } = await supabase.from('hq_tasks').select('title,status,updated_at').eq('workspace_id', ws).in('title', t).neq('status', 'deleted');
+    if (error) throw error;
+    latestBy((data ?? []) as { title: string; status: string; updated_at: string }[], r => r.title).forEach((r, k) => { out.tasks[k] = r.status === 'done'; });
+  }
+  if (q.length) {
+    const { data, error } = await supabase.from('hq_decisions').select('question,status,picked,updated_at').eq('workspace_id', ws).in('question', q);
+    if (error) throw error;
+    latestBy((data ?? []) as { question: string; status: string; picked: string | null; updated_at: string }[], r => r.question).forEach((r, k) => { out.decisions[k] = r.status === 'decided' ? (r.picked ?? '') : null; });
+  }
+  return out;
+}
+/** 브리핑에서 할 일 체크 · 해제 */
+export async function setTaskDoneByTitle(ws: string, title: string, done: boolean): Promise<boolean> {
+  const t = await findTask(ws, title);
+  if (!t) return false;
+  if ((t.status === 'done') !== done) await updateTask(t, { status: done ? 'done' : 'open' }, done ? '브리핑에서 완료' : '브리핑에서 완료 취소');
+  return true;
+}
+/** 브리핑에서 결정 고르기 (picked = null 이면 다시 결정 대기로) - 할 일은 만들지 않는다 (결정 메뉴에서) */
+export async function pickDecisionByQuestion(ws: string, question: string, picked: string | null): Promise<boolean> {
+  const d = await findDecision(ws, question);
+  if (!d) return false;
+  if (picked === null) {
+    const { error } = await supabase.from('hq_decisions').update({ status: 'open', picked: null, decided_by: null, decided_at: null, updated_at: new Date().toISOString() }).eq('id', d.id);
+    if (error) throw error;
+  } else {
+    if (!d.options.includes(picked)) return false;
+    await decide(ws, d, { picked, opinion: d.opinion, makeTask: false, status: 'decided' });
+  }
+  return true;
+}
+
 // ── 리서치 ───────────────────────────────────────────
 function rowResearch(r: any): Research {
   return { id: r.id, date: r.date, kind: r.kind, title: r.title, summary: r.summary ?? undefined, evidence: arr(r.evidence),

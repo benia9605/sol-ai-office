@@ -7,16 +7,50 @@
  *   allow-same-origin 을 주지 않는다 - 주면 브리핑 안 스크립트가 이 앱의 로그인 토큰에 닿는다 (rawHtml.ts 와 같은 원칙).
  *   iframe 이 판 높이를 다 쓰고 브리핑 안에서만 스크롤된다 (브리핑 위 메뉴 줄은 브리핑 자체에서 고정).
  */
-import { useEffect, useState } from 'react';
+import { RefObject, useEffect, useRef, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
-import { Briefing, fmtDay, getBriefingHtml, listBriefings, todayKst } from '../hq.service';
+import { Briefing, briefingState, fmtDay, getBriefingHtml, listBriefings, pickDecisionByQuestion, setTaskDoneByTitle, todayKst } from '../hq.service';
 import { Empty, Err, PageHead, Sec, Skeleton, Tabs, useEsc, useLockScroll } from '../ui';
 
-export function BriefingModal({ briefing, onClose }: { briefing: Briefing; onClose: () => void }) {
+/**
+ * 브리핑 안 체크 · 결정 → 오피스 할 일 · 결정 대기 (postMessage).
+ *   iframe → { hq: 'ready', titles, questions } · { hq: 'task', title, done } · { hq: 'decide', question, picked|null }
+ *   이 판 → { hq: 'state', tasks: {제목: 완료?}, decisions: {물음: 고른 안|null} }
+ * 이 iframe 이 보낸 것만 받고 (e.source), 이 워크스페이스에서 글자가 같은 것만 바꾼다. 토큰은 iframe 에 가지 않는다.
+ */
+function useBriefingSync(ws: string, frame: RefObject<HTMLIFrameElement>) {
+  useEffect(() => {
+    let ask: { titles: string[]; questions: string[] } = { titles: [], questions: [] };
+    const str = (v: unknown, max = 300) => (typeof v === 'string' && v.length <= max ? v : null);
+    const strs = (v: unknown) => (Array.isArray(v) ? v.map(x => str(x)).filter((x): x is string => !!x) : []);
+    const send = async () => {
+      const st = await briefingState(ws, ask.titles, ask.questions);
+      frame.current?.contentWindow?.postMessage({ hq: 'state', ...st }, '*');
+    };
+    const on = async (e: MessageEvent) => {
+      if (!frame.current || e.source !== frame.current.contentWindow) return;
+      const m = e.data as Record<string, unknown> | null;
+      if (!m || typeof m !== 'object') return;
+      try {
+        if (m.hq === 'ready') ask = { titles: strs(m.titles), questions: strs(m.questions) };
+        else if (m.hq === 'task' && str(m.title)) await setTaskDoneByTitle(ws, str(m.title)!, m.done === true);
+        else if (m.hq === 'decide' && str(m.question)) await pickDecisionByQuestion(ws, str(m.question)!, m.picked === null ? null : str(m.picked));
+        else return;
+      } catch (err) { console.error('[briefing sync]', err); }
+      send().catch(err => console.error('[briefing sync]', err));
+    };
+    window.addEventListener('message', on);
+    return () => window.removeEventListener('message', on);
+  }, [ws, frame]);
+}
+
+export function BriefingModal({ briefing, workspaceId, onClose }: { briefing: Briefing; workspaceId: string; onClose: () => void }) {
   const [html, setHtml] = useState<string | null>(null);
   const [err, setErr] = useState<unknown>(null);
+  const frame = useRef<HTMLIFrameElement>(null);
   useLockScroll();
   useEsc(onClose);
+  useBriefingSync(workspaceId, frame);
   useEffect(() => { getBriefingHtml(briefing.id).then(setHtml).catch(setErr); }, [briefing.id]);
   return (
     <>
@@ -25,7 +59,7 @@ export function BriefingModal({ briefing, onClose }: { briefing: Briefing; onClo
         <div className="n-ph"><span className="n-b hq">{fmtDay(briefing.date, false)}</span><b>{briefing.source === 'hq' ? '아침 브리핑' : briefing.title}</b><button type="button" className="x" aria-label="닫기" onClick={onClose}>✕</button></div>
         {err ? <div style={{ padding: 20 }}><Err e={err} /></div>
           : html === null ? <div style={{ padding: 20 }}><Skeleton /></div>
-          : html ? <iframe title="브리핑" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" srcDoc={html} />
+          : html ? <iframe ref={frame} title="브리핑" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" srcDoc={html} />
           : <div style={{ padding: 20 }}><Empty>본문 없음</Empty></div>}
       </div>
     </>
@@ -77,7 +111,7 @@ export function BriefingView({ workspace, detailId, go }: BrandViewProps) {
           </div>
         </Sec>
       ))}
-      {open && <BriefingModal briefing={open} onClose={() => go('briefing')} />}
+      {open && <BriefingModal briefing={open} workspaceId={workspace.id} onClose={() => go('briefing')} />}
     </>
   );
 }
