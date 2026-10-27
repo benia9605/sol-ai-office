@@ -1,8 +1,8 @@
 /**
  * @file supabase/functions/morning-journal/index.ts
- * @description 아침 일기 리마인더 (매일 9시 KST)
+ * @description 아침 일기 리마인더 (매일 10시 KST)
  * - 오늘 아침 일기(type='morning')를 안 쓴 유저에게 알림
- * - Cron: 5 0 * * * (UTC) = 09:05 KST (morning-routine과 5분 간격)
+ * - Cron: 5 1 * * * (UTC) = 10:05 KST (출근 10시 기준, 마이그 069)
  */
 import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
 import {

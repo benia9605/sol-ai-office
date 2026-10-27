@@ -8,7 +8,7 @@
  * - 재활용: _shared/push.ts (sendPushToUsers, checkPreference).
  * - 부르는 쪽 셋 (마이그 068 부터 이 셋만):
  *     로그인한 멤버 (앱)          → 그 워크스페이스 멤버여야 하고, 액터는 본인
- *     본부 토큰 hq_token (sol-hq) → 토큰의 워크스페이스에만, 액터는 워크스페이스를 만든 사람(대표)
+ *     본부 토큰 hq_token (sol-hq) → 토큰의 워크스페이스에만, 액터는 hq_act 가 정한 사람(본부 보고서를 쓰는 사람 · 그 워크스페이스 멤버일 때만)
  *     서버 (service-role 키)      → 그대로 믿는다 (cron)
  *   이 밖의 호출(공개 anon 키만 든 것)은 거절한다.
  */
@@ -71,8 +71,13 @@ Deno.serve(async (req: Request) => {
     const { data: ws, error } = await supabase.rpc('hq_auth', { p_token: body.hq_token });
     if (error || !ws || ws !== body.workspace_id) return json({ error: 'forbidden' }, 403);
     if (!['notify_task_completed', 'notify_decision', 'notify_comment'].includes(body.type)) return json({ error: 'bad_type' }, 400);
-    const { data: w } = await supabase.from('workspaces').select('created_by').eq('id', ws).maybeSingle();
-    body.actor_id = (w as { created_by?: string } | null)?.created_by ?? null;
+    const { data: m } = body.actor_id
+      ? await supabase.from('workspace_members').select('user_id').eq('workspace_id', ws).eq('user_id', body.actor_id).maybeSingle()
+      : { data: null };
+    if (!m) {
+      const { data: w } = await supabase.from('workspaces').select('created_by').eq('id', ws).maybeSingle();
+      body.actor_id = (w as { created_by?: string } | null)?.created_by ?? null;
+    }
     body.target_user_ids = undefined;
   } else if (!callerId && token !== Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
     return json({ error: 'forbidden' }, 403);

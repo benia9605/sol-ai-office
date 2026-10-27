@@ -371,11 +371,11 @@ export function NotificationSettings({ userId, embedded }: Props) {
             </div>
             <NotifToggle label="마감 알림 (D-1, D-Day)" desc="마감 하루 전, 당일에 알림" checked={prefs.taskDeadline} onChange={(v) => togglePref('taskDeadline', v)} />
             <NotifToggle label="미완료 할일 알림 (밤 10시)" desc="못 끝낸 할일이 있으면 밤 10시에 알림" checked={prefs.taskOverdue} onChange={(v) => togglePref('taskOverdue', v)} />
-            <NotifToggle label="아침 루틴 체크 (9시)" desc="매일 오전 9시 루틴 확인 알림" checked={prefs.morningRoutine} onChange={(v) => togglePref('morningRoutine', v)} />
+            <NotifToggle label="아침 루틴 체크 (10시)" desc="매일 오전 10시 루틴 확인 알림" checked={prefs.morningRoutine} onChange={(v) => togglePref('morningRoutine', v)} />
             <NotifToggle label="일정 시작 전 알림" desc="설정한 시간(15분/30분/1시간) 전 알림" checked={prefs.scheduleReminder} onChange={(v) => togglePref('scheduleReminder', v)} />
-            <NotifToggle label="오늘 일정 아침 브리핑 (8시)" desc="매일 오전 8시 오늘 일정 요약" checked={prefs.morningBriefing} onChange={(v) => togglePref('morningBriefing', v)} />
+            <NotifToggle label="아침 요약 (10시)" desc="매일 오전 10시 오늘 일정 · 할 일 · 오피스 할 일 요약" checked={prefs.morningBriefing} onChange={(v) => togglePref('morningBriefing', v)} />
             <NotifToggle label="뽀모도로 타이머 종료" desc="작업 시간 종료 시 알림 (백그라운드)" checked={prefs.pomodoroDone} onChange={(v) => togglePref('pomodoroDone', v)} />
-            <NotifToggle label="아침 일기 리마인더 (9시)" desc="아침 일기를 안 쓰면 오전 9시에 알림" checked={prefs.morningJournal} onChange={(v) => togglePref('morningJournal', v)} />
+            <NotifToggle label="아침 일기 리마인더 (10시)" desc="아침 일기를 안 쓰면 오전 10시에 알림" checked={prefs.morningJournal} onChange={(v) => togglePref('morningJournal', v)} />
             <NotifToggle label="저녁 일기 리마인더 (9시)" desc="저녁 일기를 안 쓰면 밤 9시에 알림" checked={prefs.eveningJournal} onChange={(v) => togglePref('eveningJournal', v)} />
 
             {/* ── 팀·오피스 알림 (멤버들과 함께 쓰는 오피스) ── */}

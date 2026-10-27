@@ -1,8 +1,8 @@
 /**
  * @file supabase/functions/morning-briefing/index.ts
- * @description 오늘 일정 아침 브리핑 (매일 8시 KST)
- * - 오늘 일정 수 + 긴급 할일 수 요약 알림
- * - Cron: 0 23 * * * (UTC) = 8:00 KST
+ * @description 오늘 일정 아침 요약 (매일 10시 KST - 출근 10시, 마이그 069)
+ * - 오늘 일정 수 + 할일 수 + 브랜드 오피스 내 담당 할 일 수 요약 알림
+ * - Cron: 0 1 * * * (UTC) = 10:00 KST
  */
 import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
 import {

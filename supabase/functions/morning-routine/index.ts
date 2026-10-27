@@ -1,8 +1,8 @@
 /**
  * @file supabase/functions/morning-routine/index.ts
- * @description 아침 루틴 체크 알림 (매일 9시 KST)
+ * @description 아침 루틴 체크 알림 (매일 10시 KST)
  * - "오늘 루틴을 확인해보세요"
- * - Cron: 0 0 * * * (UTC) = 9:00 KST
+ * - Cron: 3 1 * * * (UTC) = 10:03 KST (출근 10시 기준, 마이그 069)
  */
 import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
 import {
