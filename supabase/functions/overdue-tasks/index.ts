@@ -2,7 +2,7 @@
  * @file supabase/functions/overdue-tasks/index.ts
  * @description 미완료 할일 알림 (매일 22:00 KST)
  * - "아직 못 한 일이 있어요"
- * - Cron: 0 13 * * * (UTC) = 22:00 KST
+ * - Cron: 0 13 * * * (UTC) = 22:00 KST (마이그 071 에서 맞춤 - 그 전엔 00:05 였다)
  */
 import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
 import {
