@@ -9,7 +9,7 @@
  *   · 데이터는 본부(sol-hq)가 매일 09:00 hq_ingest 로 넣는다 - 각 앱이 직접 보내지 않는다
  * 화면 규격 · 시안: sol-hq/할일/AI오피스-개편-시안.html
  *
- * 주소: /w/:workspaceId/:view/:detailId?  (view = today · briefing · tasks · content · research · metrics · library · settings)
+ * 주소: /w/:workspaceId/:view/:detailId?  (view = today · briefing · tasks · content · research · meetings · metrics · library · settings)
  * 폰: 위 헤더(☰ · 로고 · 날짜) 고정, ☰ 로 사이드바. 판이 열리면 뒤는 고정, 판 안만 스크롤.
  */
 import { CSSProperties, useEffect, useMemo, useState } from 'react';
@@ -31,16 +31,17 @@ import { ResearchView } from './views/ResearchView';
 import { MetricsView } from './views/MetricsView';
 import { LibraryView } from './views/LibraryView';
 import { SettingsView } from './views/SettingsView';
+import { MeetingsView } from './views/MeetingsView';
 import { NoticePanel, useNotices } from './views/NoticePanel';
 
-export type BrandView = 'today' | 'briefing' | 'tasks' | 'content' | 'research' | 'metrics' | 'library' | 'settings';
+export type BrandView = 'today' | 'briefing' | 'tasks' | 'content' | 'research' | 'meetings' | 'metrics' | 'library' | 'settings';
 
 const NAV: [string, [BrandView, string, string][]][] = [
   ['매일', [['today', '01', '오늘'], ['briefing', '02', '브리핑'], ['tasks', '03', '할 일']]],
   ['제작', [['content', '04', '콘텐츠'], ['research', '05', '리서치']]],
-  ['기록', [['metrics', '06', '실적 · 유입'], ['library', '07', '자료실']]],
+  ['기록', [['meetings', '06', '회의'], ['metrics', '07', '실적 · 유입'], ['library', '08', '자료실']]],
 ];
-const VIEWS = new Set<string>(['today', 'briefing', 'tasks', 'content', 'research', 'metrics', 'library', 'settings']);
+const VIEWS = new Set<string>(['today', 'briefing', 'tasks', 'content', 'research', 'meetings', 'metrics', 'library', 'settings']);
 
 /** 브랜드 값 - 비어 있으면 워크스페이스 이름 · 기본 색으로 */
 export interface BrandLook { logo: string; sub: string; motto: string; paper: string; point: string; heroImage?: string; heroWord?: string; custom: boolean }
@@ -137,6 +138,7 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
           {view === 'tasks' && <TasksView {...props} />}
           {view === 'content' && <ContentView {...props} />}
           {view === 'research' && <ResearchView {...props} />}
+          {view === 'meetings' && <MeetingsView {...props} />}
           {view === 'metrics' && <MetricsView {...props} />}
           {view === 'library' && <LibraryView {...props} />}
           {view === 'settings' && <SettingsView {...props} onOpenLauncher={() => setLauncherOpen(true)} />}

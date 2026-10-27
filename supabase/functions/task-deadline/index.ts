@@ -4,6 +4,7 @@
  * - D-Day: 오늘 마감인 미완료 할일
  * - D-1: 내일 마감인 미완료 할일
  * - Cron: 1 1 * * * (UTC) = 10:01 KST
+ * - 브랜드 오피스 할 일: 회의 추천 날짜(due_kind planned)는 당일 알림만 (072)
  */
 import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
 import {
@@ -102,12 +103,14 @@ Deno.serve(async () => {
   // ── 브랜드 오피스 할 일 (hq_tasks · 마이그 065) - 담당자, 「공동」 이면 그 워크스페이스 멤버 모두 ──
   const { data: hqTasks } = await supabase
     .from('hq_tasks')
-    .select('id, title, due_date, assignee_user_id, assignee_shared, workspace_id')
+    .select('id, title, due_date, due_kind, assignee_user_id, assignee_shared, workspace_id')
     .in('due_date', [today, tomorrow])
     .eq('status', 'open')
     .or('assignee_user_id.not.is.null,assignee_shared.eq.true');
 
-  for (const t of (hqTasks ?? []) as { id: string; title: string; due_date: string; assignee_user_id: string | null; assignee_shared: boolean; workspace_id: string }[]) {
+  for (const t of (hqTasks ?? []) as { id: string; title: string; due_date: string; due_kind: string | null; assignee_user_id: string | null; assignee_shared: boolean; workspace_id: string }[]) {
+    // 회의 「추천 날짜」(planned) 는 당일만 - 하루 전 알림은 「약속 날짜」 와 직접 넣은 할 일만 (마이그 072)
+    if (t.due_kind === 'planned' && t.due_date !== today) continue;
     let uids = t.assignee_user_id ? [t.assignee_user_id] : [];
     if (t.assignee_shared) {
       const { data: ms } = await supabase.from('workspace_members').select('user_id').eq('workspace_id', t.workspace_id);

@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
 import { Decision, HqTask, addTask, decide, fmtDay, fmtTime, listDecisions, listTasks, todayKst, updateTask } from '../hq.service';
-import { Act, AssigneeSeg, Badge, Card, Check, DueSeg, Empty, Err, Field, Kind, List, Mini, PageHead, Panel, Row, Sec, Seg, Skeleton, Tabs, Thread, memberName } from '../ui';
+import { Act, AssigneeSeg, Badge, Card, Check, DueSeg, Empty, Err, Field, Kind, List, Mini, PageHead, Panel, Row, Sec, Seg, Skeleton, Tabs, Thread, DueKindBadge, memberName } from '../ui';
 import { isCarry, isToday } from './TodayView';
 
 type Tab = 'todo' | 'decide' | 'propose';
@@ -49,7 +49,7 @@ export function TasksView({ workspace, members, myId, detailId, go }: BrandViewP
       title={t.title}
       desc={[t.why, t.assigneeShared ? '공동' : memberName(members, t.assigneeUserId),
         t.status === 'done' && t.doneAt ? `완료 ${[memberName(members, t.doneBy), fmtTime(t.doneAt)].filter(Boolean).join(' ')}` : ''].filter(Boolean).join(' · ')}
-      right={<Badge source={isCarry(t, today) ? 'carry' : t.source} />} />
+      right={<><DueKindBadge kind={t.dueKind} /><Badge source={isCarry(t, today) ? 'carry' : t.source} /></>} />
   );
   const laterGroups = useMemo(() => {
     const m = new Map<string, HqTask[]>();

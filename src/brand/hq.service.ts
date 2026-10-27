@@ -38,6 +38,8 @@ export interface HqTask {
   id: string; workspaceId: string; title: string; why?: string; source: Source; sourceLabel?: string; status: TaskStatus;
   dueDate?: string; assigneeUserId?: string; assigneeShared: boolean; memo?: string;
   history: { at: string; text: string; by?: string }[]; createdAt: string; updatedAt: string; doneAt?: string; doneBy?: string;
+  /** 회의에서 나온 할 일 - promised 회의에서 정한 날짜 · planned 본부 추천 날짜 (마이그 072) */
+  dueKind?: 'promised' | 'planned'; meetingId?: string;
 }
 export interface Decision {
   id: string; date: string; question: string; why?: string; options: string[];
@@ -119,6 +121,7 @@ function rowTask(r: any): HqTask {
     status: r.status, dueDate: r.due_date ?? undefined, assigneeUserId: r.assignee_user_id ?? undefined,
     assigneeShared: !!r.assignee_shared, memo: r.memo ?? undefined, history: arr(r.history),
     createdAt: r.created_at, updatedAt: r.updated_at, doneAt: r.done_at ?? undefined, doneBy: r.done_by ?? undefined,
+    dueKind: r.due_kind ?? undefined, meetingId: r.meeting_id ?? undefined,
   };
 }
 /** 진행 중 · 제안 · 오늘 끝낸 할 일 */
@@ -195,8 +198,8 @@ export async function decide(ws: string, d: Decision, f: { picked?: string; opin
 }
 
 // ── 댓글 (기존 social_comments 를 같이 쓴다 · 마이그 068) ──
-// hq_task: 할 일 id · hq_decision: 결정 id · hq_briefing: '<브리핑 id>:<칸>' (칸 = top · brand · free)
-export type HqRef = 'hq_task' | 'hq_decision' | 'hq_briefing';
+// hq_task: 할 일 id · hq_decision: 결정 id · hq_briefing: '<브리핑 id>:<칸>' (칸 = top · brand · free) · hq_meeting: 회의 id (072)
+export type HqRef = 'hq_task' | 'hq_decision' | 'hq_briefing' | 'hq_meeting';
 export interface HqComment { id: string; userId: string; text: string; at: string }
 export async function listHqComments(ws: string, ref: HqRef, refIds: string[]): Promise<Record<string, HqComment[]>> {
   const out: Record<string, HqComment[]> = {};
@@ -320,6 +323,28 @@ export async function addBriefingComment(ws: string, briefingId: string, target:
   }
   const me = await whoAmI(ws);
   return { id: c.id, by: me.name, text: c.text, at: c.at, mine: true };
+}
+
+// ── 회의 (마이그 072) - 본부가 회의록 텍스트로 만든 HTML · 그 회의 할 일 ──
+export interface Meeting { id: string; date: string; title: string; summary?: string; meta: Record<string, any>; createdAt: string }
+export async function listMeetings(ws: string, limit = 60): Promise<Meeting[]> {
+  const { data, error } = await supabase.from('hq_meetings').select('id,date,title,summary,meta,created_at').eq('workspace_id', ws)
+    .order('date', { ascending: false }).limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({ id: r.id, date: r.date, title: r.title, summary: r.summary ?? undefined, meta: r.meta ?? {}, createdAt: r.created_at }));
+}
+export async function getMeetingHtml(id: string): Promise<string> {
+  const { data, error } = await supabase.from('hq_meetings').select('html').eq('id', id).single();
+  if (error) throw error;
+  return data?.html ?? '';
+}
+/** 회의 할 일 - 끝난 것까지 전부 (지운 것만 빼고). 날짜순 */
+export async function listMeetingTasks(ws: string, meetingIds: string[]): Promise<HqTask[]> {
+  if (!meetingIds.length) return [];
+  const { data, error } = await supabase.from('hq_tasks').select('*').eq('workspace_id', ws).in('meeting_id', meetingIds)
+    .neq('status', 'deleted').order('due_date', { ascending: true, nullsFirst: false }).limit(500);
+  if (error) throw error;
+  return (data ?? []).map(rowTask);
 }
 
 // ── 리서치 ───────────────────────────────────────────

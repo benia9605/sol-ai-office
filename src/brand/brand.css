@@ -63,6 +63,9 @@
 .n-b { font-size: 10px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; background: #eeede5; color: #6d7468; }
 .n-b.hq { background: var(--sage); color: #36503b; }
 .n-b.me { background: #f0e4d8; color: #825e3f; }
+.n-b.promise { background: #f3e1d3; color: #8a4a26; }
+.n-b.plan { background: #e7ece4; color: #55654f; }
+.n-b.late { background: #f6dcd6; color: #a2402f; }
 .n-ex { font-size: 9.5px; color: #a9ad9f; font-weight: 400; margin-left: 5px; white-space: nowrap; }
 .n-mini { font-size: 11px; padding: 5px 11px; border-radius: 7px; border: 1px solid var(--line); background: var(--white); white-space: nowrap; }
 .n-mini.p { background: var(--green); color: #fff; border-color: var(--green); }

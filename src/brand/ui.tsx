@@ -78,6 +78,12 @@ export function Badge({ source, children }: { source?: Source | 'carry'; childre
   return <span className="n-b">{children}</span>;
 }
 export const Ex = () => <span className="n-ex">예시</span>;
+/** 회의 할 일 날짜 종류 - 약속(회의에서 정함) · 추천(본부가 나눠 넣음) */
+export function DueKindBadge({ kind }: { kind?: 'promised' | 'planned' }) {
+  if (kind === 'promised') return <span className="n-b promise" title="회의에서 정한 날짜">약속</span>;
+  if (kind === 'planned') return <span className="n-b plan" title="「해 보자」 한 것 - 본부 추천 날짜, 바꿔도 돼요">추천</span>;
+  return null;
+}
 
 /** 겹치는 판 - PC 오른쪽 서랍 · 폰 아래에서 올라오는 판. 뒤 화면은 고정, 판 안만 스크롤 */
 export function Panel({ title, tag, onClose, children, foot }: { title: string; tag?: string; onClose: () => void; children: ReactNode; foot?: ReactNode }) {

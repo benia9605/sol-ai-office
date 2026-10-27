@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
     // 본부 보고서 → 토큰 워크스페이스에만. 다른 워크스페이스로는 못 보낸다
     const { data: ws, error } = await supabase.rpc('hq_auth', { p_token: body.hq_token });
     if (error || !ws || ws !== body.workspace_id) return json({ error: 'forbidden' }, 403);
-    if (!['notify_task_completed', 'notify_decision', 'notify_comment'].includes(body.type)) return json({ error: 'bad_type' }, 400);
+    if (!['notify_task_completed', 'notify_decision', 'notify_comment', 'notify_task_assigned'].includes(body.type)) return json({ error: 'bad_type' }, 400);
     const { data: m } = body.actor_id
       ? await supabase.from('workspace_members').select('user_id').eq('workspace_id', ws).eq('user_id', body.actor_id).maybeSingle()
       : { data: null };
@@ -78,7 +78,13 @@ Deno.serve(async (req: Request) => {
       const { data: w } = await supabase.from('workspaces').select('created_by').eq('id', ws).maybeSingle();
       body.actor_id = (w as { created_by?: string } | null)?.created_by ?? null;
     }
-    body.target_user_ids = undefined;
+    // 받는 사람을 정했으면 (회의 할 일 배정 → 담당자) 그 워크스페이스 멤버로만
+    if (body.target_user_ids?.length) {
+      const { data: members } = await supabase.from('workspace_members').select('user_id').eq('workspace_id', ws);
+      const set = new Set((members ?? []).map((x: { user_id: string }) => x.user_id));
+      body.target_user_ids = body.target_user_ids.filter((u) => set.has(u));
+      if (!body.target_user_ids.length) return json({ ok: true, sent: 0 });
+    }
   } else if (!callerId && token !== Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
     return json({ error: 'forbidden' }, 403);
   }
