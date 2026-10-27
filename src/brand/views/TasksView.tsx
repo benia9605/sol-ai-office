@@ -9,8 +9,8 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
-import { Decision, HqTask, addTask, decide, fmtDay, listDecisions, listTasks, todayKst, updateTask } from '../hq.service';
-import { Act, AssigneeSeg, Badge, Card, Check, DueSeg, Empty, Err, Field, Kind, List, Mini, PageHead, Panel, Row, Sec, Seg, Skeleton, Tabs, memberName } from '../ui';
+import { Decision, HqTask, addTask, decide, fmtDay, fmtTime, listDecisions, listTasks, todayKst, updateTask } from '../hq.service';
+import { Act, AssigneeSeg, Badge, Card, Check, DueSeg, Empty, Err, Field, Kind, List, Mini, PageHead, Panel, Row, Sec, Seg, Skeleton, Tabs, Thread, memberName } from '../ui';
 import { isCarry, isToday } from './TodayView';
 
 type Tab = 'todo' | 'decide' | 'propose';
@@ -47,7 +47,8 @@ export function TasksView({ workspace, members, myId, detailId, go }: BrandViewP
     <Row key={t.id} done={t.status === 'done'} onClick={() => go('tasks', t.id)}
       left={mark ? <Check on={t.status === 'done'} onToggle={() => toggle(t)} label="완료" /> : <Check on={false} onToggle={() => toggle(t)} label="완료" />}
       title={t.title}
-      desc={[t.why, t.assigneeShared ? '공동' : memberName(members, t.assigneeUserId)].filter(Boolean).join(' · ')}
+      desc={[t.why, t.assigneeShared ? '공동' : memberName(members, t.assigneeUserId),
+        t.status === 'done' && t.doneAt ? `완료 ${[memberName(members, t.doneBy), fmtTime(t.doneAt)].filter(Boolean).join(' ')}` : ''].filter(Boolean).join(' · ')}
       right={<Badge source={isCarry(t, today) ? 'carry' : t.source} />} />
   );
   const laterGroups = useMemo(() => {
@@ -102,7 +103,7 @@ export function TasksView({ workspace, members, myId, detailId, go }: BrandViewP
       {selTask && selTask.status === 'proposed' && <ApprovePanel task={selTask} members={members} myId={myId} today={today} tomorrow={tomorrow} onClose={close}
         onHold={async () => { replace(await updateTask(selTask, { status: 'held' }, '보류')); close(); }}
         onApprove={async f => { replace(await updateTask(selTask, { status: 'open', dueDate: f.dueDate ?? '', assigneeUserId: f.assigneeUserId ?? '', assigneeShared: !!f.assigneeShared }, '제안 승인')); close(); }} />}
-      {selDecision && <DecisionPanel d={selDecision} members={members} myId={myId} onClose={close}
+      {selDecision && <DecisionPanel ws={ws} d={selDecision} members={members} myId={myId} onClose={close}
         onSubmit={async f => { await decide(ws, selDecision, f); await load(); close(); }} />}
     </>
   );
@@ -126,8 +127,9 @@ function TaskPanel({ title, task, members, myId, today, tomorrow, onClose, onSav
       <Field label="담당"><AssigneeSeg members={members} userId={f.assigneeUserId} shared={!!f.assigneeShared} onChange={v => setF({ ...f, assigneeUserId: v.userId, assigneeShared: v.shared })} /></Field>
       {task?.why && <Field label="근거"><div className="n-box">{task.why}{task.sourceLabel && <><br /><span style={{ color: 'var(--muted)' }}>출처 · {task.sourceLabel}</span></>}</div></Field>}
       <Field label="메모"><textarea className="n-in area" rows={3} value={f.memo} onChange={e => setF({ ...f, memo: e.target.value })} placeholder="선택 입력" /></Field>
+      {task && <Field label="댓글"><Thread ws={task.workspaceId} refType="hq_task" refId={task.id} members={members} myId={myId} about={{ label: '할 일에 댓글', path: `/tasks/${task.id}` }} /></Field>}
       {task && task.history.length > 0 && <Field label="이력"><List>{[...task.history].reverse().map((h, i) => (
-        <Row key={i} left={<Kind>{fmtDay(h.at.slice(0, 10), false)}</Kind>} title={<span className="d" style={{ margin: 0 }}>{h.text}</span>} />
+        <Row key={i} left={<Kind>{fmtTime(h.at)}</Kind>} title={<span className="d" style={{ margin: 0 }}>{h.text}{h.by && <> · {h.by}</>}</span>} />
       ))}</List></Field>}
     </Panel>
   );
@@ -148,12 +150,12 @@ function ApprovePanel({ task, members, myId, today, tomorrow, onClose, onHold, o
   );
 }
 
-function DecisionPanel({ d, members, myId, onClose, onSubmit }: {
-  d: Decision; members: BrandViewProps['members']; myId: string; onClose: () => void;
+function DecisionPanel({ ws, d, members, myId, onClose, onSubmit }: {
+  ws: string; d: Decision; members: BrandViewProps['members']; myId: string; onClose: () => void;
   onSubmit: (f: { picked?: string; opinion?: string; makeTask: boolean; assigneeUserId?: string; status: 'decided' | 'held' }) => Promise<void>;
 }) {
   const [picked, setPicked] = useState<string | undefined>(d.picked);
-  const [opinion, setOpinion] = useState(d.opinion ?? '');
+  const [opinion, setOpinion] = useState('');
   const [makeTask, setMakeTask] = useState(true);
   const [assignee, setAssignee] = useState<string | undefined>(myId);
   const [busy, setBusy] = useState(false);
@@ -164,7 +166,9 @@ function DecisionPanel({ d, members, myId, onClose, onSubmit }: {
       <h3 className="n-ttl">{d.question}</h3>
       {d.why && <div className="n-sub" style={{ marginTop: -6 }}>{d.why}</div>}
       <Field label="선택"><Seg col items={d.options.map(o => ({ key: o, label: `${picked === o ? '● ' : '○ '}${o}` }))} value={picked} onChange={setPicked} /></Field>
-      <Field label="의견"><textarea className="n-in area" rows={3} value={opinion} onChange={e => setOpinion(e.target.value)} placeholder="선택 입력" /></Field>
+      {d.status === 'held' && d.decidedAt && <div className="n-sub">보류 · {memberName(members, d.decidedBy) || '본부'} · {fmtTime(d.decidedAt)}</div>}
+      <Field label="댓글"><Thread ws={ws} refType="hq_decision" refId={d.id} members={members} myId={myId} about={{ label: '결정에 댓글', path: `/tasks/decide-${d.id}` }} /></Field>
+      <Field label="결정하면서 남길 말"><textarea className="n-in area" rows={2} value={opinion} onChange={e => setOpinion(e.target.value)} placeholder="선택 입력 - 결정과 함께 댓글로 남는다" /></Field>
       <Field label="후속 할 일">
         <div className="n-box acc">
           <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={makeTask} onChange={e => setMakeTask(e.target.checked)} /> 선택한 안으로 할 일 생성 · 오늘</label>

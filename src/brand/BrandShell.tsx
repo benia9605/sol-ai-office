@@ -31,6 +31,7 @@ import { ResearchView } from './views/ResearchView';
 import { MetricsView } from './views/MetricsView';
 import { LibraryView } from './views/LibraryView';
 import { SettingsView } from './views/SettingsView';
+import { NoticePanel, useNotices } from './views/NoticePanel';
 
 export type BrandView = 'today' | 'briefing' | 'tasks' | 'content' | 'research' | 'metrics' | 'library' | 'settings';
 
@@ -73,6 +74,8 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [myId, setMyId] = useState('');
   const look = useMemo(() => brandLook(workspace), [workspace]);
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const notices = useNotices(workspace.id);
 
   const raw = params.view ?? 'today';
   const view = (VIEWS.has(raw) ? raw : 'today') as BrandView;
@@ -113,6 +116,7 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
         </nav>
         <div className="simok-side-bottom">
           <div className="n-me"><span className="simok-avatar">{look.logo[0]}</span><div>{workspace.name}<br /><span style={{ color: 'var(--muted)' }}>{look.motto}</span></div></div>
+          <button type="button" className="n-set" onClick={() => { setNavOpen(false); setNoticeOpen(true); }}>🔔 알림{notices.unread > 0 && <span className="n-cnt">{notices.unread}</span>}</button>
           <button type="button" className={`n-set${isSettings ? ' on' : ''}`} onClick={() => go('settings')}>⚙ 설정</button>
           <button type="button" className="n-set" onClick={() => setLauncherOpen(true)}>⇄ 워크스페이스 전환</button>
         </div>
@@ -122,6 +126,7 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
         <button type="button" className="n-burger" aria-label="메뉴 열기" onClick={() => setNavOpen(true)}><i /><i /><i /></button>
         <div className="simok-logo">{look.logo}</div>
         <small>{fmtDay(todayKst())}</small>
+        <button type="button" className="n-bell" aria-label={`알림${notices.unread ? ` ${notices.unread}개` : ''}`} onClick={() => setNoticeOpen(true)}>🔔{notices.unread > 0 && <span className="n-cnt">{notices.unread}</span>}</button>
       </div>
       {navOpen && <div className="n-navdim" onClick={() => setNavOpen(false)} />}
 
@@ -137,6 +142,8 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
           {view === 'settings' && <SettingsView {...props} onOpenLauncher={() => setLauncherOpen(true)} />}
         </div>
       </main>
+
+      {noticeOpen && <NoticePanel ws={workspace.id} items={notices.items} reload={notices.reload} onClose={() => setNoticeOpen(false)} />}
 
       <WorkspaceLauncher
         open={launcherOpen}

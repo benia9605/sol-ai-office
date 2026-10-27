@@ -15,7 +15,8 @@ export type NotifyType =
   | 'notify_comment'
   | 'notify_like'
   | 'notify_mention'
-  | 'notify_task_due';
+  | 'notify_task_due'
+  | 'notify_decision';
 
 export interface NotifyParams {
   type: NotifyType;

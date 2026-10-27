@@ -6,6 +6,11 @@
  * - best-effort: 실패해도 호출측은 무시(글 저장 롤백 방지).
  * - 배포: supabase functions deploy notify --project-ref <ref>  (★ _shared import 때문에 CLI 필수)
  * - 재활용: _shared/push.ts (sendPushToUsers, checkPreference).
+ * - 부르는 쪽 셋 (마이그 068 부터 이 셋만):
+ *     로그인한 멤버 (앱)          → 그 워크스페이스 멤버여야 하고, 액터는 본인
+ *     본부 토큰 hq_token (sol-hq) → 토큰의 워크스페이스에만, 액터는 워크스페이스를 만든 사람(대표)
+ *     서버 (service-role 키)      → 그대로 믿는다 (cron)
+ *   이 밖의 호출(공개 anon 키만 든 것)은 거절한다.
  */
 import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
 import { sendPushToUsers, checkPreference } from '../_shared/push.ts';
@@ -27,6 +32,8 @@ type NotifyBody = {
   tag?: string;
   /** 특정 수신자 (배정→담당자 등). 없으면 워크스페이스 전체 멤버 */
   target_user_ids?: string[];
+  /** 본부(sol-hq) 보고서에서 한 일 - 본부 토큰 (hq_auth 로 워크스페이스 확인) */
+  hq_token?: string;
 };
 
 function json(body: unknown, status = 200): Response {
@@ -59,6 +66,17 @@ Deno.serve(async (req: Request) => {
   const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
   let callerId: string | null = null;
   try { const { data } = await supabase.auth.getUser(token); callerId = data?.user?.id ?? null; } catch { callerId = null; }
+  if (!callerId && body.hq_token) {
+    // 본부 보고서 → 토큰 워크스페이스에만. 다른 워크스페이스로는 못 보낸다
+    const { data: ws, error } = await supabase.rpc('hq_auth', { p_token: body.hq_token });
+    if (error || !ws || ws !== body.workspace_id) return json({ error: 'forbidden' }, 403);
+    if (!['notify_task_completed', 'notify_decision', 'notify_comment'].includes(body.type)) return json({ error: 'bad_type' }, 400);
+    const { data: w } = await supabase.from('workspaces').select('created_by').eq('id', ws).maybeSingle();
+    body.actor_id = (w as { created_by?: string } | null)?.created_by ?? null;
+    body.target_user_ids = undefined;
+  } else if (!callerId && token !== Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
+    return json({ error: 'forbidden' }, 403);
+  }
   if (callerId) {
     const { data: me } = await supabase
       .from('workspace_members').select('user_id')

@@ -43,5 +43,34 @@ Deno.serve(async () => {
     sentCount++;
   }
 
+  // ── 브랜드 오피스 (hq_tasks) - 오늘까지인데 못 끝낸 내 담당 · 공동 할 일. 워크스페이스마다 한 번 ──
+  for (const userId of userIds) {
+    if (!(await checkPreference(supabase, userId, 'task_overdue'))) continue;
+    const { data: ms } = await supabase.from('workspace_members').select('workspace_id').eq('user_id', userId);
+    for (const { workspace_id: ws } of (ms ?? []) as { workspace_id: string }[]) {
+      const { data: rows } = await supabase
+        .from('hq_tasks')
+        .select('due_date')
+        .eq('workspace_id', ws)
+        .eq('status', 'open')
+        .or(`assignee_user_id.eq.${userId},assignee_shared.eq.true`);
+      const count = ((rows ?? []) as { due_date: string | null }[]).filter((t) => !t.due_date || t.due_date <= today).length;
+      if (!count) continue;
+
+      const refKey = `hq-overdue-${today}-${ws}`;
+      if (await isAlreadySent(supabase, userId, 'task_overdue', refKey)) continue;
+      const { data: w } = await supabase.from('workspaces').select('name').eq('id', ws).maybeSingle();
+      const title = `미완료 알림 · ${(w as { name?: string } | null)?.name ?? '오피스'}`;
+      const body = `오늘 못 끝낸 할 일 ${count}개가 있어요`;
+      const url = `/w/${ws}/tasks`;
+      await logNotification(supabase, userId, 'task_overdue', refKey);
+      try {
+        await supabase.from('notifications').insert({ workspace_id: ws, user_id: userId, type: 'task_overdue', title, body, url });
+      } catch (_) { /* 인박스 실패 무시 */ }
+      await sendPushToUser(supabase, userId, { title, body, tag: `hq-overdue-${today}-${ws}`, url });
+      sentCount++;
+    }
+  }
+
   return new Response(JSON.stringify({ ok: true, sent: sentCount }));
 });

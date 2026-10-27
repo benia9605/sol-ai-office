@@ -9,7 +9,7 @@
  */
 import { RefObject, useEffect, useRef, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
-import { Briefing, briefingState, fmtDay, getBriefingHtml, listBriefings, pickDecisionByQuestion, setBriefingMemo, setDecisionOpinion, setTaskDoneByTitle, todayKst } from '../hq.service';
+import { Briefing, briefingState, fmtDay, getBriefingHtml, listBriefings, addBriefingComment, deleteHqComment, pickDecisionByQuestion, setTaskDoneByTitle, todayKst } from '../hq.service';
 import { Empty, Err, PageHead, Sec, Skeleton, Tabs, useEsc, useLockScroll } from '../ui';
 
 /**
@@ -27,8 +27,12 @@ function useBriefingSync(ws: string, briefingId: string, frame: RefObject<HTMLIF
         case 'state': return briefingState(ws, briefingId, strs(a.titles), strs(a.questions));
         case 'task': return { ok: !!str(a.title) && await setTaskDoneByTitle(ws, str(a.title)!, a.done === true) };
         case 'decide': return { ok: !!str(a.question) && await pickDecisionByQuestion(ws, str(a.question)!, a.picked === null ? null : str(a.picked)) };
-        case 'opinion': return { ok: !!str(a.question) && await setDecisionOpinion(ws, str(a.question)!, str(a.text, 5000) ?? '') };
-        case 'memo': return { ok: await setBriefingMemo(ws, briefingId, str(a.slot) ?? '', str(a.text, 5000) ?? '') };
+        // 댓글 - 결정(question) 또는 브리핑 칸(slot). memo · opinion 은 예전 브리핑용 같은 뜻
+        case 'comment': case 'memo': case 'opinion': {
+          const c = await addBriefingComment(ws, briefingId, a.op === 'opinion' || a.target === 'decision' ? { question: str(a.question) ?? '' } : { slot: str(a.slot) ?? '' }, str(a.text, 5000) ?? '');
+          return c ? { ok: true, ...c } : { ok: false };
+        }
+        case 'uncomment': return { ok: !!str(a.id) && await deleteHqComment(str(a.id)!) };
         default: return { ok: false, why: 'unknown op' };
       }
     };

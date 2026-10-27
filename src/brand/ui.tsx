@@ -4,9 +4,9 @@
  *  PageHead · Tabs · Sec · Card · List/Row · Badge · Panel(PC 서랍 · 폰 아래 판) · Field · Seg
  *  모든 메뉴는 이것만 쓴다. 새 모양이 필요하면 여기에 먼저 만든다.
  */
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { WorkspaceMember } from '../types';
-import { Source } from './hq.service';
+import { HqComment, HqRef, Source, addHqComment, deleteHqComment, fmtTime, listHqComments } from './hq.service';
 
 export function PageHead({ title, small, action }: { title: string; small?: string; action?: ReactNode }) {
   return (
@@ -144,3 +144,41 @@ export function DueSeg({ value, onChange, today, tomorrow }: { value?: string; o
 export const Err = ({ e }: { e: unknown }) => <div className="n-err">불러오지 못했습니다 · {e instanceof Error ? e.message : String(e)}</div>;
 export const Empty = ({ children }: { children: ReactNode }) => <div className="n-empty">{children}</div>;
 export const Skeleton = () => <div className="n-card pad"><div className="n-skel" /><div className="n-skel" style={{ width: '70%' }} /><div className="n-skel" style={{ width: '50%' }} /></div>;
+
+/** 댓글 - 이름 · 내용 · 시간이 쌓인다 (오피스 기록). 내가 단 것만 지운다. about = 다른 멤버 알림 제목 · 누르면 갈 곳 */
+export function Thread({ ws, refType, refId, members, myId, about }: {
+  ws: string; refType: HqRef; refId: string; members: WorkspaceMember[]; myId: string; about: { label: string; path: string };
+}) {
+  const [items, setItems] = useState<HqComment[] | null>(null);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  useEffect(() => { listHqComments(ws, refType, [refId]).then(m => setItems(m[refId] ?? [])).catch(() => setItems([])); }, [ws, refType, refId]);
+  const send = async () => {
+    if (!text.trim()) return;
+    setBusy(true); setErr('');
+    try { const c = await addHqComment(ws, refType, refId, text, about); setItems(xs => [...(xs ?? []), c]); setText(''); }
+    catch { setErr('저장 안 됨 - 다시 눌러 주세요'); } finally { setBusy(false); }
+  };
+  const del = async (id: string) => { if (await deleteHqComment(id).catch(() => false)) setItems(xs => (xs ?? []).filter(x => x.id !== id)); };
+  return (
+    <div className="n-thread">
+      {items?.map(c => {
+        const name = memberName(members, c.userId) || '멤버';
+        return (
+          <div className="n-cmt" key={c.id}>
+            <span className="n-av">{name[0]}</span>
+            <div className="b">
+              <div className="h"><b>{name}</b><time>{fmtTime(c.at)}</time>{c.userId === myId && <button type="button" className="del" onClick={() => del(c.id)}>삭제</button>}</div>
+              <div className="t">{c.text}</div>
+            </div>
+          </div>
+        );
+      })}
+      <div className="n-cin">
+        <textarea className="n-in area" rows={2} value={text} onChange={e => setText(e.target.value)} placeholder="댓글 남기기" />
+        <div className="n-cbar">{err && <span className="n-cerr">{err}</span>}<Mini primary onClick={send} disabled={busy || !text.trim()}>{busy ? '저장 중' : '저장'}</Mini></div>
+      </div>
+    </div>
+  );
+}

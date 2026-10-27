@@ -385,6 +385,7 @@ export function NotificationSettings({ userId, embedded }: Props) {
             </div>
             <NotifToggle label="할일 배정" desc="나에게 할일이 배정/재배정되면 알림" checked={prefs.notifyTaskAssigned} onChange={(v) => togglePref('notifyTaskAssigned', v)} />
             <NotifToggle label="할일 완료" desc="멤버가 할일을 완료하면 알림" checked={prefs.notifyTaskCompleted} onChange={(v) => togglePref('notifyTaskCompleted', v)} />
+            <NotifToggle label="결정" desc="멤버가 브랜드 오피스에서 결정하면 알림" checked={prefs.notifyDecision} onChange={(v) => togglePref('notifyDecision', v)} />
             <NotifToggle label="새 일정·회의" desc="멤버가 일정을 등록하면 알림" checked={prefs.notifySchedule} onChange={(v) => togglePref('notifySchedule', v)} />
             <NotifToggle label="콘텐츠 발행" desc="멤버가 콘텐츠를 발행하면 알림" checked={prefs.notifyContent} onChange={(v) => togglePref('notifyContent', v)} />
             <NotifToggle label="@멘션" desc="댓글에서 @닉네임으로 나를 언급하면 알림" checked={prefs.notifyMention} onChange={(v) => togglePref('notifyMention', v)} />

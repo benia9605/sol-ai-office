@@ -39,6 +39,7 @@ export interface NotificationPreferencesRow {
   notify_like?: boolean;
   notify_mention?: boolean;
   notify_task_due?: boolean;
+  notify_decision?: boolean;
   created_at: string;
   updated_at: string;
 }

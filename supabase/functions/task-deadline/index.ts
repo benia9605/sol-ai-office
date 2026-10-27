@@ -99,5 +99,37 @@ Deno.serve(async () => {
     sentCount++;
   }
 
+  // ── 브랜드 오피스 할 일 (hq_tasks · 마이그 065) - 담당자, 「공동」 이면 그 워크스페이스 멤버 모두 ──
+  const { data: hqTasks } = await supabase
+    .from('hq_tasks')
+    .select('id, title, due_date, assignee_user_id, assignee_shared, workspace_id')
+    .in('due_date', [today, tomorrow])
+    .eq('status', 'open')
+    .or('assignee_user_id.not.is.null,assignee_shared.eq.true');
+
+  for (const t of (hqTasks ?? []) as { id: string; title: string; due_date: string; assignee_user_id: string | null; assignee_shared: boolean; workspace_id: string }[]) {
+    let uids = t.assignee_user_id ? [t.assignee_user_id] : [];
+    if (t.assignee_shared) {
+      const { data: ms } = await supabase.from('workspace_members').select('user_id').eq('workspace_id', t.workspace_id);
+      uids = [...new Set([...uids, ...((ms ?? []) as { user_id: string }[]).map((m) => m.user_id)])];
+    }
+    const isDDay = t.due_date === today;
+    const url = `/w/${t.workspace_id}/tasks/${t.id}`;
+    for (const uid of uids) {
+      if (!(await checkPreference(supabase, uid, 'notify_task_due').catch(() => true))) continue;
+      const refKey = `hq-${isDDay ? 'd0' : 'd1'}-${today}-${t.id}`;
+      if (await isAlreadySent(supabase, uid, 'task_due', refKey)) continue;
+
+      await logNotification(supabase, uid, 'task_due', refKey);
+      const title = isDDay ? '오늘 마감 🔴' : '마감 D-1 🟡';
+      const body = isDDay ? `「${t.title}」 오늘까지예요` : `「${t.title}」 내일 마감이에요`;
+      try {
+        await supabase.from('notifications').insert({ workspace_id: t.workspace_id, user_id: uid, type: 'notify_task_due', title, body, url });
+      } catch (_) { /* 인박스 실패 무시 */ }
+      await sendPushToUser(supabase, uid, { title, body, tag: `hq-task-due-${t.id}`, url });
+      sentCount++;
+    }
+  }
+
   return new Response(JSON.stringify({ ok: true, sent: sentCount }));
 });

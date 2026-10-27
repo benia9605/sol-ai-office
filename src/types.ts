@@ -926,4 +926,5 @@ export interface NotificationPreferences {
   notifyLike: boolean;          // 좋아요 (Phase 2)
   notifyMention: boolean;       // @멘션 (마이그 038)
   notifyTaskDue: boolean;       // 내 담당 할일 마감 임박 (마이그 038)
+  notifyDecision: boolean;      // 브랜드 오피스 결정 → 멤버 (마이그 068)
 }

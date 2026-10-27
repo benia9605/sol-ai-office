@@ -37,12 +37,27 @@ Deno.serve(async () => {
       .eq('user_id', userId)
       .neq('status', 'done');
 
-    // 둘 다 0이면 알림 스킵
-    if (!scheduleCount && !taskCount) continue;
+    // 브랜드 오피스 (hq_tasks) - 오늘까지인 내 담당 · 공동 할 일
+    const { data: ms } = await supabase.from('workspace_members').select('workspace_id').eq('user_id', userId);
+    const wsIds = ((ms ?? []) as { workspace_id: string }[]).map((m) => m.workspace_id);
+    let brandCount = 0;
+    if (wsIds.length) {
+      const { data: rows } = await supabase
+        .from('hq_tasks')
+        .select('due_date')
+        .in('workspace_id', wsIds)
+        .eq('status', 'open')
+        .or(`assignee_user_id.eq.${userId},assignee_shared.eq.true`);
+      brandCount = ((rows ?? []) as { due_date: string | null }[]).filter((t) => !t.due_date || t.due_date <= today).length;
+    }
+
+    // 셋 다 0이면 알림 스킵
+    if (!scheduleCount && !taskCount && !brandCount) continue;
 
     const parts: string[] = [];
     if (scheduleCount) parts.push(`일정 ${scheduleCount}개`);
     if (taskCount) parts.push(`할일 ${taskCount}개`);
+    if (brandCount) parts.push(`오피스 할 일 ${brandCount}개`);
 
     await logNotification(supabase, userId, 'morning_briefing', today);
     await sendPushToUser(supabase, userId, {

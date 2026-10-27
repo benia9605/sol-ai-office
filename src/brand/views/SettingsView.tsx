@@ -12,6 +12,7 @@ import { createWorkspace, updateWorkspace } from '../../services/workspaces.serv
 import { uploadImage } from '../../services/storage.service';
 import { supabase } from '../../services/supabase';
 import { useWorkspaceContext } from '../../contexts/WorkspaceContext';
+import { NotificationSettings } from '../../components/NotificationSettings';
 import { Act, Badge, Card, Empty, Field, G2, List, Mini, PageHead, Panel, Row, Sec, Seg, memberName } from '../ui';
 
 const PAPERS = ['#f4f2eb', '#f6f5f0', '#FAF9F6', '#f3f0ea'];
@@ -60,6 +61,10 @@ export function SettingsView({ workspace, members, myId, detailId, go, onBackupS
           </List></Card>
         </Sec>
       </G2>
+      {/* 폰 알림 - 기존 알림 설정 그대로 (사람마다 · 모든 워크스페이스 같이). 폰은 홈 화면에 추가한 앱에서 켠다 */}
+      <Sec title="폰 알림" count="할 일 완료 · 배정 · 결정 · 댓글 · 마감">
+        <Card><div style={{ padding: '4px 2px' }}>{myId ? <NotificationSettings userId={myId} embedded /> : <Empty>불러오는 중</Empty>}</div></Card>
+      </Sec>
       <G2>
         <Sec title="워크스페이스" count={offices.length} link="+ 새 워크스페이스" onLink={() => go('settings', 'new')}>
           <Card><List>{offices.map(w => {
