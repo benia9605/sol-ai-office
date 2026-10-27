@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
 import { HqTask, Meeting, fmtDay, getMeetingHtml, listMeetingTasks, listMeetings, todayKst, updateTask } from '../hq.service';
-import { Act, Card, Check, DueKindBadge, Empty, Err, Kind, List, PageHead, Row, Sec, Skeleton, Thread, memberName, useEsc, useLockScroll } from '../ui';
+import { Act, Card, Check, DueKindBadge, Empty, Err, Kind, List, NoHit, PageHead, Pager, Row, Sec, Skeleton, Thread, hay, matchSearch, memberName, useEsc, useLockScroll, usePaged } from '../ui';
 
 /** 회의 할 일 하나의 지금 상태 - 끝남 · 밀림(약속 날짜 지남) · 아직 */
 export function meetingTaskState(t: HqTask, today: string): 'done' | 'late' | 'open' {
@@ -46,6 +46,7 @@ export function MeetingsView({ workspace, members, myId, detailId, go }: BrandVi
   const [tasks, setTasks] = useState<HqTask[]>([]);
   const [err, setErr] = useState<unknown>(null);
   const [reading, setReading] = useState(false);
+  const [q, setQ] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -59,6 +60,10 @@ export function MeetingsView({ workspace, members, myId, detailId, go }: BrandVi
 
   const sel = items?.find(m => m.id === detailId) ?? null;
   const tasksOf = (id: string) => tasks.filter(t => t.meetingId === id);
+  // 회의 검색: 제목 · 요약 · 날짜 · 그 회의 할 일 · 정한 것 · 아버님 할 일
+  const hits = (items ?? []).filter(m => matchSearch(hay(m.title, m.summary, m.date, fmtDay(m.date), tasksOf(m.id).map(t => t.title),
+    (m.meta?.decisions ?? []).map((d: any) => d?.what), (m.meta?.hau_tasks ?? []).map((h: any) => h?.title)), q));
+  const pg = usePaged(hits);
   const toggle = async (t: HqTask) => {
     const next = await updateTask(t, { status: t.status === 'done' ? 'open' : 'done' }, t.status === 'done' ? '완료 취소' : '완료');
     setTasks(ts => ts.map(x => (x.id === t.id ? next : x)));
@@ -100,18 +105,19 @@ export function MeetingsView({ workspace, members, myId, detailId, go }: BrandVi
 
   return (
     <>
-      <PageHead title="회의" small="매주 화요일 · 클로바노트 → 본부가 정리" />
+      <PageHead title="회의" small="매주 화요일 · 클로바노트 → 본부가 정리" search={{ value: q, onChange: setQ, placeholder: '회의 검색' }} />
       {!!err && <Err e={err} />}
       {!items ? <Skeleton /> : !items.length ? <Card pad><Empty>아직 회의록이 없어요. 회의 텍스트를 본부(Claude Code)에 「시목 회의록」 하고 붙여 주면 여기로 들어와요.</Empty></Card> : (
-        <Sec title="회의록" count={items.length}>
-          <Card><List>{items.map(m => {
+        <Sec title="회의록" count={hits.length}>
+          <Card>{!hits.length ? <NoHit q={q} /> : <List>{pg.shown.map(m => {
             const c = tally(tasksOf(m.id));
             return (
               <Row key={m.id} onClick={() => go('meetings', m.id)} left={<Kind>{fmtDay(m.date, false)}</Kind>} title={m.title}
                 desc={[m.summary?.split('\n')[0], c.all ? `할 일 ${c.done}/${c.all} 끝남` : '', c.late ? `밀림 ${c.late}` : ''].filter(Boolean).join(' · ')}
                 right={c.late ? <span className="n-b late">밀림 {c.late}</span> : undefined} />
             );
-          })}</List></Card>
+          })}</List>}</Card>
+          <Pager {...pg} />
         </Sec>
       )}
     </>

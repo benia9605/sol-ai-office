@@ -8,10 +8,66 @@ import { ReactNode, useEffect, useState } from 'react';
 import { WorkspaceMember } from '../types';
 import { HqComment, HqRef, Source, addHqComment, deleteHqComment, fmtTime, listHqComments } from './hq.service';
 
-export function PageHead({ title, small, action }: { title: string; small?: string; action?: ReactNode }) {
+export function PageHead({ title, small, action, search }: { title: string; small?: string; action?: ReactNode; search?: SearchProps }) {
   return (
     <div className="n-pagewrap">
-      <div className="n-page"><h1>{title}{small && <small>{small}</small>}</h1>{action}</div>
+      <div className="n-page"><h1>{title}{small && <small>{small}</small>}</h1><div className="n-pact">{search && <SearchBox {...search} />}{action}</div></div>
+    </div>
+  );
+}
+
+// ── 검색 (2026-10-27 대표 요청 - 모든 메뉴 오른쪽 위 · 시목 lib/search.ts 와 같은 규칙 + 중간 낱말 건너뛰기) ──
+//   ① 띄어 쓴 낱말은 모두 들어 있어야 (AND)   「상세 사진」
+//   ② 띄어쓰기 무시                            「상세페이지3번」 → '상세페이지 3번'
+//   ③ 중간 낱말을 빼고 쳐도                    「상세사진」 → '상세페이지 3번 사진' (글자가 순서대로 · 너무 멀리 흩어지면 안 찾음)
+const norm = (s: string) => (s || '').toLowerCase().replace(/\s+/g, '');
+function inOrder(term: string, hay: string): boolean {
+  if (term.length < 3) return false;   // 두 글자는 붙어 있을 때만 (「상기」 가 「상세페이지 … 찍기」 에 걸리지 않게)
+  let at = hay.indexOf(term[0]);
+  if (at < 0) return false;
+  const start = at;
+  for (const ch of term.slice(1)) { at = hay.indexOf(ch, at + 1); if (at < 0) return false; }
+  return at - start <= term.length * 4 + 8;
+}
+export function matchSearch(hay: string, q: string): boolean {
+  const terms = (q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return true;
+  const h = (hay || '').toLowerCase(), hn = norm(hay);
+  return terms.every(t => h.includes(t) || hn.includes(t) || inOrder(t, hn));
+}
+/** 검색할 글을 한 줄로 - 빈 값은 건너뛴다 */
+export const hay = (...xs: unknown[]) => xs.flat().filter(x => x != null && x !== '').map(String).join(' ');
+export interface SearchProps { value: string; onChange: (v: string) => void; placeholder?: string }
+export function SearchBox({ value, onChange, placeholder = '검색' }: SearchProps) {
+  return (
+    <label className="n-search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+      <input type="search" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} aria-label={placeholder} />
+      {value && <button type="button" aria-label="지우기" onClick={() => onChange('')}>✕</button>}
+    </label>
+  );
+}
+export const NoHit = ({ q }: { q: string }) => <Empty>「{q}」 찾은 것 없음</Empty>;
+
+// ── 쪽 넘김 (2026-10-27 대표 요청 - 길게 나열하지 않고 < 1 / 12 >. 시목 Pager 와 같은 모양) ──
+export const PER_PAGE = 10;
+/** 받아 둔 목록을 쪽으로 자른다. 목록이 바뀌어(검색 등) 지금 쪽이 비면 첫 쪽으로 */
+export function usePaged<T>(list: readonly T[], per = PER_PAGE) {
+  const [page, setPage] = useState(1);
+  const pages = Math.max(1, Math.ceil(list.length / per));
+  useEffect(() => { if (page > pages) setPage(1); }, [page, pages]);
+  const at = Math.min(page, pages);
+  return { page: at, pages, setPage, shown: list.slice((at - 1) * per, at * per), total: list.length };
+}
+/** 넘칠 때만 나타난다 */
+export function Pager({ page, pages, setPage }: { page: number; pages: number; setPage: (p: number) => void }) {
+  if (pages <= 1) return null;
+  const arrow = (d: string) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>;
+  return (
+    <div className="n-pager">
+      <button type="button" aria-label="이전 쪽" disabled={page <= 1} onClick={() => setPage(page - 1)}>{arrow('m15 18-6-6 6-6')}</button>
+      <span>{page} / {pages}</span>
+      <button type="button" aria-label="다음 쪽" disabled={page >= pages} onClick={() => setPage(page + 1)}>{arrow('m9 18 6-6-6-6')}</button>
     </div>
   );
 }

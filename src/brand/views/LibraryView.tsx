@@ -13,7 +13,7 @@ import {
   listPromptCategories, listPromptVersions, listPrompts, markPromptUsed, renamePromptCategory, reorderPromptCategories, revisePrompt,
 } from '../hq.service';
 import { Attachment, deleteAttachment, listAttachments, signedUrl, uploadAttachment } from '../../services/attachments.service';
-import { Act, Badge, Card, Empty, Err, Field, Kind, List, Mini, PageHead, Panel, Row, Sec, Seg, Skeleton, Tabs, memberName } from '../ui';
+import { Act, Badge, Card, Empty, Err, Field, Kind, List, Mini, NoHit, PageHead, Pager, Panel, Row, Sec, Seg, Skeleton, Tabs, hay, matchSearch, memberName, usePaged } from '../ui';
 import { BriefingModal } from './BriefingView';
 
 type Tab = 'prompts' | 'docs' | 'media' | 'briefings';
@@ -33,6 +33,7 @@ export function LibraryView({ workspace, members, myId, detailId, go }: BrandVie
   const [err, setErr] = useState<unknown>(null);
   const [openBrief, setOpenBrief] = useState<Briefing | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [q, setQ] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -52,16 +53,19 @@ export function LibraryView({ workspace, members, myId, detailId, go }: BrandVie
   const onDrop = (e: DragEvent) => { e.preventDefault(); upload(e.dataTransfer.files); };
   const openFile = async (a: Attachment) => { const u = await signedUrl(a); if (u) window.open(u, '_blank', 'noopener'); };
 
-  const ps = (prompts ?? []).filter(p => catFilter === 'all' || (catFilter === 'none' ? !p.categoryId : p.categoryId === catFilter));
+  const ps = (prompts ?? []).filter(p => (catFilter === 'all' || (catFilter === 'none' ? !p.categoryId : p.categoryId === catFilter)) && matchSearch(hay(p.title, p.body, p.tool), q));
   const sel = (prompts ?? []).find(p => p.id === detailId);
-  const docs = files.filter(a => !isMedia(a)), media = files.filter(isMedia);
+  const fileHit = (a: Attachment) => matchSearch(hay(a.filename, memberName(members, a.uploadedBy)), q);
+  const docs = files.filter(a => !isMedia(a) && fileHit(a)), media = files.filter(a => isMedia(a) && fileHit(a));
+  const briefsHit = briefs.filter(b => matchSearch(hay(b.summary, b.title, b.date), q));
+  const pgP = usePaged(ps, 12), pgB = usePaged(briefsHit), pgF = usePaged(tab === 'docs' ? docs : media);
 
   return (
     <>
-      <PageHead title="자료실" action={<Act onClick={() => go('library', 'upload')}>+ 업로드</Act>} />
+      <PageHead title="자료실" search={{ value: q, onChange: setQ, placeholder: '자료 검색' }} action={<Act onClick={() => go('library', 'upload')}>+ 업로드</Act>} />
       <Tabs<Tab> value={tab} onChange={setTab} items={[
         { key: 'prompts', label: '프롬프트', count: prompts?.length }, { key: 'docs', label: '문서', count: docs.length },
-        { key: 'media', label: '이미지 · 영상', count: media.length }, { key: 'briefings', label: '브리핑 보관', count: briefs.length },
+        { key: 'media', label: '이미지 · 영상', count: media.length }, { key: 'briefings', label: '브리핑 보관', count: briefsHit.length },
       ]} />
       {!!err && <Err e={err} />}
       {tab !== 'prompts' && tab !== 'briefings' && (
@@ -79,25 +83,28 @@ export function LibraryView({ workspace, members, myId, detailId, go }: BrandVie
             {prompts.some(p => !p.categoryId) && <button type="button" className={catFilter === 'none' ? 'on' : ''} onClick={() => setCatFilter('none')}>미분류 {prompts.filter(p => !p.categoryId).length}</button>}
             <button type="button" className="mg" onClick={() => go('library', 'categories')}>⚙ 용도 관리</button>
           </div>
-          {ps.length ? <div className="n-gal">{ps.map(p => (
+          {ps.length ? <div className="n-gal">{pgP.shown.map(p => (
             <div key={p.id} className="n-gc click" onClick={() => go('library', p.id)}>
               <div className="n-gm"><span className="n-kind">{cats.find(c => c.id === p.categoryId)?.name ?? '미분류'}</span><span>{[p.tool, `v${p.version}`].filter(Boolean).join(' · ')}</span><Badge source={p.source} /></div>
               <h3>{p.title}</h3><pre>{p.body.split('\n').slice(0, 2).join('\n')}{p.body.split('\n').length > 2 ? ' …' : ''}</pre><div className="grow" />
               <div className="n-gf"><span>{p.lastUsedAt ? `최근 사용 ${fmtDay(p.lastUsedAt.slice(0, 10), false)}` : '사용 기록 없음'}</span><span className="h">버전 {p.version}</span></div>
             </div>
-          ))}</div> : <Card><Empty>프롬프트 없음 · + 업로드 → 프롬프트</Empty></Card>}
+          ))}</div> : <Card>{q ? <NoHit q={q} /> : <Empty>프롬프트 없음 · + 업로드 → 프롬프트</Empty>}</Card>}
+          <Pager {...pgP} />
         </Sec>
       ) : tab === 'briefings' ? (
-        <Sec title="브리핑 보관" count={briefs.length}>
-          <Card>{briefs.length ? <List>{briefs.map(b => <Row key={b.id} left={<Kind>{fmtDay(b.date, false)}</Kind>} title={b.summary || b.title} onClick={() => setOpenBrief(b)} />)}</List> : <Empty>없음</Empty>}</Card>
+        <Sec title="브리핑 보관" count={briefsHit.length}>
+          <Card>{briefsHit.length ? <List>{pgB.shown.map(b => <Row key={b.id} left={<Kind>{fmtDay(b.date, false)}</Kind>} title={b.summary || b.title} onClick={() => setOpenBrief(b)} />)}</List> : q ? <NoHit q={q} /> : <Empty>없음</Empty>}</Card>
+          <Pager {...pgB} />
         </Sec>
       ) : (
         <Sec title={tab === 'docs' ? '문서' : '이미지 · 영상'} count={(tab === 'docs' ? docs : media).length}>
-          <Card>{(tab === 'docs' ? docs : media).length ? <List>{(tab === 'docs' ? docs : media).map(a => (
+          <Card>{(tab === 'docs' ? docs : media).length ? <List>{pgF.shown.map(a => (
             <Row key={a.id} left={<Kind>{(a.filename.split('.').pop() ?? '').toUpperCase().slice(0, 4)}</Kind>} title={a.filename}
               desc={[memberName(members, a.uploadedBy), fmtDay(a.createdAt.slice(0, 10), false), kb(a.sizeBytes)].filter(Boolean).join(' · ')} onClick={() => openFile(a)}
               right={<Mini onClick={async () => { if (confirm(`「${a.filename}」 삭제할까요?`)) { await deleteAttachment(a); setFiles(fs => fs.filter(x => x.id !== a.id)); } }}>삭제</Mini>} />
-          ))}</List> : <Empty>파일 없음</Empty>}</Card>
+          ))}</List> : q ? <NoHit q={q} /> : <Empty>파일 없음</Empty>}</Card>
+          <Pager {...pgF} />
         </Sec>
       )}
 

@@ -9,34 +9,44 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
-import { Decision, HqTask, addTask, decide, fmtDay, fmtTime, listDecisions, listTasks, todayKst, updateTask } from '../hq.service';
-import { Act, AssigneeSeg, Badge, Card, Check, DueSeg, Empty, Err, Field, Kind, List, Mini, PageHead, Panel, Row, Sec, Seg, Skeleton, Tabs, Thread, DueKindBadge, memberName } from '../ui';
+import { Decision, HqTask, addTask, decide, doneDay, fmtDay, fmtTime, listDecisions, listTasks, listTasksMonth, todayKst, updateTask } from '../hq.service';
+import { Act, AssigneeSeg, Badge, Card, Check, DueSeg, Empty, Err, Field, Kind, List, Mini, NoHit, PageHead, Pager, Panel, Row, Sec, Seg, Skeleton, Tabs, Thread, DueKindBadge, hay, matchSearch, memberName, usePaged } from '../ui';
 import { isCarry, isToday } from './TodayView';
 
 type Tab = 'todo' | 'decide' | 'propose';
+const shiftMonth = (m: string, d: number) => { const [y, mm] = m.split('-').map(Number); const t = new Date(Date.UTC(y, mm - 1 + d, 1)); return t.toISOString().slice(0, 7); };
 
 export function TasksView({ workspace, members, myId, detailId, go }: BrandViewProps) {
   const ws = workspace.id;
   const today = todayKst(), tomorrow = todayKst(1);
   const [tasks, setTasks] = useState<HqTask[] | null>(null);
+  const [monthTasks, setMonthTasks] = useState<HqTask[]>([]);
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [err, setErr] = useState<unknown>(null);
+  const [q, setQ] = useState('');
+  const [month, setMonth] = useState(today.slice(0, 7));
+  const [day, setDay] = useState(today);
 
   const load = useCallback(async () => {
     try { const [t, d] = await Promise.all([listTasks(ws), listDecisions(ws)]); setTasks(t); setDecisions(d); setErr(null); }
     catch (e) { setErr(e); }
   }, [ws]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { listTasksMonth(ws, month).then(setMonthTasks).catch(() => setMonthTasks([])); }, [ws, month]);
 
   const tab: Tab = detailId === 'decide' || detailId?.startsWith('decide-') ? 'decide' : detailId === 'propose' || detailId?.startsWith('propose-') ? 'propose' : 'todo';
-  const all = tasks ?? [];
-  const open = all.filter(t => t.status === 'open' || t.status === 'done');
+  const all = useMemo(() => { const m = new Map<string, HqTask>(); [...monthTasks, ...(tasks ?? [])].forEach(t => m.set(t.id, t)); return [...m.values()]; }, [tasks, monthTasks]);
+  const hit = (t: HqTask) => matchSearch(hay(t.title, t.why, t.sourceLabel, t.assigneeShared ? '공동' : memberName(members, t.assigneeUserId), t.memo), q);
+  const open = (tasks ?? []).filter(t => t.status === 'open' || t.status === 'done');
   const todays = open.filter(t => isToday(t, today));
-  const later = open.filter(t => t.status === 'open' && t.dueDate && t.dueDate > today).sort((a, b) => (a.dueDate! < b.dueDate! ? -1 : 1));
-  const proposals = all.filter(t => t.status === 'proposed');
-  const openDecisions = decisions.filter(d => d.status === 'open');
+  // 달력에서 고른 날 - 오늘이면 「오늘 할 일」(일정 없는 것 · 이월 포함), 다른 날이면 그날 일정 · 그날 끝낸 것
+  const dayList = (day === today ? todays : all.filter(t => t.dueDate === day || doneDay(t) === day)).filter(hit);
+  const later = open.filter(t => t.status === 'open' && t.dueDate && t.dueDate > today && hit(t)).sort((a, b) => (a.dueDate! < b.dueDate! ? -1 : 1));
+  const proposals = (tasks ?? []).filter(t => t.status === 'proposed' && hit(t));
+  const openDecisions = decisions.filter(d => d.status === 'open' && matchSearch(hay(d.question, d.why, d.options), q));
+  const pgDay = usePaged(dayList), pgLater = usePaged(later), pgDec = usePaged(openDecisions), pgProp = usePaged(proposals);
 
-  const replace = (t: HqTask) => setTasks(ts => (ts ?? []).map(x => (x.id === t.id ? t : x)));
+  const replace = (t: HqTask) => { setTasks(ts => (ts ?? []).map(x => (x.id === t.id ? t : x))); setMonthTasks(ts => ts.map(x => (x.id === t.id ? t : x))); };
   const toggle = async (t: HqTask) => replace(await updateTask(t, { status: t.status === 'done' ? 'open' : 'done' }, t.status === 'done' ? '완료 취소' : '완료'));
 
   const selTask = all.find(t => t.id === detailId || `propose-${t.id}` === detailId);
@@ -53,13 +63,13 @@ export function TasksView({ workspace, members, myId, detailId, go }: BrandViewP
   );
   const laterGroups = useMemo(() => {
     const m = new Map<string, HqTask[]>();
-    later.forEach(t => m.set(t.dueDate!, [...(m.get(t.dueDate!) ?? []), t]));
+    pgLater.shown.forEach(t => m.set(t.dueDate!, [...(m.get(t.dueDate!) ?? []), t]));
     return [...m];
-  }, [later]);
+  }, [pgLater.shown]);
 
   return (
     <>
-      <PageHead title="할 일" action={<Act onClick={() => go('tasks', 'new')}>+ 할 일</Act>} />
+      <PageHead title="할 일" search={{ value: q, onChange: setQ, placeholder: '할 일 · 결정 검색' }} action={<Act onClick={() => go('tasks', 'new')}>+ 할 일</Act>} />
       <Tabs<Tab> value={tab} onChange={k => go('tasks', k === 'todo' ? undefined : k)} items={[
         { key: 'todo', label: '할 일', count: todays.length },
         { key: 'decide', label: '결정 대기', count: openDecisions.length },
@@ -68,38 +78,44 @@ export function TasksView({ workspace, members, myId, detailId, go }: BrandViewP
       {!!err && <Err e={err} />}
       {!tasks ? <Skeleton /> : tab === 'todo' ? (
         <>
-          <Sec title="오늘" count={`${fmtDay(today)} · ${todays.length}`}>
-            <Card>{todays.length ? <List>{todays.map(t => rowFor(t))}</List> : <Empty>오늘 할 일 없음</Empty>}</Card>
+          <TaskCalendar month={month} onMonth={m => { setMonth(m); setDay(m === today.slice(0, 7) ? today : `${m}-01`); }} tasks={all} today={today} picked={day} onPick={setDay} />
+          <Sec title={day === today ? '오늘' : fmtDay(day)} count={`${day === today ? `${fmtDay(today)} · ` : ''}${dayList.length}`}
+            link={day !== today ? '오늘로 ↺' : undefined} onLink={() => { setMonth(today.slice(0, 7)); setDay(today); }}>
+            <Card>{dayList.length ? <List>{pgDay.shown.map(t => rowFor(t))}</List> : q ? <NoHit q={q} /> : <Empty>{day === today ? '오늘 할 일 없음' : '이날 할 일 없음'}</Empty>}</Card>
+            <Pager {...pgDay} />
           </Sec>
           <Sec title="예정" count={later.length}>
             <Card>{laterGroups.length ? laterGroups.map(([d, list]) => (
               <div key={d}><div className="n-day">{fmtDay(d)}</div><List>{list.map(t => rowFor(t, false))}</List></div>
-            )) : <Empty>예정된 할 일 없음</Empty>}</Card>
+            )) : q ? <NoHit q={q} /> : <Empty>예정된 할 일 없음</Empty>}</Card>
+            <Pager {...pgLater} />
           </Sec>
         </>
       ) : tab === 'decide' ? (
         <Sec title="결정 대기" count={openDecisions.length}>
-          <Card>{openDecisions.length ? <List>{openDecisions.map(d => (
+          <Card>{openDecisions.length ? <List>{pgDec.shown.map(d => (
             <Row key={d.id} onClick={() => go('tasks', `decide-${d.id}`)} title={d.question}
               desc={<><div className="n-opts">{d.options.map(o => <span key={o} className="n-opt">{o}</span>)}</div><div className="n-ans">의견 입력</div></>}
               left={<Kind>{fmtDay(d.date, false)}</Kind>} />
-          ))}</List> : <Empty>결정 대기 없음</Empty>}</Card>
+          ))}</List> : q ? <NoHit q={q} /> : <Empty>결정 대기 없음</Empty>}</Card>
+          <Pager {...pgDec} />
         </Sec>
       ) : (
         <Sec title="제안" count={proposals.length}>
-          <Card>{proposals.length ? <List>{proposals.map(t => (
+          <Card>{proposals.length ? <List>{pgProp.shown.map(t => (
             <Row key={t.id} title={t.title} desc={t.why} onClick={() => go('tasks', `propose-${t.id}`)}
               right={<><Mini onClick={async () => replace(await updateTask(t, { status: 'held' }, '보류'))}>보류</Mini><Mini primary onClick={() => go('tasks', `propose-${t.id}`)}>승인</Mini></>} />
-          ))}</List> : <Empty>제안 없음</Empty>}</Card>
+          ))}</List> : q ? <NoHit q={q} /> : <Empty>제안 없음</Empty>}</Card>
+          <Pager {...pgProp} />
         </Sec>
       )}
 
       {detailId === 'new' && <TaskPanel title="할 일 추가" members={members} myId={myId} today={today} tomorrow={tomorrow} onClose={close}
-        onSave={async f => { const t = await addTask(ws, f); setTasks(ts => [...(ts ?? []), t]); close(); }} />}
+        onSave={async f => { const t = await addTask(ws, f); setTasks(ts => [...(ts ?? []), t]); if (t.dueDate?.startsWith(month)) setMonthTasks(ts => [...ts, t]); close(); }} />}
       {selTask && selTask.status !== 'proposed' && <TaskPanel title="할 일" task={selTask} members={members} myId={myId} today={today} tomorrow={tomorrow} onClose={close}
         onSave={async f => { replace(await updateTask(selTask, { title: f.title, dueDate: f.dueDate ?? '', assigneeUserId: f.assigneeUserId ?? '', assigneeShared: !!f.assigneeShared, memo: f.memo ?? '' }, '수정')); close(); }}
         onDone={async () => { replace(await updateTask(selTask, { status: selTask.status === 'done' ? 'open' : 'done' }, '완료')); close(); }}
-        onDelete={async () => { await updateTask(selTask, { status: 'deleted' }, '삭제'); setTasks(ts => (ts ?? []).filter(x => x.id !== selTask.id)); close(); }} />}
+        onDelete={async () => { await updateTask(selTask, { status: 'deleted' }, '삭제'); setTasks(ts => (ts ?? []).filter(x => x.id !== selTask.id)); setMonthTasks(ts => ts.filter(x => x.id !== selTask.id)); close(); }} />}
       {selTask && selTask.status === 'proposed' && <ApprovePanel task={selTask} members={members} myId={myId} today={today} tomorrow={tomorrow} onClose={close}
         onHold={async () => { replace(await updateTask(selTask, { status: 'held' }, '보류')); close(); }}
         onApprove={async f => { replace(await updateTask(selTask, { status: 'open', dueDate: f.dueDate ?? '', assigneeUserId: f.assigneeUserId ?? '', assigneeShared: !!f.assigneeShared }, '제안 승인')); close(); }} />}
@@ -176,5 +192,52 @@ function DecisionPanel({ ws, d, members, myId, onClose, onSubmit }: {
         </div>
       </Field>
     </Panel>
+  );
+}
+
+/** 할 일 달력 (2026-10-27 대표 요청 · 시목 판매현황 날짜별 달력 모양) - 날을 누르면 아래 목록이 그날로.
+ *  칸: 남은 일 수 · 끝낸 수(✓). 약속 날짜가 지났는데 남은 날은 붉게 */
+function TaskCalendar({ month, onMonth, tasks, today, picked, onPick }: {
+  month: string; onMonth: (m: string) => void; tasks: HqTask[]; today: string; picked: string; onPick: (d: string) => void;
+}) {
+  const [y, m] = month.split('-').map(Number);
+  const lead = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const cells: (string | null)[] = [...Array(lead).fill(null), ...Array.from({ length: days }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`)];
+  while (cells.length % 7) cells.push(null);
+  const stat = useMemo(() => {
+    const s = new Map<string, { open: number; done: number; late: boolean }>();
+    const at = (d: string) => { if (!s.has(d)) s.set(d, { open: 0, done: 0, late: false }); return s.get(d)!; };
+    for (const t of tasks) {
+      if (t.status === 'done') { const d = doneDay(t); if (d?.startsWith(month)) at(d).done++; }
+      else if (t.status === 'open' && t.dueDate?.startsWith(month)) { const c = at(t.dueDate); c.open++; if (t.dueDate < today) c.late = true; }
+    }
+    return s;
+  }, [tasks, month, today]);
+  const arrow = (d: string) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>;
+  return (
+    <div className="n-cal">
+      <div className="n-calh">
+        <b>{y}년 {m}월</b>
+        <span className="n-pager" style={{ margin: 0 }}>
+          <button type="button" aria-label="이전 달" onClick={() => onMonth(shiftMonth(month, -1))}>{arrow('m15 18-6-6 6-6')}</button>
+          <button type="button" aria-label="다음 달" onClick={() => onMonth(shiftMonth(month, 1))}>{arrow('m9 18 6-6-6-6')}</button>
+        </span>
+      </div>
+      <div className="n-calg">
+        {'일월화수목금토'.split('').map(w => <span key={w} className="w">{w}</span>)}
+        {cells.map((d, i) => {
+          if (!d) return <span key={i} />;
+          const c = stat.get(d);
+          return (
+            <button key={d} type="button" onClick={() => onPick(d)}
+              className={`c${d === today ? ' today' : ''}${d === picked ? ' on' : ''}${c?.late ? ' late' : ''}${c?.open ? ' has' : ''}`}>
+              <b>{Number(d.slice(8))}</b>
+              <span>{c?.open ? <em>{c.open}</em> : null}{c?.done ? <i>✓{c.done}</i> : null}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

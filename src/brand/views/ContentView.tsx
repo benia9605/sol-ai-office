@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
 import { Content, Prompt, STAGES, Stage, addContent, deleteContent, fmtDay, listContents, listPrompts, todayKst, updateContent } from '../hq.service';
-import { Act, Badge, Card, DueSeg, Empty, Err, Field, Kind, List, Mini, PageHead, Panel, Row, Sec, Seg, Skeleton } from '../ui';
+import { Act, Badge, Card, DueSeg, Empty, Err, Field, Kind, List, Mini, NoHit, PageHead, Pager, Panel, Row, Sec, Seg, Skeleton, hay, matchSearch, usePaged } from '../ui';
 
 const CHANNELS = ['피드', '릴스', '스레드', '유튜브', '블로그'];
 
@@ -22,22 +22,25 @@ export function ContentView({ workspace, detailId, go }: BrandViewProps) {
   const [stageTab, setStageTab] = useState<Stage>('plan');
   const [dragId, setDragId] = useState<string | null>(null);
   const [over, setOver] = useState<Stage | null>(null);
+  const [q, setQ] = useState('');
 
   const load = useCallback(async () => {
     try { const [c, p] = await Promise.all([listContents(ws), listPrompts(ws)]); setItems(c); setPrompts(p); setErr(null); } catch (e) { setErr(e); }
   }, [ws]);
   useEffect(() => { load(); }, [load]);
 
-  const list = items ?? [];
+  const all = items ?? [];
+  const list = all.filter(c => matchSearch(hay(c.title, c.channel, c.memo, c.draft), q));
   const replace = (c: Content) => setItems(xs => (xs ?? []).map(x => (x.id === c.id ? c : x)));
   const move = async (id: string, stage: Stage) => {
-    const c = list.find(x => x.id === id);
+    const c = all.find(x => x.id === id);
     if (!c || c.stage === stage) return;
     replace({ ...c, stage });                         // 바로 옮겨 보이고
     try { replace(await updateContent(id, { stage })); } catch (e) { setErr(e); replace(c); }
   };
-  const sel = list.find(c => c.id === detailId);
+  const sel = all.find(c => c.id === detailId);
   const scheduled = list.filter(c => c.dueDate && c.stage !== 'done').sort((a, b) => (a.dueDate! < b.dueDate! ? -1 : 1));
+  const pgSch = usePaged(scheduled);
 
   const card = (c: Content) => (
     <div key={c.id} className={`n-kc click${dragId === c.id ? ' n-dragging' : ''}`} draggable
@@ -52,7 +55,7 @@ export function ContentView({ workspace, detailId, go }: BrandViewProps) {
 
   return (
     <>
-      <PageHead title="콘텐츠" action={<Act onClick={() => go('content', 'new')}>+ 콘텐츠</Act>} />
+      <PageHead title="콘텐츠" search={{ value: q, onChange: setQ, placeholder: '콘텐츠 검색' }} action={<Act onClick={() => go('content', 'new')}>+ 콘텐츠</Act>} />
       {!!err && <Err e={err} />}
       {!items ? <Skeleton /> : (
         <>
@@ -66,15 +69,16 @@ export function ContentView({ workspace, detailId, go }: BrandViewProps) {
                 onDragOver={e => { e.preventDefault(); setOver(s.key); }} onDragLeave={() => setOver(o => (o === s.key ? null : o))}
                 onDrop={e => { e.preventDefault(); const id = e.dataTransfer.getData('text/plain'); setOver(null); if (id) move(id, s.key); }}>
                 <h4>{s.label}<span>{cs.length}</span></h4>
-                {cs.length ? cs.map(card) : <div className="none">없음</div>}
+                {cs.length ? cs.map(card) : <div className="none">{q ? '찾은 것 없음' : '없음'}</div>}
               </div>
             );
           })}</div>
           <div style={{ marginTop: 28 }}>
             <Sec title="게시 일정" count={scheduled.length}>
-              <Card>{scheduled.length ? <List>{scheduled.map(c => (
+              <Card>{scheduled.length ? <List>{pgSch.shown.map(c => (
                 <Row key={c.id} left={<Kind>{fmtDay(c.dueDate!, false)}</Kind>} title={c.title} desc={[c.channel, STAGES.find(s => s.key === c.stage)?.label].filter(Boolean).join(' · ')} onClick={() => go('content', c.id)} />
-              ))}</List> : <Empty>예정된 게시물 없음</Empty>}</Card>
+              ))}</List> : q ? <NoHit q={q} /> : <Empty>예정된 게시물 없음</Empty>}</Card>
+              <Pager {...pgSch} />
             </Sec>
           </div>
         </>

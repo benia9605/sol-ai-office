@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
 import { Research, addContent, addResearchNote, addTask, fmtFull, listResearch } from '../hq.service';
-import { Act, Badge, Empty, Err, Field, PageHead, Panel, Sec, Seg, Skeleton, Tabs } from '../ui';
+import { Act, Badge, Empty, Err, Field, NoHit, PageHead, Pager, Panel, Sec, Seg, Skeleton, Tabs, hay, matchSearch, usePaged } from '../ui';
 
 const KINDS = ['인기 상품', '인기 콘텐츠', '트렌드', '표현', '아이디어'];
 const host = (u?: string) => { try { return u ? new URL(u).hostname.replace(/^www\./, '') : ''; } catch { return ''; } };
@@ -16,28 +16,31 @@ export function ResearchView({ workspace, detailId, go }: BrandViewProps) {
   const [items, setItems] = useState<Research[] | null>(null);
   const [err, setErr] = useState<unknown>(null);
   const [tab, setTab] = useState('all');
+  const [q, setQ] = useState('');
   const load = useCallback(async () => { try { setItems(await listResearch(ws)); setErr(null); } catch (e) { setErr(e); } }, [ws]);
   useEffect(() => { load(); }, [load]);
 
   const list = items ?? [];
-  const shown = list.filter(r => tab === 'all' || (tab === 'me' ? r.source === 'me' : r.kind === tab));
+  const shown = list.filter(r => (tab === 'all' || (tab === 'me' ? r.source === 'me' : r.kind === tab))
+    && matchSearch(hay(r.title, r.summary, r.kind, r.judgment, r.evidence, r.implications), q));
+  const pg = usePaged(shown, 12);
   const byDate = useMemo(() => {
     const m = new Map<string, Research[]>();
-    shown.forEach(r => m.set(r.date, [...(m.get(r.date) ?? []), r]));
+    pg.shown.forEach(r => m.set(r.date, [...(m.get(r.date) ?? []), r]));
     return [...m];
-  }, [shown]);
+  }, [pg.shown]);
   const sel = list.find(r => r.id === detailId);
 
   return (
     <>
-      <PageHead title="리서치" action={<Act onClick={() => go('research', 'new')}>+ 메모</Act>} />
+      <PageHead title="리서치" search={{ value: q, onChange: setQ, placeholder: '리서치 검색' }} action={<Act onClick={() => go('research', 'new')}>+ 메모</Act>} />
       <Tabs value={tab} onChange={setTab} items={[
         { key: 'all', label: '전체', count: list.length },
         ...KINDS.map(k => ({ key: k, label: k, count: list.filter(r => r.kind === k).length })),
         { key: 'me', label: '내 메모', count: list.filter(r => r.source === 'me').length },
       ]} />
       {!!err && <Err e={err} />}
-      {!items ? <Skeleton /> : !byDate.length ? <Empty>리서치 없음</Empty> : byDate.map(([d, rs]) => (
+      {!items ? <Skeleton /> : !byDate.length ? (q ? <NoHit q={q} /> : <Empty>리서치 없음</Empty>) : byDate.map(([d, rs]) => (
         <Sec key={d} title={fmtFull(d)} count={rs.length}>
           <div className="n-gal">{rs.map(r => (
             <div key={r.id} className="n-gc click" onClick={() => go('research', r.id)}>
@@ -48,6 +51,8 @@ export function ResearchView({ workspace, detailId, go }: BrandViewProps) {
           ))}</div>
         </Sec>
       ))}
+
+      <Pager {...pg} />
 
       {sel && (
         <Panel title={sel.kind} tag={sel.date.slice(5).replace('-', '.')} onClose={() => go('research')}

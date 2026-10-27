@@ -132,6 +132,18 @@ export async function listTasks(ws: string): Promise<HqTask[]> {
   if (error) throw error;
   return (data ?? []).map(rowTask);
 }
+/** 달력 한 달 - 그 달이 일정인 할 일 + 그 달에 끝낸 할 일 (지운 것 · 제안 빼고). month = YYYY-MM */
+export async function listTasksMonth(ws: string, month: string): Promise<HqTask[]> {
+  const [y, m] = month.split('-').map(Number);
+  const from = `${month}-01`, next = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
+  const { data, error } = await supabase.from('hq_tasks').select('*').eq('workspace_id', ws).in('status', ['open', 'done', 'held'])
+    .or(`and(due_date.gte.${from},due_date.lt.${next}),and(done_at.gte.${from}T00:00:00+09:00,done_at.lt.${next}T00:00:00+09:00)`)
+    .order('created_at', { ascending: true }).limit(1000);
+  if (error) throw error;
+  return (data ?? []).map(rowTask);
+}
+/** 끝낸 날 (KST) */
+export const doneDay = (t: HqTask) => (t.doneAt ? new Date(new Date(t.doneAt).getTime() + 9 * 3600e3).toISOString().slice(0, 10) : undefined);
 const stamp = (text: string, by?: string) => ({ at: new Date().toISOString(), text, ...(by ? { by } : {}) });
 export async function addTask(ws: string, f: { title: string; dueDate?: string; assigneeUserId?: string; assigneeShared?: boolean; memo?: string; why?: string }): Promise<HqTask> {
   const me = await whoAmI(ws);

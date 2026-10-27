@@ -10,7 +10,7 @@
 import { RefObject, useEffect, useRef, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
 import { Briefing, briefingState, fmtDay, getBriefingHtml, listBriefings, addBriefingComment, deleteHqComment, pickDecisionByQuestion, setTaskDoneByTitle, todayKst } from '../hq.service';
-import { Empty, Err, PageHead, Sec, Skeleton, Tabs, useEsc, useLockScroll } from '../ui';
+import { Empty, Err, NoHit, PageHead, Pager, Sec, Skeleton, Tabs, hay, matchSearch, useEsc, useLockScroll, usePaged } from '../ui';
 
 /**
  * 브리핑 안 체크 · 결정 · 의견 · 메모 → 오피스 (postMessage).
@@ -77,24 +77,26 @@ export function BriefingView({ workspace, detailId, go }: BrandViewProps) {
   const [items, setItems] = useState<Briefing[] | null>(null);
   const [err, setErr] = useState<unknown>(null);
   const [filter, setFilter] = useState<Filter>('all');
-  useEffect(() => { listBriefings(workspace.id).then(setItems).catch(setErr); }, [workspace.id]);
+  const [q, setQ] = useState('');
+  useEffect(() => { listBriefings(workspace.id, 400).then(setItems).catch(setErr); }, [workspace.id]);
 
   const open = items?.find(b => b.id === detailId) ?? null;
   const today = todayKst();
-  const shown = (items ?? []).filter(b => filter === 'all' || b.source === filter);
+  const shown = (items ?? []).filter(b => (filter === 'all' || b.source === filter) && matchSearch(hay(b.summary, b.title, b.date, fmtDay(b.date), b.meta?.headline, (b.meta?.work ?? []).map((w: any) => w?.title)), q));
+  const pg = usePaged(shown);
   const months = new Map<string, Briefing[]>();
-  shown.forEach(b => { const k = `${b.date.slice(0, 4)}년 ${+b.date.slice(5, 7)}월`; months.set(k, [...(months.get(k) ?? []), b]); });
+  pg.shown.forEach(b => { const k = `${b.date.slice(0, 4)}년 ${+b.date.slice(5, 7)}월`; months.set(k, [...(months.get(k) ?? []), b]); });
 
   return (
     <>
-      <PageHead title="브리핑" />
+      <PageHead title="브리핑" search={{ value: q, onChange: setQ, placeholder: '브리핑 검색' }} />
       <Tabs value={filter} onChange={setFilter} items={[
         { key: 'all', label: '전체', count: items?.length },
         { key: 'hq', label: '아침 브리핑', count: items?.filter(b => b.source === 'hq').length },
         { key: 'me', label: '직접 작성', count: items?.filter(b => b.source === 'me').length },
       ]} />
       {!!err && <Err e={err} />}
-      {!items ? <Skeleton /> : !shown.length ? <Empty>브리핑 없음</Empty> : [...months].map(([m, list]) => (
+      {!items ? <Skeleton /> : !shown.length ? (q ? <NoHit q={q} /> : <Empty>브리핑 없음</Empty>) : [...months].map(([m, list]) => (
         <Sec key={m} title={m} count={list.length}>
           <div className="simok-report-list">
             {list.map(b => {
@@ -116,6 +118,7 @@ export function BriefingView({ workspace, detailId, go }: BrandViewProps) {
           </div>
         </Sec>
       ))}
+      <Pager {...pg} />
       {open && <BriefingModal briefing={open} workspaceId={workspace.id} onClose={() => go('briefing')} />}
     </>
   );

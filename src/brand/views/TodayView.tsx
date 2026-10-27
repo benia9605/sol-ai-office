@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
 import { Briefing, Decision, HqTask, Metrics, fmtDay, fmtFull, listBriefings, listDecisions, listMetrics, listTasks, todayKst, updateTask } from '../hq.service';
-import { Act, Badge, Card, Check, Empty, Err, G2, Kind, List, PageHead, Row, Sec, Skeleton } from '../ui';
+import { Act, Badge, Card, Check, Empty, Err, G2, Kind, List, NoHit, PageHead, Row, Sec, Skeleton, hay, matchSearch } from '../ui';
 import { MetricsStrip } from './MetricsView';
 import { BriefingModal } from './BriefingView';
 
@@ -24,6 +24,7 @@ export function TodayView({ workspace, look, go }: BrandViewProps) {
   const [err, setErr] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Briefing | null>(null);
+  const [q, setQ] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -34,16 +35,19 @@ export function TodayView({ workspace, look, go }: BrandViewProps) {
   useEffect(() => { load(); }, [load]);
 
   const todays = tasks.filter(t => isToday(t, today));
+  // 오늘 화면 검색 - 오늘 할 일 · 결정 대기 · 어제 작업을 거른다 (전체는 「할 일」 메뉴 검색)
+  const todaysHit = todays.filter(t => matchSearch(hay(t.title, t.why, t.sourceLabel), q));
+  const decHit = decisions.filter(d => matchSearch(hay(d.question, d.options), q));
   const toggle = async (t: HqTask) => {
     const next = await updateTask(t, { status: t.status === 'done' ? 'open' : 'done' }, t.status === 'done' ? '완료 취소' : '완료');
     setTasks(ts => ts.map(x => (x.id === t.id ? next : x)));
   };
-  const work: { kind: string; title: string; detail?: string }[] = Array.isArray(brief?.meta?.work) ? brief!.meta.work : [];
+  const work: { kind: string; title: string; detail?: string }[] = (Array.isArray(brief?.meta?.work) ? brief!.meta.work : []).filter((w: any) => matchSearch(hay(w?.kind, w?.title, w?.detail), q));
 
   if (loading) return <><PageHead title="오늘" small={fmtFull(today)} /><Skeleton /></>;
   return (
     <>
-      <PageHead title="오늘" small={fmtFull(today)}
+      <PageHead title="오늘" small={fmtFull(today)} search={{ value: q, onChange: setQ, placeholder: '오늘 화면에서 찾기' }}
         action={brief && <Act ghost onClick={() => setOpen(brief)}>브리핑 열기 ↗</Act>} />
       {!!err && <Err e={err} />}
 
@@ -63,21 +67,21 @@ export function TodayView({ workspace, look, go }: BrandViewProps) {
       </Sec>
 
       <G2>
-        <Sec title="오늘 할 일" count={todays.length} link="전체 ↗" onLink={() => go('tasks')}>
+        <Sec title="오늘 할 일" count={todaysHit.length} link="전체 ↗" onLink={() => go('tasks')}>
           <Card>
-            {todays.length ? <List>{todays.slice(0, 6).map(t => (
+            {todaysHit.length ? <List>{todaysHit.slice(0, 6).map(t => (
               <Row key={t.id} done={t.status === 'done'} onClick={() => go('tasks', t.id)}
                 left={<Check on={t.status === 'done'} onToggle={() => toggle(t)} label="완료" />}
                 title={t.title} desc={t.why} right={<Badge source={isCarry(t, today) ? 'carry' : t.source} />} />
-            ))}</List> : <Empty>오늘 할 일 없음</Empty>}
+            ))}</List> : q ? <NoHit q={q} /> : <Empty>오늘 할 일 없음</Empty>}
           </Card>
         </Sec>
-        <Sec title="결정 대기" count={decisions.length} link="전체 ↗" onLink={() => go('tasks', 'decide')}>
+        <Sec title="결정 대기" count={decHit.length} link="전체 ↗" onLink={() => go('tasks', 'decide')}>
           <Card>
-            {decisions.length ? <List>{decisions.slice(0, 4).map(d => (
+            {decHit.length ? <List>{decHit.slice(0, 4).map(d => (
               <Row key={d.id} onClick={() => go('tasks', `decide-${d.id}`)} title={d.question}
                 desc={<div className="n-opts">{d.options.map(o => <span key={o} className="n-opt">{o}</span>)}</div>} />
-            ))}</List> : <Empty>결정 대기 없음</Empty>}
+            ))}</List> : q ? <NoHit q={q} /> : <Empty>결정 대기 없음</Empty>}
           </Card>
         </Sec>
       </G2>

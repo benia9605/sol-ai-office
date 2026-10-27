@@ -7,7 +7,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { BrandViewProps } from '../BrandShell';
 import { Briefing, Metrics, MetricItem, fmtDay, listBriefings, listMetrics, todayKst } from '../hq.service';
-import { Act, Card, Empty, Err, Field, G2, Kind, List, PageHead, Panel, Row, Sec, Skeleton } from '../ui';
+import { Act, Card, Empty, Err, Field, G2, Kind, List, NoHit, PageHead, Pager, Panel, Row, Sec, Skeleton, hay, matchSearch, usePaged } from '../ui';
 import { BriefingModal } from './BriefingView';
 
 export function MetricsStrip({ items }: { items: MetricItem[] }) {
@@ -48,8 +48,9 @@ export function MetricsView({ workspace, detailId, go }: BrandViewProps) {
   const [briefs, setBriefs] = useState<Briefing[]>([]);
   const [open, setOpen] = useState<Briefing | null>(null);
   const [err, setErr] = useState<unknown>(null);
+  const [q, setQ] = useState('');
   useEffect(() => {
-    Promise.all([listMetrics(workspace.id, 30), listBriefings(workspace.id, 40)]).then(([m, b]) => { setRows(m); setBriefs(b); }).catch(setErr);
+    Promise.all([listMetrics(workspace.id, 180), listBriefings(workspace.id, 40)]).then(([m, b]) => { setRows(m); setBriefs(b); }).catch(setErr);
   }, [workspace.id]);
 
   const list = rows ?? [];
@@ -57,12 +58,15 @@ export function MetricsView({ workspace, detailId, go }: BrandViewProps) {
   const days = Array.from({ length: 7 }, (_, i) => todayKst(i - 7));            // 어제까지 7일
   const pick = (k: string) => days.map(d => { const r = list.find(x => x.date === d); const v = r?.raw?.[k]; return typeof v === 'number' ? v : null; });
   const sel = list.find(r => r.date === detailId);
+  // 일별 표 검색: 날짜(10.26 · 2026-10-26 · 월) · 채널 · 메모
+  const rowsHit = list.filter(r => matchSearch(hay(r.date, fmtDay(r.date), Object.keys(r.raw.byChannel ?? {}), r.items.map(x => x.note)), q));
+  const pg = usePaged(rowsHit);
   const sources: { name: string; count: number }[] = Array.isArray(latest?.raw?.sources) ? latest!.raw.sources : [];
   const workOf = (date: string) => { const b = briefs.find(x => x.meta?.day === date); return Array.isArray(b?.meta?.work) ? b!.meta.work : []; };
 
   return (
     <>
-      <PageHead title="실적 · 유입" small="본부 · 매일 09:00 갱신" />
+      <PageHead title="실적 · 유입" small="본부 · 매일 09:00 갱신" search={{ value: q, onChange: setQ, placeholder: '날짜 · 채널 검색' }} />
       {!!err && <Err e={err} />}
       {!rows ? <Skeleton /> : (
         <>
@@ -74,16 +78,17 @@ export function MetricsView({ workspace, detailId, go }: BrandViewProps) {
             <Sec title="방문 추이" count="최근 7일"><Card pad><Bars days={days} values={pick('visits')} /></Card></Sec>
           </G2>
           <Sec title="일별 실적" count="방문은 내부 접속 제외">
-            <Card pad>{list.length ? (
+            <Card pad>{rowsHit.length ? (
               <table className="n-tbl">
                 <thead><tr><th>날짜</th><th>매출</th><th>판매</th><th className="hide-m">채널</th><th>방문</th><th>가입</th></tr></thead>
-                <tbody>{list.map(r => (
+                <tbody>{pg.shown.map(r => (
                   <tr key={r.date} onClick={() => go('metrics', r.date)} style={{ cursor: 'pointer' }}>
                     <td>{fmtDay(r.date, false)}</td><td className="num">{won(r.raw.revenue)}</td><td className="num">{r.raw.sales ?? r.raw.orders ?? '-'}</td>
                     <td className="hide-m">{Object.keys(r.raw.byChannel ?? {}).join(' · ') || '-'}</td><td className="num">{r.raw.visits ?? '-'}</td><td className="num">{r.raw.signups ?? '-'}</td>
                   </tr>
                 ))}</tbody>
-              </table>) : <Empty>기록 없음</Empty>}</Card>
+              </table>) : q ? <NoHit q={q} /> : <Empty>기록 없음</Empty>}</Card>
+            <Pager {...pg} />
           </Sec>
           <Sec title="유입 경로">
             <Card>{sources.length ? <List>{sources.map(s => <Row key={s.name} title={s.name} right={<span className="n-b">{s.count}</span>} />)}</List>
