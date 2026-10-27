@@ -3,7 +3,7 @@
  * @description 회의 - 본부가 회의록 텍스트(클로바노트)로 만든 회의 HTML · 그 회의에서 나온 할 일 진행 · 댓글 (마이그 072)
  *  - 할 일은 본부가 바로 「할 일」 에 넣는다 (담당 · 날짜). 여기서는 회의별로 모아 본다
  *  - 약속 = 회의에서 정한 날짜 (지나도 안 끝나면 「밀림」) · 추천 = 「해 보자」 만 한 것에 본부가 나눠 넣은 날짜
- *  - 아버님(하우) 할 일은 회의 HTML 에만 있다 (오피스 멤버가 아니라서)
+ *  - 하우(아버님) 할 일은 회의 HTML 에만 있다 (오피스 멤버가 아니라서) · 화면 이름은 「하우 할 일」
  * 주소: /w/:id/meetings/(<회의 id>)
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -60,7 +60,7 @@ export function MeetingsView({ workspace, members, myId, detailId, go }: BrandVi
 
   const sel = items?.find(m => m.id === detailId) ?? null;
   const tasksOf = (id: string) => tasks.filter(t => t.meetingId === id);
-  // 회의 검색: 제목 · 요약 · 날짜 · 그 회의 할 일 · 정한 것 · 아버님 할 일
+  // 회의 검색: 제목 · 요약 · 날짜 · 그 회의 할 일 · 정한 것 · 하우 할 일
   const hits = (items ?? []).filter(m => matchSearch(hay(m.title, m.summary, m.date, fmtDay(m.date), tasksOf(m.id).map(t => t.title),
     (m.meta?.decisions ?? []).map((d: any) => d?.what), (m.meta?.hau_tasks ?? []).map((h: any) => h?.title)), q));
   const pg = usePaged(hits);
@@ -94,7 +94,7 @@ export function MeetingsView({ workspace, members, myId, detailId, go }: BrandVi
             );
           })}</List> : <Empty>이 회의에서 나온 할 일 없음</Empty>}</Card>
         </Sec>
-        {hau.length > 0 && <Sec title="아버님(하우) 할 일" count={`${hau.length} · 회의록에만`}>
+        {hau.length > 0 && <Sec title="하우 할 일" count={`${hau.length} · 회의록에만`}>
           <Card><List>{hau.map((h, i) => <Row key={i} left={<Kind>하우</Kind>} title={h} />)}</List></Card>
         </Sec>}
         <Sec title="댓글"><Card pad><Thread ws={ws} refType="hq_meeting" refId={sel.id} members={members} myId={myId} about={{ label: '회의에 댓글', path: `/meetings/${sel.id}` }} /></Card></Sec>
