@@ -88,7 +88,8 @@ export function TodayView({ workspace, look, go }: BrandViewProps) {
         </Card>
       </Sec>
 
-      {open && <BriefingModal briefing={open} workspaceId={workspace.id} onClose={() => setOpen(null)} />}
+      {/* 브리핑에서 체크 · 결정했을 수 있으니 닫을 때 목록을 다시 읽는다 */}
+      {open && <BriefingModal briefing={open} workspaceId={workspace.id} onClose={() => { setOpen(null); load(); }} />}
     </>
   );
 }
