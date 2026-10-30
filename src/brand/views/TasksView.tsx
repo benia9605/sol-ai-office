@@ -53,9 +53,9 @@ export function TasksView({ workspace, members, myId, detailId, go }: BrandViewP
   const selDecision = decisions.find(d => `decide-${d.id}` === detailId);
   const close = () => go('tasks', tab === 'todo' ? undefined : tab);
 
-  const rowFor = (t: HqTask, mark = true) => (
+  const rowFor = (t: HqTask) => (
     <Row key={t.id} done={t.status === 'done'} onClick={() => go('tasks', t.id)}
-      left={mark ? <Check on={t.status === 'done'} onToggle={() => toggle(t)} label="완료" /> : <Check on={false} onToggle={() => toggle(t)} label="완료" />}
+      left={<Check on={t.status === 'done'} onToggle={() => toggle(t)} label="완료" />}
       title={t.title}
       desc={[t.why, t.assigneeShared ? '공동' : memberName(members, t.assigneeUserId),
         t.status === 'done' && t.doneAt ? `완료 ${[memberName(members, t.doneBy), fmtTime(t.doneAt)].filter(Boolean).join(' ')}` : ''].filter(Boolean).join(' · ')}
@@ -86,7 +86,7 @@ export function TasksView({ workspace, members, myId, detailId, go }: BrandViewP
           </Sec>
           <Sec title="예정" count={later.length}>
             <Card>{laterGroups.length ? laterGroups.map(([d, list]) => (
-              <div key={d}><div className="n-day">{fmtDay(d)}</div><List>{list.map(t => rowFor(t, false))}</List></div>
+              <div key={d}><div className="n-day">{fmtDay(d)}</div><List>{list.map(t => rowFor(t))}</List></div>
             )) : q ? <NoHit q={q} /> : <Empty>예정된 할 일 없음</Empty>}</Card>
             <Pager {...pgLater} />
           </Sec>
@@ -113,8 +113,8 @@ export function TasksView({ workspace, members, myId, detailId, go }: BrandViewP
       {detailId === 'new' && <TaskPanel title="할 일 추가" members={members} myId={myId} today={today} tomorrow={tomorrow} onClose={close}
         onSave={async f => { const t = await addTask(ws, f); setTasks(ts => [...(ts ?? []), t]); if (t.dueDate?.startsWith(month)) setMonthTasks(ts => [...ts, t]); close(); }} />}
       {selTask && selTask.status !== 'proposed' && <TaskPanel title="할 일" task={selTask} members={members} myId={myId} today={today} tomorrow={tomorrow} onClose={close}
-        onSave={async f => { replace(await updateTask(selTask, { title: f.title, dueDate: f.dueDate ?? '', assigneeUserId: f.assigneeUserId ?? '', assigneeShared: !!f.assigneeShared, memo: f.memo ?? '' }, '수정')); close(); }}
-        onDone={async () => { replace(await updateTask(selTask, { status: selTask.status === 'done' ? 'open' : 'done' }, '완료')); close(); }}
+        onSave={async f => { replace(await updateTask(selTask, taskPatch(f), '수정')); close(); }}
+        onDone={async f => { const done = selTask.status !== 'done'; replace(await updateTask(selTask, { ...taskPatch(f), status: done ? 'done' : 'open' }, done ? '완료' : '완료 취소')); close(); }}
         onDelete={async () => { await updateTask(selTask, { status: 'deleted' }, '삭제'); setTasks(ts => (ts ?? []).filter(x => x.id !== selTask.id)); setMonthTasks(ts => ts.filter(x => x.id !== selTask.id)); close(); }} />}
       {selTask && selTask.status === 'proposed' && <ApprovePanel task={selTask} members={members} myId={myId} today={today} tomorrow={tomorrow} onClose={close}
         onHold={async () => { replace(await updateTask(selTask, { status: 'held' }, '보류')); close(); }}
@@ -126,9 +126,10 @@ export function TasksView({ workspace, members, myId, detailId, go }: BrandViewP
 }
 
 interface TaskForm { title: string; dueDate?: string; assigneeUserId?: string; assigneeShared?: boolean; memo?: string }
+const taskPatch = (f: TaskForm) => ({ title: f.title, dueDate: f.dueDate ?? '', assigneeUserId: f.assigneeUserId ?? '', assigneeShared: !!f.assigneeShared, memo: f.memo ?? '' });
 function TaskPanel({ title, task, members, myId, today, tomorrow, onClose, onSave, onDone, onDelete }: {
   title: string; task?: HqTask; members: BrandViewProps['members']; myId: string; today: string; tomorrow: string;
-  onClose: () => void; onSave: (f: TaskForm) => Promise<void>; onDone?: () => Promise<void>; onDelete?: () => Promise<void>;
+  onClose: () => void; onSave: (f: TaskForm) => Promise<void>; onDone?: (f: TaskForm) => Promise<void>; onDelete?: () => Promise<void>;
 }) {
   const [f, setF] = useState<TaskForm>(() => ({ title: task?.title ?? '', dueDate: task?.dueDate, assigneeUserId: task?.assigneeUserId ?? (task ? undefined : myId), assigneeShared: task?.assigneeShared, memo: task?.memo ?? '' }));
   const [busy, setBusy] = useState(false);
@@ -136,8 +137,8 @@ function TaskPanel({ title, task, members, myId, today, tomorrow, onClose, onSav
   return (
     <Panel title={title} tag={task ? (task.source === 'hq' ? '자동' : undefined) : undefined} onClose={onClose}
       foot={<>{onDelete && <Act ghost onClick={run(onDelete)} disabled={busy}>삭제</Act>}<span className="grow" />
-        <Act ghost={!!onDone} onClick={run(() => onSave(f))} disabled={busy || !f.title.trim()}>{task ? '저장' : '추가'}</Act>
-        {onDone && <Act onClick={run(onDone)} disabled={busy}>{task?.status === 'done' ? '완료 취소' : '완료'}</Act>}</>}>
+        <Act ghost={!!onDone} onClick={run(() => onSave(f))} disabled={busy || !f.title.trim()}>{!task ? '추가' : task.status === 'done' ? '저장' : '임시저장'}</Act>
+        {onDone && <Act onClick={run(() => onDone(f))} disabled={busy || !f.title.trim()}>{task?.status === 'done' ? '저장 + 완료 취소' : '저장 + 할 일 완료'}</Act>}</>}>
       <Field label="제목"><input className="n-in" value={f.title} onChange={e => setF({ ...f, title: e.target.value })} placeholder="할 일 입력" autoFocus={!task} /></Field>
       <Field label="일정"><DueSeg value={f.dueDate} onChange={d => setF({ ...f, dueDate: d })} today={today} tomorrow={tomorrow} /></Field>
       <Field label="담당"><AssigneeSeg members={members} userId={f.assigneeUserId} shared={!!f.assigneeShared} onChange={v => setF({ ...f, assigneeUserId: v.userId, assigneeShared: v.shared })} /></Field>

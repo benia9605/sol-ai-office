@@ -253,6 +253,8 @@
 .brand-office .n-list > li.click { cursor: pointer; }
 .brand-office .n-list > li.click:hover .t { color: var(--green); }
 .brand-office .n-ck { cursor: pointer; background: transparent; padding: 0; }
+.brand-office .n-ck.on { background: var(--green); border-color: var(--green); position: relative; }
+.brand-office .n-ck.on::after { content: ''; position: absolute; left: 5px; top: 2px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .brand-office .n-gc.click, .brand-office .n-kc.click { cursor: pointer; }
 .brand-office .n-gc.click:hover, .brand-office .n-kc.click:hover { border-color: var(--green); }
 .brand-office .n-err { font-size: 12px; color: #8a4f46; background: #fdf4f2; border: 1px solid #ecd6d1; border-radius: 10px; padding: 10px 14px; }
