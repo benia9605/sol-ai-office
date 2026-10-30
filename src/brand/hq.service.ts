@@ -476,3 +476,93 @@ export async function listPromptVersions(promptId: string): Promise<PromptVersio
 export async function markPromptUsed(id: string): Promise<void> {
   await supabase.from('hq_prompts').update({ last_used_at: new Date().toISOString() }).eq('id', id);
 }
+
+// ── 인사이트 (마이그 073) ─────────────────────────────
+// 폰 「인사이트」 단축어가 hq_insight_add 로 넣는다 (링크 · 공유 글 · 캡처 · 한 줄 메모). 본부가 매일 읽고 정리를 남긴다.
+// 공통(common) 은 쏠닝포인트 워크스페이스에 들어가서 세 오피스 모두에서 보인다 (멤버 RLS).
+export type InsightKind = 'ai' | 'reference' | 'info';
+export type InsightBrand = 'common' | 'simok' | 'solningpoint' | 'unmyunglab';
+export type InsightStatus = 'new' | 'read' | 'done' | 'held';
+export const INSIGHT_KINDS: { key: InsightKind; label: string }[] = [
+  { key: 'ai', label: 'AI · 프롬프트' }, { key: 'reference', label: '레퍼런스 참고' }, { key: 'info', label: '인사이트 정보' },
+];
+export const INSIGHT_BRANDS: { key: InsightBrand; label: string }[] = [
+  { key: 'common', label: '공통' }, { key: 'simok', label: '시목' }, { key: 'solningpoint', label: '쏠닝오즈' }, { key: 'unmyunglab', label: '운명랩' },
+];
+export interface Insight {
+  id: string; workspaceId: string; brand: InsightBrand; kind: InsightKind; url?: string; body?: string; memo?: string;
+  title?: string; hqNote?: string; status: InsightStatus; imageCount: number; source: 'shortcut' | 'me'; createdAt: string;
+}
+function rowInsight(r: any): Insight {
+  return { id: r.id, workspaceId: r.workspace_id, brand: r.brand, kind: r.kind, url: r.url ?? undefined, body: r.body ?? undefined,
+    memo: r.memo ?? undefined, title: r.title ?? undefined, hqNote: r.hq_note ?? undefined, status: r.status,
+    imageCount: r.image_count ?? 0, source: r.source, createdAt: r.created_at };
+}
+/** 이 워크스페이스 것 + 공통 */
+export async function listInsights(ws: string, limit = 300): Promise<Insight[]> {
+  const { data, error } = await supabase.from('hq_insights')
+    .select('id,workspace_id,brand,kind,url,body,memo,title,hq_note,status,image_count,source,created_at')
+    .or(`workspace_id.eq.${ws},brand.eq.common`).order('created_at', { ascending: false }).limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(rowInsight);
+}
+/** 캡처 - bytea 는 PostgREST 가 \x 16진 문자열로 준다 → 브라우저 그림 주소 */
+const hexToUrl = (r: any) => {
+  const hex = String(r.data ?? '').replace(/^\\x/, '');
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return URL.createObjectURL(new Blob([bytes], { type: r.mime || 'image/jpeg' }));
+};
+export async function getInsightImages(id: string): Promise<string[]> {
+  const { data, error } = await supabase.from('hq_insight_images').select('idx,mime,data').eq('insight_id', id).order('idx');
+  if (error) throw error;
+  return (data ?? []).map(hexToUrl);
+}
+/** 카드 미리보기 - 첫 캡처 한 장만 */
+export async function getInsightFirstImage(id: string): Promise<string | null> {
+  const { data, error } = await supabase.from('hq_insight_images').select('mime,data').eq('insight_id', id).order('idx').limit(1);
+  if (error || !data?.length) return null;
+  return hexToUrl(data[0]);
+}
+/** 사진 → 긴 변 1600 JPEG (3MB 넘으면 더 줄임) → bytea 16진 문자열 */
+async function photoToHex(file: File): Promise<string> {
+  const bmp = await createImageBitmap(file);
+  let side = 1600, q = 0.82, blob: Blob | null = null;
+  for (let t = 0; t < 4; t++) {
+    const k = Math.min(1, side / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
+    blob = await new Promise<Blob | null>(r => c.toBlob(r, 'image/jpeg', q));
+    if (blob && blob.size <= 3 * 1024 * 1024) break;
+    side = Math.round(side * 0.75); q -= 0.1;
+  }
+  if (!blob) throw new Error('사진을 읽지 못했어요');
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let hex = '\\x';
+  for (let i = 0; i < bytes.length; i++) hex += bytes[i].toString(16).padStart(2, '0');
+  return hex;
+}
+export async function setInsightStatus(id: string, status: InsightStatus): Promise<void> {
+  const { error } = await supabase.from('hq_insights').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw error;
+}
+export async function addInsight(ws: string, f: { brand: InsightBrand; kind: InsightKind; url?: string; memo?: string; photos?: File[] }): Promise<void> {
+  const uid = await getCurrentUserId();
+  const photos = (f.photos ?? []).slice(0, 10);
+  const { data, error } = await supabase.from('hq_insights').insert({
+    workspace_id: ws, brand: f.brand, kind: f.kind, url: f.url || null, memo: f.memo || null, source: 'me', created_by: uid,
+  }).select('id').single();
+  if (error) throw error;
+  if (!photos.length) return;
+  const rows = [];
+  for (let i = 0; i < photos.length; i++) rows.push({ insight_id: data.id, workspace_id: ws, idx: i, mime: 'image/jpeg', data: await photoToHex(photos[i]) });
+  const { error: e2 } = await supabase.from('hq_insight_images').insert(rows);
+  if (e2) throw e2;
+  const { error: e3 } = await supabase.from('hq_insights').update({ image_count: rows.length }).eq('id', data.id);
+  if (e3) throw e3;
+}
+export async function deleteInsight(id: string): Promise<void> {
+  const { error } = await supabase.from('hq_insights').delete().eq('id', id);
+  if (error) throw error;
+}
