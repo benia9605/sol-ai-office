@@ -9,7 +9,7 @@
 -- 062 는 이미 적용됐으므로 수정하지 않고 새 번호로 보강한다(CLAUDE.md 규칙).
 --   · query_version 컬럼은 062 에 이미 있다. 이제 **wire 값**(질의본 식별자)이 들어간다.
 --   · schema_version 을 따로 둬서 둘을 섞지 않는다.
---   · content_digest 는 원천이 계산한 **의미 digest** 다. 수신 bytes 해시(raw_sha256)와 다르다.
+--   · content_digest 는 원천이 계산한 **의미 digest** 다. 수신 bytes 해시(raw_sha256)와 다르다.p
 --
 -- 가산적·idempotent. 적용: Supabase 대시보드 SQL 에디터.
 -- ────────────────────────────────────────────────────────
