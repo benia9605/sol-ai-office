@@ -78,7 +78,7 @@ function CardThumb({ it }: { it: Insight }) {
   }, [it.id, it.imageCount, yt]);
   if (!src) return null;
   return (
-    <div style={{ position: 'relative', margin: '-16px -18px 12px', height: 0, paddingBottom: yt ? '56.25%' : '40%', overflow: 'hidden', borderRadius: '13px 13px 0 0', background: '#eceae2' }}>
+    <div style={{ position: 'relative', margin: '-16px -18px 12px', height: 0, paddingBottom: '56.25%', overflow: 'hidden', borderRadius: '13px 13px 0 0', background: '#eceae2' }}>
       <img src={src} alt="" loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       {yt && <PlayMark />}
     </div>
