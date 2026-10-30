@@ -16,7 +16,7 @@ import {
   Content, ContentFormat, FORMATS, Prompt, STAGES, Stage, addContent, addContentPhotos, deleteContent, fmtDay, getContentCover, getContentSlides,
   listContents, listPrompts, todayKst, updateContent,
 } from '../hq.service';
-import { Act, Card, DueSeg, Err, Field, Kind, List, Mini, PageHead, Panel, Row, Seg, Skeleton, hay, matchSearch } from '../ui';
+import { Act, Card, DueSeg, Empty, Err, Field, Kind, List, Mini, PageHead, Panel, Row, Seg, Skeleton, Tabs, hay, matchSearch } from '../ui';
 import { Site, SiteIcon } from './InsightsView';
 
 const CHANNELS = ['인스타', '스레드', '인스타 · 스레드', '유튜브', '블로그'];
@@ -56,6 +56,7 @@ export function ContentView({ workspace, detailId, go }: BrandViewProps) {
   const [items, setItems] = useState<Content[] | null>(null);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [err, setErr] = useState<unknown>(null);
+  const [tab, setTab] = useState<'now' | 'topics'>('now');
   const [fmtTab, setFmtTab] = useState<ContentFormat | 'all'>('all');
   const [dragId, setDragId] = useState<string | null>(null);
   const [over, setOver] = useState<string | null>(null);
@@ -108,7 +109,13 @@ export function ContentView({ workspace, detailId, go }: BrandViewProps) {
       {!!err && <Err e={err} />}
       {!items ? <Skeleton /> : (
         <>
-          {topics.some(t => !t.dueDate) && <Topics topics={topics} all={all} onChange={replace} onRemove={ids => setItems(xs => (xs ?? []).filter(x => !ids.includes(x.id)))} setErr={setErr} />}
+          <Tabs value={tab} onChange={setTab} items={[
+            { key: 'now', label: '현황' },
+            { key: 'topics', label: '다음 주 캐러셀 주제', count: topics.length ? Math.max(0, 7 - topics.filter(t => t.dueDate).length) : undefined },
+          ]} />
+          {tab === 'topics' ? (topics.length
+            ? <Topics topics={topics} all={all} onChange={replace} onRemove={ids => setItems(xs => (xs ?? []).filter(x => !ids.includes(x.id)))} setErr={setErr} />
+            : <Empty>후보 없음 · 매주 일요일 9시에 본부가 다음 주 캐러셀 주제 Top 10 을 올려요</Empty>) : <>
           {/* PC - 종류 줄 × 단계 */}
           <div className="n-b3">
             <div className="n-b3-h"><span />{STAGES.map(s => (
@@ -150,6 +157,7 @@ export function ContentView({ workspace, detailId, go }: BrandViewProps) {
               );
             })}</div>
           </div>
+          </>}
         </>
       )}
 
@@ -175,8 +183,8 @@ function Topics({ topics, all, onChange, onRemove, setErr }: { topics: Content[]
   const set = async (t: Content, dueDate: string) => { try { onChange(await updateContent(t.id, { dueDate })); } catch (e) { setErr(e); } };
   const label = (d: string) => `${fmtDay(d, false)} ${WD[new Date(d).getDay()]}`;
   return (
-    <section className="n-sec" style={{ marginBottom: 22 }}>
-      <div className="n-sh"><h2>다음 주 캐러셀 주제</h2><span className="cnt">{label(days[0])} ~ {label(days[6])} · 본부 Top {topics.length} · {picked} / 7 고름</span>
+    <section className="n-sec">
+      <div className="n-sh"><h2>{label(days[0])} ~ {label(days[6])}</h2><span className="cnt">본부 Top {topics.length} · {picked} / 7 고름</span>
         <span className="lnk" style={{ cursor: 'pointer' }} onClick={async () => {
           const rest = topics.filter(t => !t.dueDate);
           if (!rest.length || !confirm(`고르지 않은 ${rest.length}개를 뺄까요?`)) return;
@@ -192,7 +200,7 @@ function Topics({ topics, all, onChange, onRemove, setErr }: { topics: Content[]
           </> : <Mini primary onClick={() => set(t, days.find(d => !used.has(d)) ?? days[6])}>고르기</Mini>}
         </li>
       ))}</ul></Card>
-      <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 8 }}>고르면 빈 날 순서로 게시일이 잡히고 (날짜를 눌러 바꿈) 기획 칸 캐러셀 카드가 된다 · 그날 아침 본부가 그 주제로 캐러셀을 만든다 · 안 고른 날은 본부가 고른다</div>
+      <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 8 }}>고르면 빈 날 순서로 게시일이 잡히고 (날짜를 눌러 바꿈) 현황 탭 기획 줄에 캐러셀 카드로 · 그날 아침 본부가 그 주제로 캐러셀을 만든다 · 안 고른 날은 본부가 고른다 · 후보는 매주 일요일 9시에 바뀐다</div>
     </section>
   );
 }
