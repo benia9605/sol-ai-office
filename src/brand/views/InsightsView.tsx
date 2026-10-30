@@ -18,7 +18,7 @@ const host = (u?: string) => { try { return u ? new URL(u).hostname.replace(/^ww
 const kindLabel = (k: InsightKind) => INSIGHT_KINDS.find(x => x.key === k)?.label ?? k;
 const brandLabel = (b: InsightBrand) => INSIGHT_BRANDS.find(x => x.key === b)?.label ?? b;
 // 링크 어디 것인지 - 아이콘 · 미리보기 · 임베드
-type Site = 'youtube' | 'instagram' | 'threads' | 'daangn' | 'naver' | 'web';
+export type Site = 'youtube' | 'instagram' | 'threads' | 'daangn' | 'naver' | 'web';
 const siteOf = (u?: string): Site | null => {
   const h = host(u);
   if (!h) return null;
@@ -49,8 +49,8 @@ const embedUrl = (u?: string): string | null => {
   } catch { /* 주소가 아니면 임베드 없음 */ }
   return null;
 };
-function SiteIcon({ site }: { site: Site | null }) {
-  const s = { width: 15, height: 15, flex: 'none' as const, verticalAlign: '-3px' };
+export function SiteIcon({ site, size = 15 }: { site: Site | null; size?: number }) {
+  const s = { width: size, height: size, flex: 'none' as const, verticalAlign: '-3px' };
   switch (site) {
     case 'youtube': return <svg viewBox="0 0 16 16" style={s} aria-label="유튜브"><rect y="2.5" width="16" height="11" rx="3.2" fill="#FF0000" /><path d="M6.4 5.4v5.2L10.8 8z" fill="#fff" /></svg>;
     case 'instagram': return <svg viewBox="0 0 16 16" style={s} aria-label="인스타그램" fill="none" stroke="#DD2A7B" strokeWidth="1.8"><rect x="1" y="1" width="14" height="14" rx="4" /><circle cx="8" cy="8" r="3.1" /><circle cx="12" cy="4" r=".6" fill="#DD2A7B" /></svg>;

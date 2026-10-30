@@ -54,10 +54,21 @@ export const STAGES: { key: Stage; label: string }[] = [
   { key: 'plan', label: '기획' }, { key: 'draft', label: '원고' }, { key: 'shoot', label: '촬영' },
   { key: 'edit', label: '편집' }, { key: 'done', label: '게시 완료' },
 ];
+export type ContentFormat = 'carousel' | 'video' | 'post';
+export const FORMATS: { key: ContentFormat; label: string; icon: string; sub: string; color: string; bg: string }[] = [
+  { key: 'carousel', label: '캐러셀', icon: '▦', sub: '여러 장 넘기기', color: '#2f6f4f', bg: '#e3efe6' },
+  { key: 'video', label: '영상', icon: '▶', sub: '릴스 · 유튜브', color: '#b4432f', bg: '#f6e3de' },
+  { key: 'post', label: '게시물', icon: '▢', sub: '피드 · 스레드 · 블로그', color: '#2f5f8f', bg: '#e1ebf5' },
+];
 export interface Content {
   id: string; title: string; channel?: string; stage: Stage; dueDate?: string; draft?: string; draftVersion: number;
   draftStatus?: 'auto' | 'edited' | 'confirmed'; promptId?: string; memo?: string; position: number; source: Source; updatedAt: string;
+  format: ContentFormat; captionIg?: string; captionThreads?: string; slideCount: number; hqKey?: string;
 }
+/** 종류 칸(074)이 비어 있으면 채널로 짐작 */
+export const formatOf = (format: unknown, channel?: string): ContentFormat =>
+  format === 'carousel' || format === 'video' || format === 'post' ? format
+    : /릴스|유튜브|쇼츠|영상|reels|youtube|shorts/i.test(channel ?? '') ? 'video' : /캐러셀|carousel/i.test(channel ?? '') ? 'carousel' : 'post';
 export interface PromptCategory { id: string; name: string; position: number }
 export interface Prompt {
   id: string; categoryId?: string; title: string; tool?: string; body: string; version: number; source: Source;
@@ -382,7 +393,8 @@ export async function addResearchNote(ws: string, f: { kind: string; title: stri
 function rowContent(r: any): Content {
   return { id: r.id, title: r.title, channel: r.channel ?? undefined, stage: r.stage, dueDate: r.due_date ?? undefined,
     draft: r.draft ?? undefined, draftVersion: r.draft_version ?? 0, draftStatus: r.draft_status ?? undefined,
-    promptId: r.prompt_id ?? undefined, memo: r.memo ?? undefined, position: r.position ?? 0, source: r.source, updatedAt: r.updated_at };
+    promptId: r.prompt_id ?? undefined, memo: r.memo ?? undefined, position: r.position ?? 0, source: r.source, updatedAt: r.updated_at,
+    format: formatOf(r.format, r.channel), captionIg: r.caption_ig ?? undefined, captionThreads: r.caption_threads ?? undefined, slideCount: r.slide_count ?? 0, hqKey: r.hq_key ?? undefined };
 }
 export async function listContents(ws: string): Promise<Content[]> {
   const { data, error } = await supabase.from('hq_contents').select('*').eq('workspace_id', ws)
@@ -390,15 +402,17 @@ export async function listContents(ws: string): Promise<Content[]> {
   if (error) throw error;
   return (data ?? []).map(rowContent);
 }
-export async function addContent(ws: string, f: { title: string; channel?: string; stage: Stage; dueDate?: string; memo?: string }): Promise<Content> {
+export async function addContent(ws: string, f: { title: string; channel?: string; stage: Stage; dueDate?: string; memo?: string; format?: ContentFormat }): Promise<Content> {
   const uid = await getCurrentUserId();
-  const { data, error } = await supabase.from('hq_contents').insert({
+  const row: Record<string, unknown> = {
     workspace_id: ws, title: f.title.trim(), channel: f.channel ?? null, stage: f.stage, due_date: f.dueDate ?? null, memo: f.memo ?? null, source: 'me', created_by: uid,
-  }).select().single();
+  };
+  if (f.format) row.format = f.format;
+  const { data, error } = await supabase.from('hq_contents').insert(row).select().single();
   if (error) throw error;
   return rowContent(data);
 }
-export async function updateContent(id: string, patch: Partial<Pick<Content, 'title' | 'channel' | 'stage' | 'dueDate' | 'draft' | 'draftStatus' | 'memo' | 'position'>>): Promise<Content> {
+export async function updateContent(id: string, patch: Partial<Pick<Content, 'title' | 'channel' | 'stage' | 'dueDate' | 'draft' | 'draftStatus' | 'memo' | 'position' | 'format'>>): Promise<Content> {
   const p: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (patch.title !== undefined) p.title = patch.title.trim();
   if (patch.channel !== undefined) p.channel = patch.channel || null;
@@ -408,6 +422,7 @@ export async function updateContent(id: string, patch: Partial<Pick<Content, 'ti
   if (patch.draftStatus !== undefined) p.draft_status = patch.draftStatus;
   if (patch.memo !== undefined) p.memo = patch.memo || null;
   if (patch.position !== undefined) p.position = patch.position;
+  if (patch.format !== undefined) p.format = patch.format;
   const { data, error } = await supabase.from('hq_contents').update(p).eq('id', id).select().single();
   if (error) throw error;
   return rowContent(data);
@@ -415,6 +430,28 @@ export async function updateContent(id: string, patch: Partial<Pick<Content, 'ti
 export async function deleteContent(id: string): Promise<void> {
   const { error } = await supabase.from('hq_contents').delete().eq('id', id);
   if (error) throw error;
+}
+/** 콘텐츠 장 그림 (074 hq_content_slides) - 본부 캐러셀 장 · 직접 넣은 사진 */
+export async function getContentSlides(id: string): Promise<string[]> {
+  const { data, error } = await supabase.from('hq_content_slides').select('idx,mime,data').eq('content_id', id).order('idx');
+  if (error) throw error;
+  return (data ?? []).map(hexToUrl);
+}
+export async function getContentCover(id: string): Promise<string | null> {
+  const { data, error } = await supabase.from('hq_content_slides').select('mime,data').eq('content_id', id).order('idx').limit(1);
+  if (error || !data?.length) return null;
+  return hexToUrl(data[0]);
+}
+export async function addContentPhotos(ws: string, id: string, start: number, files: File[]): Promise<number> {
+  const rows = [];
+  for (let i = 0; i < files.length && start + i < 10; i++) rows.push({ content_id: id, workspace_id: ws, idx: start + i, mime: 'image/jpeg', data: await photoToHex(files[i]) });
+  if (!rows.length) return start;
+  const { error } = await supabase.from('hq_content_slides').insert(rows);
+  if (error) throw error;
+  const n = start + rows.length;
+  const { error: e2 } = await supabase.from('hq_contents').update({ slide_count: n, updated_at: new Date().toISOString() }).eq('id', id);
+  if (e2) throw e2;
+  return n;
 }
 
 // ── 프롬프트 ─────────────────────────────────────────
@@ -507,12 +544,12 @@ export async function listInsights(ws: string, limit = 300): Promise<Insight[]> 
   return (data ?? []).map(rowInsight);
 }
 /** 캡처 - bytea 는 PostgREST 가 \x 16진 문자열로 준다 → 브라우저 그림 주소 */
-const hexToUrl = (r: any) => {
+function hexToUrl(r: any): string {
   const hex = String(r.data ?? '').replace(/^\\x/, '');
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
   return URL.createObjectURL(new Blob([bytes], { type: r.mime || 'image/jpeg' }));
-};
+}
 export async function getInsightImages(id: string): Promise<string[]> {
   const { data, error } = await supabase.from('hq_insight_images').select('idx,mime,data').eq('insight_id', id).order('idx');
   if (error) throw error;
