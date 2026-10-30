@@ -6,7 +6,7 @@
  */
 import { ReactNode, useEffect, useState } from 'react';
 import { WorkspaceMember } from '../types';
-import { HqComment, HqRef, Source, addHqComment, deleteHqComment, fmtTime, listHqComments } from './hq.service';
+import { HqComment, HqRef, Source, addHqComment, deleteHqComment, fmtDay, fmtTime, listHqComments } from './hq.service';
 
 export function PageHead({ title, small, action, search }: { title: string; small?: string; action?: ReactNode; search?: SearchProps }) {
   return (
@@ -198,7 +198,12 @@ export function DueSeg({ value, onChange, today, tomorrow }: { value?: string; o
     <div className="n-seg">
       <button type="button" className={!value || value === today ? 'on' : ''} onClick={() => onChange(undefined)}>오늘</button>
       <button type="button" className={value === tomorrow ? 'on' : ''} onClick={() => onChange(tomorrow)}>내일</button>
-      <input type="date" className={`n-in${custom ? '' : ' ph'}`} style={{ width: 'auto', padding: '6px 10px' }} value={custom ? value : ''} min={today} onChange={e => onChange(e.target.value || undefined)} aria-label="날짜 선택" />
+      {/* 빈 date 입력은 브라우저마다 빈 네모로만 보여서 - 버튼 모양 위에 투명 입력을 덮는다 (누르면 달력) */}
+      <label className={`n-date${custom ? ' on' : ''}`}>
+        📅 {custom ? fmtDay(value) : '날짜 선택'}
+        <input type="date" value={custom ? value : ''} min={today} onChange={e => onChange(e.target.value || undefined)}
+          onClick={e => { try { e.currentTarget.showPicker(); } catch { /* showPicker 없는 브라우저는 기본 동작 */ } }} aria-label="날짜 선택" />
+      </label>
     </div>
   );
 }

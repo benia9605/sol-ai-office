@@ -250,6 +250,9 @@
 .brand-office .n-seg button { font: inherit; font-size: 12px; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--white); cursor: pointer; }
 .brand-office .n-seg button.on { background: var(--green); color: #fff; border-color: var(--green); }
 .brand-office .n-seg.col button { text-align: left; }
+.brand-office .n-date { position: relative; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--white); color: var(--muted); cursor: pointer; }
+.brand-office .n-date.on { background: var(--green); color: #fff; border-color: var(--green); }
+.brand-office .n-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
 .brand-office .n-list > li.click { cursor: pointer; }
 .brand-office .n-list > li.click:hover .t { color: var(--green); }
 .brand-office .n-ck { cursor: pointer; background: transparent; padding: 0; }
