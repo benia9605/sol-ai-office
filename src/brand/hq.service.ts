@@ -64,6 +64,8 @@ export interface Content {
   id: string; title: string; channel?: string; stage: Stage; dueDate?: string; draft?: string; draftVersion: number;
   draftStatus?: 'auto' | 'edited' | 'confirmed'; promptId?: string; memo?: string; position: number; source: Source; updatedAt: string;
   format: ContentFormat; captionIg?: string; captionThreads?: string; slideCount: number; hqKey?: string;
+  /** 080 - 이미지 주문서 · 사진 고르기 상태 (none · picking · done · made) */
+  orderMd?: string; pickStatus?: 'none' | 'picking' | 'done' | 'made';
 }
 /** 종류 칸(074)이 비어 있으면 채널로 짐작 */
 export const formatOf = (format: unknown, channel?: string): ContentFormat =>
@@ -394,7 +396,8 @@ function rowContent(r: any): Content {
   return { id: r.id, title: r.title, channel: r.channel ?? undefined, stage: r.stage, dueDate: r.due_date ?? undefined,
     draft: r.draft ?? undefined, draftVersion: r.draft_version ?? 0, draftStatus: r.draft_status ?? undefined,
     promptId: r.prompt_id ?? undefined, memo: r.memo ?? undefined, position: r.position ?? 0, source: r.source, updatedAt: r.updated_at,
-    format: formatOf(r.format, r.channel), captionIg: r.caption_ig ?? undefined, captionThreads: r.caption_threads ?? undefined, slideCount: r.slide_count ?? 0, hqKey: r.hq_key ?? undefined };
+    format: formatOf(r.format, r.channel), captionIg: r.caption_ig ?? undefined, captionThreads: r.caption_threads ?? undefined, slideCount: r.slide_count ?? 0, hqKey: r.hq_key ?? undefined,
+    orderMd: r.order_md ?? undefined, pickStatus: r.pick_status ?? undefined };
 }
 export async function listContents(ws: string): Promise<Content[]> {
   const { data, error } = await supabase.from('hq_contents').select('*').eq('workspace_id', ws)

@@ -18,6 +18,7 @@ import {
 } from '../hq.service';
 import { Act, Card, DueSeg, Empty, Err, Field, Kind, List, Mini, PageHead, Panel, Row, Seg, Skeleton, Tabs, hay, matchSearch } from '../ui';
 import { Site, SiteIcon } from './InsightsView';
+import { CarouselPick, OrderSection, RequestSection } from './CarouselPick';
 
 const CHANNELS = ['인스타', '스레드', '인스타 · 스레드', '유튜브', '블로그'];
 const CH_SITE: Record<string, Site> = { 인스타: 'instagram', 피드: 'instagram', 릴스: 'instagram', 스레드: 'threads', 유튜브: 'youtube', 쇼츠: 'youtube', 블로그: 'naver' };
@@ -98,7 +99,7 @@ export function ContentView({ workspace, detailId, go }: BrandViewProps) {
       <Cover c={c} />
       <b>{c.title}</b>
       {c.stage === 'draft' && c.draftStatus && <div className="n-gm" style={{ marginTop: 6 }}><span className="n-b hq">{c.draftStatus === 'auto' ? `초안 v${c.draftVersion}` : c.draftStatus === 'edited' ? '원고 수정 중' : '원고 확정'}</span></div>}
-      <div className="mt"><span className="l"><ChIcons ch={c.channel} /><Who c={c} /></span><DDay due={c.dueDate} today={today} /></div>
+      <div className="mt"><span className="l"><ChIcons ch={c.channel} /><Who c={c} />{c.pickStatus === 'done' && <span className="n-b ok">선택 완료</span>}</span><DDay due={c.dueDate} today={today} /></div>
     </div>
   );
 
@@ -167,6 +168,7 @@ export function ContentView({ workspace, detailId, go }: BrandViewProps) {
       {sel && <ContentPanel ws={ws} title={sel.format === 'carousel' && sel.slideCount ? `캐러셀 · ${sel.slideCount}장` : '콘텐츠'} c={sel} prompt={prompts.find(p => p.id === sel.promptId)} onClose={() => go('content')}
         onSave={async f => { replace(await updateContent(sel.id, f)); go('content'); }}
         onPhotos={n => replace({ ...sel, slideCount: n, updatedAt: new Date().toISOString() })}
+        onPatch={p => replace({ ...sel, ...p })}
         onDelete={async () => { await deleteContent(sel.id); setItems(xs => (xs ?? []).filter(x => x.id !== sel.id)); go('content'); }}
         onOpenPrompt={() => go('library', sel.promptId)} />}
     </>
@@ -278,8 +280,8 @@ function Captions({ c }: { c: Content }) {
 }
 
 interface CForm { title: string; channel?: string; stage: Stage; dueDate?: string; memo?: string; draft?: string; draftStatus?: Content['draftStatus']; format: ContentFormat }
-function ContentPanel({ ws, title, c, prompt, onClose, onSave, onDelete, onOpenPrompt, onPhotos }: {
-  ws: string; title: string; c?: Content; prompt?: Prompt; onClose: () => void; onSave: (f: CForm) => Promise<void>; onDelete?: () => Promise<void>; onOpenPrompt?: () => void; onPhotos?: (n: number) => void;
+function ContentPanel({ ws, title, c, prompt, onClose, onSave, onDelete, onOpenPrompt, onPhotos, onPatch }: {
+  ws: string; title: string; c?: Content; prompt?: Prompt; onClose: () => void; onSave: (f: CForm) => Promise<void>; onDelete?: () => Promise<void>; onOpenPrompt?: () => void; onPhotos?: (n: number) => void; onPatch?: (p: Partial<Content>) => void;
 }) {
   const [f, setF] = useState<CForm>(() => ({ title: c?.title ?? '', channel: c?.channel, stage: c?.stage ?? 'plan', dueDate: c?.dueDate, memo: c?.memo ?? '', draft: c?.draft, draftStatus: c?.draftStatus, format: c?.format ?? 'post' }));
   const [editing, setEditing] = useState(false);
@@ -291,8 +293,12 @@ function ContentPanel({ ws, title, c, prompt, onClose, onSave, onDelete, onOpenP
     <Panel title={title} tag={c?.source === 'hq' ? '자동' : undefined} onClose={onClose}
       foot={<>{onDelete && <Act ghost onClick={onDelete} disabled={busy}>삭제</Act>}<span className="grow" /><Act onClick={() => save()} disabled={busy || !f.title.trim()}>{c ? '저장' : '추가'}</Act></>}>
       {c && <h3 className="n-ttl">{c.title}</h3>}
-      {c && <Slides c={c} ws={ws} onPhotos={n => onPhotos?.(n)} />}
+      {/* 캐러셀 사진 고르기 (080) - 3안이 있고 확정본 전이면 고르기 · 아니면 장 그림 */}
+      {c && c.format === 'carousel' && c.pickStatus && c.pickStatus !== 'none' && c.pickStatus !== 'made'
+        ? <CarouselPick c={c} ws={ws} onChanged={p => onPatch?.(p)} />
+        : c && <Slides c={c} ws={ws} onPhotos={n => onPhotos?.(n)} />}
       {c && (c.captionIg || c.captionThreads) && <Captions c={c} />}
+      {c && c.format === 'carousel' && <OrderSection c={c} ws={ws} slideCount={c.slideCount} />}
       <Field label="단계"><Seg items={STAGES.map(s => ({ key: s.key, label: s.label }))} value={f.stage} onChange={k => setF({ ...f, stage: k })} /></Field>
       <Field label="종류"><Seg items={FORMATS.map(x => ({ key: x.key, label: `${x.icon} ${x.label}` }))} value={f.format} onChange={k => setF({ ...f, format: k })} /></Field>
       <Field label="제목"><input className="n-in" value={f.title} onChange={e => setF({ ...f, title: e.target.value })} placeholder="제목 입력" autoFocus={!c} /></Field>
@@ -317,6 +323,7 @@ function ContentPanel({ ws, title, c, prompt, onClose, onSave, onDelete, onOpenP
       )}
       {prompt && <Field label="사용한 프롬프트"><Card><List><Row left={<Kind>v{prompt.version}</Kind>} title={prompt.title} desc="07 자료실" right={<Mini onClick={onOpenPrompt}>열기</Mini>} /></List></Card></Field>}
       <Field label={c?.source === 'hq' ? '본부 메모' : '메모'}><textarea className="n-in area" rows={3} value={f.memo} onChange={e => setF({ ...f, memo: e.target.value })} placeholder="선택 입력" /></Field>
+      {c && c.format === 'carousel' && <RequestSection c={c} ws={ws} slideCount={c.slideCount} />}
     </Panel>
   );
 }
