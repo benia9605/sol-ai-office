@@ -4,7 +4,7 @@
  *  PageHead · Tabs · Sec · Card · List/Row · Badge · Panel(PC 서랍 · 폰 아래 판) · Field · Seg
  *  모든 메뉴는 이것만 쓴다. 새 모양이 필요하면 여기에 먼저 만든다.
  */
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { WorkspaceMember } from '../types';
 import { HqComment, HqRef, Source, addHqComment, deleteHqComment, fmtDay, fmtTime, listHqComments } from './hq.service';
 
@@ -141,15 +141,54 @@ export function DueKindBadge({ kind }: { kind?: 'promised' | 'planned' }) {
   return null;
 }
 
-/** 겹치는 판 - PC 오른쪽 서랍 · 폰 아래에서 올라오는 판. 뒤 화면은 고정, 판 안만 스크롤 */
-export function Panel({ title, tag, onClose, children, foot }: { title: string; tag?: string; onClose: () => void; children: ReactNode; foot?: ReactNode }) {
+/** 겹치는 판 - PC 오른쪽 서랍 · 폰 아래에서 올라오는 판. 뒤 화면은 고정, 판 안만 스크롤
+ *  PC: 왼쪽 가장자리를 끌어 폭 조절 (최소 480 · 최대 화면 80% · 판 종류(wide)마다 폭 기억)
+ *  폰: ✕ 없음 · 위 손잡이를 끌어 올리면 크게 · 내리면 작게 → 닫힘 (2026-10-31 대표 · 오피스 공통) */
+const PANEL_MIN = 480;
+const isPhone = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches;
+function readW(key: string, def: number): number {
+  try { const v = Number(localStorage.getItem(key)); return v >= PANEL_MIN ? v : def; } catch { return def; }
+}
+export function Panel({ title, tag, onClose, children, foot, wide }: { title: string; tag?: string; onClose: () => void; children: ReactNode; foot?: ReactNode; wide?: boolean }) {
   useLockScroll();
   useEsc(onClose);
+  const key = `n-panel-w:${wide ? 'wide' : 'base'}`;
+  const [w, setW] = useState(() => readW(key, wide ? 860 : PANEL_MIN));
+  const [full, setFull] = useState(false);
+  const [dy, setDy] = useState(0);
+  const drag = useRef<{ y: number; t: number } | null>(null);
+
+  // PC 폭 조절
+  const startResize = (e: React.PointerEvent) => {
+    if (isPhone()) return;
+    e.preventDefault();
+    const move = (ev: PointerEvent) => setW(Math.round(Math.min(window.innerWidth * 0.8, Math.max(PANEL_MIN, window.innerWidth - ev.clientX))));
+    const up = () => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+      setW(cur => { try { localStorage.setItem(key, String(cur)); } catch { /* 저장 안 돼도 그대로 */ } return cur; });
+    };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+  // 폰 손잡이 끌기
+  const grabStart = (e: React.PointerEvent) => { if (!isPhone()) return; drag.current = { y: e.clientY, t: Date.now() }; (e.target as HTMLElement).setPointerCapture?.(e.pointerId); };
+  const grabMove = (e: React.PointerEvent) => { if (drag.current) setDy(e.clientY - drag.current.y); };
+  const grabEnd = () => {
+    if (!drag.current) return;
+    const d = dy, fast = Date.now() - drag.current.t < 250;
+    drag.current = null; setDy(0);
+    if (d < -50) setFull(true);
+    else if (d > 110 || (fast && d > 40)) { if (full) setFull(false); else onClose(); }
+  };
+  const style = isPhone()
+    ? { transform: dy > 0 ? `translateY(${dy}px)` : undefined, transition: drag.current ? 'none' : undefined }
+    : { width: Math.min(w, Math.round(window.innerWidth * 0.8)) };
   return (
     <>
       <div className="n-dim" onClick={onClose} />
-      <div className="n-drawer" role="dialog" aria-modal="true" aria-label={title}>
-        <div className="n-ph">{tag && <span className="n-b hq">{tag}</span>}<b>{title}</b><button type="button" className="x" aria-label="닫기" onClick={onClose}>✕</button></div>
+      <div className={`n-drawer${wide ? ' wide' : ''}${full ? ' full' : ''}`} role="dialog" aria-modal="true" aria-label={title} style={style}>
+        <div className="n-rz" onPointerDown={startResize} title="끌어서 폭 조절" aria-hidden="true" />
+        <div className="n-grab" onPointerDown={grabStart} onPointerMove={grabMove} onPointerUp={grabEnd} onPointerCancel={grabEnd} aria-label="끌어 올리면 크게 · 내리면 닫힘"><i /></div>
+        <div className="n-ph" onPointerDown={grabStart} onPointerMove={grabMove} onPointerUp={grabEnd} onPointerCancel={grabEnd}>{tag && <span className="n-b hq">{tag}</span>}<b>{title}</b><button type="button" className="x" aria-label="닫기" onClick={onClose}>✕</button></div>
         <div className="n-pb">{children}</div>
         {foot && <div className="n-pf">{foot}</div>}
       </div>

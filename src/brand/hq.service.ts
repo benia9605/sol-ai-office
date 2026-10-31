@@ -544,7 +544,7 @@ export async function listInsights(ws: string, limit = 300): Promise<Insight[]> 
   return (data ?? []).map(rowInsight);
 }
 /** 캡처 - bytea 는 PostgREST 가 \x 16진 문자열로 준다 → 브라우저 그림 주소 */
-function hexToUrl(r: any): string {
+export function hexToUrl(r: any): string {
   const hex = String(r.data ?? '').replace(/^\\x/, '');
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
@@ -562,7 +562,7 @@ export async function getInsightFirstImage(id: string): Promise<string | null> {
   return hexToUrl(data[0]);
 }
 /** 사진 → 긴 변 1600 JPEG (3MB 넘으면 더 줄임) → bytea 16진 문자열 */
-async function photoToHex(file: File): Promise<string> {
+export async function photoToHex(file: File): Promise<string> {
   const bmp = await createImageBitmap(file);
   let side = 1600, q = 0.82, blob: Blob | null = null;
   for (let t = 0; t < 4; t++) {

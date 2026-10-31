@@ -31,6 +31,32 @@ const mockData: Record<string, any[]> = {
     { workspace_id: 'ws-simok', user_id: 'dev', role: 'owner', nickname: null, joined_at: new Date().toISOString() },
     { workspace_id: 'ws-other', user_id: 'dev', role: 'owner', nickname: null, joined_at: new Date().toISOString() },
   ],
+  // ── 10 메일 (076 · 로컬 확인용 예시) ──
+  hq_mail_accounts: [
+    { id: 'ma-1', workspace_id: 'ws-simok', address: 'studio@example.com', provider: 'daum', label: '다음', is_active: true, created_at: new Date(Date.now() - 48 * 3600e3).toISOString() },
+  ],
+  hq_mail_messages: [
+    { id: 'mm-1', workspace_id: 'ws-simok', account_id: 'ma-1', msg_key: 'k1', from_name: '손님 A', from_addr: 'a@example.com', subject: '원목 도마 각인 문의', summary: '이름 각인 · 선물 포장 되는지', category: 'reply', status: 'open', is_read: false, received_at: new Date(Date.now() - 2 * 3600e3).toISOString() },
+    { id: 'mm-2', workspace_id: 'ws-simok', account_id: 'ma-1', msg_key: 'k2', from_name: '업체 B', from_addr: 'b@example.com', subject: '매장 납품 견적 요청', summary: '트레이 30개 · 11월 셋째 주까지', category: 'reply', status: 'open', is_read: true, received_at: new Date(Date.now() - 20 * 3600e3).toISOString() },
+    { id: 'mm-3', workspace_id: 'ws-simok', account_id: 'ma-1', msg_key: 'k3', from_name: '서비스 D', from_addr: 'd@example.com', subject: '보안 설정 확인 요청', summary: '할 일로 올림', category: 'important', status: 'done', is_read: true, received_at: new Date(Date.now() - 5 * 3600e3).toISOString() },
+    { id: 'mm-4', workspace_id: 'ws-simok', account_id: 'ma-1', msg_key: 'k4', from_name: '자사몰', from_addr: 'shop@example.com', subject: '새 주문 2건', summary: '오피스 실적과 같은 숫자', category: 'order', status: 'open', is_read: true, received_at: new Date(Date.now() - 3 * 3600e3).toISOString() },
+    { id: 'mm-5', workspace_id: 'ws-simok', account_id: 'ma-1', msg_key: 'k5', from_name: '광고 F', from_addr: 'ad@example.com', subject: '가을 세일', summary: '광고', category: 'ad', status: 'open', is_read: true, received_at: new Date(Date.now() - 6 * 3600e3).toISOString() },
+  ],
+  hq_mail_digests: [],
+  hq_mail_drafts: [
+    { id: 'md-1', workspace_id: 'ws-simok', account_id: 'ma-1', message_id: 'mm-1', hq_key: 'draft:k1', to_addr: 'a@example.com', subject: 'Re: 원목 도마 각인 문의', html: '<p>손님 A 님, 안녕하세요. 시목입니다.</p><p>각인은 <b>한글 8자</b>까지 가능해요.</p>', basis: '템플릿 「각인 문의」', status: 'draft', created_at: new Date(Date.now() - 1 * 3600e3).toISOString(), updated_at: new Date(Date.now() - 1 * 3600e3).toISOString() },
+  ],
+  hq_mail_templates: [
+    { id: 'mt-1', workspace_id: 'ws-simok', name: '각인 문의', when_to_use: '각인 · 선물 포장을 물을 때', subject: '', html: '<p>{손님 이름} 님, 안녕하세요.</p>', use_count: 3, proposed: false, sort: 0 },
+    { id: 'mt-2', workspace_id: 'ws-simok', name: '배송 문의', when_to_use: '배송 언제 오냐고 물을 때', subject: '', html: '<p>발송일은 {발송일} 이에요.</p>', use_count: 0, proposed: true, sort: 0 },
+  ],
+  hq_mail_signatures: [
+    { id: 'ms-1', workspace_id: 'ws-simok', account_id: null, name: '기본 서명', html: '<p><b>시목</b> · 대표 · 010-0000-0000</p>', card_mime: null, card_data: null, is_default: true, created_at: new Date(Date.now() - 30 * 3600e3).toISOString() },
+  ],
+  hq_mail_unsubs: [
+    { id: 'mu-1', workspace_id: 'ws-simok', account_id: 'ma-1', sender_name: '광고 F', sender_addr: 'ad@example.com', count_30d: 12, method: 'oneclick', status: 'candidate' },
+    { id: 'mu-2', workspace_id: 'ws-simok', account_id: 'ma-1', sender_name: '모르는 곳 G', sender_addr: 'g@example.com', count_30d: 6, method: 'caution', status: 'candidate', note: '처음 보는 주소' },
+  ],
   workspace_invites: [],
   workspace_activities: [],
   // ── 회사 브레인 (시목 초안 시드: 빈 4필드는 사장이 직접 채움) ──

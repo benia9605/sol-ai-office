@@ -70,8 +70,10 @@ Deno.serve(async (req: Request) => {
     // 본부 보고서 → 토큰 워크스페이스에만. 다른 워크스페이스로는 못 보낸다
     const { data: ws, error } = await supabase.rpc('hq_auth', { p_token: body.hq_token });
     if (error || !ws || ws !== body.workspace_id) return json({ error: 'forbidden' }, 403);
-    if (!['notify_task_completed', 'notify_decision', 'notify_comment', 'notify_task_assigned'].includes(body.type)) return json({ error: 'bad_type' }, 400);
-    const { data: m } = body.actor_id
+    if (!['notify_task_completed', 'notify_decision', 'notify_comment', 'notify_task_assigned', 'notify_mail_important'].includes(body.type)) return json({ error: 'bad_type' }, 400);
+    // 중요 메일 (본부 sol-hq/scripts/mail.mjs · 076) - 사람 행동이 아니라서 액터가 없다 → 멤버 전체 (대표도 받는다 · 본부 오피스는 멤버가 대표 한 명)
+    if (body.type === 'notify_mail_important') { body.actor_id = null; body.target_user_ids = undefined; }
+    const { data: m } = body.type === 'notify_mail_important' ? { data: true } : body.actor_id
       ? await supabase.from('workspace_members').select('user_id').eq('workspace_id', ws).eq('user_id', body.actor_id).maybeSingle()
       : { data: null };
     if (!m) {

@@ -9,7 +9,8 @@
  *   · 데이터는 본부(sol-hq)가 매일 09:00 hq_ingest 로 넣는다 - 각 앱이 직접 보내지 않는다
  * 화면 규격 · 시안: sol-hq/할일/AI오피스-개편-시안.html
  *
- * 주소: /w/:workspaceId/:view/:detailId?  (view = today · briefing · tasks · content · research · insights · meetings · metrics · library · settings)
+ * 주소: /w/:workspaceId/:view/:detailId?  (view = today · briefing · tasks · content · research · insights · meetings · metrics · library · mail · budget · settings)
+ * 본부(개인) 오피스 (hq_brand_key 'hq' · 076): 01 오늘 · 02 브리핑 · 03 할 일 · 10 메일 · 11 가계부(준비 중)
  * 폰: 위 헤더(☰ · 로고 · 날짜) 고정, ☰ 로 사이드바. 판이 열리면 뒤는 고정, 판 안만 스크롤.
  */
 import { CSSProperties, useEffect, useMemo, useState } from 'react';
@@ -17,6 +18,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Workspace, WorkspaceMember } from '../types';
 import { useWorkspaceContext } from '../contexts/WorkspaceContext';
 import { WorkspaceLauncher } from '../components/WorkspaceLauncher';
+import { WorkspaceCreateModal } from '../components/WorkspaceCreateModal';
 import { fetchMembers } from '../services/workspaces.service';
 import { getCurrentUserId } from '../services/auth';
 import { todayKst, fmtDay } from './hq.service';
@@ -33,16 +35,31 @@ import { LibraryView } from './views/LibraryView';
 import { SettingsView } from './views/SettingsView';
 import { MeetingsView } from './views/MeetingsView';
 import { InsightsView } from './views/InsightsView';
+import { MailView, BudgetSoon } from './views/MailView';
 import { NoticePanel, useNotices } from './views/NoticePanel';
 
-export type BrandView = 'today' | 'briefing' | 'tasks' | 'content' | 'research' | 'insights' | 'meetings' | 'metrics' | 'library' | 'settings';
+export type BrandView = 'today' | 'briefing' | 'tasks' | 'content' | 'research' | 'insights' | 'meetings' | 'metrics' | 'library' | 'mail' | 'budget' | 'settings';
 
 const NAV: [string, [BrandView, string, string][]][] = [
   ['매일', [['today', '01', '오늘'], ['briefing', '02', '브리핑'], ['tasks', '03', '할 일']]],
   ['제작', [['content', '04', '콘텐츠'], ['research', '05', '리서치'], ['insights', '06', '인사이트']]],
   ['기록', [['meetings', '07', '회의'], ['metrics', '08', '실적 · 유입'], ['library', '09', '자료실']]],
+  ['소통', [['mail', '10', '메일']]],
 ];
-const VIEWS = new Set<string>(['today', 'briefing', 'tasks', 'content', 'research', 'insights', 'meetings', 'metrics', 'library', 'settings']);
+// 본부(개인) 오피스 - hq_brand_key 'hq' (076 · 메일 · 가계부 자리)
+const NAV_HQ: [string, [BrandView, string, string][]][] = [
+  ['매일', [['today', '01', '오늘'], ['briefing', '02', '브리핑'], ['tasks', '03', '할 일']]],
+  ['소통', [['mail', '10', '메일']]],
+  ['돈', [['budget', '11', '가계부 · 준비 중']]],
+];
+// 사이드바 아래 세 줄 아이콘 - 같은 크기 SVG (2026-10-31)
+const svg = (d: string) => <svg className="n-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
+const IC = {
+  bell: svg('M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0'),
+  gear: svg('M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'),
+  swap: svg('M16 3l4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16'),
+};
+const VIEWS = new Set<string>(['today', 'briefing', 'tasks', 'content', 'research', 'insights', 'meetings', 'metrics', 'library', 'mail', 'budget', 'settings']);
 
 /** 브랜드 값 - 비어 있으면 워크스페이스 이름 · 기본 색으로 */
 export interface BrandLook { logo: string; sub: string; motto: string; paper: string; point: string; heroImage?: string; heroWord?: string; custom: boolean }
@@ -72,6 +89,7 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
   const params = useParams();
   const { personal, offices, setActiveWorkspace, reload } = useWorkspaceContext();
   const [launcherOpen, setLauncherOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [myId, setMyId] = useState('');
@@ -105,7 +123,7 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
         </div>
         <div className="simok-ws-label">WORKSPACE / {workspace.name}</div>
         <nav className="simok-nav" aria-label="오피스 메뉴">
-          {NAV.map(([g, items]) => (
+          {(workspace.hqBrandKey === 'hq' ? NAV_HQ : NAV).map(([g, items]) => (
             <div key={g}>
               <div className="n-grp">{g}</div>
               {items.map(([k, n, l]) => (
@@ -118,9 +136,9 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
         </nav>
         <div className="simok-side-bottom">
           <div className="n-me"><span className="simok-avatar">{look.logo[0]}</span><div>{workspace.name}<br /><span style={{ color: 'var(--muted)' }}>{look.motto}</span></div></div>
-          <button type="button" className="n-set" onClick={() => { setNavOpen(false); setNoticeOpen(true); }}>🔔 알림{notices.unread > 0 && <span className="n-cnt">{notices.unread}</span>}</button>
-          <button type="button" className={`n-set${isSettings ? ' on' : ''}`} onClick={() => go('settings')}>⚙ 설정</button>
-          <button type="button" className="n-set" onClick={() => setLauncherOpen(true)}>⇄ 워크스페이스 전환</button>
+          <button type="button" className="n-set" onClick={() => { setNavOpen(false); setNoticeOpen(true); }}>{IC.bell}알림{notices.unread > 0 && <span className="n-cnt">{notices.unread}</span>}</button>
+          <button type="button" className={`n-set${isSettings ? ' on' : ''}`} onClick={() => go('settings')}>{IC.gear}설정</button>
+          <button type="button" className="n-set" onClick={() => setLauncherOpen(true)}>{IC.swap}워크스페이스 전환</button>
         </div>
       </aside>
 
@@ -143,6 +161,8 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
           {view === 'meetings' && <MeetingsView {...props} />}
           {view === 'metrics' && <MetricsView {...props} />}
           {view === 'library' && <LibraryView {...props} />}
+          {view === 'mail' && <MailView {...props} />}
+          {view === 'budget' && <BudgetSoon />}
           {view === 'settings' && <SettingsView {...props} onOpenLauncher={() => setLauncherOpen(true)} />}
         </div>
       </main>
@@ -156,8 +176,11 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
         activeId={workspace.id}
         onPick={(id) => { setActiveWorkspace(id); navigate(`/w/${id}/today`); }}
         onClose={() => setLauncherOpen(false)}
-        onCreate={() => { setLauncherOpen(false); reload(); navigate('/'); }}
+        // 예전에는 navigate('/') 만 해서 활성 워크스페이스(시목)로 되돌아갔다 - 만들기 팝업을 여기서 연다 (2026-10-31)
+        onCreate={() => { setLauncherOpen(false); setCreateOpen(true); }}
       />
+      <WorkspaceCreateModal open={createOpen} onClose={() => setCreateOpen(false)}
+        onCreated={async (ws) => { setCreateOpen(false); await reload(); setActiveWorkspace(ws.id); navigate(`/w/${ws.id}/today`); }} />
     </div>
   );
 }
