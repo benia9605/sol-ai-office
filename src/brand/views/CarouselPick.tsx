@@ -12,10 +12,29 @@ import { Content } from '../hq.service';
 import { Alt, Pick, PickRequest, Upload, addRequest, addUploads, completePick, getAlts, getPicks, listRequests, listUploads, orderBlocks, setPick } from '../carousel.service';
 import { Err, Field, Mini } from '../ui';
 
+/** 그림 저장 - 폰은 공유 시트(파일 공유가 되면) 또는 새 창(길게 눌러 저장) · PC 는 바로 받기 */
+export async function saveImage(url: string, name: string) {
+  const phone = typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches;
+  if (phone) {
+    try {
+      const blob = await (await fetch(url)).blob();
+      const file = new File([blob], name, { type: blob.type || 'image/jpeg' });
+      const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+      if (nav.canShare?.({ files: [file] })) { await nav.share({ files: [file] }); return; }
+    } catch { /* 공유 취소 · 미지원 → 새 창 */ }
+    window.open(url, '_blank');
+    return;
+  }
+  const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+}
+/** 파일 이름 바탕 - hq_key 의 폴더 이름(2026-10-31-집들이-선물) · 없으면 제목 */
+export const baseName = (c: Content) => (c.hqKey?.replace(/^[^:]*:/, '') || c.title).replace(/[\\/:*?"<>|\s]+/g, '-').slice(0, 60);
+const DL_ICON = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v11" /><path d="m7 10 5 5 5-5" /><path d="M5 20h14" /></svg>;
+
 const when = (iso: string) => { const d = new Date(iso); return `${d.getMonth() + 1}.${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 
 // ── 확대 보기 (오피스 공통으로 쓸 수 있게 따로) ──
-export interface LbItem { url: string; label: string }
+export interface LbItem { url: string; label: string; file?: string }
 export function Lightbox({ items, index, onIndex, onClose, action }: {
   items: LbItem[]; index: number; onIndex: (i: number) => void; onClose: () => void; action?: (i: number) => ReactNode;
 }) {
@@ -40,6 +59,7 @@ export function Lightbox({ items, index, onIndex, onClose, action }: {
       <div className="n-lb-top">
         <span className="n-lb-lbl">{it.label}</span>
         <span className="grow" />
+        {it.file && <button type="button" className="n-lb-dl" onClick={() => saveImage(it.url, it.file!)} aria-label="이미지 다운로드" title="이미지 다운로드">{DL_ICON}</button>}
         {action?.(index)}
         <button type="button" className="n-lb-x" onClick={onClose} aria-label="닫기">✕</button>
       </div>
@@ -88,7 +108,8 @@ export function CarouselPick({ c, ws, onChanged }: { c: Content; ws: string; onC
     try { for (const s of slides) await setPick(ws, c.id, s, k); setPicks(slides.map(s => ({ slide: s, alt: k, by: '나' }))); } catch (e) { setErr(e); }
   };
   const finish = async () => { setBusy(true); try { await completePick(c.id); onChanged({ pickStatus: 'done' }); } catch (e) { setErr(e); } finally { setBusy(false); } };
-  const items = alts.map(a => ({ url: a.url, label: `${a.slide}장 · ${a.alt}안` }));
+  const fileOf = (a: Alt) => `${baseName(c)}_${a.slide}장_${a.alt}안.jpg`;
+  const items = alts.map(a => ({ url: a.url, label: `${a.slide}장 · ${a.alt}안`, file: fileOf(a) }));
   const by = [...new Set(picks.map(p => p.by).filter(Boolean))].join(' · ');
   return (
     <Field label={design ? '디자인 고르기' : '사진 고르기'}>
@@ -106,7 +127,7 @@ export function CarouselPick({ c, ws, onChanged }: { c: Content; ws: string; onC
         <div key={s} className="n-pk-row">
           <div className="n-pk-no">{s}장{alts.some(a => a.slide === s && a.changed) && <span className="n-b warn">바뀜</span>}</div>
           <div className="n-pk-alts" style={{ gridTemplateColumns: `repeat(${altN}, minmax(0, 1fr))` }}>{alts.filter(a => a.slide === s).map(a => (
-            <button key={a.alt} type="button" className={`n-pk-alt${pickOf(s) === a.alt ? ' on' : ''}`} onClick={() => setPop(a)} aria-label={`${s}장 ${a.alt}안`}>
+            <button key={a.alt} type="button" className={`n-pk-alt${pickOf(s) === a.alt ? ' on' : ''}`} onClick={() => setPop(a)} onContextMenu={e => { e.preventDefault(); setPop(a); }} aria-label={`${s}장 ${a.alt}안`}>
               <img src={a.url} alt="" />
               <span className="n-pk-tag">{a.alt}안</span>
               {pickOf(s) === a.alt && <span className="n-pk-ck">✓</span>}
@@ -126,6 +147,7 @@ export function CarouselPick({ c, ws, onChanged }: { c: Content; ws: string; onC
             <img className="n-pop-img" src={pop.url} alt="" />
             <div className="n-pop-f">
               <Mini onClick={() => { setLb(alts.indexOf(pop)); setPop(null); }}>⤢ 크게 보기</Mini>
+              <Mini onClick={() => saveImage(pop.url, fileOf(pop))}>이미지 다운로드</Mini>
               <span className="grow" />
               {!locked && <Mini primary onClick={() => { choose(pop); setPop(null); }}>{pickOf(pop.slide) === pop.alt ? '선택됨 ✓' : '✓ 이 안으로 선택'}</Mini>}
             </div>
@@ -202,7 +224,7 @@ export function OrderSection({ c, ws, slideCount }: { c: Content; ws: string; sl
           </div>
         </div>
       )}
-      {lb != null && ups && <Lightbox items={ups.map(u => ({ url: u.url, label: u.slide ? `${u.slide}장 · 올린 사진` : '올린 사진' }))} index={lb} onIndex={setLb} onClose={() => setLb(null)} />}
+      {lb != null && ups && <Lightbox items={ups.map((u, i) => ({ url: u.url, label: u.slide ? `${u.slide}장 · 올린 사진` : '올린 사진', file: `${baseName(c)}_올린사진_${i + 1}.jpg` }))} index={lb} onIndex={setLb} onClose={() => setLb(null)} />}
     </div>
   );
 }

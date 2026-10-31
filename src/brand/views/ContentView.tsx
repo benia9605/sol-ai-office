@@ -18,7 +18,7 @@ import {
 } from '../hq.service';
 import { Act, Card, DueSeg, Empty, Err, Field, Kind, List, Mini, PageHead, Panel, Row, Seg, Skeleton, Tabs, hay, matchSearch } from '../ui';
 import { Site, SiteIcon } from './InsightsView';
-import { CarouselPick, OrderSection, RequestSection } from './CarouselPick';
+import { CarouselPick, Lightbox, OrderSection, RequestSection, baseName } from './CarouselPick';
 
 const CHANNELS = ['인스타', '스레드', '인스타 · 스레드', '유튜브', '블로그'];
 const CH_SITE: Record<string, Site> = { 인스타: 'instagram', 피드: 'instagram', 릴스: 'instagram', 스레드: 'threads', 유튜브: 'youtube', 쇼츠: 'youtube', 블로그: 'naver' };
@@ -235,6 +235,7 @@ function Slides({ c, ws, onPhotos }: { c: Content; ws: string; onPhotos: (n: num
   const [urls, setUrls] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<unknown>(null);
+  const [lb, setLb] = useState<number | null>(null);
   useEffect(() => {
     let us: string[] = [], live = true;
     if (c.slideCount) getContentSlides(c.id).then(x => { us = x; if (live) setUrls(x); }).catch(setErr);
@@ -252,8 +253,9 @@ function Slides({ c, ws, onPhotos }: { c: Content; ws: string; onPhotos: (n: num
     <>
       {!!err && <Err e={err} />}
       {c.slideCount > 0 && <div className="n-slides">{(urls.length ? urls : Array.from({ length: c.slideCount }, () => '')).map((u, i) => (
-        <a key={i} href={u || undefined} target="_blank" rel="noopener noreferrer">{u && <img src={u} alt={`${i + 1}장`} />}<span>{i + 1}</span></a>
+        <a key={i} href={u || undefined} onClick={e => { e.preventDefault(); if (u) setLb(i); }}>{u && <img src={u} alt={`${i + 1}장`} />}<span>{i + 1}</span></a>
       ))}</div>}
+      {lb != null && <Lightbox items={urls.map((u, i) => ({ url: u, label: `${i + 1}장`, file: `${baseName(c)}_${i + 1}장.jpg` }))} index={lb} onIndex={setLb} onClose={() => setLb(null)} />}
       <div className="n-slides-f">
         <span>{c.slideCount ? `${c.slideCount}장` : '사진 없음'}{c.format === 'carousel' && c.slideCount ? ' · 1080 × 1350' : ''}</span>
         <span className="grow" />
