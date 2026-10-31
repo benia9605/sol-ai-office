@@ -13,7 +13,7 @@
  * 본부(개인) 오피스 (hq_brand_key 'hq' · 076): 01 오늘 · 02 브리핑 · 03 할 일 · 10 메일 · 11 가계부(준비 중)
  * 폰: 위 헤더(☰ · 로고 · 날짜) 고정, ☰ 로 사이드바. 판이 열리면 뒤는 고정, 판 안만 스크롤.
  */
-import { CSSProperties, useEffect, useMemo, useState } from 'react';
+import { CSSProperties, Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Workspace, WorkspaceMember } from '../types';
 import { useWorkspaceContext } from '../contexts/WorkspaceContext';
@@ -37,6 +37,7 @@ import { MeetingsView } from './views/MeetingsView';
 import { InsightsView } from './views/InsightsView';
 import { MailView, BudgetSoon } from './views/MailView';
 import { NoticePanel, useNotices } from './views/NoticePanel';
+import { RefreshCtx } from './ui';
 
 export type BrandView = 'today' | 'briefing' | 'tasks' | 'content' | 'research' | 'insights' | 'meetings' | 'metrics' | 'library' | 'mail' | 'budget' | 'settings';
 
@@ -113,6 +114,9 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
   const style = { '--paper': look.paper, '--green': look.point } as CSSProperties;
   const props: BrandViewProps = { workspace, look, members, myId, detailId, go, onBackupShell };
   const isSettings = view === 'settings';
+  // 새로고침 - 지금 화면을 다시 띄운다 (그 화면이 Supabase 에서 새로 받는다 · 알림도) · ui.tsx RefreshBtn
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = useCallback(async () => { setRefreshKey((k) => k + 1); notices.reload(); await new Promise((r) => setTimeout(r, 450)); }, [notices]);
 
   return (
     <div className={`simok-office simok-shell brand-office${navOpen ? ' nav-open' : ''}`} data-theme={look.custom ? 'custom' : undefined} style={style}>
@@ -152,6 +156,7 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
 
       <main className="simok-main" id="brand-main">
         <div className="simok-main-inner">
+          <RefreshCtx.Provider value={refresh}><Fragment key={refreshKey}>
           {view === 'today' && <TodayView {...props} />}
           {view === 'briefing' && <BriefingView {...props} />}
           {view === 'tasks' && <TasksView {...props} />}
@@ -164,6 +169,7 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
           {view === 'mail' && <MailView {...props} />}
           {view === 'budget' && <BudgetSoon />}
           {view === 'settings' && <SettingsView {...props} onOpenLauncher={() => setLauncherOpen(true)} />}
+          </Fragment></RefreshCtx.Provider>
         </div>
       </main>
 

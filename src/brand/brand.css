@@ -501,3 +501,13 @@
   .m-tpl, .m-fields { grid-template-columns: 1fr; }
   .m-sigrow { flex-wrap: wrap; }
 }
+
+/* 새로고침 (모든 메뉴 오른쪽 위 · ui.tsx RefreshBtn · 시목 RefreshButton 모양: 테두리만 · 아이콘만 · 도는 동안 흐리게) */
+.n-refresh { flex: none; width: 36px; height: 36px; display: inline-grid; place-content: center; border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--green) 40%, transparent); color: var(--green); background: transparent; cursor: pointer; transition: background .15s; }
+.n-refresh:hover { background: color-mix(in srgb, var(--green) 6%, transparent); }
+.n-refresh:disabled { opacity: .5; cursor: default; }
+.n-refresh svg.spin { animation: n-spin .8s linear infinite; }
+@keyframes n-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .n-refresh svg.spin { animation: none; } }
+@media (max-width: 900px) { .n-pact .n-refresh { margin-left: auto; } }

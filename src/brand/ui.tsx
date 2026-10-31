@@ -4,15 +4,38 @@
  *  PageHead · Tabs · Sec · Card · List/Row · Badge · Panel(PC 서랍 · 폰 아래 판) · Field · Seg
  *  모든 메뉴는 이것만 쓴다. 새 모양이 필요하면 여기에 먼저 만든다.
  */
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
 import { WorkspaceMember } from '../types';
 import { HqComment, HqRef, Source, addHqComment, deleteHqComment, fmtDay, fmtTime, listHqComments } from './hq.service';
 
 export function PageHead({ title, small, action, search }: { title: string; small?: string; action?: ReactNode; search?: SearchProps }) {
   return (
     <div className="n-pagewrap">
-      <div className="n-page"><h1>{title}{small && <small>{small}</small>}</h1><div className="n-pact">{search && <SearchBox {...search} />}{action}</div></div>
+      <div className="n-page"><h1>{title}{small && <small>{small}</small>}</h1><div className="n-pact">{search && <SearchBox {...search} />}{action}<RefreshBtn /></div></div>
     </div>
+  );
+}
+
+// ── 새로고침 (2026-10-31 대표 요청 - 모든 메뉴 오른쪽 위 · 시목 components/admin/RefreshButton 과 같은 모양) ──
+//   오피스는 실시간이 아니라 화면이 뜰 때 한 번 받는다. 머무는 동안 본부 · 다른 사람이 바꾼 것을 다시 받을 때 누른다
+//   BrandShell 이 화면을 다시 띄워(key) 그 화면이 Supabase 에서 새로 받는다 · 도는 동안 안 눌림 · 최소 400ms 돈다 · 아이콘만(이름은 title)
+export const RefreshCtx = createContext<(() => Promise<void>) | null>(null);
+export function RefreshBtn() {
+  const refresh = useContext(RefreshCtx);
+  const [busy, setBusy] = useState(false);
+  if (!refresh) return null;
+  const run = async () => {
+    if (busy) return;
+    setBusy(true);
+    try { await refresh(); } finally { setTimeout(() => setBusy(false), 400); }
+  };
+  return (
+    <button type="button" className="n-refresh" onClick={run} disabled={busy} aria-label="새로고침" title="새로고침">
+      {/* 위에서 시작해 왼쪽 → 오른쪽으로 돌고, 화살촉이 오른쪽 위 */}
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={busy ? 'spin' : undefined}>
+        <path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" />
+      </svg>
+    </button>
   );
 }
 
