@@ -72,6 +72,8 @@ export function CarouselPick({ c, ws, onChanged }: { c: Content; ws: string; onC
   }, [c.id, ws]);
   if (!alts || !alts.length) return null;
   const slides = [...new Set(alts.map(a => a.slide))].sort((a, b) => a - b);
+  const altN = Math.max(...alts.map(a => a.alt));   // 시목 사진 3안 · 쏠닝오즈 디자인 2안
+  const design = altN === 2;
   const pickOf = (s: number) => picks.find(p => p.slide === s)?.alt;
   const done = slides.filter(s => pickOf(s)).length;
   const locked = c.pickStatus === 'done' || c.pickStatus === 'made';
@@ -80,11 +82,16 @@ export function CarouselPick({ c, ws, onChanged }: { c: Content; ws: string; onC
     setErr(null);
     try { await setPick(ws, c.id, a.slide, a.alt); setPicks(ps => [...ps.filter(p => p.slide !== a.slide), { slide: a.slide, alt: a.alt, by: '나' }]); } catch (e) { setErr(e); }
   };
+  const pickAll = async (k: number) => {
+    if (locked) return;
+    setErr(null);
+    try { for (const s of slides) await setPick(ws, c.id, s, k); setPicks(slides.map(s => ({ slide: s, alt: k, by: '나' }))); } catch (e) { setErr(e); }
+  };
   const finish = async () => { setBusy(true); try { await completePick(c.id); onChanged({ pickStatus: 'done' }); } catch (e) { setErr(e); } finally { setBusy(false); } };
   const items = alts.map(a => ({ url: a.url, label: `${a.slide}장 · ${a.alt}안` }));
   const by = [...new Set(picks.map(p => p.by).filter(Boolean))].join(' · ');
   return (
-    <Field label="사진 고르기">
+    <Field label={design ? '디자인 고르기' : '사진 고르기'}>
       {!!err && <Err e={err} />}
       <div className="n-pk-head">
         <span className="n-pk-n">{slides.length}장 중 <b>{done}</b>장 선택</span>
@@ -93,11 +100,12 @@ export function CarouselPick({ c, ws, onChanged }: { c: Content; ws: string; onC
         {locked && <span className="n-b ok">{c.pickStatus === 'made' ? '확정본 제작' : '선택 완료'}</span>}
       </div>
       <div className="n-pk-bar"><i style={{ width: `${(done / slides.length) * 100}%` }} /></div>
-      {!locked && <div className="n-pk-note">사진을 누르면 크게 보고 선택할 수 있습니다</div>}
+      {!locked && design && <div className="n-pk-quick">{Array.from({ length: altN }, (_, i) => i + 1).map(k => <Mini key={k} primary={slides.every(s => pickOf(s) === k)} onClick={() => pickAll(k)}>모두 {k}안</Mini>)}<span className="n-pk-note" style={{ margin: 0 }}>장마다 바꿀 수도 있습니다</span></div>}
+      {!locked && <div className="n-pk-note">{design ? '장을 누르면 크게 보고 선택할 수 있습니다' : '사진을 누르면 크게 보고 선택할 수 있습니다'}</div>}
       <div className="n-pk-rows">{slides.map(s => (
         <div key={s} className="n-pk-row">
           <div className="n-pk-no">{s}장{alts.some(a => a.slide === s && a.changed) && <span className="n-b warn">바뀜</span>}</div>
-          <div className="n-pk-alts">{alts.filter(a => a.slide === s).map(a => (
+          <div className="n-pk-alts" style={{ gridTemplateColumns: `repeat(${altN}, minmax(0, 1fr))` }}>{alts.filter(a => a.slide === s).map(a => (
             <button key={a.alt} type="button" className={`n-pk-alt${pickOf(s) === a.alt ? ' on' : ''}`} onClick={() => setPop(a)} aria-label={`${s}장 ${a.alt}안`}>
               <img src={a.url} alt="" />
               <span className="n-pk-tag">{a.alt}안</span>

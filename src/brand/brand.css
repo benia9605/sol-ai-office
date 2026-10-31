@@ -646,3 +646,4 @@
   .n-lb-nav { display: none; }
   .n-lb-x { display: none; }
 }
+.n-pk-quick { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 2px 0 6px; }
