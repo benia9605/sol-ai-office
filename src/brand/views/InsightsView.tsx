@@ -115,7 +115,7 @@ export function InsightsView({ workspace, detailId, go }: BrandViewProps) {
         ...INSIGHT_KINDS.map(k => ({ key: k.key, label: k.label, count: list.filter(i => i.kind === k.key).length })),
       ]} />
       {!!err && <Err e={err} />}
-      {!items ? <Skeleton /> : !byDate.length ? (q ? <NoHit q={q} /> : <Empty>아직 없음 · 폰 공유 버튼 → 「인사이트」 단축어 · 또는 「+ 던지기」</Empty>) : byDate.map(([d, is]) => (
+      {!items ? <Skeleton /> : !byDate.length ? (q ? <NoHit q={q} /> : <Empty>등록된 인사이트가 없습니다</Empty>) : byDate.map(([d, is]) => (
         <Sec key={d} title={fmtFull(d)} count={is.length}>
           <div className="n-gal">{is.map(i => (
             <div key={i.id} className={`n-gc click${i.status === 'new' ? ' on' : ''}`} onClick={() => go('insights', i.id)}>

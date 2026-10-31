@@ -54,7 +54,8 @@ const mockData: Record<string, any[]> = {
     { id: 'ms-1', workspace_id: 'ws-simok', account_id: null, name: '기본 서명', html: '<p><b>시목</b> · 대표 · 010-0000-0000</p>', card_mime: null, card_data: null, is_default: true, created_at: new Date(Date.now() - 30 * 3600e3).toISOString() },
   ],
   hq_mail_unsubs: [
-    { id: 'mu-1', workspace_id: 'ws-simok', account_id: 'ma-1', sender_name: '광고 F', sender_addr: 'ad@example.com', count_30d: 12, method: 'oneclick', status: 'candidate' },
+    { id: 'mu-1', workspace_id: 'ws-simok', account_id: 'ma-1', sender_name: '광고 F', sender_addr: 'ad@example.com', count_30d: 12, method: 'oneclick', status: 'candidate', examples: [{ date: new Date(Date.now() - 2 * 86400e3).toISOString(), subject: '(광고) 가을 세일 마지막 날' }, { date: new Date(Date.now() - 9 * 86400e3).toISOString(), subject: '(광고) 신상품 입고 안내' }, { date: new Date(Date.now() - 16 * 86400e3).toISOString(), subject: '(광고) 회원 전용 쿠폰' }] },
+    { id: 'mu-3', workspace_id: 'ws-simok', account_id: 'ma-1', sender_name: '뉴스레터 H', sender_addr: 'h@example.com', count_30d: 4, method: 'oneclick', status: 'kept', examples: [] },
     { id: 'mu-2', workspace_id: 'ws-simok', account_id: 'ma-1', sender_name: '모르는 곳 G', sender_addr: 'g@example.com', count_30d: 6, method: 'caution', status: 'candidate', note: '처음 보는 주소' },
   ],
   workspace_invites: [],
@@ -321,7 +322,7 @@ const mockData: Record<string, any[]> = {
 // ── 로컬 영속화 (새로고침해도 추가/수정 유지) ──
 // Mock 모드는 메모리 전용이라 리셋됨 → localStorage에 저장해 보존.
 // 시드를 바꾸면 _LS_KEY 버전을 올려 초기화.
-const _LS_KEY = 'mock-db-v15';   // v15: 063 bridge 테이블 추가 (v14: office_shell·운명랩·062)
+const _LS_KEY = 'mock-db-v16';   // v15: 063 bridge 테이블 추가 (v14: office_shell·운명랩·062)
 try {
   const saved = typeof localStorage !== 'undefined' && localStorage.getItem(_LS_KEY);
   if (saved) {

@@ -14,7 +14,7 @@ import {
   MAIL_CATS, MailAccount, MailCategory, MailDigest, MailDraft, MailMessage, MailSignature, MailTemplate, MailUnsub, QUICK, QuickRange, Range,
   UNSUB_METHOD, addDraft, bumpTemplate, catLabel, composeHtml, confirmDraft, deleteSignature, deleteTemplate, discardDraft, fmtKst, fmtWhen,
   getMailDigest, getSignatureCard, kstDay, listDrafts, listMailAccounts, listMailMessages, listOpenMail, listSignatures, listTemplates, listUnsubs,
-  quickRange, requestUnsubs, keepUnsub, saveDraft, saveSignature, saveTemplate, setMailDone, unconfirmDraft, DraftFields,
+  quickRange, requestUnsubs, keepUnsub, unkeepUnsub, saveDraft, saveSignature, saveTemplate, setMailDone, unconfirmDraft, DraftFields,
 } from '../mail.service';
 import { MailEditor } from './MailEditor';
 
@@ -98,38 +98,44 @@ export function MailView({ workspace, look, detailId, go }: BrandViewProps) {
       )}
 
       {(tab === 'sum' || tab === 'all') && (accounts.length === 0 ? (
-        <div className="m-empty"><b>메일 계정을 만들면 연결해요</b><p>본부가 계정마다 앱 비밀번호로 연결해요 (sol-hq 공통/연결-가이드/메일-계정-연결.md).<br />연결되면 매일 10시에 정리하고, 중요 메일은 바로 알려 드려요.</p></div>
+        <div className="m-empty"><b>연결된 메일 계정이 없습니다</b><p>계정을 연결하면 매일 10시에 정리하고, 중요 메일은 바로 알림을 보냅니다.</p></div>
       ) : <>
         <div className="m-fbar">
-          <input className="sr" value={q} onChange={e => setQ(e.target.value)} placeholder="⌕ 보낸 사람 · 제목 검색" />
-          <span className="m-chip ap">{range.key === 'custom' ? '직접' : QUICK.find(x => x.key === range.key)?.label} · {fmtKst(range.from).slice(0, 5)} ~ {fmtKst(range.to).slice(0, 5)}</span>
-          <button type="button" className="m-fbtn" onClick={() => setFilterOpen(true)}>☰ 필터{cat !== 'all' || range.key !== 'today' ? ` ${(cat !== 'all' ? 1 : 0) + (range.key !== 'today' ? 1 : 0)}` : ''}</button>
+          <input className="sr" value={q} onChange={e => setQ(e.target.value)} placeholder="보낸 사람 · 제목 검색" />
+          <button type="button" className={`m-fbtn${cat !== 'all' || range.key !== 'today' ? ' on' : ''}`} onClick={() => setFilterOpen(true)}>필터{cat !== 'all' || range.key !== 'today' ? ` ${(cat !== 'all' ? 1 : 0) + (range.key !== 'today' ? 1 : 0)}` : ''}</button>
         </div>
-        <div className="m-quick">{QUICK.map(x => <button key={x.key} type="button" className={`m-chip${range.key === x.key ? ' on' : ''}`} onClick={() => setRange(quickRange(x.key))}>{x.label}</button>)}</div>
-        <div className="m-period">{fmtKst(range.from)} ~ {fmtKst(range.to)} · 온 메일 {mList.length}통</div>
+        <div className="m-quick">
+          {cat !== 'all' && <button type="button" className="m-chip ap" onClick={() => setCat('all')} aria-label="분류 필터 해제">{catLabel(cat)} ✕</button>}
+          {QUICK.map(x => <button key={x.key} type="button" className={`m-chip${range.key === x.key ? ' on' : ''}`} onClick={() => setRange(quickRange(x.key))}>{x.label}</button>)}
+        </div>
+        <div className="m-period">{fmtKst(range.from)} ~ {fmtKst(range.to)} · {cat === 'all' ? `메일 ${mList.length}통` : `${catLabel(cat)} ${mList.filter(m => m.category === cat).length}통`}</div>
       </>)}
 
-      {tab === 'sum' && accounts.length > 0 && <>
+      {tab === 'sum' && accounts.length > 0 && cat !== 'all' && (() => {
+        const xs = mList.filter(m => m.category === cat);
+        return <Card pad>{xs.length ? xs.map(m => <MailRow key={m.id} m={m} draft={draftOf(m.id)} acc={multi ? accOf(m.accountId) : undefined} onOpen={() => go('mail', `m-${m.id}`)} />) : <Empty>해당 메일이 없습니다</Empty>}</Card>;
+      })()}
+      {tab === 'sum' && accounts.length > 0 && cat === 'all' && <>
         <div className="m-sum">{tileCats.map((k, i) => (
-          <button key={k} type="button" className={`m-tile${i === 0 && (counts[k] ?? 0) > 0 ? ' hot' : ''}`} onClick={() => { setCat(k); setTab('all'); }}>
+          <button key={k} type="button" className={`m-tile${i === 0 && (counts[k] ?? 0) > 0 ? ' hot' : ''}`} onClick={() => setCat(k)}>
             <span className={`k ${k}`}>{catLabel(k)}</span><b>{counts[k] ?? 0}</b>
           </button>
         ))}</div>
-        {digest && <div className="m-hq"><span className="t">10:00 본부 정리</span><span>휴지통 <b>{digest.trashed}</b></span><span>읽음 <b>{digest.readMarked}</b></span><span>답장 초안 <b>{digest.drafted}</b></span><span>구독 취소 후보 <b>{digest.unsubFound}</b></span>{digest.note && <span className="nt">{digest.note}</span>}</div>}
-        <Sec title="아직 남은 것" count={`${byAcc(openList).length} · 기간과 상관없이`} link={openDrafts.length ? '초안 보기 ↗' : undefined} onLink={() => setTab('drafts')}>
-          <Card pad>{byAcc(openList).length ? byAcc(openList).map(m => <MailRow key={m.id} m={m} draft={draftOf(m.id)} acc={multi ? accOf(m.accountId) : undefined} onOpen={() => go('mail', `m-${m.id}`)} />) : <Empty>답장할 메일이 없어요</Empty>}</Card>
+        {digest && <div className="m-hq"><span className="t">10:00 본부 정리</span><span>휴지통 <b>{digest.trashed}</b></span><span>읽음 <b>{digest.readMarked}</b></span><span>답장 초안 <b>{digest.drafted}</b></span><span>구독 취소 대상 <b>{digest.unsubFound}</b></span>{digest.note && <span className="nt">{digest.note}</span>}</div>}
+        <Sec title="처리 대기" count={byAcc(openList).length} link={openDrafts.length ? '초안 보기 ↗' : undefined} onLink={() => setTab('drafts')}>
+          <Card pad>{byAcc(openList).length ? byAcc(openList).map(m => <MailRow key={m.id} m={m} draft={draftOf(m.id)} acc={multi ? accOf(m.accountId) : undefined} onOpen={() => go('mail', `m-${m.id}`)} />) : <Empty>처리할 메일이 없습니다</Empty>}</Card>
         </Sec>
         {(() => {
           const keys: MailCategory[] = isHq ? ['billing', 'important'] : ['important', 'order'];
           const xs = mList.filter(m => keys.includes(m.category) && !(m.category === 'important' && m.status === 'open'));
           return <Sec title={`이 기간 ${keys.map(catLabel).join(' · ')}`} count={xs.length}>
-            <Card pad>{xs.length ? xs.map(m => <MailRow key={m.id} m={m} acc={multi ? accOf(m.accountId) : undefined} onOpen={() => go('mail', `m-${m.id}`)} />) : <Empty>없어요</Empty>}</Card>
+            <Card pad>{xs.length ? xs.map(m => <MailRow key={m.id} m={m} acc={multi ? accOf(m.accountId) : undefined} onOpen={() => go('mail', `m-${m.id}`)} />) : <Empty>해당 메일이 없습니다</Empty>}</Card>
           </Sec>;
         })()}
-        <div className="m-note">휴지통은 30일 안에 되살릴 수 있어요 · 광고 · 알림은 「전체 메일」 탭</div>
+        <div className="m-note">휴지통 메일은 30일 안에 복구할 수 있습니다</div>
       </>}
 
-      {tab === 'all' && accounts.length > 0 && <AllMail list={cat === 'all' ? mList : mList.filter(m => m.category === cat)} cat={cat} setCat={setCat} counts={counts}
+      {tab === 'all' && accounts.length > 0 && <AllMail list={cat === 'all' ? mList : mList.filter(m => m.category === cat)}
         draftOf={draftOf} accOf={multi ? accOf : undefined} onOpen={(m) => go('mail', `m-${m.id}`)} />}
 
       {tab === 'drafts' && <DraftList drafts={byAcc(drafts)} accOf={accOf} onOpen={(d) => go('mail', `d-${d.id}`)} />}
@@ -147,7 +153,7 @@ export function MailView({ workspace, look, detailId, go }: BrandViewProps) {
               const d = await addDraft(ws, { accountId: curMsg.accountId, toAddr: curMsg.fromAddr ?? '', subject: curMsg.subject ? `Re: ${curMsg.subject}` : '', html: '', signatureId: sig?.id }, curMsg.id);
               await reload(); go('mail', `d-${d.id}`);
             }} />
-        : <Panel title="메일" onClose={close}><Empty>찾을 수 없어요 · 기간을 바꿔 보세요</Empty></Panel>)}
+        : <Panel title="메일" onClose={close}><Empty>메일을 찾을 수 없습니다 · 기간을 바꿔 보세요</Empty></Panel>)}
       {kind === 'd' && (id === 'new' || curDraft) && <DraftPanel ws={ws} draft={curDraft} accounts={accounts} sigs={sigs} templates={templates}
         orig={curDraft?.messageId ? [...msgs, ...openList].find(m => m.id === curDraft.messageId) : undefined}
         point={look.point} onClose={close} onSaved={async (nid) => { await reload(); if (nid) go('mail', `d-${nid}`); }} />}
@@ -170,17 +176,13 @@ function MailRow({ m, draft, acc, onOpen }: { m: MailMessage; draft?: MailDraft;
   );
 }
 
-function AllMail({ list, cat, setCat, counts, draftOf, accOf, onOpen }: {
-  list: MailMessage[]; cat: MailCategory | 'all'; setCat: (c: MailCategory | 'all') => void; counts: Record<string, number>;
+function AllMail({ list, draftOf, accOf, onOpen }: {
+  list: MailMessage[];
   draftOf: (id: string) => MailDraft | undefined; accOf?: (id?: string) => MailAccount | undefined; onOpen: (m: MailMessage) => void;
 }) {
   const { page, pages, setPage, shown: slice } = usePaged(list, 20);
   return <>
-    <div className="m-quick">
-      <button type="button" className={`m-chip${cat === 'all' ? ' on' : ''}`} onClick={() => setCat('all')}>전체</button>
-      {MAIL_CATS.filter(c => counts[c.key]).map(c => <button key={c.key} type="button" className={`m-chip${cat === c.key ? ' on' : ''}`} onClick={() => setCat(c.key)}>{c.label} {counts[c.key]}</button>)}
-    </div>
-    <Card pad>{slice.length ? slice.map(m => <MailRow key={m.id} m={m} draft={draftOf(m.id)} acc={accOf?.(m.accountId)} onOpen={() => onOpen(m)} />) : <Empty>이 기간 메일이 없어요</Empty>}</Card>
+    <Card pad>{slice.length ? slice.map(m => <MailRow key={m.id} m={m} draft={draftOf(m.id)} acc={accOf?.(m.accountId)} onOpen={() => onOpen(m)} />) : <Empty>해당 기간 메일이 없습니다</Empty>}</Card>
     <Pager page={page} pages={pages} setPage={setPage} />
   </>;
 }
@@ -212,7 +214,7 @@ function FilterSheet({ range, cat, onClose, onSave }: { range: Range; cat: MailC
           {MAIL_CATS.map(x => <button key={x.key} type="button" className={`m-chip${c === x.key ? ' on' : ''}`} onClick={() => setC(x.key)}>{x.label}</button>)}
         </div>
       </Field>
-      <div className="m-small">「오늘」 은 어제 10:00 ~ 오늘 10:00 · 날짜를 직접 고르면 「직접」 · [저장] 을 눌러야 걸려요</div>
+      <div className="m-small">오늘: 어제 10:00 ~ 오늘 10:00 · 저장을 눌러야 적용됩니다</div>
     </Panel>
   );
 }
@@ -224,7 +226,7 @@ function MessagePanel({ m, acc, draft, onClose, onChanged, onDraft }: { m: MailM
   return (
     <Panel title={m.subject || '(제목 없음)'} tag={catLabel(m.category)} onClose={onClose}
       foot={<>
-        <Act ghost disabled={busy} onClick={async () => { setBusy(true); try { await setMailDone(m.id, !done); onChanged(); onClose(); } finally { setBusy(false); } }}>{done ? '다시 열기' : '끝냄'}</Act>
+        <Act ghost disabled={busy} onClick={async () => { setBusy(true); try { await setMailDone(m.id, !done); onChanged(); onClose(); } finally { setBusy(false); } }}>{done ? '다시 열기' : '처리 완료'}</Act>
         <span className="grow" />
         <Act onClick={onDraft}>{draft ? '답장 초안 열기' : '답장 초안 쓰기'}</Act>
       </>}>
@@ -232,7 +234,7 @@ function MessagePanel({ m, acc, draft, onClose, onChanged, onDraft }: { m: MailM
         <div className="mh"><b>{m.fromName || m.fromAddr}</b>{m.fromAddr && m.fromName ? `${m.fromAddr} · ` : ''}{fmtKst(m.receivedAt)}{acc ? ` · 받은 주소 ${acc.address}` : ''}</div>
         <div className="m-body"><p style={{ margin: 0 }}>{m.summary || '요약 없음'}</p></div>
       </div>
-      <div className="m-small">본부 요약이에요 · 메일 전체는 그 계정 메일함에서 봐요{done ? ' · 끝낸 메일' : ''}</div>
+      <div className="m-small">요약입니다. 원문은 해당 계정 메일함에서 확인하세요.{done ? ' · 처리 완료' : ''}</div>
     </Panel>
   );
 }
@@ -244,7 +246,7 @@ function DraftList({ drafts, accOf, onOpen }: { drafts: MailDraft[]; accOf: (id?
     ['보낼 예정 · 실패', drafts.filter(d => ['confirmed', 'sending', 'failed'].includes(d.status))],
     ['보냄', drafts.filter(d => d.status === 'sent').slice(0, 30)],
   ];
-  if (!drafts.length) return <Empty>초안이 없어요 · 본부가 매일 10시에 답장 초안을 써 둬요</Empty>;
+  if (!drafts.length) return <Empty>초안이 없습니다 · 매일 10시에 답장 초안이 준비됩니다</Empty>;
   return <>{groups.filter(([, xs]) => xs.length).map(([g, xs]) => (
     <Sec key={g} title={g} count={xs.length}>
       <Card pad>{xs.map(d => {
@@ -292,14 +294,14 @@ function DraftPanel({ ws, draft, accounts, sigs, templates, orig, onClose, onSav
     <Panel wide title={draft ? (draft.subject || '초안') : '새 메일'} tag={st?.[0]} onClose={onClose}
       foot={locked ? <>
         {draft!.status === 'confirmed' && <Act ghost disabled={busy} onClick={() => run(() => unconfirmDraft(draft!.id), () => onSaved())}>확정 취소</Act>}
-        <span className="grow" /><span className="m-small" style={{ margin: 0 }}>{draft!.status === 'sent' ? `보냄 · ${draft!.sentAt ? fmtKst(draft!.sentAt) : ''}` : '몇 분 안에 본부가 보내요'}</span>
+        <span className="grow" /><span className="m-small" style={{ margin: 0 }}>{draft!.status === 'sent' ? `보냄 · ${draft!.sentAt ? fmtKst(draft!.sentAt) : ''}` : '몇 분 안에 발송됩니다'}</span>
       </> : <>
         {draft && <Act ghost disabled={busy} onClick={() => run(() => discardDraft(draft.id), () => { onSaved(); onClose(); })}>지우기</Act>}
         <span className="grow" />
         <Act ghost disabled={busy} onClick={() => run(save)}>저장</Act>
         <Act disabled={busy || !ok} onClick={() => run(async () => { if (draft) { await confirmDraft(draft.id, f); onSaved(); } else { const d = await addDraft(ws, f); await confirmDraft(d.id, f); onSaved(d.id); } })}>보내기 확정</Act>
       </>}>
-      {draft?.status === 'failed' && <div className="n-err">보내지 못했어요 · {draft.error} · 고친 뒤 다시 확정해 주세요</div>}
+      {draft?.status === 'failed' && <div className="n-err">발송 실패 · {draft.error} · 수정 후 다시 확정하세요</div>}
       {msg && <div className="n-err">{msg}</div>}
       <div className="m-fields">
         <Field label="보내는 주소">
@@ -308,22 +310,22 @@ function DraftPanel({ ws, draft, accounts, sigs, templates, orig, onClose, onSav
           </select>
         </Field>
         <Field label="받는 사람"><input className="n-in" value={f.toAddr} disabled={locked} onChange={e => set({ toAddr: e.target.value })} placeholder="name@example.com" /></Field>
-        <Field label="참조"><input className="n-in" value={f.cc ?? ''} disabled={locked} onChange={e => set({ cc: e.target.value })} placeholder="비워도 돼요" /></Field>
+        <Field label="참조"><input className="n-in" value={f.cc ?? ''} disabled={locked} onChange={e => set({ cc: e.target.value })} placeholder="선택" /></Field>
         <Field label="제목"><input className="n-in" value={f.subject} disabled={locked} onChange={e => set({ subject: e.target.value })} /></Field>
       </div>
       {orig && <div className="m-orig"><b>{orig.fromName || orig.fromAddr}</b> · {orig.subject}<br />{orig.summary}</div>}
-      {draft?.basis && <div className="m-small" style={{ marginTop: 0 }}>본부 근거 · {draft.basis}</div>}
+      {draft?.basis && <div className="m-small" style={{ marginTop: 0 }}>근거 · {draft.basis}</div>}
       <div className="m-vt">
         <button type="button" className={view === 'edit' ? 'on' : ''} onClick={() => setView('edit')}>편집</button>
         <button type="button" className={view === 'mail' ? 'on' : ''} onClick={() => setView('mail')}>받는 사람 화면</button>
       </div>
       {view === 'edit' && !locked ? <>
-        <MailEditor html={f.html} onChange={html => set({ html })} placeholder="답장을 써 주세요"
+        <MailEditor html={f.html} onChange={html => set({ html })} placeholder="답장 내용"
           signatures={sigs.map(s => ({ key: s.id, label: s.name, sub: s.isDefault ? '기본' : undefined }))} onSignature={k => set({ signatureId: k })}
           templates={templates.filter(t => !t.proposed).map(t => ({ key: t.id, label: t.name, sub: t.whenToUse }))}
           onTemplate={(k, ed) => { const t = templates.find(x => x.id === k); if (!t) return; ed.chain().focus().insertContent(t.html).run(); if (!f.subject && t.subject) set({ subject: t.subject, templateId: t.id }); else set({ templateId: t.id }); bumpTemplate(t); }} />
         <div className="m-sigrow">
-          <span>서명 · 본문 아래 구분선 뒤에 붙어요</span>
+          <span>서명</span>
           <select className="n-in" value={f.signatureId ?? ''} onChange={e => set({ signatureId: e.target.value || undefined })}>
             <option value="">서명 없음</option>{sigs.map(s => <option key={s.id} value={s.id}>{s.name}{s.isDefault ? ' · 기본' : ''}</option>)}
           </select>
@@ -335,7 +337,6 @@ function DraftPanel({ ws, draft, accounts, sigs, templates, orig, onClose, onSav
           <div className="m-body" dangerouslySetInnerHTML={{ __html: composeHtml(f.html, sig, card) }} />
         </div>
       )}
-      <div className="m-small">메일은 손님 메일 앱에서 그대로 보이게 인라인 스타일로 바꿔 보내요 · 글자만 보는 앱용 글도 같이 보내요</div>
     </Panel>
   );
 }
@@ -344,16 +345,16 @@ function DraftPanel({ ws, draft, accounts, sigs, templates, orig, onClose, onSav
 function TemplateList({ items, onOpen }: { items: MailTemplate[]; onOpen: (t?: MailTemplate) => void }) {
   const prop = items.filter(t => t.proposed), mine = items.filter(t => !t.proposed);
   return <>
-    {prop.length > 0 && <div className="m-sug"><b>본부 제안 {prop.length}</b><span>비슷한 답장이 여러 번 나와서 템플릿으로 만들어 봤어요 · 열어서 「저장」 하면 써요</span>
+    {prop.length > 0 && <div className="m-sug"><b>추천 템플릿 {prop.length}</b><span>자주 쓰는 답장을 템플릿으로 만들었습니다. 저장하면 사용됩니다.</span>
       {prop.map(t => <Mini key={t.id} onClick={() => onOpen(t)}>{t.name}</Mini>)}</div>}
-    <div className="m-intro"><span>본부가 초안을 쓸 때 이 템플릿을 먼저 봐요 · 빈칸은 {'{손님 이름}'} {'{주문 번호}'} {'{발송일}'} 처럼</span><Act ghost onClick={() => onOpen()}>+ 템플릿</Act></div>
+    <div className="m-intro"><span>답장 초안에 먼저 쓰입니다 · 빈칸 예: {'{손님 이름}'} {'{주문 번호}'}</span><Act ghost onClick={() => onOpen()}>+ 템플릿</Act></div>
     {mine.length ? <div className="m-tpl">{mine.map(t => (
       <button key={t.id} type="button" className="m-tc" onClick={() => onOpen(t)}>
-        <b>{t.name}</b><div className="w">{t.whenToUse || '언제 쓰는지 적어 두면 본부가 골라 써요'}</div>
+        <b>{t.name}</b><div className="w">{t.whenToUse || '사용 상황 미입력'}</div>
         <div className="pv">{stripHtml(t.html).slice(0, 120) || '본문 없음'}</div>
         <div className="ft">쓴 횟수 {t.useCount}</div>
       </button>
-    ))}</div> : <Empty>템플릿이 없어요 · 자주 쓰는 답장을 저장해 두세요</Empty>}
+    ))}</div> : <Empty>등록된 템플릿이 없습니다</Empty>}
   </>;
 }
 
@@ -364,16 +365,16 @@ function TemplatePanel({ ws, t, onClose, onSaved }: { ws: string; t?: MailTempla
   const [html, setHtml] = useState(t?.html ?? '');
   const [busy, setBusy] = useState(false);
   return (
-    <Panel wide title={t ? t.name : '새 템플릿'} tag={t?.proposed ? '본부 제안' : undefined} onClose={onClose}
+    <Panel wide title={t ? t.name : '새 템플릿'} tag={t?.proposed ? '추천' : undefined} onClose={onClose}
       foot={<>{t && <Act ghost disabled={busy} onClick={async () => { setBusy(true); try { await deleteTemplate(t.id); onSaved(); } finally { setBusy(false); } }}>지우기</Act>}<span className="grow" />
         <Act disabled={busy || !name.trim()} onClick={async () => { setBusy(true); try { await saveTemplate(ws, t?.id, { name, whenToUse: when, subject, html }); onSaved(); } finally { setBusy(false); } }}>저장</Act></>}>
       <div className="m-fields">
         <Field label="이름"><input className="n-in" value={name} onChange={e => setName(e.target.value)} placeholder="배송 문의 답장" /></Field>
-        <Field label="언제 쓰나"><input className="n-in" value={when} onChange={e => setWhen(e.target.value)} placeholder="주문 후 배송이 언제 오냐고 물을 때" /></Field>
+        <Field label="사용 상황"><input className="n-in" value={when} onChange={e => setWhen(e.target.value)} placeholder="주문 후 배송이 언제 오냐고 물을 때" /></Field>
         <Field label="제목 (선택)"><input className="n-in" value={subject} onChange={e => setSubject(e.target.value)} /></Field>
       </div>
       <MailEditor html={html} onChange={setHtml} placeholder="{손님 이름} 님, 안녕하세요." />
-      <div className="m-small">서명은 템플릿에 넣지 않아요 · 보낼 때 본문 아래 구분선 뒤에 자동으로 붙어요</div>
+      <div className="m-small">서명은 발송 시 자동으로 붙습니다</div>
     </Panel>
   );
 }
@@ -381,14 +382,14 @@ function TemplatePanel({ ws, t, onClose, onSaved }: { ws: string; t?: MailTempla
 // ── 서명 ──
 function SignatureList({ items, accOf, onOpen }: { items: MailSignature[]; accOf: (id?: string) => MailAccount | undefined; onOpen: (s?: MailSignature) => void }) {
   return <>
-    <div className="m-intro"><span>서명은 늘 본문 아래 구분선 뒤 맨 아래에 붙어요 · 보통 명함 이미지 + 이름 · 연락처</span><Act ghost onClick={() => onOpen()}>+ 서명</Act></div>
+    <div className="m-intro"><span>본문 아래 구분선 뒤에 붙습니다</span><Act ghost onClick={() => onOpen()}>+ 서명</Act></div>
     {items.length ? <div className="m-tpl">{items.map(s => (
       <button key={s.id} type="button" className="m-tc" onClick={() => onOpen(s)}>
         <b>{s.name}</b>{s.isDefault && <span className="n-b hq" style={{ marginLeft: 8 }}>기본</span>}
         <div className="w">{accOf(s.accountId)?.address ?? '이 오피스 모든 주소'}</div>
         <SigPreview s={s} />
       </button>
-    ))}</div> : <Empty>서명이 없어요 · 명함 이미지와 연락처를 넣어 두세요</Empty>}
+    ))}</div> : <Empty>등록된 서명이 없습니다</Empty>}
   </>;
 }
 
@@ -418,47 +419,54 @@ function SignaturePanel({ ws, s, accounts, onClose, onSaved }: { ws: string; s?:
           </select>
         </Field>
       </div>
-      <label className="m-check"><input type="checkbox" checked={isDefault} onChange={e => setIsDefault(e.target.checked)} /> 기본 서명 (새 답장에 자동으로)</label>
+      <label className="m-check"><input type="checkbox" checked={isDefault} onChange={e => setIsDefault(e.target.checked)} /> 기본 서명</label>
       <Field label="명함 이미지">
         <div className="m-cardup">
           {preview ? <img src={preview} alt="명함" className="m-cardimg" /> : <div className="m-cardph">명함 이미지 없음</div>}
           <div style={{ display: 'flex', gap: 8 }}>
-            <label className="n-act ghost" style={{ cursor: 'pointer' }}>🖼 명함 이미지 넣기<input type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) { setFile(f); setRemove(false); } }} /></label>
-            {preview && <Mini onClick={() => { setFile(null); setRemove(true); }}>빼기</Mini>}
+            <label className="n-act ghost" style={{ cursor: 'pointer' }}>명함 이미지 올리기<input type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) { setFile(f); setRemove(false); } }} /></label>
+            {preview && <Mini onClick={() => { setFile(null); setRemove(true); }}>삭제</Mini>}
           </div>
         </div>
       </Field>
       <Field label="이름 · 연락처"><MailEditor html={html} onChange={setHtml} minHeight={140} placeholder="시목 · 대표 이름 · 010-0000-0000 · simok.co.kr" /></Field>
-      <div className="m-small">항상 본문 아래 구분선 뒤에 붙어요 · 미리보기</div>
+      <div className="m-small">미리보기</div>
       <div className="m-mail"><div className="m-body"><p style={{ color: '#8a8f84', margin: 0 }}>(본문)</p>
         <div dangerouslySetInnerHTML={{ __html: composeHtml('', { html }, preview) }} /></div></div>
     </Panel>
   );
 }
 
-// ── 구독 취소 ──
+// ── 구독 취소 ── 줄을 누르면 그동안 온 메일(날짜 · 제목) · 유지한 곳은 다음 날 본부 「지키기」 로 (077)
 function UnsubList({ items, accOf, onDone }: { items: MailUnsub[]; accOf?: (id?: string) => MailAccount | undefined; onDone: () => void }) {
   const [sel, setSel] = useState<Set<string>>(new Set());
+  const [open, setOpen] = useState<string | null>(null);
+  const [keptOpen, setKeptOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const cand = items.filter(u => u.status === 'candidate');
+  const kept = items.filter(u => u.status === 'kept');
   const rest = items.filter(u => u.status !== 'candidate' && u.status !== 'kept');
   const toggle = (id: string) => setSel(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const ST: Record<string, string> = { requested: '요청함 · 본부 처리 중', done: '취소됨', failed: '실패' };
+  const ST: Record<string, string> = { requested: '처리 중', done: '취소 완료', failed: '실패' };
+  const act = async (fn: () => Promise<unknown>) => { setBusy(true); try { await fn(); onDone(); } finally { setBusy(false); } };
   return <>
-    <div className="m-intro"><span>체크한 곳만 본부가 취소해요 · 지메일 공식 원클릭 먼저 · 없으면 링크를 열어 버튼까지 · 로그인 · 개인정보를 물으면 멈추고 알려 드려요</span></div>
-    <Sec title="후보" count={cand.length}>
+    <div className="m-intro"><span>선택한 곳의 구독을 취소합니다 · 로그인이나 개인정보를 요구하는 곳은 진행하지 않습니다</span></div>
+    <Sec title="구독 취소 대상" count={cand.length}>
       <Card pad>{cand.length ? cand.map(u => (
-        <label key={u.id} className="m-row m-un">
-          <input type="checkbox" checked={sel.has(u.id)} onChange={() => toggle(u.id)} />
-          <div className="who">{u.senderName || u.senderAddr}</div>
-          <div className="t">{u.senderAddr}</div>
-          <div className="d">30일 {u.count30d}통{u.note ? ` · ${u.note}` : ''}</div>
-          <div className="rt">{accOf?.(u.accountId) && <span className="m-st">{accOf(u.accountId)!.label}</span>}<span className={`m-st ${u.method === 'caution' ? 'fail' : ''}`}>{UNSUB_METHOD[u.method]}</span>
-            <Mini onClick={async (e) => { e.preventDefault(); await keepUnsub(u.id); onDone(); }}>둠</Mini></div>
-        </label>
-      )) : <Empty>구독 취소 후보가 없어요</Empty>}</Card>
+        <div key={u.id} className="m-unw">
+          <div className="m-row m-un" role="button" tabIndex={0} onClick={() => setOpen(o => o === u.id ? null : u.id)} onKeyDown={e => { if (e.key === 'Enter') setOpen(o => o === u.id ? null : u.id); }}>
+            <input type="checkbox" checked={sel.has(u.id)} onClick={e => e.stopPropagation()} onChange={() => toggle(u.id)} aria-label="선택" />
+            <div className="who">{u.senderName || u.senderAddr}</div>
+            <div className="t">{u.senderAddr}</div>
+            <div className="d">최근 30일 {u.count30d}통{u.note ? ` · ${u.note}` : ''}</div>
+            <div className="rt">{accOf?.(u.accountId) && <span className="m-st">{accOf(u.accountId)!.label}</span>}<span className={`m-st ${u.method === 'caution' ? 'fail' : ''}`}>{UNSUB_METHOD[u.method]}</span>
+              <Mini onClick={(e) => { e.stopPropagation(); act(() => keepUnsub(u.id)); }}>유지</Mini><span className="m-car">{open === u.id ? '▴' : '▾'}</span></div>
+          </div>
+          {open === u.id && <ExampleList xs={u.examples} />}
+        </div>
+      )) : <Empty>구독 취소 대상이 없습니다</Empty>}</Card>
     </Sec>
-    {rest.length > 0 && <Sec title="요청 · 결과" count={rest.length}>
+    {rest.length > 0 && <Sec title="처리 결과" count={rest.length}>
       <Card pad>{rest.map(u => (
         <div key={u.id} className="m-row">
           <div className="who">{u.senderName || u.senderAddr}</div><div className="t">{u.senderAddr}</div><div className="d">{u.note}</div>
@@ -466,15 +474,32 @@ function UnsubList({ items, accOf, onDone }: { items: MailUnsub[]; accOf?: (id?:
         </div>
       ))}</Card>
     </Sec>}
+    {kept.length > 0 && <div className="m-kept">
+      <button type="button" className="m-kepth" onClick={() => setKeptOpen(v => !v)}>유지한 곳 {kept.length}<span className="m-car">{keptOpen ? '▴' : '▾'}</span></button>
+      {keptOpen && <Card pad>{kept.map(u => (
+        <div key={u.id} className="m-row">
+          <div className="who">{u.senderName || u.senderAddr}</div><div className="t">{u.senderAddr}</div><div className="d">구독 취소 · 휴지통 대상에서 제외</div>
+          <div className="rt"><Mini onClick={() => act(() => unkeepUnsub(u.id))}>되돌리기</Mini></div>
+        </div>
+      ))}</Card>}
+    </div>}
     {sel.size > 0 && <div className="m-bar"><b>{sel.size}곳</b> 선택<span className="grow" style={{ flex: 1 }} />
-      <Act disabled={busy} onClick={async () => { setBusy(true); try { await requestUnsubs([...sel]); setSel(new Set()); onDone(); } finally { setBusy(false); } }}>체크한 {sel.size}곳 구독 취소 요청</Act></div>}
+      <Act disabled={busy} onClick={() => act(async () => { await requestUnsubs([...sel]); setSel(new Set()); })}>선택한 {sel.size}곳 구독 취소</Act></div>}
   </>;
+}
+
+/** 그동안 온 메일 - 날짜 · 제목 (최근 것부터) */
+const ymd = (iso: string) => { const t = Date.parse(iso); if (!t) return '-'; const d = new Date(t + 9 * 3600e3); return `${String(d.getUTCFullYear()).slice(2)}.${String(d.getUTCMonth() + 1).padStart(2, '0')}.${String(d.getUTCDate()).padStart(2, '0')}`; };
+function ExampleList({ xs }: { xs: { date: string; subject: string }[] }) {
+  if (!xs.length) return <div className="m-exs"><div className="m-exe">받은 메일 기록이 아직 없습니다 · 다음 정리 때 채워집니다</div></div>;
+  const sorted = [...xs].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  return <div className="m-exs">{sorted.map((x, i) => <div key={i} className="m-ex"><span className="dt">{ymd(x.date)}</span><span className="sj">{x.subject}</span></div>)}</div>;
 }
 
 /** 가계부 - 본부 오피스 11 (준비 중) */
 export function BudgetSoon() {
   return <>
     <PageHead title="가계부" small="준비 중" />
-    <div className="m-empty"><b>가계부 · 준비 중</b><p>1억 모으기 가계부와 연결해서 수입 · 지출을 본부가 정리할 자리예요.<br />청구서 · 구독 결제 메일이 지출로 이어지게 만들 거예요.</p></div>
+    <div className="m-empty"><b>가계부 · 준비 중</b><p>1억 모으기 가계부와 연결해 수입 · 지출을 정리합니다.</p></div>
   </>;
 }

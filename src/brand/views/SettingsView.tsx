@@ -19,10 +19,10 @@ const PAPERS = ['#f4f2eb', '#f6f5f0', '#FAF9F6', '#f3f0ea'];
 const POINTS = ['#1f4035', '#00594D', '#5B3A6B', '#7A5A42', '#2F4A6B'];
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
-interface BrandForm { name: string; logo: string; sub: string; motto: string; paper: string; point: string; heroImage?: string; heroWord: string }
+interface BrandForm { name: string; logo: string; sub: string; motto: string; paper: string; point: string; heroImage?: string; heroWord: string; profile?: string }
 const formOf = (w?: Workspace): BrandForm => {
   const l = w ? brandLook(w) : null;
-  return { name: w?.name ?? '', logo: w?.brandLogo ?? '', sub: w?.brandSub ?? '', motto: w?.brandMotto ?? '', paper: l?.paper ?? '#f4f2eb', point: l?.point ?? '#1f4035', heroImage: w?.brandHeroImage, heroWord: w?.brandHeroWord ?? '' };
+  return { name: w?.name ?? '', logo: w?.brandLogo ?? '', sub: w?.brandSub ?? '', motto: w?.brandMotto ?? '', paper: l?.paper ?? '#f4f2eb', point: l?.point ?? '#1f4035', heroImage: w?.brandHeroImage, heroWord: w?.brandHeroWord ?? '', profile: w?.imageUrl };
 };
 
 export function SettingsView({ workspace, members, myId, detailId, go, onBackupShell, onOpenLauncher }: BrandViewProps & { onOpenLauncher: () => void }) {
@@ -70,7 +70,7 @@ export function SettingsView({ workspace, members, myId, detailId, go, onBackupS
           <Card><List>{offices.map(w => {
             const l = brandLook(w);
             return <Row key={w.id} title={w.name} desc={w.id === workspace.id ? '현재' : undefined}
-              right={<><span className="n-sw"><i style={{ background: l.point }} /></span>{w.id !== workspace.id && <Mini onClick={() => { setActiveWorkspace(w.id); go('today'); window.location.assign(`/w/${w.id}/today`); }}>전환</Mini>}</>} />;
+              right={<>{w.imageUrl ? <img src={w.imageUrl} alt="" className="n-wsimg" /> : <span className="n-sw"><i style={{ background: l.point }} /></span>}{w.id !== workspace.id && <Mini onClick={() => { setActiveWorkspace(w.id); go('today'); window.location.assign(`/w/${w.id}/today`); }}>전환</Mini>}</>} />;
           })}</List></Card>
         </Sec>
         <Sec title="백업">
@@ -83,18 +83,36 @@ export function SettingsView({ workspace, members, myId, detailId, go, onBackupS
 
       {detailId === 'brand' && <BrandPanel title="브랜드 편집" initial={formOf(workspace)} onClose={() => go('settings')}
         onSave={async f => {
-          await updateWorkspace(workspace.id, { name: f.name, brandLogo: f.logo, brandSub: f.sub, brandMotto: f.motto, brandPaper: f.paper, brandPoint: f.point, brandHeroImage: f.heroImage ?? null, brandHeroWord: f.heroWord });
+          await updateWorkspace(workspace.id, { name: f.name, imageUrl: f.profile ?? null, brandLogo: f.logo, brandSub: f.sub, brandMotto: f.motto, brandPaper: f.paper, brandPoint: f.point, brandHeroImage: f.heroImage ?? null, brandHeroWord: f.heroWord });
           reload(); go('settings');
         }} />}
       {detailId === 'new' && <BrandPanel title="새 워크스페이스" initial={{ ...formOf(), name: '', paper: '#FAF9F6', point: '#2F4A6B' }} isNew onClose={() => go('settings')}
         onSave={async f => {
           const w = await createWorkspace('office', f.name, { bizInfo: f.motto });
-          await updateWorkspace(w.id, { brandLogo: f.logo, brandSub: f.sub, brandMotto: f.motto, brandPaper: f.paper, brandPoint: f.point, brandHeroImage: f.heroImage ?? null, brandHeroWord: f.heroWord });
+          await updateWorkspace(w.id, { imageUrl: f.profile ?? null, brandLogo: f.logo, brandSub: f.sub, brandMotto: f.motto, brandPaper: f.paper, brandPoint: f.point, brandHeroImage: f.heroImage ?? null, brandHeroWord: f.heroWord });
           reload(); window.location.assign(`/w/${w.id}/today`);
         }} />}
       {detailId === 'invite' && <InvitePanel code={workspace.inviteCode} onClose={() => go('settings')} />}
     </>
   );
+}
+
+/** 프로필 이미지 - 가운데를 정사각으로 잘라 size px JPEG 데이터 주소로 (workspaces.image_url · 런처 · 사이드바) */
+function squareDataUrl(file: File, size: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const m = Math.min(img.width, img.height);
+      const c = document.createElement('canvas'); c.width = size; c.height = size;
+      const g = c.getContext('2d'); if (!g) { URL.revokeObjectURL(url); return reject(new Error('이미지를 처리하지 못했습니다')); }
+      g.fillStyle = '#fff'; g.fillRect(0, 0, size, size);
+      g.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, size, size);
+      URL.revokeObjectURL(url); resolve(c.toDataURL('image/jpeg', 0.86));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지를 읽지 못했습니다')); };
+    img.src = url;
+  });
 }
 
 function MiniOffice({ f }: { f: BrandForm }) {
@@ -131,6 +149,16 @@ function BrandPanel({ title, initial, isNew, onClose, onSave }: { title: string;
         onClick={async () => { setBusy(true); setErr(''); try { await onSave({ ...f, heroImage: heroMode === 'image' ? f.heroImage : undefined }); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); } }}>{isNew ? '만들기' : '저장'}</Act></>}>
       {err && <div className="n-err">{err}</div>}
       <Field label="미리보기"><MiniOffice f={f} /></Field>
+      <Field label="프로필 이미지">
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {f.profile ? <img src={f.profile} alt="" className="n-pimg" /> : <span className="simok-avatar n-pimg">{(f.logo || f.name || '오')[0]}</span>}
+          <label className="n-mini" style={{ cursor: 'pointer' }}>{f.profile ? '바꾸기' : '올리기'}<input type="file" accept="image/*" hidden onChange={async e => {
+            const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
+            try { set({ profile: await squareDataUrl(file, 256) }); } catch (x) { setErr(x instanceof Error ? x.message : String(x)); }
+          }} /></label>
+          {f.profile && <button type="button" className="n-mini" onClick={() => set({ profile: undefined })}>삭제</button>}
+        </div>
+      </Field>
       <Field label="워크스페이스 이름"><input className="n-in" value={f.name} onChange={e => set({ name: e.target.value })} autoFocus={isNew} /></Field>
       <Field label="로고 글자"><input className="n-in" value={f.logo} onChange={e => set({ logo: e.target.value })} placeholder="비우면 이름" /></Field>
       <Field label="로고 아래 글"><input className="n-in" value={f.sub} onChange={e => set({ sub: e.target.value })} placeholder="THE PRIVATE OFFICE" /></Field>

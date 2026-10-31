@@ -105,9 +105,9 @@ export function MeetingsView({ workspace, members, myId, detailId, go }: BrandVi
 
   return (
     <>
-      <PageHead title="회의" small="매주 화요일 · 클로바노트 → 본부가 정리" search={{ value: q, onChange: setQ, placeholder: '회의 검색' }} />
+      <PageHead title="회의" small="매주 화요일" search={{ value: q, onChange: setQ, placeholder: '회의 검색' }} />
       {!!err && <Err e={err} />}
-      {!items ? <Skeleton /> : !items.length ? <Card pad><Empty>아직 회의록이 없어요. 회의 텍스트를 본부(Claude Code)에 「시목 회의록」 하고 붙여 주면 여기로 들어와요.</Empty></Card> : (
+      {!items ? <Skeleton /> : !items.length ? <Card pad><Empty>등록된 회의록이 없습니다</Empty></Card> : (
         <Sec title="회의록" count={hits.length}>
           <Card>{!hits.length ? <NoHit q={q} /> : <List>{pg.shown.map(m => {
             const c = tally(tasksOf(m.id));

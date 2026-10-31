@@ -139,7 +139,7 @@ export function BrandShell({ workspace, onBackupShell }: { workspace: Workspace;
           ))}
         </nav>
         <div className="simok-side-bottom">
-          <div className="n-me"><span className="simok-avatar">{look.logo[0]}</span><div>{workspace.name}<br /><span style={{ color: 'var(--muted)' }}>{look.motto}</span></div></div>
+          <div className="n-me">{workspace.imageUrl ? <img src={workspace.imageUrl} alt="" className="simok-avatar n-avimg" /> : <span className="simok-avatar">{look.logo[0]}</span>}<div>{workspace.name}<br /><span style={{ color: 'var(--muted)' }}>{look.motto}</span></div></div>
           <button type="button" className="n-set" onClick={() => { setNavOpen(false); setNoticeOpen(true); }}>{IC.bell}알림{notices.unread > 0 && <span className="n-cnt">{notices.unread}</span>}</button>
           <button type="button" className={`n-set${isSettings ? ' on' : ''}`} onClick={() => go('settings')}>{IC.gear}설정</button>
           <button type="button" className="n-set" onClick={() => setLauncherOpen(true)}>{IC.swap}워크스페이스 전환</button>

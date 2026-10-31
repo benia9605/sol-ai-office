@@ -166,7 +166,7 @@ export async function addTask(ws: string, f: { title: string; dueDate?: string; 
   if (error) throw error;
   const t = rowTask(data);
   if (t.assigneeUserId && t.assigneeUserId !== me.uid)
-    brandNotify(ws, 'notify_task_assigned', '🔄 할 일 배정', `${me.name} 님이 「${t.title}」 을 맡겼어요.`, `/tasks/${t.id}`, `hq-task-assign-${t.id}-${t.assigneeUserId}`, [t.assigneeUserId]);
+    brandNotify(ws, 'notify_task_assigned', '🔄 할 일 배정', `${me.name} 님이 「${t.title}」 을 배정했습니다.`, `/tasks/${t.id}`, `hq-task-assign-${t.id}-${t.assigneeUserId}`, [t.assigneeUserId]);
   return t;
 }
 export async function updateTask(t: HqTask, patch: Partial<Pick<HqTask, 'title' | 'status' | 'dueDate' | 'assigneeUserId' | 'assigneeShared' | 'memo'>>, note?: string): Promise<HqTask> {
@@ -186,9 +186,9 @@ export async function updateTask(t: HqTask, patch: Partial<Pick<HqTask, 'title' 
   if (error) throw error;
   const next = rowTask(data);
   if (next.status === 'done' && t.status !== 'done')
-    brandNotify(t.workspaceId, 'notify_task_completed', '✅ 할 일 완료', `${me.name} 님이 「${next.title}」 을 완료했어요.`, `/tasks/${t.id}`, `hq-task-${t.id}-done`);
+    brandNotify(t.workspaceId, 'notify_task_completed', '✅ 할 일 완료', `${me.name} 님이 「${next.title}」 을 완료했습니다.`, `/tasks/${t.id}`, `hq-task-${t.id}-done`);
   if (next.assigneeUserId && next.assigneeUserId !== t.assigneeUserId && next.assigneeUserId !== me.uid)
-    brandNotify(t.workspaceId, 'notify_task_assigned', '🔄 할 일 배정', `${me.name} 님이 「${next.title}」 을 맡겼어요.`, `/tasks/${t.id}`, `hq-task-assign-${t.id}-${next.assigneeUserId}`, [next.assigneeUserId]);
+    brandNotify(t.workspaceId, 'notify_task_assigned', '🔄 할 일 배정', `${me.name} 님이 「${next.title}」 을 배정했습니다.`, `/tasks/${t.id}`, `hq-task-assign-${t.id}-${next.assigneeUserId}`, [next.assigneeUserId]);
   return next;
 }
 
@@ -237,7 +237,7 @@ export async function listHqComments(ws: string, ref: HqRef, refIds: string[]): 
 /** 댓글 달기 → 다른 멤버에게 알림 (about.label · about.path = 알림 제목 · 누르면 갈 곳) */
 export async function addHqComment(ws: string, ref: HqRef, refId: string, text: string, about: { label: string; path: string }): Promise<HqComment> {
   const me = await whoAmI(ws);
-  if (!me.uid) throw new Error('로그인이 필요해요');
+  if (!me.uid) throw new Error('로그인이 필요합니다');
   const body = text.trim().slice(0, 5000);
   const { data, error } = await supabase.from('social_comments')
     .insert({ ref_type: ref, ref_id: refId, workspace_id: ws, user_id: me.uid, content: body })
@@ -574,7 +574,7 @@ export async function photoToHex(file: File): Promise<string> {
     if (blob && blob.size <= 3 * 1024 * 1024) break;
     side = Math.round(side * 0.75); q -= 0.1;
   }
-  if (!blob) throw new Error('사진을 읽지 못했어요');
+  if (!blob) throw new Error('사진을 읽지 못했습니다');
   const bytes = new Uint8Array(await blob.arrayBuffer());
   let hex = '\\x';
   for (let i = 0; i < bytes.length; i++) hex += bytes[i].toString(16).padStart(2, '0');

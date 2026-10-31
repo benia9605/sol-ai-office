@@ -105,7 +105,7 @@ export function MailEditor({ html, onChange, signatures, onSignature, templates,
               <B title="서명" on={menu === 'sig'} onClick={() => toggle('sig')} label="서명 ▾" />
               {menu === 'sig' && <span className="m-menu list">
                 {signatures.length ? signatures.map(s => <button key={s.key} type="button" onClick={() => { onSignature?.(s.key); setMenu(''); }}><b>{s.label}</b>{s.sub && <small>{s.sub}</small>}</button>)
-                  : <span className="none">저장된 서명이 없어요 · 「서명」 탭에서 만들어요</span>}
+                  : <span className="none">저장된 서명이 없습니다</span>}
               </span>}
             </span>
           </>}
@@ -113,12 +113,13 @@ export function MailEditor({ html, onChange, signatures, onSignature, templates,
             <B title="템플릿" on={menu === 'tpl'} onClick={() => toggle('tpl')} label="템플릿 ▾" />
             {menu === 'tpl' && <span className="m-menu list">
               {templates.length ? templates.map(t => <button key={t.key} type="button" onClick={() => { onTemplate?.(t.key, editor); setMenu(''); }}><b>{t.label}</b>{t.sub && <small>{t.sub}</small>}</button>)
-                : <span className="none">템플릿이 없어요 · 「템플릿」 탭에서 만들어요</span>}
+                : <span className="none">등록된 템플릿이 없습니다</span>}
             </span>}
           </span>}
         </div>
       </div>
-      <div style={{ minHeight }} onClick={() => editor.chain().focus().run()}><EditorContent editor={editor} /></div>
+      {/* 길어지면 본문 칸 안에서만 스크롤 - 도구줄이 계속 보이게 */}
+      <div className="m-edc" style={{ minHeight }} onClick={() => editor.chain().focus().run()}><EditorContent editor={editor} /></div>
     </div>
   );
 }

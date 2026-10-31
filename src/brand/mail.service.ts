@@ -35,6 +35,8 @@ export type UnsubMethod = 'oneclick' | 'link' | 'caution' | 'filter';
 export interface MailUnsub {
   id: string; accountId?: string; senderName?: string; senderAddr: string; count30d: number; method: UnsubMethod;
   status: 'candidate' | 'requested' | 'done' | 'failed' | 'kept'; note?: string; requestedAt?: string; doneAt?: string;
+  /** 그동안 온 메일 (본부가 넣음 · 077) - 날짜 · 제목 */
+  examples: { date: string; subject: string }[];
 }
 export const UNSUB_METHOD: Record<UnsubMethod, string> = { oneclick: '원클릭 취소', link: '링크 열어 취소', caution: '주의', filter: '자동 보관 필터' };
 
@@ -222,7 +224,8 @@ export async function listUnsubs(ws: string): Promise<MailUnsub[]> {
   const { data, error } = await supabase.from('hq_mail_unsubs').select('*').eq('workspace_id', ws).order('count_30d', { ascending: false }).limit(300);
   if (error) throw error;
   return (data ?? []).map((r: any) => ({ id: r.id, accountId: r.account_id ?? undefined, senderName: r.sender_name ?? undefined, senderAddr: r.sender_addr,
-    count30d: r.count_30d ?? 0, method: r.method, status: r.status, note: r.note ?? undefined, requestedAt: r.requested_at ?? undefined, doneAt: r.done_at ?? undefined }));
+    count30d: r.count_30d ?? 0, method: r.method, status: r.status, note: r.note ?? undefined, requestedAt: r.requested_at ?? undefined, doneAt: r.done_at ?? undefined,
+    examples: Array.isArray(r.examples) ? r.examples.filter((x: any) => x && x.subject).map((x: any) => ({ date: String(x.date ?? ''), subject: String(x.subject) })) : [] }));
 }
 export async function requestUnsubs(ids: string[]): Promise<void> {
   if (!ids.length) return;
@@ -230,8 +233,14 @@ export async function requestUnsubs(ids: string[]): Promise<void> {
   const { error } = await supabase.from('hq_mail_unsubs').update({ status: 'requested', requested_by: uid, requested_at: now(), updated_at: now() }).in('id', ids).eq('status', 'candidate');
   if (error) throw error;
 }
+/** 유지 - 다음 날 본부가 읽어 「지키기」 에 넣는다 (hq_mail_pull kept · 077) */
 export async function keepUnsub(id: string): Promise<void> {
   const { error } = await supabase.from('hq_mail_unsubs').update({ status: 'kept', updated_at: now() }).eq('id', id);
+  if (error) throw error;
+}
+/** 유지 되돌리기 - 다시 구독 취소 대상으로 */
+export async function unkeepUnsub(id: string): Promise<void> {
+  const { error } = await supabase.from('hq_mail_unsubs').update({ status: 'candidate', updated_at: now() }).eq('id', id).eq('status', 'kept');
   if (error) throw error;
 }
 

@@ -53,7 +53,7 @@ export function TodayView({ workspace, look, go }: BrandViewProps) {
 
       <section className="simok-hero n-hero">
         <div className="simok-hero-copy">
-          <div className="simok-eyebrow">MORNING BRIEF — {(brief?.date ?? today).replace(/-/g, '.')}</div>
+          <div className="simok-eyebrow">MORNING BRIEF · {(brief?.date ?? today).replace(/-/g, '.')}</div>
           <h2>{brief?.summary || brief?.title || '아직 오늘 브리핑이 없습니다'}</h2>
           <p>할 일 {todays.length} · 결정 대기 {decisions.length}</p>
         </div>

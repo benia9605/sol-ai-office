@@ -416,7 +416,7 @@
 .m-fbar .sr:focus { border-color: var(--green); background: #fff; }
 .m-chip { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--white); font: inherit; font-size: 13px; white-space: nowrap; color: var(--ink); cursor: pointer; }
 .m-chip.on { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
-.m-chip.ap { cursor: default; background: color-mix(in srgb, var(--green) 9%, #fff); border-color: color-mix(in srgb, var(--green) 28%, #fff); color: var(--green); }
+.m-chip.ap { cursor: pointer; background: color-mix(in srgb, var(--green) 9%, #fff); border-color: color-mix(in srgb, var(--green) 28%, #fff); color: var(--green); }
 .m-chip small { font-size: 11.5px; opacity: .8; font-weight: 400; margin-left: 4px; }
 .m-fbtn { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--green); background: var(--green); color: #fff; font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .m-quick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 18px; }
@@ -465,7 +465,8 @@
 .m-vt button:first-child { border-radius: 7px 0 0 7px; } .m-vt button:last-child { border-radius: 0 7px 7px 0; }
 .m-vt button { font: inherit; font-size: 12.5px; padding: 7px 14px; background: var(--white); cursor: pointer; } .m-vt button.on { background: var(--green); color: #fff; }
 .m-ed { border: 1px solid var(--line); border-radius: 12px; background: var(--white); overflow: visible; }
-.m-tb { border-bottom: 1px solid var(--line); background: #fbfaf6; border-radius: 12px 12px 0 0; }
+.m-tb { border-bottom: 1px solid var(--line); background: #fbfaf6; border-radius: 12px 12px 0 0; position: sticky; top: 0; z-index: 3; }
+.m-edc { max-height: max(45vh, 240px); overflow-y: auto; overscroll-behavior: contain; cursor: text; }
 .m-tb .r { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; align-items: center; } .m-tb .r + .r { border-top: 1px dashed var(--line); }
 .m-tb button, .m-tb select { font: inherit; font-size: 12.5px; padding: 4px 9px; border-radius: 6px; border: 1px solid var(--line); background: var(--white); white-space: nowrap; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
 .m-tb button.sel { border-color: var(--green); color: var(--green); } .m-tb em { width: 1px; height: 18px; background: var(--line); margin: 0 3px; }
@@ -488,8 +489,17 @@
 .m-cardup { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 .m-cardph { width: 220px; aspect-ratio: 9 / 5; border-radius: 8px; border: 1.5px dashed #c8cbbf; display: grid; place-content: center; font-size: 12.5px; color: #7a7f76; background: repeating-linear-gradient(45deg, #f6f5ee, #f6f5ee 8px, #efeee6 8px, #efeee6 16px); }
 .m-check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+/* 구독 취소 - 줄 펼침(그동안 온 메일) · 유지한 곳 */
+.m-unw { border-bottom: 1px solid var(--line); } .m-unw:last-child { border-bottom: 0; } .m-unw .m-row { border-bottom: 0; }
+.m-car { color: #8a8f84; font-size: 11px; margin-left: 2px; }
+.m-exs { margin: 0 4px 14px 36px; padding: 10px 14px; background: #faf9f4; border-radius: 8px; display: grid; gap: 6px; max-height: 260px; overflow-y: auto; }
+.m-ex { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; font-size: 13px; line-height: 1.5; } .m-ex .dt { color: #8a8f84; font-variant-numeric: tabular-nums; } .m-ex .sj { color: var(--ink); overflow-wrap: anywhere; }
+.m-exe { font-size: 13px; color: #8a8f84; }
+.m-kept { margin-top: 18px; } .m-kepth { display: inline-flex; gap: 6px; align-items: center; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: #5f645a; padding: 6px 2px; cursor: pointer; margin-bottom: 8px; }
+.m-fbtn.on { box-shadow: inset 0 0 0 2px rgba(255,255,255,.35); }
 @media (max-width: 900px) {
-  .m-fbar { flex-wrap: wrap; } .m-fbar .ap { display: none; } .m-fbar .sr { flex-basis: 100%; order: 2; }
+  .m-fbar { flex-wrap: nowrap; padding: 8px 10px; gap: 8px; } .m-fbar .sr { flex: 1 1 auto; height: 40px; font-size: 14px; } .m-fbar .m-fbtn { height: 40px; padding: 0 14px; }
+  .m-exs { margin-left: 4px; } .m-ex { grid-template-columns: 64px minmax(0, 1fr); }
   .m-quick { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; } .m-quick::-webkit-scrollbar { display: none; }
   .m-acc { flex-wrap: nowrap; overflow-x: auto; }
   .m-sum { grid-template-columns: repeat(2, 1fr); gap: 10px; } .m-sum .m-tile:first-child { grid-column: span 2; }
@@ -511,3 +521,11 @@
 @keyframes n-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .n-refresh svg.spin { animation: none; } }
 @media (max-width: 900px) { .n-pact .n-refresh { margin-left: auto; } }
+
+/* 오피스 프로필 이미지 (설정 · 사이드바) */
+.n-avimg { object-fit: cover; padding: 0; }
+.n-pimg { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; display: inline-grid; place-content: center; font-size: 18px; flex: none; }
+.n-wsimg { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; }
+@media (max-width: 900px) {
+  .m-tb .r { gap: 5px; padding: 7px 8px; } .m-tb button, .m-tb select { padding: 4px 7px; font-size: 12px; } .m-tb em { display: none; }
+}

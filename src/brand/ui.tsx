@@ -160,7 +160,7 @@ export const Ex = () => <span className="n-ex">예시</span>;
 /** 회의 할 일 날짜 종류 - 약속(회의에서 정함) · 추천(본부가 나눠 넣음) */
 export function DueKindBadge({ kind }: { kind?: 'promised' | 'planned' }) {
   if (kind === 'promised') return <span className="n-b promise" title="회의에서 정한 날짜">약속</span>;
-  if (kind === 'planned') return <span className="n-b plan" title="「해 보자」 한 것 - 본부 추천 날짜, 바꿔도 돼요">추천</span>;
+  if (kind === 'planned') return <span className="n-b plan" title="추천 날짜 · 변경 가능">추천</span>;
   return null;
 }
 
@@ -287,7 +287,7 @@ export function Thread({ ws, refType, refId, members, myId, about }: {
     if (!text.trim()) return;
     setBusy(true); setErr('');
     try { const c = await addHqComment(ws, refType, refId, text, about); setItems(xs => [...(xs ?? []), c]); setText(''); }
-    catch { setErr('저장 안 됨 - 다시 눌러 주세요'); } finally { setBusy(false); }
+    catch { setErr('저장되지 않았습니다 · 다시 시도해 주세요'); } finally { setBusy(false); }
   };
   const del = async (id: string) => { if (await deleteHqComment(id).catch(() => false)) setItems(xs => (xs ?? []).filter(x => x.id !== id)); };
   return (

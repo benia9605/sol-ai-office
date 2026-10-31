@@ -115,7 +115,7 @@ export function ContentView({ workspace, detailId, go }: BrandViewProps) {
           ]} />
           {tab === 'topics' ? (topics.length
             ? <Topics topics={topics} all={all} onChange={replace} onRemove={ids => setItems(xs => (xs ?? []).filter(x => !ids.includes(x.id)))} setErr={setErr} />
-            : <Empty>후보 없음 · 매주 일요일 9시에 본부가 다음 주 캐러셀 주제 Top 10 을 올려요</Empty>) : <>
+            : <Empty>후보 없음 · 매주 일요일 다음 주 주제 Top 10 등록</Empty>) : <>
           {/* PC - 종류 줄 × 단계 */}
           <div className="n-b3">
             <div className="n-b3-h"><span />{STAGES.map(s => (
