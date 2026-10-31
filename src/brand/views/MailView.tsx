@@ -498,10 +498,12 @@ function UnsubList({ items, accOf, onDone }: { items: MailUnsub[]; accOf?: (id?:
       {keptOpen && <Card pad>{kept.map(u => (
         <div key={u.id} className="m-unw"><div className="m-row">
           <div className="who">{u.senderName || u.senderAddr}</div><div className="t">{u.senderAddr}</div>
-          <div className="d">{u.keepMemo ? <>메모 · {u.keepMemo}</> : '구독 취소 · 휴지통 대상에서 제외'}</div>
-          <div className="rt">{memoOk && <Mini onClick={() => setMemoFor(u.id)}>메모</Mini>}<Mini onClick={() => act(() => unkeepUnsub(u.id))}>되돌리기</Mini></div>
+          <div className="d">구독 취소 · 휴지통 대상에서 제외</div>
+          <div className="rt"><Mini onClick={() => act(() => unkeepUnsub(u.id))}>되돌리기</Mini></div>
         </div>
-          {memoFor === u.id && <KeepMemo initial={u.keepMemo ?? ''} onCancel={() => setMemoFor(null)} onSave={(m) => act(async () => { await setUnsubMemo(u.id, m); setMemoFor(null); })} />}
+          {memoFor === u.id
+            ? <KeepMemo initial={u.keepMemo ?? ''} onCancel={() => setMemoFor(null)} onSave={(m) => act(async () => { await setUnsubMemo(u.id, m); setMemoFor(null); })} />
+            : memoOk && <MemoLine memo={u.keepMemo} onEdit={() => setMemoFor(u.id)} />}
         </div>
       ))}</Card>}
     </div>}
@@ -510,16 +512,23 @@ function UnsubList({ items, accOf, onDone }: { items: MailUnsub[]; accOf?: (id?:
   </>;
 }
 
-/** 유지 메모 한 줄 - 본부가 읽는다 (메모에 「배움」 → 라벨 배움 · 없으면 라벨 뉴스레터) */
+/** 유지 메모 - 줄 바로 아래 댓글창 모양 · 저장하면 유지 확정 · 본부가 읽는다 (메모에 「배움」 → 라벨 배움 · 없으면 라벨 뉴스레터) */
 function KeepMemo({ initial = '', onSave, onCancel }: { initial?: string; onSave: (memo: string) => void; onCancel: () => void }) {
   const [v, setV] = useState(initial);
   return (
     <div className="m-memo" onClick={e => e.stopPropagation()}>
-      <input value={v} onChange={e => setV(e.target.value)} placeholder="메모 (선택) · 예: 즐겨 보는 뉴스레터 · 배움으로 분류" maxLength={120} autoFocus
-        onKeyDown={e => { if (e.key === 'Enter') onSave(v); if (e.key === 'Escape') onCancel(); }} />
-      <Mini primary onClick={() => onSave(v)}>유지</Mini><Mini onClick={onCancel}>취소</Mini>
+      <input value={v} onChange={e => setV(e.target.value)} placeholder="메모 (선택) · 예: 즐겨 보는 뉴스레터, 배움으로 분류" maxLength={120} autoFocus
+        onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) onSave(v); if (e.key === 'Escape') onCancel(); }} />
+      <button type="button" className="m-memo-save" onClick={() => onSave(v)}>저장</button>
+      <button type="button" className="m-memo-x" onClick={onCancel}>취소</button>
     </div>
   );
+}
+/** 저장된 유지 메모 - 줄 아래 작은 글씨 · 고치기 */
+function MemoLine({ memo, onEdit }: { memo?: string | null; onEdit: () => void }) {
+  return <div className="m-memov" onClick={e => e.stopPropagation()}>
+    <span>{memo ? <>메모 · {memo}</> : '메모 없음'}</span><button type="button" onClick={onEdit}>{memo ? '고치기' : '메모 남기기'}</button>
+  </div>;
 }
 
 // ── 메일함 정리 ── 본부 정리안(077) · 행동별 묶음 (휴지통 → 구독 취소 → 라벨 → 확인 필요 → 유지) · 줄을 누르면 그동안 온 메일
@@ -545,7 +554,7 @@ function CleanupList({ items, accOf, onDone }: { items: MailCleanup[]; accOf?: (
   const done = items.filter(c => c.status === 'done');
   const choose = (c: MailCleanup, v: string) => {
     const [d, label] = v.split(':');
-    if (d === 'keep') { if (memoOk) setMemoFor(c.id); act(() => setCleanup(c.id, { chosen: 'keep', checked: false })); return; }
+    if (d === 'keep') { if (memoOk) { setMemoFor(c.id); return; } act(() => setCleanup(c.id, { chosen: 'keep', checked: false })); return; }
     if (d === 'label' && label !== c.label) return;   // 다른 라벨로 옮기기는 본부 정리안에서
     act(() => setCleanup(c.id, { chosen: d === c.action ? null : d as Exclude<CleanAction, 'ask'>, checked: true }));
   };
@@ -571,7 +580,7 @@ function CleanupList({ items, accOf, onDone }: { items: MailCleanup[]; accOf?: (
                 onChange={() => act(() => setCleanup(c.id, { checked: !c.checked }))} aria-label="선택" />
               <div className="who">{c.senderName || c.senderAddr}</div>
               <div className="t">{c.senderAddr}<span className="m-kind">{c.kind}</span></div>
-              <div className="d">{c.count.toLocaleString()}통 · 안 읽음 {c.unseen.toLocaleString()}{gone ? ` · 이미 오지 않음 (${c.goneMonths}개월 전) · 구독 취소 불필요` : ''}{c.status === 'failed' && c.error ? ` · 실패: ${c.error}` : ''}{d === 'keep' && c.keepMemo ? ` · 메모: ${c.keepMemo}` : ''}</div>
+              <div className="d">{c.count.toLocaleString()}통 · 안 읽음 {c.unseen.toLocaleString()}{gone ? ` · 이미 오지 않음 (${c.goneMonths}개월 전) · 구독 취소 불필요` : ''}{c.status === 'failed' && c.error ? ` · 실패: ${c.error}` : ''}</div>
               <div className="rt">{accOf?.(c.accountId) && <span className="m-st">{accOf(c.accountId)!.label}</span>}
                 <select className="m-sel" value={d === 'label' ? `label:${c.label ?? ''}` : d} onClick={e => e.stopPropagation()} onChange={e => choose(c, e.target.value)} aria-label="행동">
                   {c.action === 'label' && <option value={`label:${c.label ?? ''}`}>라벨 · {c.label}</option>}
@@ -580,8 +589,10 @@ function CleanupList({ items, accOf, onDone }: { items: MailCleanup[]; accOf?: (
                 </select>
                 <span className="m-car">{open === c.id ? '▴' : '▾'}</span></div>
             </div>
-            {memoFor === c.id && <KeepMemo initial={c.keepMemo ?? ''} onCancel={() => setMemoFor(null)} onSave={(m) => act(async () => { await setCleanup(c.id, { keepMemo: m }); setMemoFor(null); })} />}
-            {open === c.id && <ExampleList xs={c.examples} />}
+            {memoFor === c.id
+              ? <KeepMemo initial={c.keepMemo ?? ''} onCancel={() => setMemoFor(null)} onSave={(m) => act(async () => { await setCleanup(c.id, { chosen: 'keep', checked: false, keepMemo: m }); setMemoFor(null); })} />
+              : d === 'keep' && memoOk && <MemoLine memo={c.keepMemo} onEdit={() => setMemoFor(c.id)} />}
+            {open === c.id && <ExampleList xs={c.examples} total={c.count} />}
           </div>;
         })}</Card>}
       </section>
@@ -595,10 +606,13 @@ function CleanupList({ items, accOf, onDone }: { items: MailCleanup[]; accOf?: (
 
 /** 그동안 온 메일 - 날짜 · 제목 (최근 것부터) */
 const ymd = (iso: string) => { const t = Date.parse(iso); if (!t) return '-'; const d = new Date(t + 9 * 3600e3); return `${String(d.getUTCFullYear()).slice(2)}.${String(d.getUTCMonth() + 1).padStart(2, '0')}.${String(d.getUTCDate()).padStart(2, '0')}`; };
-function ExampleList({ xs }: { xs: { date: string; subject: string }[] }) {
-  if (!xs.length) return <div className="m-exs"><div className="m-exe">받은 메일 기록이 아직 없습니다 · 다음 정리 때 채워집니다</div></div>;
+function ExampleList({ xs, total }: { xs: { date: string; subject: string }[]; total?: number }) {
+  if (!xs.length) return <div className="m-exs"><div className="m-exe">받은 메일 기록이 없습니다</div></div>;
   const sorted = [...xs].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  return <div className="m-exs">{sorted.map((x, i) => <div key={i} className="m-ex"><span className="dt">{ymd(x.date)}</span><span className="sj">{x.subject}</span></div>)}</div>;
+  return <div className="m-exs">
+    <div className="m-exh">받은 메일 최근 {sorted.length}건{total && total > sorted.length ? ` · 전체 ${total.toLocaleString()}통 중` : ''}</div>
+    {sorted.map((x, i) => <div key={i} className="m-ex"><span className="dt">{ymd(x.date)}</span><span className="sj">{x.subject}</span></div>)}
+  </div>;
 }
 
 /** 가계부 - 본부 오피스 11 (준비 중) */

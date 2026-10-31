@@ -506,8 +506,14 @@
 .m-ck { display: inline-flex; font-size: 12.5px; font-weight: 600; padding: 3px 9px; border-radius: 5px; align-items: center; }
 .m-kind { margin-left: 8px; font-size: 11.5px; color: #7a7f76; border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
 .m-sel { height: 30px; border: 1px solid var(--line); border-radius: 6px; background: var(--white); font: inherit; font-size: 12.5px; color: var(--ink); padding: 0 6px; max-width: 170px; }
-.m-memo { display: flex; gap: 8px; align-items: center; margin: 0 4px 14px 36px; }
-.m-memo input { flex: 1 1 auto; min-width: 0; height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0 12px; font: inherit; font-size: 13.5px; }
+.m-memo { display: flex; gap: 6px; align-items: center; margin: 0 4px 14px 36px; padding: 6px 6px 6px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.m-memo:focus-within { border-color: var(--green); }
+.m-memo input { flex: 1 1 auto; min-width: 0; height: 34px; border: 0; outline: 0; padding: 0; font: inherit; font-size: 13.5px; background: transparent; }
+.m-memo-save { height: 32px; padding: 0 14px; border: 0; border-radius: 6px; background: var(--green); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.m-memo-x { height: 32px; padding: 0 10px; border: 0; background: transparent; color: #8a8f84; font: inherit; font-size: 13px; cursor: pointer; }
+.m-memov { display: flex; gap: 10px; align-items: center; margin: -4px 4px 12px 36px; font-size: 12.5px; color: var(--muted); }
+.m-memov button { border: 0; background: transparent; padding: 0; color: var(--green); font: inherit; font-size: 12.5px; text-decoration: underline; cursor: pointer; }
+.m-exh { font-size: 12px; color: #8a8f84; font-weight: 600; }
 @media (max-width: 900px) {
   .m-fbar { flex-wrap: nowrap; padding: 8px 10px; gap: 8px; } .m-fbar .sr { flex: 1 1 auto; height: 40px; font-size: 14px; } .m-fbar .m-fbtn { height: 40px; padding: 0 14px; }
   .m-exs { margin-left: 4px; } .m-ex { grid-template-columns: 64px minmax(0, 1fr); }
@@ -521,7 +527,7 @@
   .m-un { grid-template-columns: 20px minmax(0, 1fr) auto; } .m-un .who { grid-column: 2; } .m-un .rt { grid-column: 3; } .m-un .t, .m-un .d { grid-column: 2 / -1; }
   .m-tpl, .m-fields { grid-template-columns: 1fr; }
   .m-csum { grid-template-columns: repeat(2, 1fr); } .m-csum .m-tile:first-child { grid-column: auto; }
-  .m-memo { margin-left: 4px; flex-wrap: wrap; } .m-memo input { flex-basis: 100%; }
+  .m-memo { margin-left: 4px; } .m-memov { margin-left: 4px; }
   .m-sel { max-width: 132px; font-size: 12px; } .m-kind { display: none; }
   .m-sigrow { flex-wrap: wrap; }
 }
