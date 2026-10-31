@@ -16,7 +16,7 @@ import {
   UNSUB_METHOD, addDraft, bumpTemplate, catLabel, composeHtml, confirmDraft, deleteSignature, deleteTemplate, discardDraft, fmtKst, fmtWhen,
   getMailDigest, getSignatureCard, kstDay, listDrafts, listMailAccounts, listMailMessages, listOpenMail, listSignatures, listTemplates, listUnsubs,
   quickRange, requestUnsubs, keepUnsub, unkeepUnsub, saveDraft, saveSignature, saveTemplate, setMailDone, unconfirmDraft, DraftFields,
-  setUnsubMemo, listCleanup, setCleanup, requestCleanup, cleanDo, CLEAN_LABEL, MailCleanup, CleanAction,
+  setUnsubMemo, listCleanup, setCleanup, requestCleanup, cleanDo, CLEAN_LABEL, MailCleanup, CleanAction, getMailExcerpt
 } from '../mail.service';
 import { MailEditor } from './MailEditor';
 
@@ -229,6 +229,9 @@ function FilterSheet({ range, cat, onClose, onSave }: { range: Range; cat: MailC
 // ── 메일 열기 ──
 function MessagePanel({ m, acc, draft, onClose, onChanged, onDraft }: { m: MailMessage; acc?: MailAccount; draft?: MailDraft; onClose: () => void; onChanged: () => void; onDraft: () => void }) {
   const [busy, setBusy] = useState(false);
+  const [excerpt, setExcerpt] = useState<string | null>(null);
+  const [showBody, setShowBody] = useState(false);
+  useEffect(() => { let on = true; setExcerpt(null); setShowBody(false); getMailExcerpt(m.id).then(x => { if (on) setExcerpt(x); }); return () => { on = false; }; }, [m.id]);
   const done = m.status === 'done';
   return (
     <Panel title={m.subject || '(제목 없음)'} tag={catLabel(m.category)} onClose={onClose}
@@ -240,8 +243,14 @@ function MessagePanel({ m, acc, draft, onClose, onChanged, onDraft }: { m: MailM
       <div className="m-mail">
         <div className="mh"><b>{m.fromName || m.fromAddr}</b>{m.fromAddr && m.fromName ? `${m.fromAddr} · ` : ''}{fmtKst(m.receivedAt)}{acc ? ` · 받은 주소 ${acc.address}` : ''}</div>
         <div className="m-body"><p style={{ margin: 0 }}>{m.summary || '요약 없음'}</p></div>
+        {excerpt && <div className="m-excerpt">
+          <button type="button" className="m-excerpt-t" onClick={() => setShowBody(v => !v)} aria-expanded={showBody}>
+            <span>본문 미리보기</span><span className="m-excerpt-c">{showBody ? '접기' : '펼치기'}</span>
+          </button>
+          {showBody && <div className="m-excerpt-b">{excerpt}</div>}
+        </div>}
       </div>
-      <div className="m-small">요약입니다. 원문은 해당 계정 메일함에서 확인하세요.{done ? ' · 처리 완료' : ''}</div>
+      <div className="m-small">{done ? '처리 완료된 메일입니다.' : '처리 완료하면 목록에서 빠지고 메일함에서도 읽음으로 표시됩니다.'} 원문은 해당 계정 메일함에서 확인하세요.</div>
     </Panel>
   );
 }

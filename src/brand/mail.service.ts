@@ -102,6 +102,12 @@ export async function listMailMessages(ws: string, from: string, to: string): Pr
   if (error) throw error;
   return (data ?? []).map(rowMsg);
 }
+/** 본문 미리보기 (079 · 칼럼이 없으면 null - 화면에서 숨김) */
+export async function getMailExcerpt(id: string): Promise<string | null> {
+  const { data, error } = await supabase.from('hq_mail_messages').select('excerpt').eq('id', id).maybeSingle();
+  if (error || !data) return null;
+  return (data as { excerpt?: string | null }).excerpt || null;
+}
 /** 아직 남은 것 - 기간과 상관없이 답장 필요 · 중요 중 안 끝낸 것 */
 export async function listOpenMail(ws: string): Promise<MailMessage[]> {
   const { data, error } = await supabase.from('hq_mail_messages').select(MSG_COLS)

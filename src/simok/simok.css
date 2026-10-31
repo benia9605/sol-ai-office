@@ -241,7 +241,7 @@
 .simok-report-row p { font-size: 11px; color: var(--muted); }
 @media (max-width: 620px) {
   .simok-report-row { grid-template-columns: 1fr; gap: 10px; padding: 20px; }
-  .simok-report-date { display: flex; align-items: baseline; gap: 8px; }
+  .simok-report-date { display: flex; align-items: center; gap: 8px; }
   .simok-report-date .month { margin-top: 0; }
 }
 
