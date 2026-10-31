@@ -37,6 +37,8 @@ export interface MailUnsub {
   status: 'candidate' | 'requested' | 'done' | 'failed' | 'kept'; note?: string; requestedAt?: string; doneAt?: string;
   /** 그동안 온 메일 (본부가 넣음 · 077) - 날짜 · 제목 */
   examples: { date: string; subject: string }[];
+  /** 유지 메모 (078 · 칼럼이 없으면 undefined) */
+  keepMemo?: string | null;
 }
 export const UNSUB_METHOD: Record<UnsubMethod, string> = { oneclick: '원클릭 취소', link: '링크 열어 취소', caution: '주의', filter: '자동 보관 필터' };
 
@@ -225,23 +227,70 @@ export async function listUnsubs(ws: string): Promise<MailUnsub[]> {
   if (error) throw error;
   return (data ?? []).map((r: any) => ({ id: r.id, accountId: r.account_id ?? undefined, senderName: r.sender_name ?? undefined, senderAddr: r.sender_addr,
     count30d: r.count_30d ?? 0, method: r.method, status: r.status, note: r.note ?? undefined, requestedAt: r.requested_at ?? undefined, doneAt: r.done_at ?? undefined,
-    examples: Array.isArray(r.examples) ? r.examples.filter((x: any) => x && x.subject).map((x: any) => ({ date: String(x.date ?? ''), subject: String(x.subject) })) : [] }));
+    examples: exList(r.examples), keepMemo: 'keep_memo' in r ? (r.keep_memo ?? null) : undefined }));
 }
+const exList = (v: unknown) => Array.isArray(v) ? v.filter((x: any) => x && x.subject).map((x: any) => ({ date: String(x.date ?? ''), subject: String(x.subject) })) : [];
 export async function requestUnsubs(ids: string[]): Promise<void> {
   if (!ids.length) return;
   const uid = await getCurrentUserId();
   const { error } = await supabase.from('hq_mail_unsubs').update({ status: 'requested', requested_by: uid, requested_at: now(), updated_at: now() }).in('id', ids).eq('status', 'candidate');
   if (error) throw error;
 }
-/** 유지 - 다음 날 본부가 읽어 「지키기」 에 넣는다 (hq_mail_pull kept · 077) */
-export async function keepUnsub(id: string): Promise<void> {
-  const { error } = await supabase.from('hq_mail_unsubs').update({ status: 'kept', updated_at: now() }).eq('id', id);
+/** 유지 - 다음 날 본부가 읽어 「지키기」 에 넣는다 (hq_mail_pull kept · 077) · 메모는 078 (메모에 「배움」 → 본부 배움 라벨) */
+export async function keepUnsub(id: string, memo?: string | null): Promise<void> {
+  const row: Record<string, unknown> = { status: 'kept', updated_at: now() };
+  if (memo !== undefined) row.keep_memo = memo?.trim() || null;
+  const { error } = await supabase.from('hq_mail_unsubs').update(row).eq('id', id);
+  if (error) throw error;
+}
+export async function setUnsubMemo(id: string, memo: string): Promise<void> {
+  const { error } = await supabase.from('hq_mail_unsubs').update({ keep_memo: memo.trim() || null, updated_at: now() }).eq('id', id);
   if (error) throw error;
 }
 /** 유지 되돌리기 - 다시 구독 취소 대상으로 */
 export async function unkeepUnsub(id: string): Promise<void> {
   const { error } = await supabase.from('hq_mail_unsubs').update({ status: 'candidate', updated_at: now() }).eq('id', id).eq('status', 'kept');
   if (error) throw error;
+}
+
+// ── 메일함 정리 (077) ── 본부가 보낸 곳별 정리안을 넣고, 사람이 고른 뒤 「정리 요청」 → 본부가 몇 분 안에 실행
+export type CleanAction = 'trash' | 'unsub_trash' | 'label' | 'keep' | 'ask';
+export interface MailCleanup {
+  id: string; accountId?: string; senderAddr: string; senderName?: string; part: string; kind: string;
+  action: CleanAction; label?: string; chosen?: Exclude<CleanAction, 'ask'>; checked: boolean;
+  count: number; unseen: number; goneMonths?: number; newest?: string; examples: { date: string; subject: string }[]; note?: string;
+  status: 'proposed' | 'requested' | 'done' | 'failed'; moved: number; unsubOk?: boolean; error?: string; keepMemo?: string | null;
+}
+/** 실제로 할 일 = 사람이 고른 것 먼저 */
+export const cleanDo = (c: MailCleanup): CleanAction => c.chosen ?? c.action;
+export const CLEAN_LABEL: Record<CleanAction, string> = { trash: '휴지통', unsub_trash: '구독 취소 + 휴지통', label: '라벨', keep: '유지', ask: '확인 필요' };
+export async function listCleanup(ws: string): Promise<MailCleanup[]> {
+  const { data, error } = await supabase.from('hq_mail_cleanup').select('*').eq('workspace_id', ws).order('count', { ascending: false }).limit(2000);
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({ id: r.id, accountId: r.account_id ?? undefined, senderAddr: r.sender_addr, senderName: r.sender_name ?? undefined,
+    part: r.part, kind: r.kind, action: r.action, label: r.label ?? undefined, chosen: r.chosen ?? undefined, checked: !!r.checked,
+    count: r.count ?? 0, unseen: r.unseen ?? 0, goneMonths: r.gone_months ?? undefined, newest: r.newest ?? undefined, examples: exList(r.examples),
+    note: r.note ?? undefined, status: r.status, moved: r.moved ?? 0, unsubOk: r.unsub_ok ?? undefined, error: r.error ?? undefined,
+    keepMemo: 'keep_memo' in r ? (r.keep_memo ?? null) : undefined }));
+}
+/** 행동 바꾸기 · 체크 · 유지 메모 */
+export async function setCleanup(id: string, f: { chosen?: Exclude<CleanAction, 'ask'> | null; checked?: boolean; keepMemo?: string | null }): Promise<void> {
+  const row: Record<string, unknown> = { updated_at: now() };
+  if (f.chosen !== undefined) row.chosen = f.chosen;
+  if (f.checked !== undefined) row.checked = f.checked;
+  if (f.keepMemo !== undefined) row.keep_memo = f.keepMemo?.trim() || null;
+  const { error } = await supabase.from('hq_mail_cleanup').update(row).eq('id', id);
+  if (error) throw error;
+}
+/** 정리 요청 - 체크한 줄 중 휴지통 · 구독 취소 · 라벨만 (유지는 다음 정리에 반영) */
+export async function requestCleanup(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  const uid = await getCurrentUserId();
+  for (let i = 0; i < ids.length; i += 200) {
+    const { error } = await supabase.from('hq_mail_cleanup').update({ status: 'requested', checked: true, requested_by: uid, requested_at: now(), error: null, updated_at: now() })
+      .in('id', ids.slice(i, i + 200)).in('status', ['proposed', 'failed']);
+    if (error) throw error;
+  }
 }
 
 /** 받는 사람 화면 - 본문 + 구분선 + 서명(명함) · 손님 메일 앱처럼 */

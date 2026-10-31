@@ -1,7 +1,8 @@
 /**
  * @file src/brand/views/MailView.tsx
  * @description 10 메일 - 그 오피스 메일 계정만 (마이그 076 · 시안 sol-hq/할일/AI오피스-개편-시안.html 「10 메일 · 4판」)
- *  탭: 아침 정리 · 초안 · 템플릿 · 서명 · 구독 취소 · 전체 메일
+ *  탭: 아침 정리 · 초안 · 템플릿 · 서명 · 구독 취소 · 메일함 정리 · 전체 메일
+ *  · 메일함 정리: 본부가 보낸 곳별로 낸 정리안(077) → 행동 고르기 · 체크 → 「정리 요청」 → 본부가 몇 분 안에 실행 · 유지 메모(078)
  *  · 아침 정리: 기간 필터(시목 판매 현황 결 · 「오늘」 = 어제 10시 ~ 오늘 10시 · [저장] 을 눌러야 걸림) → 요약 카드 → 본부 정리 → 아직 남은 것 → 이 기간 중요
  *  · 초안: 본부가 쓴 답장 · 직접 쓴 것 → 고치고 「보내기 확정」 → 본부가 몇 분 안에 그 계정으로 보낸다
  *  · 서명은 늘 본문 아래 구분선 뒤 (명함 이미지 · 이름 · 연락처)
@@ -15,10 +16,11 @@ import {
   UNSUB_METHOD, addDraft, bumpTemplate, catLabel, composeHtml, confirmDraft, deleteSignature, deleteTemplate, discardDraft, fmtKst, fmtWhen,
   getMailDigest, getSignatureCard, kstDay, listDrafts, listMailAccounts, listMailMessages, listOpenMail, listSignatures, listTemplates, listUnsubs,
   quickRange, requestUnsubs, keepUnsub, unkeepUnsub, saveDraft, saveSignature, saveTemplate, setMailDone, unconfirmDraft, DraftFields,
+  setUnsubMemo, listCleanup, setCleanup, requestCleanup, cleanDo, CLEAN_LABEL, MailCleanup, CleanAction,
 } from '../mail.service';
 import { MailEditor } from './MailEditor';
 
-type Tab = 'sum' | 'drafts' | 'tpl' | 'sig' | 'unsub' | 'all';
+type Tab = 'sum' | 'drafts' | 'tpl' | 'sig' | 'unsub' | 'clean' | 'all';
 const DRAFT_ST: Record<string, [string, string]> = {
   draft: ['확정 전', 'wait'], confirmed: ['보낼 예정', 'go'], sending: ['보내는 중', 'go'], sent: ['보냄', 'sent'], failed: ['실패', 'fail'],
 };
@@ -41,12 +43,14 @@ export function MailView({ workspace, look, detailId, go }: BrandViewProps) {
   const [templates, setTemplates] = useState<MailTemplate[]>([]);
   const [sigs, setSigs] = useState<MailSignature[]>([]);
   const [unsubs, setUnsubs] = useState<MailUnsub[]>([]);
+  const [cleans, setCleans] = useState<MailCleanup[]>([]);
   const [err, setErr] = useState<unknown>(null);
 
   const reload = useCallback(async () => {
     try {
       const [a, o, d, t, s, u] = await Promise.all([listMailAccounts(ws), listOpenMail(ws), listDrafts(ws), listTemplates(ws), listSignatures(ws), listUnsubs(ws)]);
       setAccounts(a); setOpenList(o); setDrafts(d); setTemplates(t); setSigs(s); setUnsubs(u); setErr(null);
+      setCleans(await listCleanup(ws).catch(() => []));   // 077 전에는 빈 목록
     } catch (e) { setErr(e); setAccounts([]); }
   }, [ws]);
   const reloadRange = useCallback(async () => {
@@ -87,10 +91,12 @@ export function MailView({ workspace, look, detailId, go }: BrandViewProps) {
       <Tabs<Tab> value={tab} onChange={setTab} items={[
         { key: 'sum', label: '아침 정리' }, { key: 'drafts', label: '초안', count: openDrafts.length },
         { key: 'tpl', label: '템플릿', count: templates.length }, { key: 'sig', label: '서명', count: sigs.length },
-        { key: 'unsub', label: '구독 취소', count: unsubs.filter(u => u.status === 'candidate').length }, { key: 'all', label: '전체 메일', count: mList.length },
+        { key: 'unsub', label: '구독 취소', count: unsubs.filter(u => u.status === 'candidate').length },
+        ...(cleans.length ? [{ key: 'clean' as Tab, label: '메일함 정리', count: cleans.filter(c => c.status === 'proposed' && cleanDo(c) !== 'keep').length }] : []),
+        { key: 'all', label: '전체 메일', count: mList.length },
       ]} />
       {err != null && <Err e={err} />}
-      {multi && (tab === 'sum' || tab === 'all' || tab === 'drafts' || tab === 'unsub') && (
+      {multi && (tab === 'sum' || tab === 'all' || tab === 'drafts' || tab === 'unsub' || tab === 'clean') && (
         <div className="m-acc">
           <button type="button" className={`m-chip${acc === 'all' ? ' on' : ''}`} onClick={() => setAcc('all')}>전체</button>
           {accounts.map(a => <button key={a.id} type="button" className={`m-chip${acc === a.id ? ' on' : ''}`} onClick={() => setAcc(a.id)}>{a.label || a.provider}<small>{a.address}</small></button>)}
@@ -142,6 +148,7 @@ export function MailView({ workspace, look, detailId, go }: BrandViewProps) {
       {tab === 'tpl' && <TemplateList items={templates} onOpen={(t) => go('mail', t ? `t-${t.id}` : 't-new')} />}
       {tab === 'sig' && <SignatureList items={sigs} accOf={accOf} onOpen={(s) => go('mail', s ? `s-${s.id}` : 's-new')} />}
       {tab === 'unsub' && <UnsubList items={byAcc(unsubs)} accOf={multi ? accOf : undefined} onDone={reload} />}
+      {tab === 'clean' && <CleanupList items={byAcc(cleans)} accOf={multi ? accOf : undefined} onDone={reload} />}
 
       {filterOpen && <FilterSheet range={range} cat={cat} onClose={() => setFilterOpen(false)} onSave={(r, c) => { setRange(r); setCat(c); setFilterOpen(false); }} />}
       {kind === 'm' && (curMsg
@@ -443,6 +450,8 @@ function UnsubList({ items, accOf, onDone }: { items: MailUnsub[]; accOf?: (id?:
   const [open, setOpen] = useState<string | null>(null);
   const [keptOpen, setKeptOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [memoFor, setMemoFor] = useState<string | null>(null);
+  const memoOk = items.some(u => u.keepMemo !== undefined);   // 078 전에는 메모 숨김
   const cand = items.filter(u => u.status === 'candidate');
   const kept = items.filter(u => u.status === 'kept');
   const rest = items.filter(u => u.status !== 'candidate' && u.status !== 'kept');
@@ -460,8 +469,9 @@ function UnsubList({ items, accOf, onDone }: { items: MailUnsub[]; accOf?: (id?:
             <div className="t">{u.senderAddr}</div>
             <div className="d">최근 30일 {u.count30d}통{u.note ? ` · ${u.note}` : ''}</div>
             <div className="rt">{accOf?.(u.accountId) && <span className="m-st">{accOf(u.accountId)!.label}</span>}<span className={`m-st ${u.method === 'caution' ? 'fail' : ''}`}>{UNSUB_METHOD[u.method]}</span>
-              <Mini onClick={(e) => { e.stopPropagation(); act(() => keepUnsub(u.id)); }}>유지</Mini><span className="m-car">{open === u.id ? '▴' : '▾'}</span></div>
+              <Mini onClick={(e) => { e.stopPropagation(); if (memoOk) setMemoFor(u.id); else act(() => keepUnsub(u.id)); }}>유지</Mini><span className="m-car">{open === u.id ? '▴' : '▾'}</span></div>
           </div>
+          {memoFor === u.id && <KeepMemo onCancel={() => setMemoFor(null)} onSave={(m) => act(async () => { await keepUnsub(u.id, m); setMemoFor(null); })} />}
           {open === u.id && <ExampleList xs={u.examples} />}
         </div>
       )) : <Empty>구독 취소 대상이 없습니다</Empty>}</Card>
@@ -477,14 +487,100 @@ function UnsubList({ items, accOf, onDone }: { items: MailUnsub[]; accOf?: (id?:
     {kept.length > 0 && <div className="m-kept">
       <button type="button" className="m-kepth" onClick={() => setKeptOpen(v => !v)}>유지한 곳 {kept.length}<span className="m-car">{keptOpen ? '▴' : '▾'}</span></button>
       {keptOpen && <Card pad>{kept.map(u => (
-        <div key={u.id} className="m-row">
-          <div className="who">{u.senderName || u.senderAddr}</div><div className="t">{u.senderAddr}</div><div className="d">구독 취소 · 휴지통 대상에서 제외</div>
-          <div className="rt"><Mini onClick={() => act(() => unkeepUnsub(u.id))}>되돌리기</Mini></div>
+        <div key={u.id} className="m-unw"><div className="m-row">
+          <div className="who">{u.senderName || u.senderAddr}</div><div className="t">{u.senderAddr}</div>
+          <div className="d">{u.keepMemo ? <>메모 · {u.keepMemo}</> : '구독 취소 · 휴지통 대상에서 제외'}</div>
+          <div className="rt">{memoOk && <Mini onClick={() => setMemoFor(u.id)}>메모</Mini>}<Mini onClick={() => act(() => unkeepUnsub(u.id))}>되돌리기</Mini></div>
+        </div>
+          {memoFor === u.id && <KeepMemo initial={u.keepMemo ?? ''} onCancel={() => setMemoFor(null)} onSave={(m) => act(async () => { await setUnsubMemo(u.id, m); setMemoFor(null); })} />}
         </div>
       ))}</Card>}
     </div>}
     {sel.size > 0 && <div className="m-bar"><b>{sel.size}곳</b> 선택<span className="grow" style={{ flex: 1 }} />
       <Act disabled={busy} onClick={() => act(async () => { await requestUnsubs([...sel]); setSel(new Set()); })}>선택한 {sel.size}곳 구독 취소</Act></div>}
+  </>;
+}
+
+/** 유지 메모 한 줄 - 본부가 읽는다 (메모에 「배움」 → 라벨 배움 · 없으면 라벨 뉴스레터) */
+function KeepMemo({ initial = '', onSave, onCancel }: { initial?: string; onSave: (memo: string) => void; onCancel: () => void }) {
+  const [v, setV] = useState(initial);
+  return (
+    <div className="m-memo" onClick={e => e.stopPropagation()}>
+      <input value={v} onChange={e => setV(e.target.value)} placeholder="메모 (선택) · 예: 즐겨 보는 뉴스레터 · 배움으로 분류" maxLength={120} autoFocus
+        onKeyDown={e => { if (e.key === 'Enter') onSave(v); if (e.key === 'Escape') onCancel(); }} />
+      <Mini primary onClick={() => onSave(v)}>유지</Mini><Mini onClick={onCancel}>취소</Mini>
+    </div>
+  );
+}
+
+// ── 메일함 정리 ── 본부 정리안(077) · 행동별 묶음 (휴지통 → 구독 취소 → 라벨 → 확인 필요 → 유지) · 줄을 누르면 그동안 온 메일
+const CLEAN_ORDER: CleanAction[] = ['trash', 'unsub_trash', 'label', 'ask', 'keep'];
+function CleanupList({ items, accOf, onDone }: { items: MailCleanup[]; accOf?: (id?: string) => MailAccount | undefined; onDone: () => void }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const [fold, setFold] = useState<Record<string, boolean>>({ keep: true });
+  const [memoFor, setMemoFor] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const memoOk = items.some(c => c.keepMemo !== undefined);
+  const act = async (fn: () => Promise<unknown>) => { setBusy(true); try { await fn(); onDone(); } finally { setBusy(false); } };
+  const todo = items.filter(c => c.status === 'proposed' || c.status === 'failed');
+  const groupKey = (c: MailCleanup) => { const d = cleanDo(c); return d === 'label' ? `label:${c.label ?? ''}` : d; };
+  const groups = useMemo(() => {
+    const m = new Map<string, MailCleanup[]>();
+    for (const c of todo) { const k = groupKey(c); if (!m.has(k)) m.set(k, []); m.get(k)!.push(c); }
+    return [...m.entries()].sort((a, b) => CLEAN_ORDER.indexOf(a[0].split(':')[0] as CleanAction) - CLEAN_ORDER.indexOf(b[0].split(':')[0] as CleanAction) || a[0].localeCompare(b[0]));
+  }, [todo]);
+  const gTitle = (k: string) => k.startsWith('label:') ? `라벨 · ${k.slice(6)}` : CLEAN_LABEL[k as CleanAction];
+  const sum = (xs: MailCleanup[]) => xs.reduce((n, c) => n + c.count, 0);
+  const runnable = todo.filter(c => c.checked && ['trash', 'unsub_trash', 'label'].includes(cleanDo(c)));
+  const working = items.filter(c => c.status === 'requested');
+  const done = items.filter(c => c.status === 'done');
+  const choose = (c: MailCleanup, v: string) => {
+    const [d, label] = v.split(':');
+    if (d === 'keep') { if (memoOk) setMemoFor(c.id); act(() => setCleanup(c.id, { chosen: 'keep', checked: false })); return; }
+    if (d === 'label' && label !== c.label) return;   // 다른 라벨로 옮기기는 본부 정리안에서
+    act(() => setCleanup(c.id, { chosen: d === c.action ? null : d as Exclude<CleanAction, 'ask'>, checked: true }));
+  };
+  return <>
+    <div className="m-intro"><span>보낸 곳별 정리안입니다 · 선택한 곳을 정리합니다 · 휴지통은 30일이 지난 메일만 옮기며 30일 안에 복구할 수 있습니다</span></div>
+    <div className="m-sum m-csum">{groups.map(([k, xs]) => (
+      <button key={k} type="button" className="m-tile" onClick={() => document.getElementById(`mc-${k}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+        <span className={`k ${k.split(':')[0]}`}>{gTitle(k)}</span><b>{sum(xs).toLocaleString()}</b><small>{xs.length}곳</small>
+      </button>
+    ))}</div>
+    {working.length > 0 && <div className="m-hq"><span className="t">처리 중</span><span>{working.length}곳 · {sum(working).toLocaleString()}통 · 몇 분 안에 끝납니다</span></div>}
+    {groups.map(([k, xs]) => (
+      <section key={k} id={`mc-${k}`} className="n-sec">
+        <button type="button" className="m-cg" onClick={() => setFold(f => ({ ...f, [k]: !f[k] }))}>
+          <span className={`m-ck ${k.split(':')[0]}`}>{gTitle(k)}</span><b>{xs.length}곳 · {sum(xs).toLocaleString()}통</b><span className="m-car">{fold[k] ? '▾' : '▴'}</span>
+        </button>
+        {!fold[k] && <Card pad>{xs.map(c => {
+          const d = cleanDo(c);
+          const gone = (c.goneMonths ?? 0) >= 2 && (d === 'trash' || d === 'unsub_trash');
+          return <div key={c.id} className="m-unw">
+            <div className="m-row m-un" role="button" tabIndex={0} onClick={() => setOpen(o => o === c.id ? null : c.id)} onKeyDown={e => { if (e.key === 'Enter') setOpen(o => o === c.id ? null : c.id); }}>
+              <input type="checkbox" checked={c.checked && d !== 'keep' && d !== 'ask'} disabled={d === 'keep' || d === 'ask'} onClick={e => e.stopPropagation()}
+                onChange={() => act(() => setCleanup(c.id, { checked: !c.checked }))} aria-label="선택" />
+              <div className="who">{c.senderName || c.senderAddr}</div>
+              <div className="t">{c.senderAddr}<span className="m-kind">{c.kind}</span></div>
+              <div className="d">{c.count.toLocaleString()}통 · 안 읽음 {c.unseen.toLocaleString()}{gone ? ` · 이미 오지 않음 (${c.goneMonths}개월 전) · 구독 취소 불필요` : ''}{c.status === 'failed' && c.error ? ` · 실패: ${c.error}` : ''}{d === 'keep' && c.keepMemo ? ` · 메모: ${c.keepMemo}` : ''}</div>
+              <div className="rt">{accOf?.(c.accountId) && <span className="m-st">{accOf(c.accountId)!.label}</span>}
+                <select className="m-sel" value={d === 'label' ? `label:${c.label ?? ''}` : d} onClick={e => e.stopPropagation()} onChange={e => choose(c, e.target.value)} aria-label="행동">
+                  {c.action === 'label' && <option value={`label:${c.label ?? ''}`}>라벨 · {c.label}</option>}
+                  <option value="trash">휴지통</option><option value="unsub_trash">구독 취소 + 휴지통</option><option value="keep">유지</option>
+                  {c.action === 'ask' && <option value="ask" disabled>확인 필요</option>}
+                </select>
+                <span className="m-car">{open === c.id ? '▴' : '▾'}</span></div>
+            </div>
+            {memoFor === c.id && <KeepMemo initial={c.keepMemo ?? ''} onCancel={() => setMemoFor(null)} onSave={(m) => act(async () => { await setCleanup(c.id, { keepMemo: m }); setMemoFor(null); })} />}
+            {open === c.id && <ExampleList xs={c.examples} />}
+          </div>;
+        })}</Card>}
+      </section>
+    ))}
+    {!todo.length && !working.length && <Empty>정리할 항목이 없습니다</Empty>}
+    {done.length > 0 && <div className="m-note">정리 완료 {done.length}곳 · {done.reduce((n, c) => n + c.moved, 0).toLocaleString()}통 이동</div>}
+    {runnable.length > 0 && <div className="m-bar"><b>{runnable.length}곳</b><span>{sum(runnable).toLocaleString()}통</span><span className="grow" style={{ flex: 1 }} />
+      <Act disabled={busy} onClick={() => act(() => requestCleanup(runnable.map(c => c.id)))}>선택한 {runnable.length}곳 정리</Act></div>}
   </>;
 }
 
